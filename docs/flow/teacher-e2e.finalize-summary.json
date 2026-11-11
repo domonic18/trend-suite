@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/deadwalk/Code/trend-suite/.archify/workflow-teacher-e2e-v3-20261111-090342/candidate.json",
+    "sha256": "7ee43c648da3e3cba354aa629bdc36be59616a5620c8bcd09cce9408bdcb1f94",
+    "bytes": 9445
+  },
+  "artifact": {
+    "path": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.html",
+    "sha256": "488af3cfa4ce732342ffaa6a59a0340119ad3db1b0bad0c95aa404a30597ee3a",
+    "bytes": 869887
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.browser-check.json\".",
+      "subject": {
+        "artifact": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.html",
+        "evidencePath": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.finalize.json",
+    "summaryReceipt": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.finalize-summary.json",
+    "browserCheckReceipt": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-10T00:59:47.341Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 735,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

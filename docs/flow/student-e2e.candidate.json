@@ -1,0 +1,313 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "学员端端到端流程：两步开通 · 平台供给 · 额度计费",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/flow/student-e2e.html"
+  },
+  "lanes": [
+    {
+      "id": "student",
+      "label": "学员（本机客户端）"
+    },
+    {
+      "id": "client",
+      "label": "客户端（渲染与交互）"
+    },
+    {
+      "id": "cloud",
+      "label": "云端（推理 · 内容 · 计费）"
+    },
+    {
+      "id": "exc",
+      "label": "异常与边界",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p_open",
+      "label": "开通：安装 · 首启登录（两步交互）",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "p_learn",
+      "label": "学习闭环：问 · 读 · 看",
+      "fromCol": 3,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "p_keep",
+      "label": "持续使用：额度 · 账号",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_onboard",
+      "label": "两步开通 · 零配置",
+      "lane": "student",
+      "fromCol": 0,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "g_loop",
+      "label": "问答-回看闭环",
+      "lane": "client",
+      "fromCol": 3,
+      "toCol": 4,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "c_portal",
+    "s_install",
+    "s_setup",
+    "s_learn",
+    "p_view",
+    "s_keep"
+  ],
+  "nodes": [
+    {
+      "id": "c_portal",
+      "lane": "cloud",
+      "col": 0,
+      "type": "frontend",
+      "label": "门户",
+      "sublabel": "了解 · 注册 · 下载安装包 · 定价说明"
+    },
+    {
+      "id": "s_install",
+      "lane": "student",
+      "col": 1,
+      "type": "frontend",
+      "label": "下载 · 一键安装",
+      "sublabel": "内嵌客户端与运行时 · 零命令行",
+      "tag": "第①步"
+    },
+    {
+      "id": "s_setup",
+      "lane": "student",
+      "col": 2,
+      "type": "frontend",
+      "label": "首启登录",
+      "sublabel": "仅一步：登录（无任何模型配置）",
+      "tag": "第②步"
+    },
+    {
+      "id": "c_auth",
+      "lane": "cloud",
+      "col": 2,
+      "type": "security",
+      "label": "授权与绑定",
+      "sublabel": "设备码 · grant 只落本机 · 注册赠额度"
+    },
+    {
+      "id": "s_learn",
+      "lane": "student",
+      "col": 3,
+      "type": "frontend",
+      "label": "选课学习",
+      "sublabel": "体系页 · 课程页 · 对话框"
+    },
+    {
+      "id": "p_ask",
+      "lane": "client",
+      "col": 3,
+      "type": "backend",
+      "label": "提问 · 带引用回答",
+      "sublabel": "云端生成 · 本地渲染 · 引用回跳",
+      "tag": "问（计费）"
+    },
+    {
+      "id": "c_reason",
+      "lane": "cloud",
+      "col": 3,
+      "type": "backend",
+      "label": "检索与推理",
+      "sublabel": "RAG · 平台模型 · 额度扣减 · 空召回拒答"
+    },
+    {
+      "id": "p_view",
+      "lane": "client",
+      "col": 4,
+      "type": "frontend",
+      "label": "课程页 · 播放",
+      "sublabel": "同构渲染 · seek≤2s · 水印",
+      "tag": "读 · 看（免费）"
+    },
+    {
+      "id": "c_content",
+      "lane": "cloud",
+      "col": 4,
+      "type": "database",
+      "label": "内容 · 播放 · 进度",
+      "sublabel": "签名会话 · 窗校验 · 幂等 · 版本门禁"
+    },
+    {
+      "id": "s_keep",
+      "lane": "student",
+      "col": 5,
+      "type": "frontend",
+      "label": "持续使用",
+      "sublabel": "课堂（免费） · 账号 · 额度与充值"
+    },
+    {
+      "id": "x_quota",
+      "lane": "exc",
+      "col": 3,
+      "type": "security",
+      "label": "额度耗尽",
+      "sublabel": "停止生成 · 引导充值 · 浏览照常"
+    },
+    {
+      "id": "x_expired",
+      "lane": "exc",
+      "col": 4,
+      "type": "security",
+      "label": "签名过期 / 越窗",
+      "sublabel": "可读提示 · 换签重试"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "c_portal",
+      "to": "s_install",
+      "label": "官网下载安装包",
+      "variant": "default"
+    },
+    {
+      "id": "e2",
+      "from": "s_install",
+      "to": "s_setup",
+      "label": "安装完成 · 向导自启",
+      "variant": "default"
+    },
+    {
+      "id": "e3",
+      "from": "s_setup",
+      "to": "c_auth",
+      "label": "登录（自动拉起授权页）",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e4",
+      "from": "c_auth",
+      "to": "s_setup",
+      "label": "绑定 · 已登录 · 赠额到账",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "e5",
+      "from": "s_setup",
+      "to": "s_learn",
+      "label": "进入学习",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "s_learn",
+      "to": "p_ask",
+      "label": "问",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e7",
+      "from": "p_ask",
+      "to": "c_reason",
+      "label": "提问（文字/图片/语音）",
+      "variant": "default"
+    },
+    {
+      "id": "e8",
+      "from": "c_reason",
+      "to": "p_ask",
+      "label": "带引用回答 · 扣减额度",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "e9",
+      "from": "p_ask",
+      "to": "p_view",
+      "label": "点引用回跳",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e10",
+      "from": "s_learn",
+      "to": "p_view",
+      "label": "打开课程页",
+      "variant": "default"
+    },
+    {
+      "id": "e11",
+      "from": "p_view",
+      "to": "c_content",
+      "label": "取内容 · 换签 · 报进度（免费）",
+      "variant": "default"
+    },
+    {
+      "id": "e12",
+      "from": "p_view",
+      "to": "s_keep",
+      "label": "持续使用",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "e13",
+      "from": "c_reason",
+      "to": "x_quota",
+      "label": "额度耗尽",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e14",
+      "from": "p_view",
+      "to": "x_expired",
+      "label": "过期 / 越窗",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "两步开通 · 零配置",
+      "items": [
+        "① 官网下载一键安装包（内嵌客户端与运行时）",
+        "② 首启登录，仅此一步——模型配置步骤已移除（ADR-03）",
+        "注册赠初始额度，登录即赠额到账"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "平台供给 · 问得出点得回",
+      "items": [
+        "云端完成检索 + 生成，回答只引检索返回的片段",
+        "引用点击回跳播放器，seek ≤ 2s，片段高亮",
+        "课程页与管理台同构：正文 · 图示 · 片段卡 · 案例股"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "额度计费与合规",
+      "items": [
+        "智能问答按额度计费，余额与消耗透明；耗尽即停并引导充值",
+        "浏览 · 播放 · 课堂不耗额度（内容消费免费）",
+        "云端生成内容经审核过滤（不荐股红线）；赠额防刷限流"
+      ]
+    }
+  ]
+}

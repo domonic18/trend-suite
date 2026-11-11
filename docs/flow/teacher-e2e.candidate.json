@@ -1,0 +1,438 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "教师端端到端流程：Agent 驱动制作",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/flow/teacher-e2e.html"
+  },
+  "lanes": [
+    {
+      "id": "ops",
+      "label": "运营 / 管理员"
+    },
+    {
+      "id": "human",
+      "label": "教师（关键环节介入）"
+    },
+    {
+      "id": "cloud",
+      "label": "云端底座（直传 · 管线 · 门禁）"
+    },
+    {
+      "id": "agent",
+      "label": "生产 Agent（主 Agent 编排 · 子代理并行）"
+    },
+    {
+      "id": "exc",
+      "label": "异常 · 人工介入",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p_plan",
+      "label": "方案阶段：Agent 起草 · 人确认",
+      "fromCol": 0,
+      "toCol": 3
+    },
+    {
+      "id": "p_produce",
+      "label": "生产阶段：逐节子代理并行",
+      "fromCol": 4,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "p_audit",
+      "label": "审核与发布：Agent 自评 · 人把关",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_upload",
+      "label": "直传通道",
+      "lane": "cloud",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "g_agents",
+      "label": "Agent 编排（理解 → 综合 → 逐节 → 评审）",
+      "lane": "agent",
+      "fromCol": 2,
+      "toCol": 5,
+      "variant": "emphasis"
+    },
+    {
+      "id": "g_exceptions",
+      "label": "异常分支（人工裁决）",
+      "lane": "exc",
+      "fromCol": 3,
+      "toCol": 4,
+      "variant": "security"
+    },
+    {
+      "id": "g_handoff",
+      "label": "发布交接",
+      "lane": "ops",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "ops_account",
+    "h_brief",
+    "c_upload",
+    "c_pipeline",
+    "a_understand",
+    "a_synthesis",
+    "h_plan",
+    "a_section",
+    "a_review",
+    "c_readiness",
+    "h_audit",
+    "ops_signoff",
+    "ops_publish"
+  ],
+  "nodes": [
+    {
+      "id": "ops_account",
+      "lane": "ops",
+      "col": 0,
+      "type": "security",
+      "label": "建账号 · 预置模型",
+      "sublabel": "邀请码 · 任务绑定 · 密钥加密",
+      "tag": "B1"
+    },
+    {
+      "id": "h_brief",
+      "lane": "human",
+      "col": 1,
+      "type": "frontend",
+      "label": "上传素材（单 / 批）",
+      "sublabel": "入库即转码转写 · 就绪度可见",
+      "tag": "人的输入"
+    },
+    {
+      "id": "c_upload",
+      "lane": "cloud",
+      "col": 2,
+      "type": "cloud",
+      "label": "直传通道",
+      "sublabel": "凭据签名 · ≤2GiB",
+      "yOffset": -50
+    },
+    {
+      "id": "c_pipeline",
+      "lane": "cloud",
+      "col": 2,
+      "type": "backend",
+      "label": "转码 · 关键帧 · 转写",
+      "sublabel": "增量可读 partial",
+      "yOffset": 50
+    },
+    {
+      "id": "a_understand",
+      "lane": "agent",
+      "col": 2,
+      "type": "backend",
+      "label": "理解 Agent",
+      "sublabel": "多模态逐 chunk → source units",
+      "tag": "Agent"
+    },
+    {
+      "id": "a_synthesis",
+      "lane": "agent",
+      "col": 3,
+      "type": "backend",
+      "label": "综合 Agent",
+      "sublabel": "目录校验 · 概念归一 · 起草方案",
+      "tag": "Agent"
+    },
+    {
+      "id": "h_plan",
+      "lane": "human",
+      "col": 3,
+      "type": "security",
+      "label": "方案确认",
+      "sublabel": "批准 / 微调编辑 / 打回重起草",
+      "tag": "决策点①",
+      "yOffset": 55
+    },
+    {
+      "id": "a_section",
+      "lane": "agent",
+      "col": 4,
+      "type": "backend",
+      "label": "逐节子代理 ×N 并行",
+      "sublabel": "九步生产 · 工具调用 · 恒draft",
+      "tag": "Agent"
+    },
+    {
+      "id": "a_review",
+      "lane": "agent",
+      "col": 5,
+      "type": "backend",
+      "label": "评审 Agent",
+      "sublabel": "rubric 十维自评 · 修改指令",
+      "tag": "Agent"
+    },
+    {
+      "id": "c_readiness",
+      "lane": "cloud",
+      "col": 5,
+      "type": "backend",
+      "label": "就绪度计算",
+      "sublabel": "与发布同一份门禁判定"
+    },
+    {
+      "id": "h_audit",
+      "lane": "human",
+      "col": 5,
+      "type": "security",
+      "label": "成品审核",
+      "sublabel": "就绪度 + 评审结论 + 逐节预览",
+      "tag": "决策点②"
+    },
+    {
+      "id": "ops_signoff",
+      "lane": "ops",
+      "col": 5,
+      "type": "security",
+      "label": "签批终审",
+      "sublabel": "对内容指纹签名",
+      "yOffset": -50
+    },
+    {
+      "id": "ops_publish",
+      "lane": "ops",
+      "col": 5,
+      "type": "cloud",
+      "label": "发布课程",
+      "sublabel": "迁移 · 索引 · 学员可见",
+      "tag": "终点",
+      "yOffset": 50
+    },
+    {
+      "id": "x_outline",
+      "lane": "exc",
+      "col": 3,
+      "type": "security",
+      "label": "提纲与素材不匹配",
+      "sublabel": "教师裁决：修订提纲 / 补素材",
+      "tag": "异常"
+    },
+    {
+      "id": "x_material",
+      "lane": "human",
+      "col": 4,
+      "type": "security",
+      "label": "课件证据不足",
+      "sublabel": "Agent 挂起 · 教师补素材 · 补后恢复",
+      "tag": "异常"
+    },
+    {
+      "id": "x_rework",
+      "lane": "exc",
+      "col": 4,
+      "type": "security",
+      "label": "回灌超限",
+      "sublabel": "校验/自评失败 ≤3 次 · 超限人工待办",
+      "tag": "异常"
+    },
+    {
+      "id": "h_trigger",
+      "lane": "human",
+      "col": 3,
+      "type": "frontend",
+      "label": "触发方案制作",
+      "sublabel": "素材就绪后：选集 · 目标 · 目录先验",
+      "tag": "人的触发",
+      "yOffset": -55
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "ops_account",
+      "to": "h_brief",
+      "label": "账号到手",
+      "variant": "default"
+    },
+    {
+      "id": "e2",
+      "from": "h_brief",
+      "to": "c_upload",
+      "label": "拖素材 · 直传",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "c_upload",
+      "to": "c_pipeline",
+      "label": "入队转写",
+      "variant": "default"
+    },
+    {
+      "id": "e4",
+      "from": "c_pipeline",
+      "to": "a_understand",
+      "label": "增量转写 + 帧可读",
+      "variant": "default"
+    },
+    {
+      "id": "e5",
+      "from": "a_understand",
+      "to": "a_synthesis",
+      "label": "source units",
+      "variant": "default"
+    },
+    {
+      "id": "e6",
+      "from": "a_synthesis",
+      "to": "h_plan",
+      "label": "制作方案草案",
+      "variant": "default"
+    },
+    {
+      "id": "e7",
+      "from": "h_plan",
+      "to": "a_section",
+      "label": "批准 · 开产",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e8",
+      "from": "a_section",
+      "to": "a_review",
+      "label": "九步产出",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e9",
+      "from": "a_review",
+      "to": "c_readiness",
+      "label": "自评通过",
+      "variant": "default"
+    },
+    {
+      "id": "e10",
+      "from": "c_readiness",
+      "to": "h_audit",
+      "label": "就绪度 + 评审结论",
+      "variant": "default"
+    },
+    {
+      "id": "e11",
+      "from": "h_audit",
+      "to": "ops_signoff",
+      "label": "审核通过 · 交接",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e12",
+      "from": "ops_signoff",
+      "to": "ops_publish",
+      "label": "签批",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e13",
+      "from": "a_synthesis",
+      "to": "x_outline",
+      "label": "提纲与素材不匹配",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e14",
+      "from": "x_outline",
+      "to": "a_synthesis",
+      "label": "修订 / 补素材 · 重跑",
+      "variant": "security"
+    },
+    {
+      "id": "e15",
+      "from": "a_section",
+      "to": "x_material",
+      "label": "证据不足 · 挂起",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e16",
+      "from": "x_material",
+      "to": "a_section",
+      "label": "补素材后恢复",
+      "variant": "security"
+    },
+    {
+      "id": "e18",
+      "from": "x_rework",
+      "to": "a_section",
+      "label": "回灌 ≤3",
+      "variant": "security"
+    },
+    {
+      "id": "e17",
+      "from": "a_section",
+      "to": "x_rework",
+      "label": "校验 / 自评 reject",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e20",
+      "from": "h_trigger",
+      "to": "a_synthesis",
+      "label": "生成方案 · 显式触发",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e21",
+      "from": "h_plan",
+      "to": "a_synthesis",
+      "label": "调整 · 修改指令重起草",
+      "variant": "security",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "人只把关两端",
+      "items": [
+        "初始：确认制作方案（骨架 · 概念 · 分节计划）",
+        "方案可调：微调直接编辑；大改给指令重起草（不重跑理解）",
+        "终局：成品审核（就绪度 + 评审结论 + 逐节预览）"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Agent 全程承载制作",
+      "items": [
+        "理解 Agent：多模态逐 chunk 产 source units",
+        "综合 Agent：目录先验校验 + 概念归一 + 起草方案",
+        "逐节子代理 ×N 并行：九步生产，工具调用落云端",
+        "评审 Agent：rubric 十维自评并生成修改指令",
+        "素材单/批上传即流水处理；方案由教师显式触发（选集+目标+目录）"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "异常分支闭环",
+      "items": [
+        "提纲与素材不匹配 → 教师裁决后重跑综合",
+        "课件证据不足 → 挂起请求补素材，补后自动恢复",
+        "校验 / 自评失败 → 回灌 ≤3 次，超限进人工待办"
+      ]
+    }
+  ]
+}

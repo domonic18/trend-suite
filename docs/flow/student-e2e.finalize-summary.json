@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/deadwalk/Code/trend-suite/.archify/workflow-student-e2e-20261111-092021/candidate.json",
+    "sha256": "11de044fb797ebe82e30d8a3dce97f933d69f5d0c855e843abcc36d7eff631e3",
+    "bytes": 9517
+  },
+  "artifact": {
+    "path": "/Users/deadwalk/Code/trend-suite/docs/flow/student-e2e.html",
+    "sha256": "9b5d6d0f88f3a79d159de7eb3b7840f98864dcda5201f8c4bfcdca1ccfb600b7",
+    "bytes": 874573
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/deadwalk/Code/trend-suite/docs/flow/student-e2e.finalize.json",
+    "summaryReceipt": "/Users/deadwalk/Code/trend-suite/docs/flow/student-e2e.finalize-summary.json",
+    "browserCheckReceipt": "/Users/deadwalk/Code/trend-suite/docs/flow/student-e2e.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-10T00:59:47.341Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2919,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

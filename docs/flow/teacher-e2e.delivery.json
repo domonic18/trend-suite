@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ad51ea0f-6f1f-4e72-87cf-d1aeb962028d",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/deadwalk/Code/trend-suite/.archify/workflow-teacher-e2e-v4-20261111-091550/candidate.json",
+  "output": "/Users/deadwalk/Code/trend-suite/docs/flow/teacher-e2e.html",
+  "specification": {
+    "sha256": "4085dfb11c6c2055536df7bec1904e24d0096034016600f5a006931e5871c127",
+    "bytes": 10183
+  },
+  "artifact": {
+    "sha256": "fc2b48742cb53c73314463467d225499679ff15a0670d809ccc56912d7873cd7",
+    "bytes": 873733
+  }
+}

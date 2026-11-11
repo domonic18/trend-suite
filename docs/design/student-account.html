@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>个人中心 · 额度</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fff;--soft:#f6f8fc;--panel:#fff;--line:#e4e9f2;--ink:#16203a;--mut:#5a6785;
+--pri:#2563eb;--pri-soft:#eaf1ff;--acc:#0f9d76;--acc-soft:#e7f6f0;
+--code:#0f172a;--sh:0 18px 48px rgba(22,32,58,.08);--mono:ui-monospace,"SF Mono",Menlo,monospace}
+body{font:14px/1.65 ui-sans-serif,system-ui,-apple-system,"PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+a{color:var(--pri);text-decoration:none}
+.hd{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line);background:color-mix(in srgb,#fff 88%,transparent);backdrop-filter:blur(14px)}
+.hd-in{display:flex;align-items:center;gap:24px;width:min(1160px,calc(100vw - 48px));height:68px;margin:0 auto}
+.brd{display:flex;align-items:center;gap:10px;color:var(--ink)}
+.mk{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e4fd8);color:#fff;font-weight:700;flex:none}
+.brd-t{display:flex;flex-direction:column;line-height:1.25}
+.brd-t strong{font-size:15px}.brd-t small{font-size:11px;color:var(--mut)}
+nav{display:flex;gap:4px;flex:1;min-width:0}
+.nl{padding:8px 12px;border-radius:8px;color:var(--mut);font-size:14px;white-space:nowrap}
+.nl:hover{background:var(--soft);color:var(--ink)}
+.nl.on{color:var(--pri);background:var(--pri-soft);font-weight:600}
+.hd-act{display:flex;gap:8px;flex:none;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;font-weight:500;cursor:default}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.lg{height:44px;padding:0 22px;font-size:15px}
+.btn.ghost-w{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
+.w{width:min(1160px,calc(100vw - 48px));margin:0 auto}
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+background:radial-gradient(circle at 82% 12%,rgba(15,157,118,.14),transparent 42%),radial-gradient(circle at 10% 0%,rgba(37,99,235,.18),transparent 46%),linear-gradient(180deg,#f8fbff,#fff)}
+.hero-in{padding:84px 0 64px;max-width:880px}
+.kick{display:inline-block;margin-bottom:14px;padding:4px 12px;border-radius:999px;background:var(--pri-soft);color:var(--pri);font-size:12px;font-weight:700;letter-spacing:.08em}
+.hero h1{margin:0 0 20px;font-size:clamp(32px,5vw,50px);line-height:1.18;letter-spacing:-.02em}
+.lead{max-width:720px;margin:0 0 28px;font-size:17px;color:var(--mut)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:48px}
+.sc{display:flex;flex-direction:column;gap:4px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.78)}
+.sc strong{font-size:26px;font-variant-numeric:tabular-nums;line-height:1.2}
+.sc span{font-size:13px;color:var(--mut)}
+.disc{margin:24px 0 0;font-size:12px;color:var(--mut)}
+.sec{padding:72px 0}
+.sec.mut{background:var(--soft);border-block:1px solid var(--line)}
+.sh{max-width:720px;margin-bottom:32px}
+.sh h2{margin:0 0 8px;font-size:clamp(24px,3.2vw,34px);letter-spacing:-.01em}
+.sh p{margin:0;color:var(--mut)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.pc{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.pc.cap{box-shadow:var(--sh)}
+.pc h3{margin:0 0 10px;font-size:18px}
+.pc p{margin:0;color:var(--mut);font-size:14px}
+.pc .em{font:600 22px var(--mono);margin:0 0 8px}
+.path{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;list-style:none}
+.path li{display:flex;gap:16px;padding:22px 24px;border:1px solid var(--line);border-radius:16px}
+.path .n{flex:none;font-size:22px;font-weight:800;color:var(--pri);font-variant-numeric:tabular-nums}
+.path h3{margin:0 0 6px;font-size:16px}.path p{margin:0;color:var(--mut);font-size:14px}
+.cta{padding:56px 0 72px;background:linear-gradient(120deg,#11203d,#1d3b74);color:#eef4ff}
+.cta-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px}
+.cta h2{margin:0 0 8px;font-size:28px}.cta p{margin:0;color:#b9c6e4}
+.price{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+.price th,.price td{padding:14px 20px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+.price th{font-size:12px;font-weight:600;color:var(--mut);background:var(--soft)}
+.price td.amt{font:600 16px var(--mono)}
+.price tr.rec td{background:var(--pri-soft)}
+.tag{font:600 11px var(--mono);color:var(--pri);border:1px solid var(--pri);border-radius:4px;padding:0 6px;margin-left:8px}
+.note{font-size:13px;color:var(--mut)}
+.ft{border-top:1px solid var(--line);background:var(--soft)}
+.ft-in{display:flex;gap:48px;padding:40px 0 24px;flex-wrap:wrap}
+.ft-b{display:flex;gap:10px;align-items:center}
+.ft-l{display:flex;gap:48px}
+.ft-l>div{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.ft-l span{font-weight:600;margin-bottom:2px}
+.ft-l a{color:var(--mut)}.ft-l a:hover{color:var(--pri)}
+.ft-bot{border-top:1px solid var(--line);padding:16px 0;display:flex;gap:16px;font-size:12px;color:var(--mut)}
+:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+</style><style>
+.acct{max-width:920px;margin:0 auto;padding:28px 40px 60px}
+.bal{display:flex;align-items:center;gap:22px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin-bottom:16px}
+.bal .big{font:650 34px var(--mono);letter-spacing:-.5px}
+.bal .big small{font:400 13px var(--mono);color:var(--mut);letter-spacing:0}
+.bal .m{flex:1}
+.bal .m .bar{height:6px;border-radius:3px;background:var(--line2);overflow:hidden}
+.bal .m .bar i{display:block;height:100%;width:43%;background:var(--pri)}
+.g2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+.sech{font-size:13px;font-weight:650;padding:11px 18px;border-bottom:1px solid var(--line2);display:flex;align-items:center}
+.sech .n{font:500 11px var(--mono);color:var(--mut);margin-left:auto}
+.tbl2{width:100%;border-collapse:collapse;font-size:13px}
+.tbl2 th{font-size:12px;font-weight:500;color:var(--mut);text-align:left;padding:8px 18px;border-bottom:1px solid var(--line2)}
+.tbl2 td{padding:9px 18px;border-bottom:1px solid var(--line2)}
+.tbl2 .num{font-family:var(--mono)}
+.opt{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:7px;padding:12px 15px;margin-bottom:8px;cursor:default}
+.opt.on{border-color:var(--pri);background:var(--jade-bg)}
+.opt .amt{font:600 15px var(--mono)}
+.opt .note{margin-left:auto}
+.kv2{display:flex;justify-content:space-between;gap:10px;padding:9px 18px;font-size:13px;border-bottom:1px solid var(--line2)}
+.kv2 .k{color:var(--mut)}
+</style></head><body></head><body>
+<div class="nav"><div class="brand"><div class="mk">势</div>趋势交易课程</div><a>课程</a><a>常见问题</a><div class="sp"></div>
+ <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--line2);display:grid;place-items:center;font-size:12px;font-weight:600">明</div>
+ <div style="font-size:13px"><b>xiaoming</b><div class="note">学员</div></div></div></div>
+<div class="acct">
+ <div class="bal">
+  <div><div class="note" style="margin-bottom:2px">问答余额</div><div class="big">13 <small>/ 30 次</small></div></div>
+  <div class="m"><div class="bar"><i></i></div>
+   <div class="note" style="margin-top:7px">仅智能问答（含语音转写）计费 · 浏览 / 播放 / 课堂长期免费</div></div>
+  <a class="btn pri" style="height:36px">充值</a>
+ </div>
+ <div class="g2">
+  <div>
+   <div class="sech" style="background:var(--panel);border:1px solid var(--line);border-radius:8px 8px 0 0">消耗明细<span class="n">不含问题原文</span></div>
+   <div style="background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px">
+    <table class="tbl2">
+     <tr><th>时间</th><th>类型</th><th style="text-align:right">变动</th></tr>
+     <tr><td class="num">今天 14:02</td><td>智能问答</td><td class="num" style="text-align:right">−1</td></tr>
+     <tr><td class="num">今天 13:47</td><td>智能问答 · 语音转写</td><td class="num" style="text-align:right">−1</td></tr>
+     <tr><td class="num">昨天 21:15</td><td>智能问答</td><td class="num" style="text-align:right">−1</td></tr>
+     <tr><td class="num">11-08 09:30</td><td>注册赠额</td><td class="num" style="text-align:right;color:var(--pri)">+30</td></tr>
+    </table>
+   </div>
+   <div class="sech" style="background:var(--panel);border:1px solid var(--line);border-radius:8px 8px 0 0;margin-top:16px">设备</div>
+   <div style="background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px">
+    <div class="kv2"><span>MacBook Pro（本机）</span><span><span class="note">活跃 · </span><a class="btn" style="height:24px;padding:0 10px;font-size:12px">解绑</a></span></div>
+    <div class="kv2"><span>改密 / 注销账号</span><a class="btn" style="height:24px;padding:0 10px;font-size:12px">管理</a></div>
+   </div>
+  </div>
+  <div>
+   <div class="sech" style="background:var(--panel);border:1px solid var(--line);border-radius:8px 8px 0 0">充值档位</div>
+   <div style="background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;padding:14px 16px">
+    <div class="opt on"><input type="radio" checked><div><div class="amt">¥35</div><div class="note">100 次 · 到账即时</div></div><span class="note">推荐</span></div>
+    <div class="opt"><input type="radio"><div><div class="amt">¥19</div><div class="note">50 次</div></div></div>
+    <div class="opt"><input type="radio"><div><div class="amt">¥128<span class="note"> / 月</span></div><div class="note">月订阅 · 不限次</div></div></div>
+    <button class="btn pri" style="width:100%;height:36px;margin-top:6px">去支付</button>
+    <div class="note" style="margin-top:9px">支付成功额度即时到账；重复回调不重复加额。发票与退款规则以正式发布为准。</div>
+   </div>
+   <div class="sech" style="background:var(--panel);border:1px solid var(--line);border-radius:8px 8px 0 0;margin-top:16px">隐私</div>
+   <div style="background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px">
+    <div class="kv2"><span class="k">指标上报</span><span>默认关闭 · 可开启 / 撤回</span></div>
+    <div class="kv2"><span class="k">学习上下文</span><span>只在本机内存处理</span></div>
+    <div class="kv2"><span class="k">音频与转写</span><span>仅内存流转，不落盘</span></div>
+   </div>
+  </div>
+ </div>
+</div></body></html>
