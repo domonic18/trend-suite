@@ -1,65 +1,141 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>我的课程 · 生产工作台 · 趋势课程</title>
-<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-admin.css">
-<style>
-.crow{display:flex;align-items:center;gap:14px;padding:16px 18px}
-.crow+.crow{border-top:1px solid var(--line2)}
-.crow .cname b{font-size:15px}
-.crow .cname .id{font:500 11px var(--mono);color:var(--faint);display:block;margin-top:2px}
-.crow .cinfo{color:var(--mut);font-size:12.5px;margin-left:6px;flex:1;min-width:0}
-.crow .cinfo .num{color:var(--ink2)}
-</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<title>课程内容 · 生产工作台 · 趋势课程</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css">
+</head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-</svg><div class="app"><aside class="sb">
- <a class="brand" href="index.html"><span class="mk">势</span><span class="bt"><strong>趋势课程</strong><span>生产工作台</span></span></a>
- <div class="sb-menu">
-  <div class="sb-g">课程</div>
-  <a class="nv on" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>我的课程</a>
-  <div class="sb-g">当前课程 · 总论卷</div>
-  <a class="nv" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
-  <a class="nv" href="teacher-production.html"><svg><use href="#i-board"/></svg>逐节生产</a>
-  <a class="nv" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
-  <a class="nv" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
- </div>
- <div class="sb-foot"><div class="su"><div class="av">周</div><div><div class="un">周老师</div><div class="ur">producer</div></div><a class="out" href="teacher-login.html">退出</a></div></div>
-</aside><div class="main"><div class="top">
- <div class="crumb"><a href="index.html">工作台</a> / <b>我的课程</b></div>
- <div class="tip"><i></i>云端模型已预置<a href="index.html">原型索引</a></div>
-</div><div class="body" style="max-width:880px;margin:0 auto;width:100%">
+</svg><div class="ops-app">
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i on" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>课程内容</a>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
+  <a class="ops-i" href="teacher-production.html"><svg><use href="#i-board"/></svg>生产看板</a>
+  <a class="ops-i" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
+  <a class="ops-i" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+<div>
+<header class="ops-top">
+ <span>生产工作台</span><span class="sep">/</span><b>课程内容</b>
+ <span class="right"><span>模型云端预置 · 零密钥</span><a href="index.html">原型索引</a></span>
+</header>
+<main class="ops-main" style="max-width:1280px">
 
-<div class="ph">
- <div><div class="ph-t">我的课程</div><div class="ph-s">每门课四个阶段：素材与方案 → 逐节生产 → 成品审核 → 交接运营；Agent 自动推进，只在决策点等你</div></div>
- <div class="ph-a"><button class="b b-pri">新建课程</button></div>
+ <div class="ops-ph">
+  <div><div class="t">课程内容</div><div class="s">维护课程结构、知识点文章与发布状态；发布时自动重建检索索引。</div></div>
+ </div>
+
+ <div class="content-layout">
+
+  <!-- ===== 左：课程列表 ===== -->
+  <div class="course-list-card">
+   <div class="h"><b>课程</b><button class="btn sm pri">＋ 新建</button></div>
+   <div class="course-list-filters">
+    <input class="fi" style="height:34px" placeholder="搜索课程 ID 或标题">
+    <select class="fi" style="height:34px"><option>全部状态</option><option>草稿</option><option>已发布</option></select>
+   </div>
+   <div class="course-list-item is-selected">
+    <div class="course-list-item-title"><b>总论卷</b><span class="tag run">生产中</span></div>
+    <div class="course-list-item-meta"><span class="chip mono">TC-ZONGLUN</span><span>6 章 · 26 知识点</span><span>96 片段</span></div>
+   </div>
+   <div class="course-list-item">
+    <div class="course-list-item-title"><b>筹码分布卷</b><span class="tag gray">草稿</span></div>
+    <div class="course-list-item-meta"><span class="chip mono">TC-CHIP</span><span>0 章 · 0 知识点</span><span>0 片段</span></div>
+   </div>
+   <div class="course-list-item">
+    <div class="course-list-item-title"><b>趋势交易基础</b><span class="tag ok">已发布</span></div>
+    <div class="course-list-item-meta"><span class="chip mono">TC-101</span><span>6 章 · 22 知识点</span><span>84 片段</span></div>
+   </div>
+  </div>
+
+  <!-- ===== 右：课程详情 ===== -->
+  <div>
+   <!-- 课程信息 -->
+   <div class="ops-card">
+    <div class="h"><div><b>课程信息</b><small>TC-ZONGLUN · 教师写入恒为 draft</small></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" title="重新生成该课程全部片段的向量索引">生成索引</button>
+      <a class="btn sm pri" href="teacher-production.html" title="九步生产进度、产出与评审结论">生产看板 →</a>
+      <button class="btn sm" disabled title="签批 = 对内容指纹签名（发布前置门禁，限 operator/admin）">签批（运营）</button>
+      <button class="btn sm" disabled title="发布草稿内容并重建检索索引（限 operator/admin）">发布（运营）</button>
+     </div></div>
+    <div class="b" style="display:grid;gap:12px;max-width:560px">
+     <div><div class="note" style="margin-bottom:5px">标题</div><input class="fi" value="总论卷"></div>
+     <div><div class="note" style="margin-bottom:5px">状态</div>
+      <select class="fi"><option>草稿</option><option>已发布</option><option>已归档</option></select></div>
+     <div><button class="btn">保存</button></div>
+    </div>
+   </div>
+
+   <!-- 发布就绪度（ReadinessCard 迁移） -->
+   <div class="ops-card" id="readiness">
+    <div class="h"><div><b>发布就绪度</b><small>与发布事务同一批判定，不会「全绿点发布还 409」</small></div>
+     <span class="chip mono" title="当前内容指纹">指纹 9f78 4726 … · 未签批</span></div>
+    <div class="b" style="padding-top:4px">
+     <div class="choice-row"><span class="tag ok">通过</span><b>图示解析</b><span class="note">22/22 可解析 · 覆盖全部引用</span></div>
+     <div class="choice-row"><span class="tag ok">通过</span><b>课件断言</b><span class="note">36/36 断言证明齐备</span></div>
+     <div class="choice-row"><span class="tag ok">通过</span><b>片段窗</b><span class="note">9/9 落在本节已发布正文内</span></div>
+     <div class="choice-row"><span class="tag ok">通过</span><b>标注与回放</b><span class="note">43 锚点 · 交易日可核</span></div>
+     <div class="choice-row"><span class="tag err">未通过</span><b>终审签批</b><span class="note">待运营签批（对指纹签名）</span></div>
+     <p class="note" style="margin-top:8px">改内容即已签批失效（approval_stale，须重签）；签批与发布按钮对教师隐藏（调端点 403）。</p>
+    </div>
+   </div>
+
+   <!-- 课程结构（章节折叠） -->
+   <div class="ops-card">
+    <div class="h"><div><b>课程结构</b><small>章节 → 知识点 · 结构化修改走抽屉（落 draft）</small></div>
+     <div style="display:flex;gap:8px"><button class="btn sm">课程术语</button><button class="btn sm pri">＋ 新增章节</button></div></div>
+    <div class="b" style="padding-top:6px">
+     <div class="chap">
+      <div class="chap-h"><span class="caret">▾</span><b>第 1 章 什么是趋势</b>
+       <div class="meta"><span class="chip mono">ch-01</span><span class="tag ok">教材 v7</span><span class="tag ok">题库 v3</span><span>3 图示</span><span>4 知识点</span></div>
+       <div class="acts"><button class="btn">教材</button><button class="btn">测验</button><button class="btn">图示</button><button class="btn">编辑</button><button class="btn">知识点</button></div></div>
+      <div class="chap-b">
+       <div class="kp-row"><b>趋势的定义</b><span class="id">kp-0101</span><span class="seg">12 片段</span></div>
+       <div class="kp-row"><b>级别与周期</b><span class="id">kp-0102</span><span class="seg">9 片段</span></div>
+       <div class="kp-row"><b>摆动高低点</b><span class="id">kp-0103</span><span class="seg">7 片段</span></div>
+       <div class="kp-row"><b>证伪条件</b><span class="id">kp-0104</span><span class="seg">5 片段</span></div>
+      </div>
+     </div>
+     <div class="chap">
+      <div class="chap-h" style="box-shadow:inset 2px 0 0 var(--p-pri)"><span class="caret">▾</span><b>第 2 章 趋势的阻尼运动</b>
+       <div class="meta"><span class="chip mono">ch-02</span><span class="tag run">教材 v6 · 生产中</span><span class="tag gray">无题库</span><span>4 图示</span><span>5 知识点</span></div>
+       <div class="acts"><button class="btn">教材</button><button class="btn">测验</button><button class="btn">图示</button><button class="btn">编辑</button><button class="btn">知识点</button></div></div>
+      <div class="chap-b">
+       <div class="kp-row"><b>阻尼运动</b><span class="id">kp-0201</span><span class="seg">14 片段</span></div>
+       <div class="kp-row"><b>动能衰竭三证据</b><span class="id">kp-0202</span><span class="seg">11 片段</span></div>
+       <div class="kp-row"><b>均线粘合</b><span class="id">kp-0203</span><span class="seg">8 片段</span></div>
+       <div class="kp-row"><b>量能萎缩</b><span class="id">kp-0204</span><span class="seg">6 片段</span></div>
+       <div class="kp-row"><b>节奏与持有</b><span class="id">kp-0205</span><span class="seg">4 片段</span></div>
+      </div>
+     </div>
+     <div class="chap">
+      <div class="chap-h"><span class="caret">▸</span><b>第 3 章 均线与多空分界</b>
+       <div class="meta"><span class="chip mono">ch-03</span><span class="tag err">教材 v3 · 回灌 2/3</span><span>4 知识点</span></div>
+       <div class="acts"><button class="btn">教材</button><button class="btn">测验</button><button class="btn">图示</button></div></div>
+     </div>
+     <div class="chap" id="suspend" style="border-color:#f0e2bd;background:#fffdf7">
+      <div class="chap-h"><span class="caret">▸</span><b>第 4 章 周线级别判断</b>
+       <div class="meta"><span class="chip mono">ch-04</span><span class="tag warn">挂起 · 等补充素材</span><a class="btn sm" href="teacher-plan.html#upload" style="margin-left:4px">去补素材</a></div>
+       <div class="acts"><button class="btn">教材</button><button class="btn">测验</button><button class="btn">图示</button></div></div>
+     </div>
+     <div class="chap" style="opacity:.55">
+      <div class="chap-h"><span class="caret">▸</span><b>第 5 章 筹码密集与发散 · 第 6 章 综合研判框架</b>
+       <div class="meta"><span class="tag gray">排队（并行度 3–4）</span></div></div>
+     </div>
+     <p class="note" style="margin-top:8px">教材正文 DSL 不在工作台手改（绕过行情与术语校验）——改正文走生产回灌；术语改名走「归档 + 新建」，归档可逆。</p>
+    </div>
+   </div>
+  </div>
+
+ </div>
+</main>
 </div>
-
-<div class="panel" style="padding:0">
- <div class="crow">
-  <div class="cname"><b>总论卷</b><span class="id">TC-ZONGLUN</span></div>
-  <span class="tag run">生产中</span>
-  <div class="cinfo">逐节生产 · <span class="num">4/6</span> 节 · 当前步 <span class="num">6 正文</span> · <span style="color:var(--warn)">2 项需要你处理</span></div>
-  <a class="b b-pri" href="teacher-production.html">继续制作 →</a>
- </div>
- <div class="crow">
-  <div class="cname"><b>筹码分布卷</b><span class="id">TC-CHIP</span></div>
-  <span class="tag mut">素材就绪</span>
-  <div class="cinfo">方案待触发 · <span class="num">2</span> 个视频 ready</div>
-  <a class="b" href="teacher-plan.html">去触发方案 →</a>
- </div>
- <div class="crow">
-  <div class="cname"><b>趋势交易基础</b><span class="id">TC-101</span></div>
-  <span class="tag ok">已发布</span>
-  <div class="cinfo">v3 现行 · <span class="num">6/6</span> 节 · <span class="num">11-06 18:31</span> 发布</div>
-  <a class="b" href="teacher-review.html">查看成品 →</a>
- </div>
-</div>
-
-<details class="toolcard" style="margin-top:14px">
- <summary><span class="tname">工作纪律（三条底线）</span><span class="tmeta"><span class="tdur">对教师透明</span></span></summary>
- <div class="tout">· 决策只有三处：门禁①方案 / 评审 reject 与否 / 追加素材怎么处理<br>· 异常先展示影响面与原因，确认后才执行；一切动作幂等<br>· 教师写入恒为 <span class="num">draft</span>，签批与发布归运营（教师侧不渲染，调端点 403）</div>
-</details>
-
-</div></div></div></div></body></html>
+</div></body></html>
