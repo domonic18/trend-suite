@@ -1,0 +1,82 @@
+/* ============================================================
+   运营控制台底座（ops-*）· 后台管理布局 + 门户浅色色板
+   依赖 assets/tokens.css 与 assets/family-portal.css（组件复用：
+   panel/tbl/btn/tag/st/meter/strip/chk/bind/pub-steps/invite 等）
+   布局对齐 trend-studio admin（antd 风）：侧栏 + 顶栏 + 面卡表格
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font: 14px/1.65 var(--font-sans);
+  background: #f4f6fa;
+  color: var(--p-ink);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--p-pri); outline-offset: 1px; }
+
+/* ---------------- 应用壳：侧栏 + 主区 ---------------- */
+.ops-app { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 100vh; }
+
+.ops-sb {
+  background: #fff; border-right: 1px solid var(--p-line);
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.ops-brand { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--p-line); }
+.ops-brand .mk {
+  width: 32px; height: 32px; border-radius: 9px; flex: none;
+  background: linear-gradient(135deg, #2563eb, #1e4fd8); color: #fff;
+  display: grid; place-items: center; font-weight: 700;
+}
+.ops-brand b { font-size: 14px; display: block; }
+.ops-brand small { font-size: 11px; color: var(--p-mut); }
+.ops-menu { flex: 1; padding: 10px 12px; }
+.ops-g { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #9aa3b8; padding: 12px 10px 5px; }
+.ops-i {
+  display: flex; align-items: center; gap: 10px; margin: 2px 0; padding: 8px 10px;
+  border-radius: 8px; color: var(--p-mut); font-size: 13.5px; transition: all .12s;
+}
+.ops-i svg { width: 16px; height: 16px; flex: none; opacity: .85; }
+.ops-i:hover { background: var(--p-soft); color: var(--p-ink); }
+.ops-i.on { background: var(--p-pri-soft); color: var(--p-pri); font-weight: 600; }
+.ops-i .cnt { margin-left: auto; font: 600 10.5px var(--font-mono); background: var(--p-soft); color: var(--p-mut); border-radius: 8px; padding: 2px 7px; }
+.ops-user { border-top: 1px solid var(--p-line); padding: 12px; display: flex; align-items: center; gap: 10px; }
+.ops-user .ava {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  background: var(--p-pri-soft); color: var(--p-pri); display: grid; place-items: center; font-size: 13px; font-weight: 700;
+}
+.ops-user .un { font-size: 13px; font-weight: 600; }
+.ops-user .ur { font-size: 11px; color: var(--p-mut); }
+.ops-user .out { margin-left: auto; font-size: 11.5px; color: #9aa3b8; }
+.ops-user .out:hover { color: #d9483f; }
+
+/* ---------------- 顶栏：面包屑 ---------------- */
+.ops-top {
+  position: sticky; top: 0; z-index: 30; height: 52px;
+  display: flex; align-items: center; gap: 8px; padding: 0 24px;
+  background: rgba(255, 255, 255, .88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--p-line);
+  font-size: 13px; color: var(--p-mut);
+}
+.ops-top b { color: var(--p-ink); font-weight: 600; }
+.ops-top .sep { color: #c4ccdb; }
+.ops-top .right { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 12.5px; }
+.ops-top .right a:hover { color: var(--p-pri); }
+
+/* ---------------- 主区 ---------------- */
+.ops-main { padding: 20px 24px 40px; max-width: 1200px; width: 100%; }
+.ops-ph { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.ops-ph .t { font-size: 20px; font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+.ops-ph .s { font-size: 13px; color: var(--p-mut); margin-top: 4px; max-width: 72ch; }
+.ops-ph .a { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 面卡（复用门户 .panel 的白卡底，统一运营间距） */
+.ops-card { background: #fff; border: 1px solid var(--p-line); border-radius: 12px; }
+.ops-card + .ops-card { margin-top: 16px; }
+.ops-card > .h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--p-line); }
+.ops-card > .h b { font-size: 15px; display: block; }
+.ops-card > .h small { display: block; color: var(--p-mut); font-size: 12.5px; margin-top: 2px; font-weight: 400; }
+.ops-card > .b { padding: 16px 20px; }
+.ops-card > .b:first-child { border-top: none; }
+.tblwrap { overflow-x: auto; }

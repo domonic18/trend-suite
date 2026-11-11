@@ -1,48 +1,61 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>模型配置 · 运营控制台 · 趋势课程</title>
-<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-admin.css">
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css">
 </head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M3 15h18M8 4v16M16 4v16" stroke="currentColor" stroke-width="1.2"/></symbol>
-<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
-<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
-<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9.5v5M12 17.4v.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
-<symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-</svg><div class="app"><aside class="sb">
- <a class="brand" href="index.html"><span class="mk">势</span><span class="bt"><strong>趋势课程</strong><span>运营控制台</span></span></a>
- <div class="sb-menu">
-  <div class="sb-g">系统</div>
-  <a class="nv" href="ops-usage.html"><svg><use href="#i-board"/></svg>概览 · 用量</a>
-  <a class="nv on" href="ops-models.html"><svg><use href="#i-plan"/></svg>模型配置</a>
-  <a class="nv" href="ops-usage.html"><svg><use href="#i-todo"/></svg>模型用量</a>
-  <a class="nv" href="ops-accounts.html"><svg><use href="#i-book"/></svg>账号管理</a>
-  <a class="nv" href="ops-publish.html"><svg><use href="#i-check-c"/></svg>发布交接</a>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="13.5" r="1.3" fill="currentColor"/><circle cx="15" cy="13.5" r="1.3" fill="currentColor"/><path d="M12 8V4m-2 14h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1.4-3.4 4.2-5 7.5-5s6.1 1.6 7.5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-publish" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg><div class="ops-app">
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>运营控制台</small></span></a>
+ <nav class="ops-menu">
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-dash"/></svg>概览 · 用量</a>
+  <div class="ops-g">系统</div>
+  <a class="ops-i on" href="ops-models.html"><svg><use href="#i-robot"/></svg>模型配置</a>
+  <a class="ops-i" href="ops-accounts.html"><svg><use href="#i-user"/></svg>账号管理</a>
+  <div class="ops-g">交付</div>
+  <a class="ops-i" href="ops-publish.html"><svg><use href="#i-publish"/></svg>发布交接</a>
+ </nav>
+ <div class="ops-user"><span class="ava">陈</span><span><span class="un">陈运营</span><br><span class="ur">operator</span></span><a class="out" href="portal.html">门户</a></div>
+</aside>
+<div>
+<header class="ops-top">
+ <span>运营控制台</span><span class="sep">/</span><b>模型配置</b>
+ <span class="right"><span>密钥 AES-GCM 加密</span><a href="index.html">原型索引</a></span>
+</header>
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">模型配置</div><div class="s">密钥仅在此维护，明文不进浏览器 / 日志 / 响应；连通性测试会真实调用一次（LLM 为最小生成请求，需计费）。对应需求 B1。</div></div>
+  <div class="a"><button class="btn pri">新增模型条目</button></div>
  </div>
- <div class="sb-foot"><div class="su"><div class="av">陈</div><div><div class="un">陈运营</div><div class="ur">operator</div></div><span class="out">退出</span></div></div>
-</aside><div class="main"><div class="top">
- <div class="csel"><span class="dot"></span>TC-ZONGLUN · 总论卷<svg viewBox="0 0 24 24" style="width:12px;height:12px;opacity:.6"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
- <div class="crumb"><a href="index.html">运营</a> / <b>模型配置</b></div>
- <div class="tip"><i></i>密钥仅在此维护 · 加密存储<a href="index.html">原型索引</a></div>
-</div><div class="body">
-<div class="sec"><h2>模型条目<span class="n">4 个 · 密钥 AES-GCM 加密，不回显明文</span></h2>
- <table class="tbl">
-  <tr><th>名称</th><th>用途</th><th>协议</th><th>模型</th><th>端点</th><th>密钥</th><th>默认</th><th>状态</th><th></th></tr>
-  <tr class="hov"><td><b>生产主力</b></td><td>LLM · 内容生成</td><td>anthropic</td><td class="num">MiniMax-M3.1-Flash</td><td class="num">内部代理</td><td class="num">••••8f2a</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button> <span class="ok-inline">23ms ✓</span></td></tr>
-  <tr class="hov"><td><b>视觉理解</b></td><td>VLM · 素材理解</td><td>anthropic</td><td class="num">MiniMax-M3.1-Flash</td><td class="num">内部代理</td><td class="num">••••c31d</td><td><span class="st st-mut"><i></i>–</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
-  <tr class="hov"><td><b>转写</b></td><td>ASR · 长音频</td><td>minimax</td><td class="num">asr-1.0</td><td class="num">api.minimaxi.com</td><td class="num">••••97e0</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
-  <tr class="hov"><td><b>向量</b></td><td>Embedding</td><td>openai</td><td class="num">embedding-3 · 1024d</td><td class="num">内部代理</td><td class="num">••••41b7</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
- </table>
- <div class="in" style="padding:10px 16px;border-top:1px solid var(--line2);display:flex;gap:8px;align-items:center">
-  <button class="btn sm">新增模型条目</button><span class="note">连通性测试会真实调用一次（LLM 为最小生成请求，需计费）</span></div>
+
+ <div class="ops-card">
+  <div class="h"><div><b>模型条目</b><small>4 个 · 任务未绑定时回落默认条目</small></div></div>
+  <div class="tblwrap">
+  <table class="tbl">
+   <tr><th>名称</th><th>用途</th><th>协议</th><th>模型</th><th>端点</th><th>密钥</th><th>默认</th><th>状态</th><th></th></tr>
+   <tr><td><b>生产主力</b></td><td>LLM · 内容生成</td><td>anthropic</td><td class="num">MiniMax-M3.1-Flash</td><td class="num">内部代理</td><td class="num">••••8f2a</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right;white-space:nowrap"><button class="btn sm">测试</button> <span class="ok-inline">23ms ✓</span></td></tr>
+   <tr><td><b>视觉理解</b></td><td>VLM · 素材理解</td><td>anthropic</td><td class="num">MiniMax-M3.1-Flash</td><td class="num">内部代理</td><td class="num">••••c31d</td><td><span class="st st-mut"><i></i>–</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
+   <tr><td><b>转写</b></td><td>ASR · 长音频</td><td>minimax</td><td class="num">asr-1.0</td><td class="num">api.minimaxi.com</td><td class="num">••••97e0</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
+   <tr><td><b>向量</b></td><td>Embedding</td><td>openai</td><td class="num">embedding-3 · 1024d</td><td class="num">内部代理</td><td class="num">••••41b7</td><td><span class="st st-ok"><i></i>默认</span></td><td><span class="st st-ok"><i></i>启用</span></td><td style="text-align:right"><button class="btn sm">测试</button></td></tr>
+  </table>
+  </div>
+ </div>
+
+ <div class="ops-card">
+  <div class="h"><div><b>任务级绑定（主 / 备）</b><small>主备同用途 · 主模型 429 / 5xx / 超时自动切备用（单跳）· 失败配置 60 秒冷却</small></div></div>
+  <div class="b">
+   <div class="bind"><span>content.section_draft · 节教材起草</span><span class="sel">生产主力 ▾</span><span class="sel">（空） ▾</span></div>
+   <div class="bind"><span>content.figure_spec · 图示规格</span><span class="sel">生产主力 ▾</span><span class="sel">（空） ▾</span></div>
+   <div class="bind"><span>vision.describe · 素材理解</span><span class="sel">视觉理解 ▾</span><span class="sel">生产主力 ▾</span></div>
+   <div class="bind"><span>asr.longform · 长音频转写</span><span class="sel">转写 ▾</span><span class="sel">（空） ▾</span></div>
+   <div class="bind"><span>student.qa · 学员问答（计费）</span><span class="sel">生产主力 ▾</span><span class="sel">视觉理解 ▾</span></div>
+   <p class="note" style="margin-top:10px">两次调用（主 + 备）都记入<a href="ops-usage.html">用量账本</a>。</p>
+  </div>
+ </div>
+
+</main>
 </div>
-<div class="sec"><h2>任务级绑定（主 / 备）<span class="n">主备同用途 · 未绑定回落默认</span></h2><div class="in">
- <div class="bind"><span>content.section_draft · 节教材起草</span><span class="sel">生产主力 ▾</span><span class="sel">（空） ▾</span></div>
- <div class="bind"><span>content.figure_spec · 图示规格</span><span class="sel">生产主力 ▾</span><span class="sel">（空） ▾</span></div>
- <div class="bind"><span>vision.describe · 素材理解</span><span class="sel">视觉理解 ▾</span><span class="sel">生产主力 ▾</span></div>
- <div class="bind"><span>asr.longform · 长音频转写</span><span class="sel">转写 ▾</span><span class="sel">（空） ▾</span></div>
- <div class="bind"><span>student.qa · 学员问答（计费）</span><span class="sel">生产主力 ▾</span><span class="sel">视觉理解 ▾</span></div>
- <div class="note" style="margin-top:8px">主模型出现 429/5xx/超时自动切备用（单跳）；失败配置进入 60 秒冷却；两次调用都记入<a href="ops-usage.html" style="color:var(--pri)">用量账本</a>。</div>
-</div></div></div></div></div></body></html>
+</div></body></html>
