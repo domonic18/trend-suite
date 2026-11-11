@@ -1,0 +1,18 @@
+{
+  "name": "trend-suite",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "turbo run check",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "dev:cloud": "pnpm --filter @trend-suite/cloud dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  }
+}

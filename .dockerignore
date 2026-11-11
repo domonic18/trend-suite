@@ -1,0 +1,21 @@
+# 构建上下文是 monorepo 根。排除项按包根锚定。
+**/node_modules
+/apps/*/dist
+/apps/*/lib
+/apps/*/test
+/apps/*/docs
+/apps/*/deploy
+/apps/*/cicd
+/apps/*/workspace
+/packages/*/dist
+/packages/*/lib
+/packages/*/test
+/docs
+/workspace
+**/.turbo
+.git
+.github
+**/*.tgz
+**/*.log
+**/.env
+**/.env.*

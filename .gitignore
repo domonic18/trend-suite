@@ -1,0 +1,20 @@
+node_modules/
+dist/
+lib/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+*.tgz
+# 运行期持久化数据统一放各应用 workspace/（不入库）
+workspace/
+# 密钥与令牌永不入库
+.secret/
+cicd/monitoring/metrics_token
+.turbo/
+# 全局 excludesFile 忽略了 *.md；本仓文档体系全在 .md，显式反选（仓库级规则优先于全局）。
+!*.md
+
