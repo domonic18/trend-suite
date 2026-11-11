@@ -1,61 +1,16 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>趋势伴学 · 会话</title><style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#131418;--panel:#1A1C22;--panel2:#21242C;--line:#282C35;--line2:#22252D;
---ink:#E8EBF0;--ink2:#BCC2CC;--mut:#878E9A;
---jade:#3DBE9B;--jade-bg:#15302B;--up:#E0564F;--up-bg:#2A1B1A;--down:#31A984;--amber:#D9A441;
---mono:ui-monospace,"SF Mono",Menlo,monospace}
-html,body{height:100%}
-body{font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
-.win{max-width:1200px;margin:22px auto;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);box-shadow:0 18px 60px rgba(0,0,0,.45)}
-.tbar{display:flex;align-items:center;gap:10px;height:38px;background:var(--panel);border-bottom:1px solid var(--line);padding:0 12px}
-.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%}
-.ttl{flex:1;text-align:center;font-size:12px;color:var(--mut)}
-.hz{display:inline-flex;align-items:center;gap:6px;font:500 10.5px var(--mono);color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:2px 8px}
-.hz b{color:var(--ink2);font-weight:600}
-.cols{display:grid;grid-template-columns:198px 1fr 292px;min-height:560px}
-.side{background:var(--panel);border-right:1px solid var(--line2);padding:12px 9px}
-.side h4{font-size:10.5px;font-weight:500;color:var(--mut);padding:0 9px 7px;letter-spacing:.3px}
-.ss{display:flex;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;color:var(--ink2);font-size:12.5px}
-.ss.on{background:var(--panel2);color:var(--ink);box-shadow:inset 2px 0 0 var(--jade)}
-.chat{display:flex;flex-direction:column;min-width:0}
-.panel{background:var(--panel);border-left:1px solid var(--line2);padding:14px 13px;overflow:auto}
-.ptabs{display:flex;gap:2px;border-bottom:1px solid var(--line2);margin:-14px -13px 12px;padding:0 13px}
-.ptab{padding:9px 2px;margin-right:14px;font-size:12.5px;color:var(--mut);border-bottom:2px solid transparent}
-.ptab.on{color:var(--ink);border-bottom-color:var(--jade)}
-h3.p{font-size:11px;font-weight:600;color:var(--mut);margin:14px 0 7px;letter-spacing:.3px}
-h3.p:first-child{margin-top:0}
-.msg{display:flex;gap:11px;padding:13px 22px;max-width:820px}
-.msg .who{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;margin-top:2px}
-.who-a{background:var(--jade);color:#0B1512}.who-u{background:var(--panel2);color:var(--ink2);border:1px solid var(--line)}
-.bub{font-size:13.5px;line-height:1.75;color:var(--ink)}
-.bub b{color:#fff}
-.dim{font-size:11.5px;color:var(--mut)}
-.segc{display:inline-block;font:500 11px var(--mono);background:#182028;border:1px solid #2C3A47;border-radius:5px;padding:1px 7px;color:#7FD7BC;margin:0 3px 3px 0;cursor:pointer}
-.segc:hover{border-color:var(--jade)}
-.sys{display:flex;gap:9px;align-items:center;margin:4px 22px;border-radius:8px;padding:8px 13px;font-size:12.5px}
-.sys.quota{background:#241D10;border:1px solid #4E3D1B;color:#E4C27C}
-.sys.empty{background:#1D222B;border:1px solid #313947;color:#9FB0C5}
-.sys .act{margin-left:auto;font-weight:600;color:var(--jade);cursor:pointer;white-space:nowrap}
-.comp{display:flex;gap:9px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 13px;margin:12px 22px}
-.comp input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:inherit;font-size:13px}
-.comp .mic{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--mut);display:grid;place-items:center;cursor:pointer}
-.comp .snd{height:30px;padding:0 13px;border:none;border-radius:8px;background:var(--jade);color:#0B1512;font:600 12.5px inherit;cursor:pointer}
-.ctx{display:flex;gap:8px;align-items:center;margin:0 22px 8px;font-size:11.5px;color:var(--mut)}
-.ctx .x{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:5px;padding:2px 8px}
-.ctx .x u{cursor:pointer;color:var(--ink2)}
-.qbox{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin-bottom:12px}
-.qtop{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-bottom:7px}
-.qbar{height:4px;border-radius:2px;background:#161920;overflow:hidden}.qbar i{display:block;height:100%;background:var(--jade)}
-.qnum{font:600 12px var(--mono);color:var(--ink)}
-.kv{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:12.5px;color:var(--ink2)}
-.kv .k{color:var(--mut)}
-.lnk{color:var(--jade);font-size:12.5px;cursor:pointer}
-.note-d{font-size:11.5px;color:var(--mut);line-height:1.6}
-.sw{width:28px;height:16px;border-radius:9px;background:#2A2E37;position:relative;flex:none}
-.sw::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#878E9A}
-.sw.on{background:var(--jade)}.sw.on::after{left:14px;background:#0B1512}
-:focus-visible{outline:2px solid var(--jade);outline-offset:1px}
-</style></head><body><div class="win"><div class="tbar"><div class="dots"><i style="background:#F0564F"></i><i style="background:#F2BD3D"></i><i style="background:#59C05A"></i></div><div class="ttl">会话：总论卷答疑</div><span class="hz">dsh <b>0.2.1</b> · trend-student</span></div><div class="cols">
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>会话 · 总论卷答疑 · 趋势伴学</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-dsh.css">
+</head><body><div class="win"><div class="tbar"><div class="dots"><i style="background:#F0564F"></i><i style="background:#F2BD3D"></i><i style="background:#59C05A"></i></div><div class="ttl" style="flex:1;text-align:center">会话：总论卷答疑</div><span class="hz">dsh <b>0.2.1</b> · trend-student</span></div>
+<div class="navrow">
+ <a class="pt" href="student-system.html">体系</a>
+ <a class="pt on" href="student-chat.html">对话</a>
+ <a class="pt" href="student-course.html">课程</a>
+ <a class="pt" href="student-class.html">课堂</a>
+ <a class="qp" href="portal-account.html">余额 <b>13</b> 次 · 充值</a>
+ <a class="home" href="portal.html">官网</a>
+</div>
+<div class="cols">
  <div class="side">
   <h4>会话</h4>
   <div class="ss on">总论卷答疑</div>
@@ -68,33 +23,34 @@ h3.p:first-child{margin-top:0}
   <div class="msg"><div class="who who-a">势</div><div class="bub">
    <b>阻尼运动</b>是趋势运行中动能逐步衰竭的比喻：价格仍沿原方向创新高，但每一段的幅度与斜率递减，如同振幅衰减的弹簧。<br><br>
    与普通回调的区别在<b>级别与证据</b>：回调是次级别的反向运动；阻尼是本级别动能的衰减，需要「幅度递减 + 均线粘合 + 量能萎缩」三者共同验证。<br><br>
-   课程出处：<span class="segc">seg-zl02-0417</span><span class="segc">seg-zl02-1120</span>
+   课程出处：<a class="segc" href="student-course.html">seg-zl02-0417</a><a class="segc" href="student-course.html">seg-zl02-1120</a>
    <div class="dim" style="margin-top:4px">点击片段编号回跳视频（误差 ≤ 2s）</div>
   </div></div>
-  <div class="sys empty">课程未覆盖：个股实时诊断不在课程范围——仅讲解方法论，不对个股给出建议。<span class="act">查看相关知识点</span></div>
-  <div class="sys quota">额度已耗尽（0/30）。浏览与播放不受影响。<span class="act">前往充值 →</span></div>
+  <div class="sys empty">课程未覆盖：个股实时诊断不在课程范围——仅讲解方法论，不对个股给出建议。<a class="act" href="student-system.html">查看相关知识点</a></div>
+  <div class="sys quota">额度已耗尽（剩 0 次）。浏览与播放不受影响。<a class="act" href="portal-account.html">前往充值 →</a></div>
   <div class="ctx"><span class="x">自动上下文：第 2 节 · 播放位置 11:20 <u>关闭</u></span><span>只在本机，不上云</span></div>
   <div class="comp" style="margin-top:0"><input placeholder="向课程提问… 回答只引用课程片段，不构成投资建议">
    <button class="mic" title="语音提问 · 单次 ≤ 60 秒"><svg width="14" height="14" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
    <button class="snd">发送</button></div>
  </div>
  <div class="panel">
-  <div class="ptabs"><div class="ptab on">趋势伴学</div><div class="ptab">播放器</div></div>
+  <div class="ptabs"><div class="ptab on">趋势伴学</div><a class="ptab" href="student-course.html">播放器</a></div>
   <div class="qbox">
-   <div class="qtop"><span>余额</span><span style="margin-left:auto" class="qnum">13 / 30 次</span></div>
+   <div class="qtop"><span>余额</span><span style="margin-left:auto" class="qnum">13 次</span></div>
    <div class="qbar"><i style="width:43%"></i></div>
    <div class="dim" style="margin-top:6px">上次问答消耗 1 次 · 仅智能问答计费</div>
   </div>
   <h3 class="p">账号</h3>
   <div class="kv"><span class="k">xiaoming</span><span>已登录</span></div>
-  <div class="kv"><span class="k">设备绑定</span><span>本机</span></div>
+  <div class="kv"><span class="k">设备绑定</span><a class="lnk" href="portal-account.html">管理</a></div>
   <h3 class="p">课程体系</h3>
   <div class="kv"><span>总论卷</span><span>6/6 节</span></div>
   <div class="kv"><span>筹码分布卷</span><span>2/8 节</span></div>
-  <div class="lnk" style="margin-top:4px">打开课程页</div>
+  <a class="lnk" style="display:block;margin-top:4px" href="student-course.html">打开课程页</a>
+  <a class="lnk" style="display:block;margin-top:6px" href="student-system.html">查看体系页</a>
   <h3 class="p">互动课堂</h3>
   <div class="note-d">AI 教师讲解 + 随堂测验，不消耗额度。</div>
-  <div class="lnk" style="margin-top:4px">进入第 2 节课堂</div>
+  <a class="lnk" style="display:block;margin-top:4px" href="student-class.html">进入第 2 节课堂</a>
   <h3 class="p">隐私</h3>
   <div style="display:flex;align-items:center;gap:9px"><span class="note-d" style="flex:1">指标上报</span><span class="sw"></span></div>
   <div class="note-d" style="margin-top:6px">学习上下文只在本机内存处理。</div>
