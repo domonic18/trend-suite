@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>账号管理 · 运营控制台 · 趋势课程</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css">
+<style>
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar .sp{flex:1}
+.role-chip{display:inline-flex;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.role-student{background:#e8f8fa;color:#0b7285}
+.role-producer{background:#eaf1ff;color:#2563eb}
+.role-operator{background:#f4f0ff;color:#6b4fd8}
+.role-admin{background:#faeef0;color:#b3352c}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="13.5" r="1.3" fill="currentColor"/><circle cx="15" cy="13.5" r="1.3" fill="currentColor"/><path d="M12 8V4m-2 14h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1.4-3.4 4.2-5 7.5-5s6.1 1.6 7.5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-publish" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg><div class="ops-app">
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>运营控制台</small></span></a>
+ <nav class="ops-menu">
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-dash"/></svg>概览 · 用量</a>
+  <div class="ops-g">系统</div>
+  <a class="ops-i" href="ops-models.html"><svg><use href="#i-robot"/></svg>模型配置</a>
+  <a class="ops-i on" href="ops-accounts.html"><svg><use href="#i-user"/></svg>账号管理</a>
+  <div class="ops-g">交付</div>
+  <a class="ops-i" href="ops-publish.html"><svg><use href="#i-publish"/></svg>发布交接</a>
+ </nav>
+ <div class="ops-user"><span class="ava">陈</span><span><span class="un">陈运营</span><br><span class="ur">operator</span></span><a class="out" href="portal.html">门户</a></div>
+</aside>
+<div>
+<header class="ops-top">
+ <span>运营控制台</span><span class="sep">/</span><b>账号管理</b>
+ <span class="right"><span>流程节点 ops_account</span><a href="index.html">原型索引</a></span>
+</header>
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">账号管理</div><div class="s">学员角色不可登录控制台；禁用后其设备令牌立即失效；密码与邀请码只存哈希。共 128 个账号（学员 121 · producer 4 · operator 2 · admin 1）。</div></div>
+ </div>
+
+ <!-- 工具栏：状态分段 + 搜索 + 角色 + 新建 -->
+ <div class="toolbar">
+  <span class="seg-lt"><span>全部</span><span class="on">正常</span><span>已禁用</span></span>
+  <input class="btn" style="padding:8px 12px;width:200px;text-align:left" placeholder="搜索用户名 / 显示名">
+  <select class="btn" style="padding:8px 12px"><option>全部角色</option><option>学员</option><option>producer</option><option>operator</option></select>
+  <span class="sp"></span>
+  <button class="btn pri">＋ 新建账号</button>
+ </div>
+
+ <div class="ops-card">
+  <div class="tblwrap">
+  <table class="tbl">
+   <tr><th>用户名</th><th>显示名</th><th>角色</th><th>账号状态</th><th>绑定设备</th><th>剩余额度</th><th>累计消耗</th><th>最近活跃</th><th>创建时间</th><th style="width:210px">操作</th></tr>
+   <tr>
+    <td class="num">xiaoming</td><td>小明</td>
+    <td><span class="role-chip role-student">学员</span></td>
+    <td><span class="tag ok">正常</span></td>
+    <td class="num">1</td><td class="num">13 次</td><td class="num">17 次</td>
+    <td class="note num">今天 14:02</td><td class="note num">11-08 09:30</td>
+    <td style="white-space:nowrap"><button class="btn sm">额度</button> <button class="btn sm">重置密码</button> <button class="btn sm">编辑</button> <button class="btn sm" style="color:#d9483f">禁用</button></td>
+   </tr>
+   <tr>
+    <td class="num">zhoulaoshi</td><td>周老师</td>
+    <td><span class="role-chip role-producer">producer</span></td>
+    <td><span class="tag ok">正常</span></td>
+    <td class="num">1</td><td class="note">—</td><td class="note">生产用量入组织账</td>
+    <td class="note num">今天 10:42</td><td class="note num">10-12 15:20</td>
+    <td style="white-space:nowrap"><button class="btn sm">重置密码</button> <button class="btn sm">编辑</button> <button class="btn sm" style="color:#d9483f">禁用</button></td>
+   </tr>
+   <tr>
+    <td class="num">wanglaoshi</td><td>王老师</td>
+    <td><span class="role-chip role-producer">producer</span></td>
+    <td><span class="tag ok">正常</span></td>
+    <td class="num">0</td><td class="note">—</td><td class="note">—</td>
+    <td class="note num">今天 09:02</td><td class="note num">11-10 16:44</td>
+    <td style="white-space:nowrap"><button class="btn sm">重置密码</button> <button class="btn sm">编辑</button> <button class="btn sm" style="color:#d9483f">禁用</button></td>
+   </tr>
+   <tr>
+    <td class="num">lihua</td><td>李华</td>
+    <td><span class="role-chip role-student">学员</span></td>
+    <td><span class="tag gray">已禁用</span></td>
+    <td class="num">0</td><td class="num">0 次</td><td class="num">23 次</td>
+    <td class="note num">11-02 20:11</td><td class="note num">10-20 11:03</td>
+    <td style="white-space:nowrap"><button class="btn sm">启用</button> <button class="btn sm">编辑</button> <button class="btn sm" style="color:#d9483f">删除</button></td>
+   </tr>
+   <tr>
+    <td class="num">chenops</td><td>陈运营</td>
+    <td><span class="role-chip role-operator">operator</span></td>
+    <td><span class="tag ok">正常</span></td>
+    <td class="num">1</td><td class="note">—</td><td class="note">—</td>
+    <td class="note num">今天 09:14</td><td class="note num">09-01 10:00</td>
+    <td style="white-space:nowrap"><button class="btn sm">重置密码</button> <button class="btn sm">编辑</button></td>
+   </tr>
+  </table>
+  </div>
+  <div class="b" style="border-top:1px solid var(--p-line);padding:12px 20px;display:flex;justify-content:space-between;color:var(--p-mut);font-size:12.5px">
+   <span>共 128 条 · 当前 1–5</span><span>« 上一页　1 / 26　下一页 »</span>
+  </div>
+ </div>
+
+ <p class="note" style="margin-top:12px">学员额度调整 / 充值回调见个人中心；producer 账号创建后即可登录<a href="teacher-login.html" style="color:var(--p-pri)">生产工作台</a>；删除需二次确认（Popconfirm）。</p>
+
+</main>
+</div>
+</div>
+
+<!-- ===== 新建账号 Modal（静态展开态） ===== -->
+<div class="ops-modal-mask" id="newAccountModal" style="align-items:start;padding-top:9vh">
+ <div class="ops-modal">
+  <div style="display:flex;align-items:flex-start;gap:10px">
+   <div style="flex:1">
+  <div class="m-head">新建账号</div>
+  <div class="m-sub">学员自助注册走门户；此处创建 producer / operator 账号</div>
+   </div>
+   <button id="modalClose" aria-label="关闭" style="border:none;background:none;color:#9aa3b8;font-size:16px;cursor:pointer;padding:4px">✕</button>
+  </div>
+  <div class="m-body" style="display:grid;gap:14px">
+   <div><div class="note" style="margin-bottom:5px">用户名 <span style="color:#d9483f">*</span></div><input class="fi" value="qianlaoshi"></div>
+   <div><div class="note" style="margin-bottom:5px">显示名 <span style="color:#d9483f">*</span></div><input class="fi" value="钱老师"></div>
+   <div><div class="note" style="margin-bottom:5px">角色 <span style="color:#d9483f">*</span></div>
+    <select class="fi"><option>producer（教师生产）</option><option>operator（运营）</option><option>admin（管理员）</option></select></div>
+   <div><div class="note" style="margin-bottom:5px">初始凭据 <span style="color:#d9483f">*</span></div>
+    <div class="radio" style="gap:6px">
+     <label class="on" style="padding:8px 11px"><input type="radio" checked><span>一次性邀请码（7 天有效 · 单次使用）</span></label>
+     <label style="padding:8px 11px"><input type="radio"><span>直接设置初始密码</span></label>
+    </div></div>
+   <div class="invite" style="margin-top:0"><span>邀请码　TREN-7K4P-B92D</span><small>仅此一次显示 · 已复制</small></div>
+  </div>
+  <div class="m-foot">
+   <button class="btn" id="modalCancel">取消</button>
+   <a class="btn pri" href="ops-accounts.html">创建</a>
+  </div>
+ </div>
+</div>
+<script>
+(function () {
+  var mask = document.getElementById('newAccountModal');
+  function close() { mask.style.display = 'none'; }
+  mask.addEventListener('click', function (e) { if (e.target === mask) close(); });
+  document.getElementById('modalClose').addEventListener('click', close);
+  document.getElementById('modalCancel').addEventListener('click', close);
+  var openBtn = document.querySelector('.toolbar .btn.pri');
+  if (openBtn) openBtn.addEventListener('click', function () { mask.style.display = 'grid'; });
+})();
+</script>
+</body></html>

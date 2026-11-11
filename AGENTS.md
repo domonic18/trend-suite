@@ -13,7 +13,7 @@ trend-suite/
 ├── docs/                    # 全部项目文档（仿 SquadSight：分类 + 中文编号文档）
 │   ├── requirement/         # 需求（主题需求v版本.md，版本并存）
 │   ├── arch/                # 架构设计（NN主题.md）
-│   ├── design/              # 原型图（HTML 静态原型 + assets/）
+│   ├── prototype/          # 原型图（HTML 静态原型 + assets/）
 │   ├── plan/  ops/  review/  standard/   # 计划 / 运维 / 评审 / 规范
 ├── apps/
 │   ├── backend/             # Fastify 后端；src/ 平铺 + db/ + deploy/ + cicd/ + compose×3

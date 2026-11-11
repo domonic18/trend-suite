@@ -1,0 +1,438 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>趋势交易课程伴学 · 主页</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css">
+<style>
+/* ============================================================
+   主页（唯一公开页面）：能力图文 + 体系 + 下载 + 定价 + FAQ + 法务
+   产品视觉均为纯 CSS/SVG 界面 mockup
+   ============================================================ */
+
+/* ---- 产品视觉框架 ---- */
+.shot{border:1px solid var(--p-line);border-radius:16px;background:#fff;padding:10px;box-shadow:var(--p-sh)}
+.winm{background:#14161c;border-radius:10px;overflow:hidden;border:1px solid #23262f;font-size:12px;line-height:1.6;color:#e8eaef}
+.winm-bar{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;background:#101115;border-bottom:1px solid #23262f}
+.winm-bar i{width:9px;height:9px;border-radius:50%;display:block}
+.winm-bar .t{font-size:11px;color:#878e9a;margin:0 auto}
+
+/* hero 大图 */
+.hero-shot{margin:40px auto 0;max-width:880px;display:block}
+.hero-shot .winm{display:grid;grid-template-columns:150px 1fr}
+.hm-side{background:#171922;border-right:1px solid #23262f;padding:10px 8px}
+.hm-side .g{font-size:9.5px;color:#6b7284;letter-spacing:.12em;margin:4px 4px 6px}
+.hm-side .i{padding:5px 8px;border-radius:6px;color:#9aa1b2;font-size:11px}
+.hm-side .i.on{background:rgba(61,190,155,.14);color:#7ad4bb}
+.hm-main{padding:14px 16px}
+.hm-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hm-pill{margin-left:auto;display:inline-flex;gap:6px;align-items:center;border:1px solid #2a2d36;border-radius:999px;padding:2px 10px;font-size:10.5px;color:#9aa1b2}
+.hm-pill b{color:#3DBE9B;font-family:var(--font-mono)}
+.bub{display:flex;gap:8px;margin-bottom:10px}
+.bub .w{width:20px;height:20px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:9px;font-weight:700}
+.bub.u .w{background:#21242c;color:#9aa1b2;border:1px solid #2a2d36}
+.bub.a .w{background:#3DBE9B;color:#0b1512}
+.bub p{margin:0;font-size:12px}
+.bub.u p{color:#bcc2cc}
+.bub.a p{color:#e8eaef}
+.segchip{display:inline-block;font:500 10px var(--font-mono);border:1px solid #2c4a41;background:#182028;color:#7fd7bc;border-radius:5px;padding:1px 7px;margin:6px 5px 0 0}
+
+/* ---- 能力行（图文交替）---- */
+.feat{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:center;margin-top:72px}
+.feat:first-of-type{margin-top:0}
+.feat.rev .feat-txt{order:2}
+.feat-kick{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--p-pri)}
+.feat h2{margin:10px 0;font-size:clamp(22px,3vw,30px);letter-spacing:-.01em}
+.feat-lead{color:var(--p-mut);font-size:15px;margin:0 0 14px}
+.feat ul{list-style:none;margin:0 0 16px;padding:0}
+.feat li{display:flex;gap:9px;align-items:flex-start;font-size:14px;color:var(--p-ink);padding:4px 0}
+.feat li svg{flex:none;margin-top:4px;color:var(--p-acc)}
+.feat-more{font-size:14px}
+
+/* mock：播放器 */
+.pl-video{position:relative;background:#0d0e12;height:150px;display:grid;place-items:center}
+.pl-video .wm{position:absolute;right:10px;bottom:8px;font-size:9.5px;color:#5b6274}
+.pl-play{width:38px;height:38px;border-radius:50%;background:rgba(61,190,155,.12);border:1px solid #2a5b4e;display:grid;place-items:center}
+.pl-bar{height:4px;background:#232630;position:relative;margin:10px 14px}
+.pl-bar .fill{position:absolute;left:0;top:0;height:100%;width:38%;background:#3DBE9B;border-radius:2px}
+.pl-bar .seg{position:absolute;left:22%;width:18%;top:-3px;height:10px;border-radius:3px;background:rgba(61,190,155,.3);border:1px solid #3DBE9B}
+.pl-chip{display:inline-flex;gap:6px;align-items:center;margin:0 14px 10px;font:500 10px var(--font-mono);color:#7fd7bc;background:#182028;border:1px solid #2c4a41;border-radius:5px;padding:2px 8px}
+
+/* mock：体系树 */
+.tree-row{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:11.5px;color:#9aa1b2}
+.tree-row.on{background:rgba(61,190,155,.1);color:#e8eaef;border-radius:6px}
+.tree-row .caret{color:#6b7284;font-size:9px;width:9px}
+.tree-row .st{margin-left:auto;font-size:9.5px;color:#3DBE9B}
+.tree-row .st.mut{color:#6b7284}
+.kp-pill{display:inline-block;font-size:10px;border:1px solid #2a2d36;border-radius:999px;padding:1px 9px;color:#9aa1b2;margin:2px 4px}
+.kp-pill.q{border-color:#2c4a41;color:#7ad4bb}
+
+/* mock：课堂 */
+.cls-head{display:flex;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid #23262f}
+.cls-tag{font-size:9.5px;border:1px solid #2a5b4e;color:#3DBE9B;border-radius:999px;padding:1px 8px}
+.quiz-opt{border:1px solid #2a2d36;border-radius:7px;padding:6px 10px;font-size:11px;color:#9aa1b2;margin:5px 10px}
+.quiz-opt.on{border-color:#2a5b4e;background:rgba(61,190,155,.1);color:#e8eaef}
+
+/* ---- bento ---- */
+.bento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:72px}
+.bcard{border:1px solid var(--p-line);border-radius:16px;background:#fff;box-shadow:var(--p-sh);padding:20px;min-height:210px;display:flex;flex-direction:column}
+.bcard h3{font-size:15px;margin:14px 0 4px}
+.bcard p{font-size:13px;color:var(--p-mut);margin:0 0 12px}
+.bcard .go{margin-top:auto;font-size:13px}
+.bmini{background:#14161c;border:1px solid #23262f;border-radius:10px;padding:12px;min-height:74px;display:grid;place-items:center}
+.code4{display:flex;gap:6px}
+.code4 b{width:26px;height:32px;border:1px solid #2a2d36;border-radius:7px;background:#1a1c22;display:grid;place-items:center;font:650 15px var(--font-mono);color:#e8eaef}
+.quota-mini{width:100%}
+.quota-pill{display:inline-flex;gap:7px;align-items:center;border:1px solid #2a2d36;border-radius:999px;padding:3px 11px;font-size:10.5px;color:#9aa1b2}
+.quota-pill b{color:#3DBE9B;font-family:var(--font-mono)}
+.quota-bar{height:4px;border-radius:2px;background:#232630;margin-top:8px;overflow:hidden}
+.quota-bar i{display:block;height:100%;width:43%;background:#3DBE9B}
+.dl-mini{display:flex;gap:10px}
+.dl-mini span{width:34px;height:34px;border-radius:9px;background:#1a1c22;border:1px solid #2a2d36;display:grid;place-items:center;color:#7ad4bb}
+
+/* ---- 下载卡 ---- */
+.dl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.dl-card{display:flex;align-items:center;gap:18px;padding:26px;border:1px solid var(--p-line);border-radius:16px;background:#fff;box-shadow:var(--p-sh)}
+.dl-card .ic{width:44px;height:44px;border-radius:12px;background:var(--p-pri-soft);color:var(--p-pri);display:grid;place-items:center;flex:none}
+.dl-card b{font-size:16px}
+.dl-card p{margin:3px 0 0;font-size:13px;color:var(--p-mut)}
+
+/* ---- 定价表 ---- */
+.price{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--p-line);border-radius:14px;overflow:hidden;box-shadow:var(--p-sh)}
+.price th,.price td{padding:14px 20px;border-bottom:1px solid var(--p-line);text-align:left;font-size:14px}
+.price th{font-size:12px;font-weight:600;color:var(--p-mut);background:var(--p-soft)}
+.price td.amt{font:600 16px var(--font-mono)}
+.price tr.rec td{background:var(--p-pri-soft)}
+.price .ptag{font:600 11px var(--font-mono);color:var(--p-pri);border:1px solid var(--p-pri);border-radius:4px;padding:0 6px;margin-left:8px}
+.legal-card ul{margin:10px 0 0;padding-left:18px;color:var(--p-mut);font-size:13.5px;line-height:2}
+</style></head><body>
+<div class="portal-shell">
+<header class="portal-header"><div class="portal-header-inner">
+ <a class="portal-brand" href="portal.html"><span class="portal-brand-mark">趋</span><span class="portal-brand-text"><strong>趋势交易课程伴学</strong><small>本地客户端 · 云端推理</small></span></a>
+ <nav class="portal-nav">
+  <a class="portal-nav-link" href="#system">交易体系</a>
+  <a class="portal-nav-link" href="#features">站点功能</a>
+  <a class="portal-nav-link" href="#download">版本下载</a>
+  <a class="portal-nav-link" href="#pricing">定价</a>
+  <a class="portal-nav-link" href="#faq">常见问题</a>
+  <a class="portal-nav-link" href="#legal">法务</a>
+ </nav>
+ <div class="portal-header-actions">
+  <a class="btn text" href="portal-login.html">登录</a>
+  <a class="btn pri" href="portal-register.html">注册</a>
+ </div>
+</div></header>
+
+<main class="portal-main">
+<!-- ============ Hero ============ -->
+<section class="home-hero"><div class="home-hero-inner">
+ <span class="page-kicker">趋势交易 · 课程伴学</span>
+ <h1>把课程、知识点与 AI 问答<br>装进你的趋势伴学客户端</h1>
+ <p class="home-hero-lead">围绕趋势交易体系组织课程内容。检索、定位与带引用问答都在客户端里完成；推理由云端供给，注册即用，无需配置任何模型密钥。</p>
+ <div class="home-hero-actions">
+  <a class="btn pri lg" href="#download">下载客户端（macOS / Windows）</a>
+  <a class="btn lg" href="#system">先了解体系</a>
+ </div>
+ <div class="home-stats">
+  <div class="stat-card"><strong>3</strong><span>课程卷</span></div>
+  <div class="stat-card"><strong>14</strong><span>章节</span></div>
+  <div class="stat-card"><strong>96</strong><span>视频片段</span></div>
+  <div class="stat-card"><strong>14</strong><span>案例股对照</span></div>
+ </div>
+ <p class="home-disclaimer">本站内容仅用于教学与知识检索，不构成投资建议，也不提供具体买卖信号。</p>
+</div>
+<a class="hero-shot shot" href="student-chat.html">
+ <div class="winm">
+  <div class="winm-bar"><span style="display:flex;gap:5px"><i style="background:#f0564f"></i><i style="background:#f2bd3d"></i><i style="background:#59c05a"></i></span><span class="t">趋势伴学 · 会话</span></div>
+  <div style="display:grid;grid-template-columns:150px 1fr">
+   <div class="hm-side">
+    <div class="g">会话</div>
+    <div class="i on">总论卷答疑</div>
+    <div class="i">阻尼运动提问</div>
+    <div class="g" style="margin-top:12px">课程体系</div>
+    <div class="i">总论卷 · 6/6</div>
+    <div class="i">筹码分布卷 · 2/8</div>
+   </div>
+   <div class="hm-main">
+    <div class="hm-top"><span class="hm-pill">余额 <b>13</b> 次 · 充值</span></div>
+    <div class="bub u"><span class="w">明</span><p>老师说的「阻尼运动」和普通回调有什么区别？</p></div>
+    <div class="bub a"><span class="w">势</span><div><p>区别在<b>级别与证据</b>：需要「幅度递减 + 均线粘合 + 量能萎缩」共同验证。</p>
+     <span class="segchip">seg-zl02-0417</span><span class="segchip">seg-zl02-1120</span>
+     <div style="font-size:10px;color:#6b7284;margin-top:3px">点击片段编号回跳视频（误差 ≤ 2s）</div></div></div>
+   </div>
+  </div>
+ </div>
+</a>
+</section>
+
+<!-- ============ 站点功能 · 能力图文 ============ -->
+<section class="home-section" id="features">
+ <div class="section-heading"><span class="page-kicker">站点功能</span><h2>检索、定位、学习、提问</h2><p>四处能力，一个客户端。</p></div>
+
+ <div class="feat">
+  <div class="feat-txt">
+   <span class="feat-kick">检索</span>
+   <h2>带引用问答，每个结论都有出处</h2>
+   <p class="feat-lead">用自然语言提问，回答只引用课程片段。</p>
+   <ul>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>答案附「课程 → 章节 → 时间点」出处</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>课程未覆盖时明确说明，不编造</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>支持文字 / 图片 / 语音提问</li>
+   </ul>
+   <div class="feat-more"><a href="student-chat.html">查看对话页原型 →</a></div>
+  </div>
+  <div class="shot"><a href="student-chat.html">
+   <div class="winm">
+    <div class="winm-bar"><span style="display:flex;gap:5px"><i style="background:#f0564f"></i><i style="background:#f2bd3d"></i><i style="background:#59c05a"></i></span><span class="t">会话 · 总论卷答疑</span><span class="hm-pill" style="margin:0 0 0 auto">余额 <b>13</b> 次</span></div>
+    <div style="padding:12px 14px">
+     <div class="bub u"><span class="w">明</span><p>周线级别怎么和日线配合找时机？</p></div>
+     <div class="bub a"><span class="w">势</span><div><p>周线定方向、日线找时机——先确认周线结构，再在日线上等回撤确认。</p><span class="segchip">seg-zl04-0233</span><span class="segchip">seg-zl04-0781</span></div></div>
+     <div style="border:1px solid #313947;border-radius:7px;background:#1d222b;color:#9fb0c5;font-size:10.5px;padding:5px 9px">课程未覆盖：个股实时诊断不在课程范围</div>
+    </div>
+   </div>
+  </a></div>
+ </div>
+
+ <div class="feat rev">
+  <div class="feat-txt">
+   <span class="feat-kick">定位</span>
+   <h2>点击引用，秒回原片</h2>
+   <p class="feat-lead">不用在长视频里来回拖进度条。</p>
+   <ul>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>回跳误差 ≤ 2 秒，片段自动高亮</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>播放 30–60 秒自动暂停，回到阅读</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>签名播放 · 水印 · 窗口校验</li>
+   </ul>
+   <div class="feat-more"><a href="student-course.html">查看课程页原型 →</a></div>
+  </div>
+  <div class="shot"><a href="student-course.html">
+   <div class="winm">
+    <div class="winm-bar"><span style="display:flex;gap:5px"><i style="background:#f0564f"></i><i style="background:#f2bd3d"></i><i style="background:#59c05a"></i></span><span class="t">课程页 · 第 2 节 趋势的阻尼运动</span><span style="font-size:9.5px;color:#3DBE9B;margin-left:auto">浏览 · 播放 · 免费</span></div>
+    <div class="pl-video">
+     <span class="pl-play"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="#3DBE9B"/></svg></span>
+     <span class="wm">水印 · xiaoming</span>
+    </div>
+    <div class="pl-bar"><span class="fill"></span><span class="seg"></span></div>
+    <div><span class="pl-chip">seg-zl02-0417 · 11:20–12:02 · 42s</span></div>
+    <div style="padding:0 12px 12px;display:flex;gap:6px">
+     <span style="font-size:10px;border:1px solid #2a2d36;border-radius:5px;padding:1px 7px;color:#9aa1b2">1 什么是趋势 ✓</span>
+     <span style="font-size:10px;border:1px solid #2c4a41;border-radius:5px;padding:1px 7px;color:#7ad4bb">2 阻尼运动 · 学习中</span>
+    </div>
+   </div>
+  </a></div>
+ </div>
+
+ <div class="feat">
+  <div class="feat-txt">
+   <span class="feat-kick">学习</span>
+   <h2>体系化的学习路径</h2>
+   <p class="feat-lead">课程 → 章节 → 知识点，进度一目了然。</p>
+   <ul>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>知识点可带上下文直接提问</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>错题自动进复习清单</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>树按需懒加载，越学越清晰</li>
+   </ul>
+   <div class="feat-more"><a href="student-system.html">查看体系页原型 →</a></div>
+  </div>
+  <div class="shot"><a href="student-system.html">
+   <div class="winm">
+    <div class="winm-bar"><span style="display:flex;gap:5px"><i style="background:#f0564f"></i><i style="background:#f2bd3d"></i><i style="background:#59c05a"></i></span><span class="t">体系页 · 知识体系</span></div>
+    <div style="padding:10px 12px 12px">
+     <div class="tree-row"><span class="caret">▾</span><b>总论卷</b><span class="st">6/6</span></div>
+     <div class="tree-row"><span class="caret">▸</span>1 什么是趋势<span class="st mut">已完成</span></div>
+     <div class="tree-row on"><span class="caret">▾</span>2 趋势的阻尼运动<span class="st">学习中</span></div>
+     <div style="margin-left:24px;border-left:1px solid #232630;padding:4px 0 6px 10px">
+      <span class="kp-pill q">阻尼运动</span><span class="kp-pill q">动能衰竭</span><span class="kp-pill">均线粘合</span><span class="kp-pill">量能萎缩</span>
+     </div>
+     <div class="tree-row"><span class="caret">▸</span>3 均线与多空分界<span class="st mut">未开始</span></div>
+     <div class="tree-row"><span class="caret">▸</span>4 周线级别判断<span class="st mut">未开始</span></div>
+    </div>
+   </div>
+  </a></div>
+ </div>
+
+ <div class="feat rev">
+  <div class="feat-txt">
+   <span class="feat-kick">提问 · 练习</span>
+   <h2>互动课堂，长期免费</h2>
+   <p class="feat-lead">AI 教师讲解 + 随堂测验，不消耗额度。</p>
+   <ul>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>本地语音合成讲解，可暂停追问</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>白板 K 线标注随讲解同步</li>
+    <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5l5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>测验本地评分，错题进复习清单</li>
+   </ul>
+   <div class="feat-more"><a href="student-class.html">查看课堂原型 →</a></div>
+  </div>
+  <div class="shot"><a href="student-class.html">
+   <div class="winm">
+    <div class="cls-head">
+     <span class="cls-tag">互动课堂 · 免费</span>
+     <span style="font-size:10.5px;color:#878e9a">本地语音合成 · 第 2 节</span>
+    </div>
+    <div style="padding:8px 10px 4px">
+     <svg viewBox="0 0 560 92" style="width:100%">
+      <g stroke="#E0564F" stroke-width="1.2"><line x1="40" y1="24" x2="40" y2="44"/><line x1="68" y1="18" x2="68" y2="38"/><line x1="96" y1="12" x2="96" y2="32"/></g>
+      <g fill="#E0564F"><rect x="35" y="29" width="10" height="10"/><rect x="63" y="23" width="10" height="10"/><rect x="91" y="17" width="10" height="10"/></g>
+      <g stroke="#31A984" stroke-width="1.2"><line x1="150" y1="26" x2="150" y2="46"/><line x1="178" y1="36" x2="178" y2="56"/><line x1="206" y1="46" x2="206" y2="66"/></g>
+      <g fill="#31A984"><rect x="145" y="31" width="10" height="10"/><rect x="173" y="41" width="10" height="10"/><rect x="201" y="51" width="10" height="10"/></g>
+      <g stroke="#E0564F" stroke-width="1.2"><line x1="264" y1="58" x2="264" y2="78"/><line x1="292" y1="52" x2="292" y2="72"/><line x1="320" y1="46" x2="320" y2="66"/><line x1="348" y1="52" x2="348" y2="72"/><line x1="376" y1="58" x2="376" y2="78"/></g>
+      <g fill="#E0564F"><rect x="259" y="63" width="10" height="10"/><rect x="287" y="57" width="10" height="10"/><rect x="315" y="51" width="10" height="10"/><rect x="343" y="57" width="10" height="10"/><rect x="371" y="63" width="10" height="10"/></g>
+      <path d="M100,40 Q220,86 340,76 S 480,80 540,84" fill="none" stroke="#3DBE9B" stroke-width="1.6" stroke-dasharray="6 4"/>
+      <circle cx="96" cy="8" r="4" fill="none" stroke="#F2BD3D" stroke-width="1.5"/>
+      <text x="106" y="12" font-size="9.5" fill="#F2BD3D">讲到这里 · 动能峰值</text>
+     </svg>
+    </div>
+    <div class="quiz-opt">A 幅度递减</div>
+    <div class="quiz-opt on">B 幅度递减 + 均线粘合 + 量能萎缩 <span style="color:#6b7284">· 三者缺一不可</span></div>
+    <div class="quiz-opt" style="margin-bottom:10px">C 均线粘合</div>
+   </div>
+  </a></div>
+ </div>
+
+ <!-- bento：基础能力 -->
+ <div class="bento">
+  <div class="bcard">
+   <div class="bmini"><div class="dl-mini">
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v10m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></span>
+   </div></div>
+   <h3>一键安装包</h3>
+   <p>双击安装，零命令行；客户端与运行时已打包在内。</p>
+   <div class="go"><a href="#download">去下载 →</a></div>
+  </div>
+  <div class="bcard">
+   <div class="bmini"><div class="code4"><b>8</b><b>4</b><b>2</b><b>7</b></div></div>
+   <h3>设备码授权</h3>
+   <p>四格用户码核对后批准；令牌只存本机，可随时解绑。</p>
+   <div class="go"><a href="portal-device-auth.html">查看授权原型 →</a></div>
+  </div>
+  <div class="bcard">
+   <div class="bmini"><div class="quota-mini">
+    <span class="quota-pill">余额 <b>13</b> 次 · 充值</span>
+    <div class="quota-bar"><i></i></div>
+   </div></div>
+   <h3>额度透明计费</h3>
+   <p>浏览播放免费；仅智能问答计费，余额与消耗透明可见。</p>
+   <div class="go"><a href="portal-account.html">查看个人中心 →</a></div>
+  </div>
+  <div class="bcard">
+   <div class="bmini"><svg viewBox="0 0 220 64" style="width:100%">
+    <g stroke="#E0564F" stroke-width="1.2"><line x1="24" y1="18" x2="24" y2="34"/><line x1="44" y1="12" x2="44" y2="28"/><line x1="64" y1="20" x2="64" y2="36"/></g>
+    <g fill="#E0564F"><rect x="20" y="22" width="8" height="8"/><rect x="40" y="16" width="8" height="8"/><rect x="60" y="24" width="8" height="8"/></g>
+    <g stroke="#31A984" stroke-width="1.2"><line x1="92" y1="24" x2="92" y2="40"/><line x1="112" y1="32" x2="112" y2="48"/><line x1="132" y1="26" x2="132" y2="42"/></g>
+    <g fill="#31A984"><rect x="88" y="28" width="8" height="8"/><rect x="108" y="36" width="8" height="8"/><rect x="128" y="30" width="8" height="8"/></g>
+    <g stroke="#E0564F" stroke-width="1.2"><line x1="160" y1="40" x2="160" y2="56"/><line x1="180" y1="34" x2="180" y2="50"/><line x1="200" y1="40" x2="200" y2="56"/></g>
+    <g fill="#E0564F"><rect x="156" y="44" width="8" height="8"/><rect x="176" y="38" width="8" height="8"/><rect x="196" y="44" width="8" height="8"/></g>
+    <path d="M136,22 l0,-9 l6,3 l-6,3" fill="#F2BD3D"/>
+   </svg></div>
+   <h3>案例股对照</h3>
+   <p>K 线 + 成交量 + 事件锚点；周期与复权口径声明常驻。</p>
+   <div class="go"><a href="student-course.html">查看课程页 →</a></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ 体系概览 ============ -->
+<section class="home-section home-section-muted" id="system">
+ <div class="section-heading"><span class="page-kicker">体系概览</span><h2>先有框架，再谈招式</h2><p>课程围绕三件事展开：判断趋势、等待结构、控制风险。三者缺一不可。</p></div>
+ <div class="pillar-grid">
+  <article class="pillar-card"><h3>顺势而为</h3><p>不预测顶底，先确认趋势方向与结构，再讨论进场。趋势不明时，空仓也是仓位。</p></article>
+  <article class="pillar-card"><h3>结构入场</h3><p>用回撤、突破与量价配合寻找风险可控的介入点，把止损放在结构失效处。</p></article>
+  <article class="pillar-card"><h3>风险先行</h3><p>先定单笔风险与总仓位上限，再谈收益。连续亏损时主动降低暴露，而不是加倍下注。</p></article>
+ </div>
+ <div class="section-more"><a href="student-system.html">查看体系页原型 →</a></div>
+</section>
+
+<!-- ============ 学习路径 ============ -->
+<section class="home-section">
+ <div class="section-heading"><span class="page-kicker">学习路径</span><h2>四步建立自己的交易检查清单</h2></div>
+ <ol class="path-list">
+  <li class="path-item"><span class="path-step">01</span><div><h3>建立框架</h3><p>先看体系页，理解趋势、结构与风险三件事的关系。</p></div></li>
+  <li class="path-item"><span class="path-step">02</span><div><h3>按课学习</h3><p>从基础课开始，按章节推进，不懂的知识点先记下来。</p></div></li>
+  <li class="path-item"><span class="path-step">03</span><div><h3>带着问题检索</h3><p>把疑问交给伴学问答，顺着引用回到视频原片段。</p></div></li>
+  <li class="path-item"><span class="path-step">04</span><div><h3>复盘与输出</h3><p>用自己的话复述知识点，形成可执行的交易检查清单。</p></div></li>
+ </ol>
+</section>
+
+<!-- ============ 版本下载 ============ -->
+<section class="home-section home-section-muted" id="download">
+ <div class="section-heading"><span class="page-kicker">版本下载</span><h2>一键安装包</h2><p>安装包内嵌客户端、运行时与插件；安装后首启仅需登录一步。安装完成后可查看<a href="student-setup.html">首启向导原型</a>。</p></div>
+ <div class="dl-grid">
+  <div class="dl-card">
+   <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v10m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+   <div style="flex:1"><b>macOS</b><p>Apple Silicon（arm64）· .dmg · 约 180 MB</p></div>
+   <a class="btn pri" href="student-setup.html">下载</a>
+  </div>
+  <div class="dl-card">
+   <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></span>
+   <div style="flex:1"><b>Windows</b><p>x64 · .exe · 约 210 MB</p></div>
+   <a class="btn pri" href="student-setup.html">下载</a>
+  </div>
+ </div>
+ <p class="note" style="margin-top:14px">当前版本 v0.9.0 · 更新日志与历史版本以正式发布为准；暂不支持 Linux 与移动端。</p>
+</section>
+
+<!-- ============ 定价 ============ -->
+<section class="home-section" id="pricing">
+ <div class="section-heading"><span class="page-kicker">额度与定价</span><h2>浏览免费，问按额度</h2><p>课程浏览、视频播放与互动课堂不消耗额度；仅智能问答（含语音转写）计费。</p></div>
+ <table class="price">
+  <tr><th></th><th>内容</th><th>价格</th></tr>
+  <tr class="rec"><td>点数包<span class="ptag">推荐</span></td><td>智能问答 100 次</td><td class="amt">¥35</td></tr>
+  <tr><td>点数包</td><td>智能问答 50 次</td><td class="amt">¥19</td></tr>
+  <tr><td>月订阅</td><td>智能问答不限次</td><td class="amt">¥128 / 月</td></tr>
+ </table>
+ <p class="note" style="margin-top:14px">余额与每次消耗在客户端透明可见，耗尽即停并引导充值；支付成功即时到账。充值与消耗明细见<a href="portal-account.html">个人中心 · 额度</a>。</p>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="home-section home-section-muted" id="faq">
+ <div class="section-heading"><span class="page-kicker">常见问题</span><h2>你可能会问</h2></div>
+ <div class="pillar-grid">
+  <article class="pillar-card"><h3>需要自己准备模型吗？</h3><p>不需要。推理由云端完成，登录即用；也不用在任何界面填写密钥。</p></article>
+  <article class="pillar-card"><h3>免费能用到什么程度？</h3><p>浏览、播放、进度与互动课堂长期免费；智能问答按额度计费，可在个人中心充值。</p></article>
+  <article class="pillar-card"><h3>回答可信吗？</h3><p>只引用课程片段并标注出处，点击回跳原片核对；未覆盖的问题明确说明，不编造。</p></article>
+ </div>
+</section>
+
+<!-- ============ 法务 ============ -->
+<section class="home-section" id="legal">
+ <div class="section-heading"><span class="page-kicker">法务</span><h2>隐私与服务条款要点</h2><p>注册即视为同意以下条款；完整文本以正式发布为准。</p></div>
+ <div class="pillar-grid">
+  <article class="pillar-card legal-card"><h3>隐私政策要点</h3>
+   <ul><li>指标上报默认关闭，可随时开启或撤回</li><li>学习上下文只在本机内存处理，不落盘</li><li>语音仅内存流转，转写后即弃</li><li>不向第三方出售个人数据</li></ul>
+  </article>
+  <article class="pillar-card legal-card"><h3>服务条款要点</h3>
+   <ul><li>课程内容仅供学习，不构成投资建议</li><li>问答额度按次计费，充值后不支持退款转让（法定情形除外）</li><li>生成内容经平台审核过滤，责任上移</li><li>账号仅限本人使用，设备可绑定可解绑</li></ul>
+  </article>
+  <article class="pillar-card legal-card"><h3>免责声明</h3>
+   <ul><li>不提供具体买卖信号与个股推荐</li><li>历史行情与案例股仅作教学对照</li><li>平台覆盖以<a href="#download">版本下载</a>区如实告知为准</li></ul>
+  </article>
+ </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="home-cta"><div class="home-cta-inner">
+ <div><h2>准备好开始了吗？</h2><p>下载一键安装包只需几分钟，账号用于同步设备授权与学习进度。</p></div>
+ <div class="home-cta-actions">
+  <a class="btn pri lg" href="portal-register.html">创建账号</a>
+  <a class="btn lg ghost-w" href="#download">下载安装包</a>
+ </div>
+</div></section>
+</main>
+
+<footer class="portal-footer">
+ <div class="portal-footer-inner">
+  <div class="portal-footer-brand">
+   <strong>趋势交易课程伴学</strong>
+   <p>课程知识与推理都在云端供给，注册即用；本地客户端负责渲染与交互。</p>
+  </div>
+  <div class="portal-footer-links">
+   <div><span>了解</span><a href="#system">交易体系</a><a href="#features">站点功能</a><a href="#faq">常见问题</a></div>
+   <div><span>开始</span><a href="#download">版本下载</a><a href="student-system.html">课程体系</a><a href="portal-register.html">创建账号</a><a href="index.html">原型索引</a></div>
+   <div><span>条款</span><a href="#legal">用户协议</a><a href="#legal">隐私说明</a><a href="#pricing">定价说明</a></div>
+  </div>
+ </div>
+ <div class="portal-footer-bottom">
+  <span>© 2026 趋势交易课程伴学</span>
+  <span>本站内容仅用于教学，不构成任何投资建议。市场有风险，决策需独立判断。</span>
+ </div>
+</footer>
+</div>
+</body></html>

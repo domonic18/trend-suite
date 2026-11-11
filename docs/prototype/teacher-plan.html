@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>素材与方案 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css">
+<style>
+.ast-row{display:grid;grid-template-columns:1.4fr .8fr .6fr .6fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eef1f6;font-size:13px}
+.ast-row:last-child{border-bottom:none}
+.ast-row .ttl b{display:block;font-size:13px}
+.ast-row .ttl span{font:500 11px var(--font-mono);color:#9aa3b8}
+.ast-row .dur{font-family:var(--font-mono);font-size:12px;color:var(--p-mut)}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg><div class="ops-app">
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>课程内容</a>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i on" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
+  <a class="ops-i" href="teacher-production.html"><svg><use href="#i-board"/></svg>生产看板</a>
+  <a class="ops-i" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
+  <a class="ops-i" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+<div>
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">课程内容</a></span><span class="sep">/</span><b>总论卷 · 素材与方案</b>
+ <span class="right"><span>云端模型已预置</span><a href="index.html">原型索引</a></span>
+</header>
+<main class="ops-main" style="max-width:1080px">
+
+ <div class="ops-ph">
+  <div><div class="t">素材与方案 <span class="tag warn" style="vertical-align:2px">门禁① · 等你确认</span></div><div class="s">上传素材（入库即转码转写）→ 触发方案制作 → 确认方案（门禁①）；Agent 不从上传行为推断课程边界。</div></div>
+ </div>
+
+ <!-- 管线步骤（视频建课 Steps 迁移） -->
+ <div class="pipe-steps">
+  <div class="p done"><b>选择课程</b>TC-ZONGLUN</div>
+  <div class="p done"><b>上传素材</b>源视频 ×3</div>
+  <div class="p cur"><b>处理转写</b>partial 实时可读</div>
+  <div class="p"><b>方案确认</b>门禁① 三动作</div>
+  <div class="p"><b>解锁生产</b>九步引擎</div>
+ </div>
+
+ <!-- 素材（AssetTable 迁移） -->
+ <div class="ops-card" id="materials">
+  <div class="h"><div><b>素材</b><small>浏览器直传 · 单文件 ≤ 2GiB · 须含音轨（否则拒绝并清理半成品）</small></div><button class="btn sm pri" id="upload-btn">＋ 上传素材</button></div>
+  <div class="b" style="padding-top:2px">
+   <div class="ast-row"><div class="ttl"><b>总论-01</b><span>ast_8fe2 · 上传于 11-11 10:05</span></div>
+    <span class="st st-ok"><i></i>ready</span><span class="dur">38:12 · 1.8GiB</span><span class="note num">units 46</span></div>
+   <div class="ast-row"><div class="ttl"><b>总论-02</b><span>ast_9d31 · 上传于 11-11 10:07</span></div>
+    <span class="st st-run"><i></i>processing · partial 62%</span><span class="dur">41:05 · 1.9GiB</span><span class="note num">已转部分可读</span></div>
+   <div class="ast-row"><div class="ttl"><b>总论-03</b><span>ast_a7b0 · 上传于 11-11 10:08</span></div>
+    <span class="st st-mut"><i></i>queued</span><span class="dur">36:48 · 1.7GiB</span><span class="note">等待转码队列</span></div>
+   <div class="dz" id="upload" style="margin-top:12px"><b>拖入视频文件</b> · 进度可见可重试（断点续传）· 转写完成即产出 source units</div>
+  </div>
+ </div>
+
+ <!-- 触发方案制作 -->
+ <div class="ops-card" id="trigger">
+  <div class="h"><div><b>触发方案制作</b><small>选素材集 + 课程目标 + 目录先验；Agent 只做校验与归一，不发明目录</small></div></div>
+  <div class="b" style="display:grid;gap:12px;max-width:640px">
+   <div><div class="note" style="margin-bottom:5px">素材集（预检：ready 或明确允许 partial）</div>
+    <label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" checked> 总论-01 <span class="note num">ready</span></label>
+    <label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" checked> 总论-02 <span class="note num">partial 62% · 已允许</span></label>
+    <label style="display:flex;gap:8px;align-items:center;padding:5px 0;color:var(--p-mut)"><input type="checkbox" disabled> 总论-03 <span class="note">排队中，不可选</span></label>
+   </div>
+   <div><div class="note" style="margin-bottom:5px">课程目标</div><input class="fi" value="趋势交易入门 · 总论卷"></div>
+   <div><div class="note" style="margin-bottom:5px">目录先验（可粘贴或口述）</div>
+    <div class="fi" style="min-height:56px;line-height:1.7">篇 → 卷 → 课时，共 6 章<br><span class="note">Agent 只做校验与归一，不发明目录</span></div></div>
+   <div class="row"><a class="btn pri" href="#gate">生成制作方案</a><span class="note" style="align-self:center">预检通过；生成后需你确认（门禁①）</span></div>
+  </div>
+ </div>
+
+ <!-- 异常裁决 -->
+ <div class="abanner err" id="mismatch">
+  <div class="ab-txt">
+   <span class="ab-title">需要你裁决 · 第 4 章「周线级别判断」提纲与素材不匹配</span>
+   <p>该节与素材<b>匹配度 41%</b>（阈值 60%）。<b>仅第 4 章重跑综合，其余章不受影响。</b>裁决后即可审批方案。</p>
+  </div>
+  <div class="ab-actions"><button class="btn sm">修订提纲</button><a class="btn sm" href="#upload">补充素材</a></div>
+ </div>
+
+ <!-- 方案草案 + 门禁① -->
+ <div class="ops-card" id="gate">
+  <div class="h"><div><b>方案草案 v3 · 骨架</b><small>目录先验校验 · 可拖拽调整与合并 · 目录外结构不会被创建</small></div><span class="tag warn">5/6 章通过 · 1 待裁决</span></div>
+  <div class="b" style="padding-top:4px">
+   <div class="outline">
+    <div class="orow"><span class="gh">1</span><b>什么是趋势</b><span class="note num">证据 12 处</span><div class="pcol"><span class="chip">趋势定义</span><span class="chip">级别</span></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="orow"><span class="gh">2</span><b>趋势的阻尼运动</b><span class="note num">证据 9 处</span><div class="pcol"><span class="chip">阻尼</span><span class="chip">动能衰竭</span></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="orow"><span class="gh">3</span><b>均线与多空分界</b><span class="note num">证据 15 处</span><div class="pcol"><span class="chip">均线组</span><span class="chip">M60</span></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="orow err-row"><span class="gh">4</span><b>周线级别判断</b><span class="note num" style="color:#d9483f">匹配 41%</span><div class="pcol"><span class="chip">周期共振</span></div><span class="st st-err"><i></i>待裁决</span></div>
+    <div class="orow"><span class="gh">5</span><b>筹码密集与发散</b><span class="note num">证据 11 处</span><div class="pcol"><span class="chip">筹码峰</span></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="orow"><span class="gh">6</span><b>综合研判框架</b><span class="note num">证据 8 处</span><div class="pcol"><span class="chip">检查单</span></div><span class="st st-ok"><i></i>通过</span></div>
+   </div>
+   <div class="abanner warn" style="margin:16px 0 0">
+    <div class="ab-txt">
+     <span class="ab-title">门禁① · 方案确认</span>
+     <p><b>批准</b>＝锁定为基准版并解锁逐节生产；<b>微调</b>＝直接改上方骨架与术语，即时生效；<b>打回</b>＝给一句修改指令，Agent 秒级重起草（不重跑理解）。</p>
+    </div>
+    <div class="ab-actions" style="width:100%">
+     <a class="btn pri" href="teacher-production.html">批准，开始生产</a>
+     <button class="btn">微调</button>
+     <input class="fi" style="flex:1;min-width:200px" placeholder="打回指令：例：把第 2、3 章合并；「假突破」改名「诱多」">
+     <button class="btn">打回</button>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <!-- 折叠：完整方案 + 起草过程 -->
+ <details class="toolcard" style="margin-top:14px">
+  <summary><span class="tname">完整方案</span><span class="targs">概念图谱 · 术语表 · 分节计划</span></summary>
+  <div class="tout">
+   概念图谱：术语 26 · 别名 14 · 拒绝自环 2（<span class="num">趋势 / 阻尼运动·依赖动能 / M60 / 筹码峰 / 周期共振·依赖级别 / 假突破 …</span>）；术语名为正文与课件的校验基准，概念重名 409。<br>
+   分节计划：6 章各派一个逐节子代理，九步固定顺序（案例股 → 行情同步 → 行情读回 → 图示 → 回放课件 → 正文 → 其余课件 → 评审 → 溯源），并行度起步 3–4。
+  </div>
+ </details>
+ <details class="toolcard">
+  <summary><span class="tname">起草过程</span><span class="targs">综合 Agent · 基于 46 source units</span></summary>
+  <div class="tout">10:38 你触发了方案制作（素材集 2 · 课程目标 · 目录先验）→ 10:39 目录校验 5/6 通过 → 10:41 概念归一（别名 14 · 拒绝自环 2）→ 10:43 写入 方案/v3.md → 10:44 等待门禁①。<br>版本历史：v1 首稿 → v2 打回「合并 2/3 章」重起草 → <b>v3 当前</b>。</div>
+ </details>
+
+</main>
+</div>
+</div></body></html>

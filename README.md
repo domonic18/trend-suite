@@ -8,7 +8,7 @@ monorepo（pnpm + Turborepo）：后端服务 + 双插件（生产端 / 学员�
 - `apps/producer` — @trend-suite/producer：生产端插件
 - `apps/coach` — @trend-suite/coach：学员端插件
 - `packages/contracts` — @trend-suite/contracts：跨端契约单一真相源（zod）
-- `docs/` — 全部项目文档（requirement / arch / design 原型图 / plan / ops / review / standard），入口 [docs/README.md](docs/README.md)
+- `docs/` — 全部项目文档（requirement / arch / prototype 原型图 / plan / ops / review / standard），入口 [docs/README.md](docs/README.md)
 
 边界、纪律与命令详见 [AGENTS.md](AGENTS.md)。
 

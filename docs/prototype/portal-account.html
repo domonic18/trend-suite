@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>个人中心 · 趋势交易课程伴学</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css">
+<style>
+/* 个人中心局部 */
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;font-size:14px;border-bottom:1px solid var(--p-line)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--p-mut)}
+.bal-big{font:650 34px var(--font-mono);letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--p-ink)}
+.bal-big small{font:400 13px var(--font-mono);color:var(--p-mut);letter-spacing:0}
+.bal-bar{height:6px;border-radius:3px;background:var(--p-line);overflow:hidden;margin:10px 0 8px}
+.bal-bar i{display:block;height:100%;width:43%;background:var(--p-pri)}
+.opt{display:flex;gap:12px;align-items:center;border:1px solid var(--p-line);border-radius:8px;padding:11px 14px;margin-bottom:8px;cursor:default}
+.opt.on{border-color:var(--p-pri);background:var(--p-pri-soft)}
+.opt .amt{font:600 15px var(--font-mono);color:var(--p-ink)}
+.tdbg{font-size:13px}
+.tdbg .num{font-family:var(--font-mono)}
+.danger-link{color:#c03535;font-size:13px}
+</style></head><body>
+<div class="portal-shell">
+<header class="portal-header"><div class="portal-header-inner">
+ <a class="portal-brand" href="portal.html"><span class="portal-brand-mark">趋</span><span class="portal-brand-text"><strong>趋势交易课程伴学</strong><small>本地客户端 · 云端推理</small></span></a>
+ <nav class="portal-nav">
+  <a class="portal-nav-link" href="student-system.html">课程体系</a>
+  <a class="portal-nav-link" href="student-chat.html">智能问答</a>
+  <a class="portal-nav-link" href="portal.html#faq">常见问题</a>
+ </nav>
+ <div class="portal-header-actions">
+  <span class="portal-user-button"><span class="portal-user-avatar">明</span><span class="portal-user-name">xiaoming</span><span style="font-size:10px;color:var(--p-mut)">▾</span></span>
+ </div>
+</div></header>
+
+<main class="portal-main">
+<section class="page-hero"><div class="page-hero-inner">
+ <span class="page-kicker">个人中心</span>
+ <h1>账号与额度</h1>
+ <div class="page-hero-description"><p>管理昵称、密码、额度与已授权设备。仅智能问答（含语音转写）计费，浏览、播放与互动课堂长期免费。</p></div>
+</div></section>
+
+<section class="content-section"><div class="account-grid">
+
+ <div class="panel">
+  <h2>账号资料</h2>
+  <div class="panel-sub">昵称展示在客户端与本页</div>
+  <div class="kv"><span class="k">用户名</span><span class="num">xiaoming</span></div>
+  <div class="kv"><span class="k">角色</span><span>学员</span></div>
+  <div class="kv"><span class="k">注册时间</span><span class="num">11-08 09:30</span></div>
+  <div class="account-form fitem">
+   <label class="flabel" for="a-name">昵称</label>
+   <input class="fi" id="a-name" type="text" value="小明" maxlength="200">
+  </div>
+  <div class="account-actions"><button class="btn pri">保存昵称</button></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><a class="danger-link" href="portal-login.html">注销账号（不可恢复）</a></div>
+ </div>
+
+ <div class="panel" id="recharge">
+  <h2>修改密码</h2>
+  <div class="panel-sub">修改后其他会话与设备授权将全部吊销，需重新登录</div>
+  <div class="fitem"><label class="flabel" for="a-cur">当前密码</label><input class="fi" id="a-cur" type="password" autocomplete="current-password"></div>
+  <div class="fitem"><label class="flabel" for="a-new">新密码</label><input class="fi" id="a-new" type="password" autocomplete="new-password" placeholder="10–128 位"></div>
+  <div class="fitem"><label class="flabel" for="a-confirm">确认新密码</label><input class="fi" id="a-confirm" type="password" autocomplete="new-password"></div>
+  <div class="account-actions"><button class="btn pri">修改密码</button></div>
+ </div>
+
+ <div class="panel">
+  <h2>问答额度</h2>
+  <div class="panel-sub">余额与消耗透明可见 · 耗尽即停并引导充值</div>
+  <div class="bal-big">13 <small>次</small></div>
+  <div class="bal-bar"><i></i></div>
+  <div class="note">仅智能问答（含语音转写）计费 · 浏览 / 播放 / 课堂免费</div>
+  <div style="margin-top:16px">
+   <div style="font-size:14px;font-weight:600;margin-bottom:8px">充值档位</div>
+   <div class="opt on"><input type="radio" checked><div><div class="amt">¥35</div><div class="note">100 次 · 到账即时</div></div><span class="note" style="margin-left:auto">推荐</span></div>
+   <div class="opt"><input type="radio"><div><div class="amt">¥19</div><div class="note">50 次</div></div></div>
+   <div class="opt"><input type="radio"><div><div class="amt">¥128<span class="note"> / 月</span></div><div class="note">月订阅 · 不限次</div></div></div>
+   <button class="btn pri blk">去支付</button>
+   <div class="note" style="margin-top:8px">支付成功额度即时到账；重复回调不重复加额。发票与退款规则以正式发布为准。</div>
+  </div>
+ </div>
+
+ <div class="panel">
+  <h2>消耗明细</h2>
+  <div class="panel-sub">不含问题原文 · 仅记录摘要维度</div>
+  <table class="tbl tdbg">
+   <tr><th>时间</th><th>类型</th><th style="text-align:right">变动</th></tr>
+   <tr><td class="num">今天 14:02</td><td>智能问答</td><td class="num" style="text-align:right">−1</td></tr>
+   <tr><td class="num">今天 13:47</td><td>智能问答 · 语音转写</td><td class="num" style="text-align:right">−1</td></tr>
+   <tr><td class="num">昨天 21:15</td><td>智能问答</td><td class="num" style="text-align:right">−1</td></tr>
+  </table>
+ </div>
+
+ <div class="panel account-devices">
+  <h2>已授权设备</h2>
+  <div class="panel-sub">设备码授权 · 令牌只存设备端 · 解绑立即失效</div>
+  <table class="tbl tdbg">
+   <tr><th>设备</th><th>来源</th><th>绑定时间</th><th>最近活跃</th><th style="text-align:right">操作</th></tr>
+   <tr><td><b>MacBook Pro</b><div class="note">本机</div></td><td>trend-student · macOS</td><td class="num">11-08</td><td class="num">今天 14:02</td><td style="text-align:right"><button class="btn sm">解绑</button></td></tr>
+   <tr><td><b>办公室 PC</b><div class="note">–</div></td><td>trend-student · Windows</td><td class="num">11-09</td><td class="num">11-10 20:11</td><td style="text-align:right"><button class="btn sm">解绑</button></td></tr>
+  </table>
+  <div class="note" style="margin-top:10px">新设备登录需在<a href="portal-device-auth.html">设备授权页</a>核对用户码后批准。</div>
+ </div>
+
+ <div class="panel account-devices" style="grid-column:auto">
+  <h2>隐私</h2>
+  <div class="panel-sub">指标上报默认关闭 · 可随时开启或撤回</div>
+  <div class="kv"><span class="k">指标上报</span><span>默认关闭 · 可开启 / 撤回</span></div>
+  <div class="kv"><span class="k">学习上下文</span><span>只在本机内存处理</span></div>
+  <div class="kv"><span class="k">音频与转写</span><span>仅内存流转，不落盘</span></div>
+ </div>
+
+</div></section>
+</main>
+
+<footer class="portal-footer">
+ <div class="portal-footer-inner">
+  <div class="portal-footer-brand"><strong>趋势交易课程伴学</strong><p>课程知识与推理都在云端供给，注册即用；本地客户端负责渲染与交互。</p></div>
+  <div class="portal-footer-links">
+   <div><span>了解</span><a href="portal.html#system">交易体系</a><a href="portal.html#faq">常见问题</a></div>
+   <div><span>开始</span><a href="portal.html#download">版本下载</a><a href="index.html">原型索引</a></div>
+   <div><span>条款</span><a href="portal.html#legal">用户协议</a><a href="portal.html#legal">隐私说明</a></div>
+  </div>
+ </div>
+ <div class="portal-footer-bottom"><span>© 2026 趋势交易课程伴学</span><span>本站内容仅用于教学，不构成任何投资建议。</span></div>
+</footer>
+</div>
+</body></html>

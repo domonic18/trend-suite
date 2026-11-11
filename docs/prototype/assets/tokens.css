@@ -1,0 +1,86 @@
+/* ============================================================
+   trend-suite 原型全局设计 token（移植自 trend-studio 已验证实现）
+   用法：每页 <link rel="stylesheet" href="assets/tokens.css"> + 所属族 base
+   规范：docs/design/README.md 三族视觉 · 红涨绿跌 · 零 emoji · 16px 线性图标
+   ============================================================ */
+
+:root {
+  /* ---- 字体 ---- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- 版心与圆角 ---- */
+  --wrap: min(1160px, calc(100vw - 48px));
+  --r-panel: 14px;   /* 卡片/面板 */
+  --r-ctrl: 10px;    /* 输入/按钮 */
+  --r-inner: 8px;    /* 内嵌块 */
+  --r-pill: 999px;
+
+  /* ---- 行情：红涨绿跌 ---- */
+  --up: #e85a5a;     --up-soft: rgba(232, 90, 90, .14);
+  --down: #5ab67a;   --down-soft: rgba(90, 182, 122, .14);
+
+  /* ---- 状态色（工作台状态点 / 徽章通用）---- */
+  --ok: #4ade80;     --ok-deep: #22a35e;
+  --run: #7c8cf8;    --run-deep: #5e6ad2;
+  --warn: #e8b64c;   --warn-deep: #c47a12;
+  --err: #ef5b5b;    --err-deep: #d9483f;
+  --info: #6ea8ff;
+
+  /* ============ 门户族（浅色官网 · trend-studio portal）============ */
+  --p-bg: #ffffff;
+  --p-soft: #f6f8fc;          /* 间隔区块底 */
+  --p-panel: #ffffff;
+  --p-line: #e4e9f2;
+  --p-ink: #16203a;
+  --p-mut: #5a6785;
+  --p-faint: #8b94a9;
+  --p-pri: #2563eb;
+  --p-pri-deep: #1e4fd8;
+  --p-pri-soft: #eaf1ff;
+  --p-acc: #0f9d76;           /* 辅助绿（成功/到账） */
+  --p-acc-soft: #e7f7f1;
+  --p-code-bg: #0f172a;
+  --p-sh: 0 18px 48px rgba(22, 32, 58, .08);
+  --p-sh-sm: 0 1px 2px rgba(20, 28, 45, .04), 0 8px 28px rgba(20, 28, 45, .06);
+  --p-hero: radial-gradient(circle at 82% 12%, rgba(15, 157, 118, .14), transparent 42%),
+            radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .18), transparent 46%),
+            linear-gradient(180deg, #f8fbff, #ffffff);
+  --p-cta: linear-gradient(120deg, #11203d, #1d3b74);  /* 深色 CTA band */
+
+  /* ============ 工作台族（深色控制台 · trend-studio admin）============ */
+  --a-bg: #0c0e12;
+  --a-panel: #111318;
+  --a-panel-soft: #151821;
+  --a-panel-lift: #171a22;
+  --a-line: #23262f;
+  --a-line-soft: #20242e;
+  --a-ink: #e6e8ee;
+  --a-mut: #8b93a7;
+  --a-faint: #5b6274;
+  --a-hover: rgba(255, 255, 255, .04);
+  --a-pri: #5e6ad2;
+  --a-pri-deep: #4c56b8;
+  --a-pri-soft: rgba(94, 106, 210, .16);
+  --a-ok: #4ade80;    --a-ok-soft: rgba(74, 222, 128, .13);
+  --a-run: #7c8cf8;   --a-run-soft: rgba(124, 140, 248, .13);
+  --a-warn: #e8b64c;  --a-warn-soft: rgba(232, 182, 76, .13);
+  --a-err: #ef5b5b;   --a-err-soft: rgba(239, 91, 91, .13);
+
+  /* ============ dsh 客户端族（石墨 · trend-studio widgets）============ */
+  --d-bg: #0f1013;            /* 窗外桌面底 */
+  --d-win: #131418;           /* 窗口底 */
+  --d-panel: #1a1c22;         /* 面板 */
+  --d-panel-soft: #20232b;
+  --d-line: #2a2d36;
+  --d-line-soft: #232630;
+  --d-ink: #e8eaef;
+  --d-mut: #9aa1b2;
+  --d-faint: #6b7284;
+  --d-pri: #3DBE9B;           /* 玉绿主操作色 */
+  --d-pri-deep: #2fa383;
+  --d-pri-soft: rgba(61, 190, 155, .14);
+  --d-canvas: #141821;        /* K 线画布 */
+  --d-serif-ink: #f0ede6;     /* 衬线节标题 */
+}
