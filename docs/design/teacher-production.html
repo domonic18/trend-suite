@@ -1,71 +1,116 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>生产看板 · 九步引擎 · 趋势课程</title>
+<title>逐节生产 · 总论卷 · 趋势课程</title>
 <link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-admin.css">
 </head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M3 15h18M8 4v16M16 4v16" stroke="currentColor" stroke-width="1.2"/></symbol>
 <symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
-<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9.5v5M12 17.4v.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
 <symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg><div class="app"><aside class="sb">
  <a class="brand" href="index.html"><span class="mk">势</span><span class="bt"><strong>趋势课程</strong><span>生产工作台</span></span></a>
  <div class="sb-menu">
-  <div class="sb-g">内容运营</div>
-  <a class="nv" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>课程</a>
-  <a class="nv" href="teacher-workbench.html#materials"><svg><use href="#i-film"/></svg>素材库</a>
-  <a class="nv" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>制作方案</a>
-  <a class="nv on" href="teacher-production.html"><svg><use href="#i-board"/></svg>生产看板</a>
+  <div class="sb-g">课程</div>
+  <a class="nv" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>我的课程</a>
+  <div class="sb-g">当前课程 · 总论卷</div>
+  <a class="nv" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
+  <a class="nv on" href="teacher-production.html"><svg><use href="#i-board"/></svg>逐节生产</a>
   <a class="nv" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
-  <a class="nv" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>待办<span class="cnt">4</span></a>
+  <a class="nv" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
  </div>
- <div class="sb-foot"><div class="su"><div class="av">周</div><div><div class="un">周老师</div><div class="ur">producer</div></div><span class="out">退出</span></div></div>
+ <div class="sb-foot"><div class="su"><div class="av">周</div><div><div class="un">周老师</div><div class="ur">producer</div></div><a class="out" href="teacher-login.html">退出</a></div></div>
 </aside><div class="main"><div class="top">
- <div class="csel"><span class="dot"></span>TC-ZONGLUN · 总论卷<svg viewBox="0 0 24 24" style="width:12px;height:12px;opacity:.6"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
- <div class="crumb"><a href="teacher-workbench.html">课程</a> / <b>生产看板 · 九步引擎</b></div>
+ <div class="crumb"><a href="teacher-workbench.html">我的课程</a> / <b>总论卷</b></div>
  <div class="tip"><i></i>云端模型已预置<a href="index.html">原型索引</a></div>
 </div><div class="body">
-<div class="alert warn" id="suspend"><svg><use href="#i-alert"/></svg>
- <div><b>第 4 节挂起。</b>课件证据不足，子代理已暂停该节并等待补充素材；补齐后自动恢复，已完成步骤不重跑。</div>
- <a class="btn sm" href="teacher-workbench.html#upload">上传补充素材</a><button class="btn sm">跳过此节</button></div>
-<div class="sec"><h2>生产看板<span class="n">子代理 ×4 并行 · 当前全课程第 6 步「正文」</span></h2>
- <table class="tbl">
-  <tr><th style="width:150px">节</th><th style="min-width:260px">九步流水线</th><th>产出</th><th>评审</th><th style="width:32%">状态说明</th></tr>
-  <tr class="hov"><td><b>1 什么是趋势</b><div class="note num">sec-zl-01</div></td>
-   <td><div class="steps"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span></div></td><td class="num">v7 · 5课件 3图示</td><td><span class="st st-ok"><i></i>approve</span></td><td class="note">完成，<a href="teacher-review.html" style="color:var(--pri)">可预览</a></td></tr>
-  <tr class="hov"><td><b>2 趋势的阻尼运动</b><div class="note num">sec-zl-02</div></td>
-   <td><div class="steps"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s c">6</span><span class="s"></span><span class="s"></span><span class="s"></span></div></td><td class="num">v6 · 4课件 4图示</td><td><span class="st st-mut"><i></i>自评中</span></td>
-   <td><div class="meter" style="max-width:170px"><i style="width:62%"></i></div><div class="note num">正文生成 62%</div></td></tr>
-  <tr class="hov"><td><b>3 均线与多空分界</b><div class="note num">sec-zl-03</div></td>
-   <td><div class="steps"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s e">4</span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></div></td><td class="num">v3 · 4课件</td><td><span class="st st-err"><i></i>回灌中 2/3</span></td>
-   <td class="note">图示校验失败：标注文字与术语表不符</td></tr>
-  <tr class="hov"><td><b>4 周线级别判断</b><div class="note num">sec-zl-04</div></td>
-   <td><div class="steps"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s w">| |</span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></div></td><td class="num">v2</td><td><span class="st st-warn"><i></i>挂起</span></td>
-   <td class="note">等待补充素材（见顶部提示）</td></tr>
- </table>
- <div style="padding:10px 16px;border-top:1px solid var(--line2)">
-  <span class="note">顺序由引擎强制：跑错序会被拦截并提示「当前该做第几步」。断点续跑：云端数据库即检查点，Worker 崩溃自动恢复。</span>
- </div>
+
+<div class="ph" style="max-width:880px;margin:0 auto">
+ <div><div class="ph-t">总论卷 <span class="tag run" style="vertical-align:2px">生产中</span></div><div class="ph-s">TC-ZONGLUN · 方案 v3（基准版）· 4/6 节 · 当前步 6 正文</div></div>
 </div>
-<div class="grid2" style="grid-template-columns:1fr 1fr">
- <div class="sec"><h2>追加素材：总论-05.mp4<span class="n">35:40 · 已入库</span></h2><div class="in">
-  <div class="note" style="margin-bottom:9px">影响面已计算：<b>选 A 将重评第 2、4 节</b>；选 B 影响全部 6 节。</div>
-  <div class="radio">
-   <label class="on"><input type="radio" checked><div><b>A · 只补这节</b><div class="note">新素材作为补充证据，其余节不动</div></div></label>
-   <label><input type="radio"><div><b>B · 重做课程骨架</b><div class="note">重跑目录校验与骨架（影响 6 节）</div></div></label>
-   <label><input type="radio"><div><b>C · 只入库，暂不生产</b><div class="note">转写就绪放着，等决定再动</div></div></label>
+
+<div class="journey">
+
+ <!-- 阶段 1（完成，折叠） -->
+ <a class="jstep done" href="teacher-plan.html"><span class="jn">✓</span><div><b>素材与方案</b><span class="js">3 个视频就绪 · 方案 v3 已批准（11:02）</span></div><span class="chev">›</span></a>
+
+ <!-- 阶段 2（当前，展开） -->
+ <div class="jstep cur">
+  <div style="display:flex;align-items:center;gap:12px;flex:1"><span class="jn">2</span><div><b>逐节生产</b><span class="js">4/6 节 · Agent 并行执行九步，无需你盯守</span></div></div>
+ </div>
+ <div class="jbody">
+
+  <!-- 告警 1：追加素材三选一 -->
+  <div class="abanner warn">
+   <div class="ab-txt">
+    <span class="ab-title">需要你决策 · 新素材「总论-05.mp4」（35:40 · 已入库）</span>
+    <p><b>A 只补这节</b>＝重评第 2、4 节；<b>B 重做骨架</b>＝影响全部 6 节；<b>C 只入库</b>＝暂不生产。影响面已算好，决策入库后受影响节重置、回灌预算保留。</p>
+   </div>
+   <div class="ab-actions"><button class="b b-pri b-sm">A 只补这节</button><button class="b b-sm">B 重做骨架</button><button class="b b-sm">C 只入库</button></div>
   </div>
-  <div style="margin-top:11px;display:flex;gap:8px"><button class="btn pri sm">确认 A</button><span class="note" style="align-self:center">决策持久化 · 受影响节九步重置，回灌预算保留</span></div>
- </div></div>
- <div class="sec" id="todo"><h2>人工待办<span class="n">2 项</span></h2><div class="in">
-  <table class="tbl">
-   <tr><th>事项</th><th>原因</th><th></th></tr>
-   <tr class="hov"><td>第 5 节 · 案例股窗口</td><td class="note">回灌 3 次未收敛（行情数值不可核）</td><td style="text-align:right"><button class="btn sm">处理</button></td></tr>
-   <tr class="hov"><td>术语「假突破」</td><td class="note">概念归一冲突待裁决</td><td style="text-align:right"><button class="btn sm">裁决</button></td></tr>
-  </table>
-  <div class="note" style="margin-top:9px">三层校验失败不部分落库；超限显式转人工，不静默。</div>
- </div></div>
+
+  <!-- 告警 2：人工待办 -->
+  <div class="abanner err" id="todo">
+   <div class="ab-txt">
+    <span class="ab-title">需要你处理 · 2 项（Agent 已停在这两处）</span>
+    <p><b>① 第 5 节案例股窗口</b>：回灌 3 次未收敛——行情数值不可核（一票否决项）。<b>② 术语「假突破/诱多」</b>：归一冲突，请指定保留名。</p>
+   </div>
+   <div class="ab-actions"><button class="b b-sm">处理 ①</button><button class="b b-sm">裁决 ②</button></div>
+  </div>
+
+  <!-- 节进度：一行一节 -->
+  <div class="seccard">
+   <div class="sc-head"><b>1 什么是趋势</b><span class="right"><span class="tag ok">完成 · 评审 approve</span><span class="note num">v7</span></span></div>
+   <div class="sc-body" style="padding-top:8px;padding-bottom:12px"><div class="steps mini"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span></div></div>
+  </div>
+  <div class="seccard" style="border-color:var(--pri)">
+   <div class="sc-head"><b>2 趋势的阻尼运动</b><span class="right"><span class="tag run">正文生成 62%</span></span></div>
+   <div class="sc-body" style="padding-top:8px;padding-bottom:12px">
+    <div class="steps mini"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s c">6</span><span class="s"></span><span class="s"></span><span class="s"></span></div>
+    <div class="pbar" style="max-width:260px;margin-top:8px"><i style="width:62%"></i></div>
+   </div>
+  </div>
+  <div class="seccard">
+   <div class="sc-head"><b>3 均线与多空分界</b><span class="right"><span class="tag err">回灌 2/3</span></span></div>
+   <div class="sc-body" style="padding-top:8px;padding-bottom:12px">
+    <div class="steps mini"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s e">4</span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></div>
+    <div class="note" style="margin-top:8px">原因：图示标注文字与术语表不符（每次回灌带回具体原因；≤3 次，超限转待办）</div>
+   </div>
+  </div>
+  <div class="seccard suspend" id="suspend">
+   <div class="sc-head"><b>4 周线级别判断</b><span class="right"><span class="tag warn">挂起 · 等补充素材</span><a class="b b-sm" href="teacher-plan.html#upload">去补素材</a></span></div>
+   <div class="sc-body" style="padding-top:8px;padding-bottom:12px">
+    <div class="steps mini"><span class="s d">✓</span><span class="s d">✓</span><span class="s d">✓</span><span class="s w">| |</span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></div>
+    <div class="note" style="margin-top:8px">进度保留；补充素材入库后<b style="color:var(--ink2)">自动恢复，不重跑已完成步骤</b></div>
+   </div>
+  </div>
+  <div class="seccard" style="opacity:.55">
+   <div class="sc-head"><b>5 筹码密集与发散 · 6 综合研判框架</b><span class="right"><span class="tag mut">排队（并行度 3–4）</span></span></div>
+  </div>
+
+  <!-- 折叠：动态与规则 -->
+  <details class="toolcard" style="margin-top:12px">
+   <summary><span class="tname">生产动态</span><span class="targs">16:12 回灌 · 15:58 挂起 · 15:40 正文 62%</span><span class="tmeta"><span class="tdur">展开查看</span></span></summary>
+   <div class="tout">
+    <span class="num">16:12</span> 子代理 sec-zl-03 图示校验失败 → 回灌 2/3（标注文字与术语表不符）<br>
+    <span class="num">15:58</span> 子代理 sec-zl-04 证据不足 → 挂起（进度保留，补素材自动恢复）<br>
+    <span class="num">15:40</span> 子代理 sec-zl-02 第 6 步正文生成 62%（事实段落全部挂 [[unit:]] 证据锚）<br>
+    <span class="num">14:20</span> 评审 Agent：sec-zl-01 自评 8.7 · approve<br>
+    <span class="num">11:03</span> 方案 v3 锁定，派生逐节子代理 ×4
+   </div>
+  </details>
+  <details class="toolcard">
+   <summary><span class="tname">引擎规则</span><span class="targs">九步顺序 · 断点续跑 · 三层校验</span><span class="tmeta"><span class="tdur">展开查看</span></span></summary>
+   <div class="tout">
+    九步固定顺序：案例股 → 行情同步 → 行情读回 → 图示 → 回放课件 → 正文 → 其余课件 → 评审 → 溯源；跑错序被拦截并提示当前该做第几步。<br>
+    三层校验：schema（云端复检）→ 语义（断言/术语/引用可回溯）→ 教学质量（rubric 十维，grounded 行情可核一票否决）；失败回灌 ≤3，绝不部分落库。<br>
+    断点续跑：云 DB 即 checkpoint，Worker 重启后从缺失单元续跑。
+   </div>
+  </details>
+
+ </div>
+
+ <!-- 阶段 3-4（折叠） -->
+ <a class="jstep" href="teacher-review.html"><span class="jn">3</span><div><b>成品审核</b><span class="js">6 节完成后开启 · 门禁②</span></div><span class="chev">›</span></a>
+ <a class="jstep" href="ops-publish.html"><span class="jn">4</span><div><b>交接运营</b><span class="js">签批与发布由运营执行（教师只读）</span></div><span class="chev">›</span></a>
+
 </div></div></div></div></body></html>
