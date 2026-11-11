@@ -1,103 +1,69 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>注册 · 趋势交易课程</title><style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#fff;--soft:#f6f8fc;--panel:#fff;--line:#e4e9f2;--ink:#16203a;--mut:#5a6785;
---pri:#2563eb;--pri-soft:#eaf1ff;--acc:#0f9d76;--acc-soft:#e7f6f0;
---code:#0f172a;--sh:0 18px 48px rgba(22,32,58,.08);--mono:ui-monospace,"SF Mono",Menlo,monospace}
-body{font:14px/1.65 ui-sans-serif,system-ui,-apple-system,"PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
-a{color:var(--pri);text-decoration:none}
-.hd{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line);background:color-mix(in srgb,#fff 88%,transparent);backdrop-filter:blur(14px)}
-.hd-in{display:flex;align-items:center;gap:24px;width:min(1160px,calc(100vw - 48px));height:68px;margin:0 auto}
-.brd{display:flex;align-items:center;gap:10px;color:var(--ink)}
-.mk{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e4fd8);color:#fff;font-weight:700;flex:none}
-.brd-t{display:flex;flex-direction:column;line-height:1.25}
-.brd-t strong{font-size:15px}.brd-t small{font-size:11px;color:var(--mut)}
-nav{display:flex;gap:4px;flex:1;min-width:0}
-.nl{padding:8px 12px;border-radius:8px;color:var(--mut);font-size:14px;white-space:nowrap}
-.nl:hover{background:var(--soft);color:var(--ink)}
-.nl.on{color:var(--pri);background:var(--pri-soft);font-weight:600}
-.hd-act{display:flex;gap:8px;flex:none;align-items:center}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;font-weight:500;cursor:default}
-.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
-.btn.lg{height:44px;padding:0 22px;font-size:15px}
-.btn.ghost-w{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
-.w{width:min(1160px,calc(100vw - 48px));margin:0 auto}
-.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
-background:radial-gradient(circle at 82% 12%,rgba(15,157,118,.14),transparent 42%),radial-gradient(circle at 10% 0%,rgba(37,99,235,.18),transparent 46%),linear-gradient(180deg,#f8fbff,#fff)}
-.hero-in{padding:84px 0 64px;max-width:880px}
-.kick{display:inline-block;margin-bottom:14px;padding:4px 12px;border-radius:999px;background:var(--pri-soft);color:var(--pri);font-size:12px;font-weight:700;letter-spacing:.08em}
-.hero h1{margin:0 0 20px;font-size:clamp(32px,5vw,50px);line-height:1.18;letter-spacing:-.02em}
-.lead{max-width:720px;margin:0 0 28px;font-size:17px;color:var(--mut)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:48px}
-.sc{display:flex;flex-direction:column;gap:4px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.78)}
-.sc strong{font-size:26px;font-variant-numeric:tabular-nums;line-height:1.2}
-.sc span{font-size:13px;color:var(--mut)}
-.disc{margin:24px 0 0;font-size:12px;color:var(--mut)}
-.sec{padding:72px 0}
-.sec.mut{background:var(--soft);border-block:1px solid var(--line)}
-.sh{max-width:720px;margin-bottom:32px}
-.sh h2{margin:0 0 8px;font-size:clamp(24px,3.2vw,34px);letter-spacing:-.01em}
-.sh p{margin:0;color:var(--mut)}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
-.pc{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
-.pc.cap{box-shadow:var(--sh)}
-.pc h3{margin:0 0 10px;font-size:18px}
-.pc p{margin:0;color:var(--mut);font-size:14px}
-.pc .em{font:600 22px var(--mono);margin:0 0 8px}
-.path{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;list-style:none}
-.path li{display:flex;gap:16px;padding:22px 24px;border:1px solid var(--line);border-radius:16px}
-.path .n{flex:none;font-size:22px;font-weight:800;color:var(--pri);font-variant-numeric:tabular-nums}
-.path h3{margin:0 0 6px;font-size:16px}.path p{margin:0;color:var(--mut);font-size:14px}
-.cta{padding:56px 0 72px;background:linear-gradient(120deg,#11203d,#1d3b74);color:#eef4ff}
-.cta-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px}
-.cta h2{margin:0 0 8px;font-size:28px}.cta p{margin:0;color:#b9c6e4}
-.price{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
-.price th,.price td{padding:14px 20px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
-.price th{font-size:12px;font-weight:600;color:var(--mut);background:var(--soft)}
-.price td.amt{font:600 16px var(--mono)}
-.price tr.rec td{background:var(--pri-soft)}
-.tag{font:600 11px var(--mono);color:var(--pri);border:1px solid var(--pri);border-radius:4px;padding:0 6px;margin-left:8px}
-.note{font-size:13px;color:var(--mut)}
-.ft{border-top:1px solid var(--line);background:var(--soft)}
-.ft-in{display:flex;gap:48px;padding:40px 0 24px;flex-wrap:wrap}
-.ft-b{display:flex;gap:10px;align-items:center}
-.ft-l{display:flex;gap:48px}
-.ft-l>div{display:flex;flex-direction:column;gap:8px;font-size:13px}
-.ft-l span{font-weight:600;margin-bottom:2px}
-.ft-l a{color:var(--mut)}.ft-l a:hover{color:var(--pri)}
-.ft-bot{border-top:1px solid var(--line);padding:16px 0;display:flex;gap:16px;font-size:12px;color:var(--mut)}
-:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
-</style><style>
-.auth{min-height:100vh;display:grid;grid-template-columns:1fr 480px}
-.auth .side{background:linear-gradient(160deg,#11203d,#1d3b74);color:#dbe7fb;padding:56px 52px;display:flex;flex-direction:column}
-.auth .side .mk{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;font-weight:700}
-.auth .side h2{font-size:22px;font-weight:650;margin:24px 0 8px;color:#fff}
-.auth .side p{font-size:13.5px;line-height:1.8;color:#9db4dd;max-width:36ch}
-.auth .side .mini{margin-top:auto;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:14px 16px;font-size:12.5px;background:rgba(255,255,255,.05)}
-.auth .side .src{font:500 11px var(--mono);background:rgba(15,157,118,.25);color:#7fe3c0;border-radius:5px;padding:1px 7px;margin-right:5px}
-.auth .form{display:flex;flex-direction:column;justify-content:center;padding:48px 56px;background:var(--soft)}
-.auth .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px 36px;box-shadow:var(--sh)}
-.auth h1{font-size:21px;font-weight:650}
-.auth .sub{font-size:13.5px;color:var(--mut);margin:5px 0 22px}
-.auth label{font-size:13px;color:var(--ink);display:block;margin:14px 0 6px;font-weight:500}
-.auth input{width:100%;height:40px;border:1px solid var(--line);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;background:#fff}
-.auth input:focus{outline:2px solid var(--pri);outline-offset:-1px;border-color:var(--pri)}
-.gift{display:flex;gap:10px;align-items:center;background:var(--acc-soft);border:1px solid #c9eadf;color:#0b7a5c;border-radius:10px;padding:11px 14px;font-size:13px;margin:20px 0 4px}
-.agree{display:flex;gap:8px;font-size:12.5px;color:var(--mut);margin:8px 0 18px}
-.auth .btn{height:42px;width:100%;font-size:14.5px}
-.auth .alt{font-size:13px;color:var(--mut);text-align:center;margin-top:18px}
-.auth .alt a{color:var(--pri);font-weight:600}
-.dev .code{display:flex;gap:10px;justify-content:center;margin:18px 0}
-.dev .code b{width:54px;height:62px;border:1px solid var(--line);border-radius:10px;background:#fff;display:grid;place-items:center;font:650 27px var(--mono);color:var(--ink)}
-</style></head><body><div class="auth"><div class="side"><div class="mk">势</div><h2>趋势交易课程</h2>
-<p>把 35 小时录播课变成可问、可查、可溯源的学习环境。回答带引用、点击回原片，案例股实盘对照。</p>
-<div class="mini">学员提问示例<br><span style="color:#fff">阻尼运动和普通回调的区别？</span><br>
-<span class="src">seg-zl02-0417</span><span class="src">seg-zl02-1120</span><span style="color:#8fa8d4;font-size:11px">点击回跳原片</span></div></div><div class="form"><div class="card"><h1>创建学员账号</h1><div class="sub">注册即登录，并获赠智能问答额度</div>
-<div class="gift"><svg width="17" height="17" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 8v13" stroke="currentColor" stroke-width="1.2"/></svg>
-注册赠额：<b>智能问答 30 次</b> · 浏览与播放长期免费</div>
-<label>用户名</label><input placeholder="3–32 位，小写字母开头，可含数字 . _ -">
-<label>密码</label><input type="password" placeholder="10–128 位">
-<label>确认密码</label><input type="password">
-<div class="agree"><input type="checkbox" checked> 我已阅读并同意<a>隐私政策</a>与<a>服务条款</a>，知悉课程内容不构成投资建议</div>
-<button class="btn pri">注册并进入</button>
-<div class="alt">已有账号？<a>登录</a></div></div></div></div></body></html>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>注册 · 趋势交易课程伴学</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css">
+</head><body>
+<div class="portal-shell">
+<header class="portal-header"><div class="portal-header-inner">
+ <a class="portal-brand" href="portal.html"><span class="portal-brand-mark">趋</span><span class="portal-brand-text"><strong>趋势交易课程伴学</strong><small>本地客户端 · 云端推理</small></span></a>
+ <nav class="portal-nav">
+  <a class="portal-nav-link" href="portal.html#system">交易体系</a>
+  <a class="portal-nav-link" href="portal.html#features">站点功能</a>
+  <a class="portal-nav-link" href="portal.html#download">版本下载</a>
+  <a class="portal-nav-link" href="portal.html#faq">常见问题</a>
+ </nav>
+ <div class="portal-header-actions">
+  <a class="btn text" href="portal-login.html">登录</a>
+  <a class="btn pri" href="portal-register.html">注册</a>
+ </div>
+</div></header>
+
+<main class="portal-main">
+<section class="page-hero"><div class="page-hero-inner">
+ <span class="page-kicker">注册</span>
+ <h1>创建学习账号</h1>
+ <div class="page-hero-description"><p>账号只用于设备授权与学习进度；注册即登录。推理由云端供给，无需配置任何模型。</p></div>
+</div></section>
+<section class="content-section content-section-narrow">
+ <div class="auth-card">
+  <div class="fitem">
+   <label class="flabel" for="r-user">用户名</label>
+   <input class="fi" id="r-user" type="text" autocomplete="username" placeholder="例如 xiaoming">
+   <div class="fextra">3–32 位，小写字母开头，可包含数字、点、下划线与短横线</div>
+  </div>
+  <div class="fitem">
+   <label class="flabel" for="r-name">昵称（可选）</label>
+   <input class="fi" id="r-name" type="text" maxlength="200" placeholder="展示在个人中心里的名字">
+  </div>
+  <div class="fitem">
+   <label class="flabel" for="r-pass">密码</label>
+   <input class="fi" id="r-pass" type="password" autocomplete="new-password" placeholder="设置密码">
+   <div class="fextra">10–128 位</div>
+  </div>
+  <div class="fitem">
+   <label class="flabel" for="r-confirm">确认密码</label>
+   <input class="fi" id="r-confirm" type="password" autocomplete="new-password" placeholder="再次输入密码">
+  </div>
+  <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--p-mut);margin:4px 0 18px;cursor:pointer">
+   <input type="checkbox" checked style="margin-top:4px">
+   <span>我已阅读并同意<a href="portal.html#legal">隐私政策</a>与<a href="portal.html#legal">服务条款</a>，知悉课程内容不构成投资建议</span>
+  </label>
+  <a class="btn pri lg blk" href="portal.html#download">注册并登录</a>
+  <p class="auth-hint">已有账号？<a href="portal-login.html">直接登录</a></p>
+  <p class="fextra" style="text-align:center;margin-top:10px">浏览与播放长期免费 · 智能问答按额度计费</p>
+ </div>
+</section>
+</main>
+
+<footer class="portal-footer">
+ <div class="portal-footer-inner">
+  <div class="portal-footer-brand"><strong>趋势交易课程伴学</strong><p>课程知识与推理都在云端供给，注册即用；本地客户端负责渲染与交互。</p></div>
+  <div class="portal-footer-links">
+   <div><span>了解</span><a href="portal.html#system">交易体系</a><a href="portal.html#faq">常见问题</a></div>
+   <div><span>开始</span><a href="portal.html#download">版本下载</a><a href="portal-register.html">创建账号</a><a href="index.html">原型索引</a></div>
+   <div><span>条款</span><a href="portal.html#legal">用户协议</a><a href="portal.html#legal">隐私说明</a></div>
+  </div>
+ </div>
+ <div class="portal-footer-bottom"><span>© 2026 趋势交易课程伴学</span><span>本站内容仅用于教学，不构成任何投资建议。</span></div>
+</footer>
+</div>
+</body></html>
