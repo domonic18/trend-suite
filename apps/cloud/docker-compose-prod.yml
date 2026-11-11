@@ -1,0 +1,1 @@
+# 生产 compose（app + db + migrate profile + caddy）：发布唯一入口是 cicd/deploy.sh，见 docs/ops/01部署Runbook.md。

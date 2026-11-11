@@ -1,0 +1,28 @@
+{
+  "name": "@trend-suite/cloud",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch --import tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --import tsx --test test/*.test.ts",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "migrate": "node --env-file-if-exists=.env --import tsx scripts/db/migrate.ts",
+    "loadtest": "node scripts/ops/load-test.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
