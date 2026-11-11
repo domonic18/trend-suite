@@ -29,7 +29,7 @@
 <main class="ops-main">
 
  <div class="ops-ph">
-  <div><div class="t">发布交接 <span class="tag pri" style="vertical-align:2px">总论卷 · TC-ZONGLUN</span></div><div class="s">上游为教师<a href="teacher-review.html#audit" style="color:var(--p-pri)">成品审核</a>；发布唯一入口，迁移先行、失败可回滚。教师侧不渲染签批发布入口（调端点 403）。</div></div>
+  <div><div class="t">发布交接 <span class="tag pri" style="vertical-align:2px">总论卷 · TC-ZONGLUN</span></div><div class="s">上游为教师<a href="teacher-review.html#readiness" style="color:var(--p-pri)">成品审核</a>；发布唯一入口，迁移先行、失败可回滚。教师侧不渲染签批发布入口（调端点 403）。</div></div>
   <div class="a">
    <select class="btn" style="padding:8px 12px"><option>TC-ZONGLUN · 总论卷（待签批）</option><option>TC-101 · 趋势交易基础（已发布）</option></select>
   </div>
@@ -38,7 +38,7 @@
  <div class="pub-grid">
   <div>
    <div class="ops-card">
-    <div class="h" id="readiness"><div><b>发布就绪度 · 五门禁</b><small>与发布事务同一批判定——不会「全绿点发布还 409」</small></div><span class="tag warn">4/5</span></div>
+    <div class="h" id="readiness"><div><b>发布就绪度 · 五项条件</b><small>与发布事务同一批判定——不会「全绿点发布还 409」</small></div><span class="tag warn">4/5</span></div>
     <div class="b" style="padding-top:6px">
      <div class="chk">
       <div class="c"><span class="st st-ok"><i></i></span>图示解析<span class="num">22/22</span></div>
@@ -71,7 +71,7 @@
    <div class="ops-card" id="signoff">
     <div class="h"><div><b>签批</b><small>对当前内容指纹签名</small></div></div>
     <div class="b" style="display:grid;gap:10px">
-     <p class="note">签批 = 对当前内容指纹签名；同门禁重批幂等（覆盖旧记录）。教师（producer）不可签批。</p>
+     <p class="note">签批 = 对当前内容指纹签名；重复签批幂等（覆盖旧记录）。教师（producer）不可签批。</p>
      <button class="btn pri blk">签批终审（gate = final）</button>
     </div>
    </div>

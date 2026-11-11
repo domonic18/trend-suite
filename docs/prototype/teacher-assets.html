@@ -1,0 +1,327 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>内容资产 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+.asset-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 2px 7px}
+.asset-toolbar .srch{display:flex;align-items:center;gap:5px;border:1px solid var(--p-line);border-radius:7px;padding:4px 8px;background:#fff;font-size:11.5px;color:var(--p-mut)}
+.asset-toolbar .srch input{border:none;outline:none;font-size:11.5px;width:128px;background:none}
+.asset-edit .tout{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.asset-edit .full{grid-column:1/-1}
+.asset-edit label{display:grid;gap:4px;font-size:11px;color:var(--p-mut)}
+.asset-edit .fi{width:100%}
+.asset-edit .chips{display:flex;gap:5px;flex-wrap:wrap}
+.asset-edit .chips .chip{cursor:default}
+@media(max-width:760px){.asset-edit .tout{grid-template-columns:1fr}}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9" r="1.6" fill="currentColor"/><path d="M4 18l5.5-5.5 3.5 3.5 3-3L20 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 14l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-quiz" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 9.5a2 2 0 1 1 2.6 1.9c-.6.2-.6.7-.6 1.2M11 15.5v.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+</svg>
+<div class="ops-app has-agent">
+
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div class="wb-col">
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><span><a href="teacher-workbench.html" style="color:var(--p-mut)">总论卷</a></span><span class="sep">/</span><b>内容资产</b>
+ <span class="right">
+  <span class="agent-pill warn"><i class="dot-wait"></i>Agent 等你确认</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">内容资产</div></div>
+  <div class="a" style="flex-wrap:nowrap"><button class="btn pri"><svg style="width:13px;height:13px"><use href="#i-spark"/></svg>批量生成</button></div>
+ </div>
+
+ <div class="stage-tabs" aria-label="阶段 2 · 内容生产">
+  <a href="teacher-assets.html" class="on">内容资产</a>
+  <a href="teacher-production.html">逐节生产</a>
+  <a href="teacher-compose.html">编排预览</a>
+ </div>
+
+ <div class="content-layout" style="grid-template-columns:minmax(0,1fr)">
+
+  <!-- 右：资产表 + 编辑 -->
+  <div>
+
+   <div class="ops-card">
+    <div class="h"><div><b>资产 · 24</b></div>
+     <button class="btn sm"><svg style="width:12px;height:12px"><use href="#i-plus"/></svg> 新增资产</button></div>
+    <div class="b" style="padding-top:0">
+     <div class="ctabs" role="tablist">
+      <button class="on" onclick="switchType(this,'all')">全部<span class="n">24</span></button>
+      <button onclick="switchType(this,'text')">正文<span class="n">6</span></button>
+      <button onclick="switchType(this,'image')">图片<span class="n">8</span></button>
+      <button onclick="switchType(this,'kline')">K 线图<span class="n">5</span></button>
+      <button onclick="switchType(this,'quiz')">习题<span class="n">5</span></button>
+     </div>
+
+     <div class="asset-toolbar">
+      <span class="srch"><svg style="width:11px;height:11px"><use href="#i-search"/></svg><input placeholder="搜索资产"></span>
+     </div>
+
+     <div style="overflow-x:auto">
+      <table class="asset-tbl" id="asset-tbl">
+       <tr><th style="width:24px"><input type="checkbox" aria-label="全选"></th><th>资产</th><th style="width:86px">状态</th><th style="width:132px;text-align:right">操作</th></tr>
+
+       <tr data-type="text">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">趋势的定义</span><div class="note">正文 · 1.1 · 1,240 字</div></td>
+        <td><span class="tag ok">draft v7</span></td>
+        <td><div class="acts"><button class="btn" onclick="focusAsset('把「趋势的定义」这一段改成先证伪再确认。')">Agent 改</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="text">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">趋势的阻尼运动</span><div class="note">正文 · 2.1 · 980 字</div></td>
+        <td><span class="tag ok">draft v6</span></td>
+        <td><div class="acts"><button class="btn" onclick="focusAsset('把「阻尼运动」这一节压缩到 800 字。')">Agent 改</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="image">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">趋势三段结构示意图</span><div class="note">图片 · 1.1 · SVG 1440×900</div></td>
+        <td><span class="tag ok">已生成</span></td>
+        <td><div class="acts"><button class="btn">替换</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="image">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">级别嵌套示意图</span><div class="note">图片 · 1.2 · SVG 待生成</div></td>
+        <td><span class="tag gray">占位</span></td>
+        <td><div class="acts"><button class="btn" onclick="focusAsset('生成 1.2 的级别嵌套示意图，复用已有关键帧。')">生成</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="kline">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">M60 均线束回踩</span><div class="note">K 线图 · 3.1 · 600519 日线</div></td>
+        <td><span class="tag warn">待校验</span></td>
+        <td><div class="acts"><button class="btn" onclick="document.getElementById('asset-edit').open=true;document.getElementById('asset-edit').scrollIntoView({behavior:'smooth'})">编辑</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="kline">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">周线级别切换</span><div class="note">K 线图 · 2.2 · 000001 周线</div></td>
+        <td><span class="tag run">生成中</span></td>
+        <td><div class="acts"><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="quiz">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">即时自检 · 回踩不破均线束</span><div class="note">习题 · 3.1 · 单选 3 选项</div></td>
+        <td><span class="tag ok">draft</span></td>
+        <td><div class="acts"><button class="btn">编辑</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="quiz">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">本章小测 · 趋势定义</span><div class="note">习题 · 1.1 · 多选 4 选项</div></td>
+        <td><span class="tag ok">已生成</span></td>
+        <td><div class="acts"><button class="btn">编辑</button><button class="btn danger">删</button></div></td>
+       </tr>
+       <tr data-type="text">
+        <td><input type="checkbox" aria-label="选择"></td>
+        <td><span class="nm">均线束与多空分界</span><div class="note">正文 · 3.1 · 生成中 62%</div></td>
+        <td><span class="tag run">生成中</span></td>
+        <td><div class="acts"><button class="btn danger">取消</button></div></td>
+       </tr>
+      </table>
+     </div>
+    </div>
+   </div>
+
+   <!-- 编辑：K 线图（示例） -->
+   <details class="toolcard asset-edit" id="asset-edit">
+    <summary><span class="tname">编辑 · M60 均线束回踩</span><span class="targs">K 线图 · 3.1 · draft</span></summary>
+    <div class="tout">
+     <label>标题<input class="fi" value="M60 均线束回踩"></label>
+     <label>所属节<select class="fi"><option>3.1 均线束</option><option>3.2 多空分界</option></select></label>
+     <label>案例股<select class="fi"><option>600519 贵州茅台</option><option>000001 平安银行</option></select></label>
+     <label>周期<select class="fi"><option>日线</option><option>周线</option></select></label>
+     <label>起<input class="fi" value="2024-08-01"></label>
+     <label>止<input class="fi" value="2024-09-30"></label>
+     <div class="full"><div class="note" style="margin-bottom:4px">标注点</div><div class="chips"><span class="chip">放量站上均线束</span><span class="chip">回踩不破</span><span class="chip">跌破证伪</span><button class="btn sm">＋ 标注</button></div></div>
+     <div class="full"><div class="note">数据源 · 行情服务只读</div><div class="chi mono" style="margin-top:4px">已读回 1,284 根日 K · 校验通过 · 不可手改数值</div></div>
+     <div class="full" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <button class="btn pri sm">保存 draft</button>
+      <button class="btn sm">重新拉取行情</button>
+      <button class="btn sm">预览</button>
+      <span style="flex:1"></span>
+      <button class="btn sm" style="color:#b3352c">删除</button>
+     </div>
+     <p class="note full" style="margin:0">保存只影响课件引用与标注；行情数值由行情服务读回，模型与教师都不能改。删除资产不会删除行情缓存。</p>
+    </div>
+   </details>
+
+   <!-- 新增（CRUD 的 C） -->
+   <details class="toolcard">
+    <summary><span class="tname">＋ 新增资产</span><span class="targs">正文 / 图片 / K 线图 / 习题</span></summary>
+    <div class="tout" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+     <label style="display:grid;gap:4px;font-size:11px;color:var(--p-mut)">类型<select class="fi"><option>K 线图</option><option>图片</option><option>习题</option></select></label>
+     <label style="display:grid;gap:4px;font-size:11px;color:var(--p-mut)">所属节<select class="fi"><option>3.2 多空分界</option><option>1.1 趋势的定义</option></select></label>
+     <label style="display:grid;gap:4px;font-size:11px;color:var(--p-mut);grid-column:1/-1">标题<input class="fi" placeholder="例如：M60 与 M120 多头排列"></label>
+     <div style="grid-column:1/-1"><button class="btn pri sm">创建 draft</button><span class="note" style="margin-left:8px">正文类型会转交给 Agent 生成，不直接写 DSL。</span></div>
+    </div>
+   </details>
+
+  </div>
+ </div>
+
+</main>
+</div>
+
+<!-- ================= Agent 面板 ================= -->
+<aside class="agent-rail" aria-label="内容 Agent">
+ <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
+ <input class="atab-in" type="radio" name="atab" id="atab-run">
+ <input class="atab-in" type="radio" name="atab" id="atab-files">
+
+ <div class="agent-head">
+  <span class="agent-ava">产</span>
+  <div class="agent-id"><b>内容 Agent</b><small>第 3 章 · 资产批量生成</small></div>
+  <span class="agent-live"><i class="dot-wait"></i>等你确认</span>
+ </div>
+
+ <div class="agent-tabs">
+  <label for="atab-chat">对话</label>
+  <label for="atab-run">执行<span class="n">1</span></label>
+  <label for="atab-files">产物<span class="n">14</span></label>
+ </div>
+
+ <div class="agent-body">
+  <div class="agent-pane pane-chat">
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">内容 Agent · 11:30</div>
+     <div class="m-text"><p>第 3 章还差 9 项，我可以按缺口批量生成。</p></div>
+     <div class="planw">
+      <div class="ph">第 3 章生成计划 <span class="n">3/5</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>读取大纲</span><span class="pn">v4</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>生成 K 线图</span><span class="pn">3</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>生成习题</span><span class="pn">2</span></div>
+      <div class="pw-item doing"><span class="tick"></span><span>等你确认</span><span class="pn">now</span></div>
+     </div>
+     <div class="tool-group">
+      <div class="tg-h">3 次工具调用 · 18.4k tokens · 2m06s</div>
+      <details class="tool"><summary><span class="tn">market_kline_pull</span><span class="ta">{"code":"600519"}</span><span class="ts">6.4s</span></summary><div class="tbody">{"bars":1284}</div></details>
+      <details class="tool"><summary><span class="tn">asset_write_batch</span><span class="ta">{"section":"ch-03"}</span><span class="ts">9.8s</span></summary><div class="tbody">{"created":6,"pending":3}</div></details>
+     </div>
+    </div>
+   </div>
+
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 11:34</div><div class="m-text"><p>第 2 章再补两张 K 线图，习题加一道。</p></div></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body"><div class="m-meta">内容 Agent · 11:35</div><div class="m-text"><p>新增 <b>K 线图 2 张</b>、<b>习题 1 道</b>，只追加到第 2 章，先写 draft。</p></div></div>
+   </div>
+
+   <div class="interrupt">
+    <div class="ih"><span class="tag run">等待你确认</span> 批量生成 12 项</div>
+    <div class="it">本次将生成 12 项，其中新增 3 项</div>
+    <p style="margin:6px 0">正文 1 · 图片 3 · K 线图 5 · 习题 3</p>
+    <p class="note" style="margin:0 0 6px">24.6k tokens · 用量 34% → 41% · 写入 draft</p>
+    <div class="ia"><button class="btn pri sm">批准生成</button><button class="btn sm" onclick="focusAsset('只生成第 3 章的 K 线图，图片和习题先等等。')">调整范围</button><button class="btn sm">取消</button></div>
+   </div>
+
+  </div>
+
+  <div class="agent-pane pane-run">
+   <div class="run-head">
+    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">产</span>第 3 章 · 资产生成<span class="st"><span class="tag run">1 进行中</span></span></div>
+    <div class="rm"><span>model · producer-main</span><span>18.4k tokens</span><span>2m06s</span></div>
+   </div>
+   <div class="run-node"><div class="nh"><b>读取大纲与术语</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>v4</span><span>6 章 / 18 节</span><span>2.1s</span></div></div>
+   <div class="run-node"><div class="nh"><b>拉取行情并生成 K 线图</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>3 张</span><span>1,284 根</span><span>6.4s</span></div></div>
+   <div class="run-node"><div class="nh"><b>生成习题</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>2 道</span><span>答案可回溯</span><span>4.2s</span></div></div>
+   <div class="run-node"><div class="nh"><b>术语与行情校验</b><span class="st"><span class="tag run">进行中</span></span></div><div class="nm"><span>26 术语</span><span>逐项断言</span></div></div>
+   <div class="run-node"><div class="nh"><b>写入 draft</b><span class="st"><span class="tag warn">待确认</span></span></div><div class="nm"><span>12 项</span><span>等待 approve</span></div></div>
+  </div>
+
+  <div class="agent-pane pane-files">
+   <div class="filetree">
+    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>workspace / assets<span class="n">14 files</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">ch-03/</span><span class="fs">9</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-03/textbook.md</span><span class="fs">62%</span></div>
+    <div class="file"><svg><use href="#i-image"/></svg><span class="fn">ch-03/fig-01.svg</span><span class="fs">待校验</span></div>
+    <div class="file"><svg><use href="#i-chart"/></svg><span class="fn">ch-03/kline-01.json</span><span class="fs">draft</span></div>
+    <div class="file"><svg><use href="#i-quiz"/></svg><span class="fn">ch-03/quiz-01.json</span><span class="fs">draft</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">ch-02/</span><span class="fs">5</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">glossary.map</span><span class="fs">26</span></div>
+   </div>
+   <div class="file-preview"># kline-01.json（draft）
+code: 600519
+period: D
+range: 2024-08-01..2024-09-30
+bars: 1284
+annotations:
+  - 放量站上均线束
+  - 回踩不破
+source: market (read-only)</div>
+  </div>
+ </div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:42%"></i></span><span>42% · 15.1k / 36k</span></div>
+  <div class="quick"><button onclick="focusAsset('给第 3 章补一张均线束 K 线图。')">补 K 线图</button><button onclick="focusAsset('给第 3 章加一道习题。')">加一道习题</button><button onclick="focusAsset('把选中的资产标题改短。')">改标题</button></div>
+  <div class="composer">
+   <textarea id="asset-input" placeholder="告诉 Agent 要补什么、改哪一项，或选中表格行批量处理…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="引用素材"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用资产"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
+</div>
+<script>
+function switchType(btn, type){
+  document.querySelectorAll('.ctabs button').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  document.querySelectorAll('#asset-tbl tr[data-type]').forEach(function(tr){
+    tr.style.display = (type==='all' || tr.getAttribute('data-type')===type) ? '' : 'none';
+  });
+}
+function focusAsset(text){
+  var c=document.getElementById('asset-input');
+  if(text) c.value=text;
+  c.focus();
+  c.scrollIntoView({block:'nearest'});
+}
+</script>
+</body></html>

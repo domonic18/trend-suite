@@ -1,0 +1,414 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教材 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+/* 三栏：结构树 / 渲染后的教材 / Agent 生成 */
+.tb-layout{display:grid;grid-template-columns:216px minmax(0,1fr);gap:14px;align-items:start}
+
+.tree-card{position:sticky;top:64px;background:#fff;border:1px solid var(--p-line);border-radius:12px;overflow:hidden;max-height:calc(100vh - 76px);display:flex;flex-direction:column}
+.tree-h{padding:11px 12px;border-bottom:1px solid var(--p-line);display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.tree-h b{font-size:13px}
+.tree-h span{font-size:10.5px;color:var(--p-mut)}
+.tree{overflow:auto;padding:6px}
+.tnode>summary{list-style:none;display:flex;align-items:center;gap:6px;padding:7px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--p-ink)}
+.tnode>summary::-webkit-details-marker{display:none}
+.tnode>summary:hover{background:var(--p-soft)}
+.tnode .caret{font-size:9px;color:#9aa3b8;transition:transform .15s;display:inline-block;flex:none}
+.tnode[open] .caret{transform:rotate(90deg)}
+.tnode>summary .tg{margin-left:auto;flex:none;font:500 9.5px var(--font-mono);border-radius:5px;padding:1px 5px;background:var(--p-soft);color:var(--p-mut)}
+.tnode>summary .tg.ok{background:#eaf8f3;color:#0b7d5e}
+.tnode>summary .tg.run{background:var(--p-pri-soft);color:var(--p-pri)}
+.tnode>summary .tg.warn{background:#fff6e5;color:#8a5a00}
+.tunits{padding:0 0 4px 9px;margin-left:9px;border-left:1px dashed var(--p-line);display:grid;gap:1px}
+.tunit{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:7px;font-size:11.5px;color:var(--p-mut);text-decoration:none;line-height:1.5}
+.tunit:hover{background:var(--p-soft);color:var(--p-ink)}
+.tunit.on{background:var(--p-pri-soft);color:var(--p-pri);font-weight:600}
+.tunit .tdot{width:6px;height:6px;border-radius:50%;background:#c9d3e2;flex:none}
+.tdot.ok{background:#0f9d76}.tdot.run{background:#2563eb}.tdot.warn{background:#d48806}
+.tunit em{margin-left:auto;font:500 9.5px var(--font-mono);font-style:normal;color:#9aa3b8}
+.tree-f{padding:8px 12px;border-top:1px solid var(--p-line);font-size:10.5px;color:var(--p-mut);display:flex;justify-content:space-between;gap:6px}
+
+.doc-card{background:#fff;border:1px solid var(--p-line);border-radius:12px;overflow:hidden}
+.doc-top{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--p-line);font-size:11px;color:var(--p-mut)}
+.doc-top .grow{flex:1}
+.doc-top .chip{font-size:10px}
+.doc{padding:30px 34px 34px;max-width:720px;margin:0 auto;font-size:13.5px;line-height:1.95;color:#25324a}
+.doc-kicker{font:600 10.5px var(--font-mono);letter-spacing:.08em;color:var(--p-pri);margin-bottom:6px}
+.doc h1{font-size:23px;line-height:1.35;margin:0 0 8px;color:var(--p-ink);letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.doc-lead{font-size:14px;color:var(--p-mut);margin:0 0 18px;padding-bottom:16px;border-bottom:1px solid #eef1f6}
+.doc h2{font-size:15.5px;margin:24px 0 8px;color:var(--p-ink)}
+.doc p{margin:0 0 11px;position:relative}
+.doc p .edit{opacity:0;border:1px solid var(--p-line);background:#fff;color:var(--p-mut);border-radius:5px;font-size:10px;padding:0 5px;margin-left:6px;cursor:pointer;transition:opacity .12s;vertical-align:1px;white-space:nowrap}
+.doc p:hover .edit{opacity:1}
+.doc-callout{border-left:3px solid #e5b95c;background:#fffdf7;border-radius:0 9px 9px 0;padding:10px 13px;font-size:12.5px;line-height:1.75;margin:0 0 18px}
+.doc-callout b{display:block;font-size:10.5px;color:#8a5a00;letter-spacing:.04em;margin-bottom:2px}
+.doc-fig{margin:4px 0 16px;border:1px solid var(--p-line);border-radius:10px;overflow:hidden}
+.doc-chart{background:#0f172a;padding:12px}
+.doc-chart .ch{display:flex;gap:8px;align-items:center;color:#cbd5e1;font:10.5px var(--font-mono)}
+.doc-chart .ch .tag{margin-left:auto}
+.doc-chart .pv-bars{height:86px;margin-top:10px}
+.doc-fig figcaption{padding:7px 11px;font-size:11px;color:var(--p-mut);border-top:1px solid var(--p-line);background:#fafbfd}
+.doc-replay{border:1px solid var(--p-line);border-radius:10px;background:#fafbfd;padding:9px 11px;display:flex;align-items:center;gap:9px;font-size:12px;color:var(--p-mut);margin:0 0 14px}
+.doc-replay .play{width:26px;height:26px;border-radius:50%;background:var(--p-pri);color:#fff;display:grid;place-items:center;flex:none}
+.doc-replay .play svg{width:11px;height:11px}
+.doc-replay b{color:var(--p-ink);font-size:12px}
+.doc-replay .grow{flex:1}
+.doc-check{border:1px solid var(--p-line);border-radius:10px;padding:11px 13px;margin:6px 0 14px}
+.doc-check .q{font-weight:600;margin-bottom:7px;font-size:12.5px}
+.doc-check .o{display:flex;gap:6px;flex-wrap:wrap}
+.doc-check .o span{border:1px solid var(--p-line);border-radius:7px;padding:4px 9px;font-size:11.5px;color:var(--p-mut)}
+.doc-src{margin-top:20px;padding-top:12px;border-top:1px dashed var(--p-line);font-size:11px;color:#9aa3b8;line-height:1.8}
+
+.skill{border-color:#d4e3ff;background:#f7faff}
+.skill summary .sk{font:700 9px var(--font-mono);background:#2563eb;color:#fff;border-radius:4px;padding:1px 4px;letter-spacing:.04em;flex:none}
+.skill .tn{color:#1e4fd8}
+.run-node.sub{margin-left:16px;border-left:2px solid #eef1f6;border-radius:0 10px 10px 0}
+
+/* 窄侧栏防溢出 + 收紧对话节奏，让 HITL 卡更早出现 */
+.agent-rail{min-width:0}
+.agent-head .agent-id{flex:1;min-width:0;overflow:hidden}
+.agent-head .agent-id small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-head .agent-live{flex:none}
+.agent-body{overflow-x:hidden}
+.agent-foot{overflow:hidden}
+.composer textarea{box-sizing:border-box}
+.tool summary .tn{flex:none;white-space:nowrap}
+.tool summary .ta{flex:1;min-width:0}
+.pane-chat .msg{margin-bottom:10px}
+.pane-chat .planw{margin:6px 0 8px}
+
+@media (max-width:900px){
+ .tb-layout{grid-template-columns:1fr}
+ .tree-card{position:static;max-height:none}
+ .doc{padding:22px 20px 26px}
+}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5l10 6.5-10 6.5z" fill="currentColor"/></symbol>
+</svg>
+<div class="ops-app has-agent">
+
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i on" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div class="wb-col">
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><span><a href="teacher-workbench.html" style="color:var(--p-mut)">总论卷</a></span><span class="sep">/</span><b>教材</b>
+ <span class="right">
+  <span class="agent-pill"><i class="dot-run"></i>Agent 生成中</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">教材 <span class="tag ok" style="vertical-align:2px">v7 · draft</span></div></div>
+  <div class="a"><a class="btn" href="student-course.html">预览学员效果</a></div>
+ </div>
+
+ <div class="tb-layout">
+
+  <!-- 左：章节 / 单元结构树 -->
+  <aside class="tree-card" aria-label="教材目录">
+   <div class="tree-h"><b>总论卷</b><span>6 章 · 26 节</span></div>
+   <div class="tree">
+    <details class="tnode" open>
+     <summary><span class="caret">▸</span><span>第 1 章 什么是趋势</span><span class="tg ok">已生成</span></summary>
+     <div class="tunits">
+      <a class="tunit on" href="#sec-0101"><i class="tdot ok"></i><span>1.1 趋势的定义</span><em>v7</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>1.2 级别与周期</span><em>v7</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>1.3 摆动高低点</span><em>v6</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>1.4 证伪条件</span><em>v6</em></a>
+     </div>
+    </details>
+    <details class="tnode">
+     <summary><span class="caret">▸</span><span>第 2 章 趋势的阻尼运动</span><span class="tg ok">已生成</span></summary>
+     <div class="tunits">
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>2.1 阻尼运动</span><em>v6</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>2.2 动能衰竭三证据</span><em>v6</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>2.3 均线粘合</span><em>v6</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>2.4 量能萎缩</span><em>v6</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>2.5 节奏与持有</span><em>v6</em></a>
+     </div>
+    </details>
+    <details class="tnode" open>
+     <summary><span class="caret">▸</span><span>第 3 章 均线与多空分界</span><span class="tg run">生成中</span></summary>
+     <div class="tunits">
+      <a class="tunit" href="#sec-0101"><i class="tdot ok"></i><span>3.1 均线束</span><em>v3</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot run"></i><span>3.2 多空分界</span><em>写入中</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot"></i><span>3.3 假突破</span><em>—</em></a>
+      <a class="tunit" href="#sec-0101"><i class="tdot"></i><span>3.4 回踩确认</span><em>—</em></a>
+     </div>
+    </details>
+    <details class="tnode">
+     <summary><span class="caret">▸</span><span>第 4 章 周线级别判断</span><span class="tg warn">缺素材</span></summary>
+     <div class="tunits"><span class="tunit" style="cursor:default"><i class="tdot warn"></i><span>等待补充周线案例视频</span></span></div>
+    </details>
+    <details class="tnode">
+     <summary><span class="caret">▸</span><span>第 5 章 筹码密集与发散</span><span class="tg">排队</span></summary>
+    </details>
+    <details class="tnode">
+     <summary><span class="caret">▸</span><span>第 6 章 综合研判框架</span><span class="tg">排队</span></summary>
+    </details>
+   </div>
+   <div class="tree-f"><span>3/6 章已生成</span><span>2 节待补</span></div>
+  </aside>
+
+  <!-- 中：渲染后的 HTML 教材 -->
+  <section class="doc-card">
+   <div class="doc-top">
+    <svg style="width:12px;height:12px"><use href="#i-file"/></svg>
+    <span class="chip mono">textbook/ch-01/1.1.html</span>
+    <span class="grow"></span>
+    <span>1,240 字</span><span>·</span><span>更新于 11:42</span>
+   </div>
+
+   <article class="doc" id="sec-0101">
+    <div class="doc-kicker">第 1 章 · 什么是趋势</div>
+    <h1>1.1 趋势的定义</h1>
+    <p class="doc-lead">先定级别，再谈方向；先找证伪条件，再谈延续。</p>
+
+    <div class="doc-callout"><b>本节先想一想</b>价格站上均线束，就等于多头成立吗？</div>
+
+    <h2>一、级别先于方向</h2>
+    <p data-edit>趋势是价格在某一级别上形成的、可被高低点结构验证的方向性运动。<span class="cite">u-128</span><button class="edit" onclick="focusComposer('改写这一段：先定级别，再说方向。')">让 Agent 改</button></p>
+    <p>级别不成立，趋势就不成立；同一段行情在日线上是趋势，在周线上可能只是一次摆动。<span class="cite">u-131</span></p>
+
+    <figure class="doc-fig">
+     <div class="doc-chart">
+      <div class="ch"><span>沪深 300 · 日线</span><span class="tag ok">行情服务读回</span></div>
+      <div class="pv-bars">
+       <i style="height:34%"></i><i style="height:41%"></i><i style="height:38%" class="g"></i><i style="height:47%"></i><i style="height:55%"></i><i style="height:52%"></i><i style="height:61%"></i><i style="height:68%"></i><i style="height:64%" class="g"></i><i style="height:72%"></i><i style="height:79%"></i><i style="height:75%"></i><i style="height:83%"></i><i style="height:88%"></i><i style="height:84%" class="g"></i><i style="height:91%"></i>
+      </div>
+     </div>
+     <figcaption>图 1-1 · 摆动低点依次抬高，构成日线级别的上升趋势（2024-09）</figcaption>
+    </figure>
+
+    <h2>二、先证伪，再确认</h2>
+    <p>判断趋势，先找证伪条件，再谈延续。若价格跌破最近一个有效摆动低点，原趋势假设即失效；此时应重新标注级别，而不是寻找理由维持原判断。<button class="edit" onclick="focusComposer('这一段补一个反例。')">让 Agent 改</button></p>
+    <p>反例：下跌趋势中的反弹若未突破前一个摆动高点，仍属于原级别的调整，不应提前标注为反转。<span class="cite">u-145</span></p>
+
+    <div class="doc-replay">
+     <span class="play"><svg><use href="#i-play"/></svg></span>
+     <b>片段回放</b><span>00:09:05 – 00:12:30 · 跌破证伪</span>
+     <span class="grow"></span><span>1 分 20 秒</span>
+    </div>
+
+    <h2>三、一课一练</h2>
+    <div class="doc-check">
+     <div class="q">日线创新高，但周线仍未突破前高。以下判断哪个正确？</div>
+     <div class="o"><span>A. 日线趋势成立，周线趋势不成立</span><span>B. 两个级别趋势都成立</span><span>C. 无法判断</span></div>
+    </div>
+
+    <div class="doc-src">本节 6 个事实段落均可回溯到 ASR 片段 u-128 / u-131 / u-145；行情数值由行情服务读回，不由模型生成。教材 v7 · draft，未经运营签批不对外。</div>
+   </article>
+  </section>
+
+ </div>
+
+</main>
+</div>
+
+<!-- ================= Agent 生成侧栏 ================= -->
+<aside class="agent-rail" aria-label="教材生成 Agent">
+ <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
+ <input class="atab-in" type="radio" name="atab" id="atab-run">
+ <input class="atab-in" type="radio" name="atab" id="atab-files">
+
+ <div class="agent-head">
+  <span class="agent-ava">教</span>
+  <div class="agent-id"><b>教材 Agent</b><small>总论卷 · 原始数据 4 份</small></div>
+  <span class="agent-live"><i class="dot-run"></i>生成中</span>
+ </div>
+
+ <div class="agent-tabs">
+  <label for="atab-chat">对话</label>
+  <label for="atab-run">执行<span class="n">1</span></label>
+  <label for="atab-files">产物<span class="n">7</span></label>
+ </div>
+
+ <div class="agent-body">
+  <div class="agent-pane pane-chat">
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">教材 Agent · 11:39</div>
+     <div class="m-text"><p>已读取 <b>4 个视频</b>、<b>128 个转写片段</b>、<b>36 张关键帧</b>。总论卷 v7：第 1–2 章已生成，第 3 章生成中，第 4 章缺素材。</p></div>
+     <div class="planw">
+      <div class="ph">总论卷 · 6 章 <span class="n">3/6</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 1 章 什么是趋势</span><span class="pn">4 节</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 2 章 趋势的阻尼运动</span><span class="pn">5 节</span></div>
+      <div class="pw-item doing"><span class="tick"></span><span>第 3 章 均线与多空分界</span><span class="pn">2/4</span></div>
+      <div class="pw-item"><span class="tick"></span><span>第 4 章 周线级别判断</span><span class="pn">缺素材</span></div>
+      <div class="pw-item"><span class="tick"></span><span>第 5–6 章</span><span class="pn">排队</span></div>
+     </div>
+    </div>
+   </div>
+
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 11:41</div><div class="m-text"><p>把 1.1 的结论改成「先证伪，再确认」，补一个反例。</p></div></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">教材 Agent · 11:42</div>
+     <div class="m-text"><p>只改 1.1，不动其他节。先读锚点，再调用写作技能。</p></div>
+
+     <div class="tool-group">
+      <div class="tg-h">tool calls</div>
+      <details class="tool">
+       <summary><span class="tn">read_section</span><span class="ta">ch-01/1.1</span><span class="ts">0.4s</span></summary>
+       <div class="tbody">units: u-128, u-131, u-145
+paragraphs: 3（结论段为第 2 段）</div>
+      </details>
+      <details class="tool">
+       <summary><span class="tn">search_units</span><span class="ta">"摆动高点" 反例</span><span class="ts">0.8s</span></summary>
+       <div class="tbody">hit: u-145 · 00:09:05
+hit: u-152 · 00:12:30</div>
+      </details>
+      <details class="tool skill" open>
+       <summary><span class="sk">SKILL</span><span class="tn">section-writer</span><span class="ta">rewrite + counterexample</span><span class="ts">完成</span></summary>
+       <div class="tbody">inputs: 1.1 大纲 · 2 个 unit · 术语表 v3
+outputs: 1 段改写 · 1 个反例
+guards: 事实段必须带 unit 引用</div>
+      </details>
+     </div>
+
+     <div class="diff">
+      <div class="d del"><span class="tag err">原</span><span>判断趋势，先看它是否延续，再考虑何时结束。</span></div>
+      <div class="d add"><span class="tag ok">新</span><span>判断趋势，先找证伪条件，再谈延续。跌破最近有效摆动低点，原假设即失效。</span></div>
+      <div class="d add"><span class="tag ok">增</span><span>反例：下跌中的反弹未破前高，仍属原级别调整，不应提前标注反转。<span class="cite">u-145</span></span></div>
+     </div>
+    </div>
+   </div>
+
+   <div class="interrupt">
+    <div class="ih"><span class="tag run">等待你确认</span></div>
+    <div class="it">应用 1.1 的修改？</div>
+    <p>校验：<b>锚点合法</b> · <b>2 处引用可回溯</b> · <b>术语一致</b>。应用后写入 draft，不影响其他节。</p>
+    <div class="ia"><button class="btn pri sm">应用</button><button class="btn sm" onclick="focusComposer('再给一版更短的写法。')">再改一版</button><button class="btn sm">放弃</button></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">教材 Agent · 正在输出</div>
+     <div class="m-text">
+      <p>同时，第 3 章 3.2「多空分界」正在写入：</p>
+      <p class="streaming">多空分界不是一条固定的均线，而是一段价格反复确认过的成本区。价格站上均线束，只说明</p>
+     </div>
+     <details class="tool" style="margin-top:6px">
+      <summary style="cursor:default"><span class="tn">write_section</span><span class="ta">ch-03/3.2</span><span class="ts"><span class="tag run">运行中</span></span></summary>
+     </details>
+    </div>
+   </div>
+
+  </div>
+
+  <div class="agent-pane pane-run">
+   <div class="run-head">
+    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">教</span>总论卷生成 · 主 Agent<span class="st"><span class="tag run">1 进行中</span></span></div>
+    <div class="rm"><span>model · producer-main</span><span>18.4k tokens</span><span>4m12s</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>规划章节与素材</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>6 章 / 26 节</span><span>128 units</span><span>42s</span></div>
+   </div>
+   <div class="run-node sub">
+    <div class="nh"><b>ch-01 什么是趋势</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>4/4 节</span><span>评审 8.8</span><span>1m06s</span></div>
+   </div>
+   <div class="run-node sub">
+    <div class="nh"><b>ch-02 趋势的阻尼运动</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>5/5 节</span><span>评审 8.6</span><span>1m18s</span></div>
+   </div>
+   <div class="run-node sub">
+    <div class="nh"><b>ch-03 均线与多空分界</b><span class="st"><span class="tag run">进行中</span></span></div>
+    <div class="nm"><span>2/4 节</span><span>3.2 写入中</span><span>38s</span></div>
+   </div>
+   <div class="run-node sub">
+    <div class="nh"><b>ch-04 周线级别判断</b><span class="st"><span class="tag warn">缺素材</span></span></div>
+    <div class="nm"><span>等待补充周线案例</span><span>—</span></div>
+   </div>
+   <div class="run-node sub">
+    <div class="nh"><b>ch-05 · ch-06</b><span class="st"><span class="tag gray">排队</span></span></div>
+    <div class="nm"><span>等待 ch-04</span><span>—</span></div>
+   </div>
+  </div>
+
+  <div class="agent-pane pane-files">
+   <div class="filetree">
+    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>textbook<span class="n">7 items</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">ch-01/</span><span class="fs">4 节 · v7</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">ch-02/</span><span class="fs">5 节 · v6</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">ch-03/</span><span class="fs">生成中</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">index.html</span><span class="fs">v7</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">outline.json</span><span class="fs">6 章</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">toc.json</span><span class="fs">26 节</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">sources.map</span><span class="fs">128 refs</span></div>
+   </div>
+   <div class="file-preview">&lt;article data-unit="u-128"&gt;
+  &lt;h1&gt;趋势的定义&lt;/h1&gt;
+  &lt;p&gt;趋势是价格在某一级别上形成的、
+     可被高低点结构验证的方向性运动。&lt;/p&gt;
+
+  &lt;figure data-source="quote"&gt;
+    &lt;img src="fig-trend-structure.svg"&gt;
+    &lt;figcaption&gt;图 1-1 · 摆动低点依次抬高&lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/article&gt;</div>
+  </div>
+ </div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:42%"></i></span><span>42% · 15.1k / 36k</span></div>
+  <div class="quick"><button onclick="focusComposer('生成第 5 章。')">生成第 5 章</button><button onclick="focusComposer('重写 1.1，结论更短。')">重写 1.1</button><button onclick="focusComposer('第 4 章需要什么素材？')">第 4 章缺什么</button></div>
+  <div class="composer">
+   <textarea id="composer" placeholder="让 Agent 生成或修改教材，例如「把 1.1 改短」「生成第 5 章」…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="附加素材"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用章节"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
+</div>
+<script>
+function focusComposer(text){
+  var c=document.getElementById('composer');
+  if(text) c.value=text;
+  c.focus();
+  c.scrollIntoView({block:'nearest'});
+}
+</script>
+</body></html>

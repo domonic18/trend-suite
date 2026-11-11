@@ -1,131 +1,297 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>素材与方案 · 总论卷 · 生产工作台</title>
-<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css">
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
 <style>
-.ast-row{display:grid;grid-template-columns:1.4fr .8fr .6fr .6fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eef1f6;font-size:13px}
-.ast-row:last-child{border-bottom:none}
-.ast-row .ttl b{display:block;font-size:13px}
-.ast-row .ttl span{font:500 11px var(--font-mono);color:#9aa3b8}
-.ast-row .dur{font-family:var(--font-mono);font-size:12px;color:var(--p-mut)}
+.oe-row .ot{min-width:0}
+.oe-row .ot b{display:block;font-size:12.5px}
+.oe-row .ot .chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.oe-row .ot .chips .chip{padding:0 6px;font-size:10px}
+.oe-row .ot .chips .chip.err{border-color:#f3cfcb;background:#fdeeed;color:#b3352c}
+.oe-row .ot .chips .chip.warn{border-color:#f0e2bd;background:#fffdf7;color:#8a5a00}
 </style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-</svg><div class="ops-app">
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4.2 3.4c-.5.4-.8.2-.8-.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="ops-app has-agent">
+
 <aside class="ops-sb">
  <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
  <nav class="ops-menu">
   <div class="ops-g">课程</div>
-  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>课程内容</a>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
   <div class="ops-g">当前课程 · 总论卷</div>
-  <a class="ops-i on" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
-  <a class="ops-i" href="teacher-production.html"><svg><use href="#i-board"/></svg>生产看板</a>
-  <a class="ops-i" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
-  <a class="ops-i" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
  </nav>
  <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
 </aside>
-<div>
+
+<div class="wb-col">
 <header class="ops-top">
- <span><a href="teacher-workbench.html" style="color:var(--p-mut)">课程内容</a></span><span class="sep">/</span><b>总论卷 · 素材与方案</b>
- <span class="right"><span>云端模型已预置</span><a href="index.html">原型索引</a></span>
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><b>总论卷 · 素材与方案</b>
+ <span class="right">
+  <span class="agent-pill warn"><i class="dot-wait"></i>Agent 等待你确认</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
 </header>
-<main class="ops-main" style="max-width:1080px">
+<main class="ops-main">
 
  <div class="ops-ph">
-  <div><div class="t">素材与方案 <span class="tag warn" style="vertical-align:2px">门禁① · 等你确认</span></div><div class="s">上传素材（入库即转码转写）→ 触发方案制作 → 确认方案（门禁①）；Agent 不从上传行为推断课程边界。</div></div>
+  <div><div class="t">课程大纲 <span class="tag warn" style="vertical-align:2px">待确认</span></div></div>
+  <div class="a"><a class="btn sm" href="../flow/teacher-e2e.html">查看端到端流程</a></div>
  </div>
 
- <!-- 管线步骤（视频建课 Steps 迁移） -->
- <div class="pipe-steps">
-  <div class="p done"><b>选择课程</b>TC-ZONGLUN</div>
-  <div class="p done"><b>上传素材</b>源视频 ×3</div>
-  <div class="p cur"><b>处理转写</b>partial 实时可读</div>
-  <div class="p"><b>方案确认</b>门禁① 三动作</div>
-  <div class="p"><b>解锁生产</b>九步引擎</div>
+ <!-- 阶段内子页 -->
+ <div class="stage-tabs" aria-label="阶段 1 · 素材与方案">
+  <a href="teacher-material.html">上传与转写</a>
+  <a href="teacher-plan.html" class="on">课程大纲</a>
  </div>
 
- <!-- 素材（AssetTable 迁移） -->
- <div class="ops-card" id="materials">
-  <div class="h"><div><b>素材</b><small>浏览器直传 · 单文件 ≤ 2GiB · 须含音轨（否则拒绝并清理半成品）</small></div><button class="btn sm pri" id="upload-btn">＋ 上传素材</button></div>
-  <div class="b" style="padding-top:2px">
-   <div class="ast-row"><div class="ttl"><b>总论-01</b><span>ast_8fe2 · 上传于 11-11 10:05</span></div>
-    <span class="st st-ok"><i></i>ready</span><span class="dur">38:12 · 1.8GiB</span><span class="note num">units 46</span></div>
-   <div class="ast-row"><div class="ttl"><b>总论-02</b><span>ast_9d31 · 上传于 11-11 10:07</span></div>
-    <span class="st st-run"><i></i>processing · partial 62%</span><span class="dur">41:05 · 1.9GiB</span><span class="note num">已转部分可读</span></div>
-   <div class="ast-row"><div class="ttl"><b>总论-03</b><span>ast_a7b0 · 上传于 11-11 10:08</span></div>
-    <span class="st st-mut"><i></i>queued</span><span class="dur">36:48 · 1.7GiB</span><span class="note">等待转码队列</span></div>
-   <div class="dz" id="upload" style="margin-top:12px"><b>拖入视频文件</b> · 进度可见可重试（断点续传）· 转写完成即产出 source units</div>
-  </div>
+ <div class="nextaction">
+  <span class="na-ic"><svg><use href="#i-warn"/></svg></span>
+  <div class="na-txt"><b>第 4 章与素材匹配度 41%，需你决定</b></div>
+  <a class="btn pri" href="#int-gate1">去处理</a>
  </div>
 
- <!-- 触发方案制作 -->
+ <!-- 梳理入口 -->
  <div class="ops-card" id="trigger">
-  <div class="h"><div><b>触发方案制作</b><small>选素材集 + 课程目标 + 目录先验；Agent 只做校验与归一，不发明目录</small></div></div>
-  <div class="b" style="display:grid;gap:12px;max-width:640px">
-   <div><div class="note" style="margin-bottom:5px">素材集（预检：ready 或明确允许 partial）</div>
-    <label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" checked> 总论-01 <span class="note num">ready</span></label>
-    <label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" checked> 总论-02 <span class="note num">partial 62% · 已允许</span></label>
-    <label style="display:flex;gap:8px;align-items:center;padding:5px 0;color:var(--p-mut)"><input type="checkbox" disabled> 总论-03 <span class="note">排队中，不可选</span></label>
-   </div>
-   <div><div class="note" style="margin-bottom:5px">课程目标</div><input class="fi" value="趋势交易入门 · 总论卷"></div>
-   <div><div class="note" style="margin-bottom:5px">目录先验（可粘贴或口述）</div>
-    <div class="fi" style="min-height:56px;line-height:1.7">篇 → 卷 → 课时，共 6 章<br><span class="note">Agent 只做校验与归一，不发明目录</span></div></div>
-   <div class="row"><a class="btn pri" href="#gate">生成制作方案</a><span class="note" style="align-self:center">预检通过；生成后需你确认（门禁①）</span></div>
+  <div class="b" style="padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+   <b style="font-size:12.5px">素材 3</b><span class="note">2 份可用</span>
+   <a class="note" href="teacher-material.html" style="color:var(--p-pri)">打开素材库</a>
+   <span style="flex:1"></span>
+   <span class="tag ok">v4 · 10:38</span>
+   <button class="btn sm" onclick="focusPlan('依据当前素材重新梳理一版大纲，保留已有章节编号。')">重新梳理</button>
   </div>
  </div>
 
- <!-- 异常裁决 -->
- <div class="abanner err" id="mismatch">
-  <div class="ab-txt">
-   <span class="ab-title">需要你裁决 · 第 4 章「周线级别判断」提纲与素材不匹配</span>
-   <p>该节与素材<b>匹配度 41%</b>（阈值 60%）。<b>仅第 4 章重跑综合，其余章不受影响。</b>裁决后即可审批方案。</p>
-  </div>
-  <div class="ab-actions"><button class="btn sm">修订提纲</button><a class="btn sm" href="#upload">补充素材</a></div>
- </div>
+ <!-- 课程大纲 v4 -->
+ <div class="ops-card" id="outline">
+  <div class="h"><div><b>课程大纲</b><small>v4 · 6 章</small></div>
+   <button class="btn sm" onclick="focusPlan('请优化当前大纲：指出过粗或过细的章节，并给出调整建议。')">让 Agent 改</button></div>
+  <div class="b" style="padding-top:6px">
 
- <!-- 方案草案 + 门禁① -->
- <div class="ops-card" id="gate">
-  <div class="h"><div><b>方案草案 v3 · 骨架</b><small>目录先验校验 · 可拖拽调整与合并 · 目录外结构不会被创建</small></div><span class="tag warn">5/6 章通过 · 1 待裁决</span></div>
-  <div class="b" style="padding-top:4px">
-   <div class="outline">
-    <div class="orow"><span class="gh">1</span><b>什么是趋势</b><span class="note num">证据 12 处</span><div class="pcol"><span class="chip">趋势定义</span><span class="chip">级别</span></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="orow"><span class="gh">2</span><b>趋势的阻尼运动</b><span class="note num">证据 9 处</span><div class="pcol"><span class="chip">阻尼</span><span class="chip">动能衰竭</span></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="orow"><span class="gh">3</span><b>均线与多空分界</b><span class="note num">证据 15 处</span><div class="pcol"><span class="chip">均线组</span><span class="chip">M60</span></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="orow err-row"><span class="gh">4</span><b>周线级别判断</b><span class="note num" style="color:#d9483f">匹配 41%</span><div class="pcol"><span class="chip">周期共振</span></div><span class="st st-err"><i></i>待裁决</span></div>
-    <div class="orow"><span class="gh">5</span><b>筹码密集与发散</b><span class="note num">证据 11 处</span><div class="pcol"><span class="chip">筹码峰</span></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="orow"><span class="gh">6</span><b>综合研判框架</b><span class="note num">证据 8 处</span><div class="pcol"><span class="chip">检查单</span></div><span class="st st-ok"><i></i>通过</span></div>
+   <div class="nextaction" style="margin:0 0 10px;background:#f7faff;border-color:#d4e3ff">
+    <span class="na-ic"><svg><use href="#i-spark"/></svg></span>
+    <div class="na-txt"><b>建议补 2 处术语对照</b><span>第 3 章「均线束 / 均线组」· 第 5 章「筹码峰 / 筹码峰迁移」</span></div>
+    <button class="btn sm" onclick="focusPlan('采纳建议：第 3 章补「均线束 / 均线组」术语对照；第 5 章补「筹码峰 / 筹码峰迁移」术语对照。')">采纳</button>
    </div>
-   <div class="abanner warn" style="margin:16px 0 0">
-    <div class="ab-txt">
-     <span class="ab-title">门禁① · 方案确认</span>
-     <p><b>批准</b>＝锁定为基准版并解锁逐节生产；<b>微调</b>＝直接改上方骨架与术语，即时生效；<b>打回</b>＝给一句修改指令，Agent 秒级重起草（不重跑理解）。</p>
+
+   <div class="oe">
+    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">01</span><div class="ot"><b>什么是趋势</b></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">02</span><div class="ot"><b>趋势的阻尼运动</b></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">03</span><div class="ot"><b>均线与多空分界</b></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="oe-row slim err" id="mismatch"><span class="drag">⠿</span><span class="gh">04</span><div class="ot"><b>周线级别判断</b></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end"><span class="st st-err"><i></i>待决定</span><a class="btn" href="teacher-material.html">补素材</a></div></div>
+    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">05</span><div class="ot"><b>筹码密集与发散</b></div><span class="st st-ok"><i></i>通过</span></div>
+    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">06</span><div class="ot"><b>综合研判框架</b></div><span class="st st-ok"><i></i>通过</span></div>
+   </div>
+
+   <details class="toolcard" style="margin-top:14px">
+    <summary><span class="tname">术语与概念图谱</span><span class="targs">26 术语 · 14 别名 · 1 处冲突待裁决</span></summary>
+    <div class="tout">
+     <div class="grid2">
+      <div>
+     <div class="sec-title">概念图谱 <span class="n">26 术语 · 14 别名 · 拒绝自环 2</span></div>
+     <table class="mini-tbl">
+      <tr><th>术语</th><th>别名</th><th>依赖</th></tr>
+      <tr><td>趋势</td><td>—</td><td>级别</td></tr>
+      <tr><td>阻尼运动</td><td>动能衰竭</td><td>动能</td></tr>
+      <tr><td>均线束</td><td>均线组</td><td>M60</td></tr>
+      <tr><td>假突破</td><td>诱多</td><td>—</td></tr>
+      <tr><td>周期共振</td><td>—</td><td>级别</td></tr>
+     </table>
     </div>
-    <div class="ab-actions" style="width:100%">
-     <a class="btn pri" href="teacher-production.html">批准，开始生产</a>
-     <button class="btn">微调</button>
-     <input class="fi" style="flex:1;min-width:200px" placeholder="打回指令：例：把第 2、3 章合并；「假突破」改名「诱多」">
-     <button class="btn">打回</button>
+    <div>
+     <div class="sec-title">术语表 <span class="n">正文与课件校验基准</span></div>
+     <table class="mini-tbl">
+      <tr><th>名称</th><th>状态</th><th>备注</th></tr>
+      <tr><td>假突破</td><td><span class="tag ok">draft</span></td><td>别名 诱多</td></tr>
+      <tr><td>阻尼运动</td><td><span class="tag ok">draft</span></td><td>别名 动能衰竭</td></tr>
+      <tr><td>均线束</td><td><span class="tag warn">待裁决</span></td><td>与「均线组」冲突</td></tr>
+      <tr><td>筹码峰</td><td><span class="tag ok">draft</span></td><td>—</td></tr>
+     </table>
+     <p class="note" style="margin-top:6px">改名走「归档 + 新建」，归档可逆；重复名返回 409。</p>
+      </div>
+     </div>
     </div>
-   </div>
+   </details>
+
+   <details class="toolcard" style="margin-top:12px">
+    <summary><span class="tname">分节计划</span><span class="targs">6 节 · 每节一个逐节子代理</span></summary>
+    <div class="tout">
+     <table class="mini-tbl">
+      <tr><th>节</th><th>子节</th><th>预估时长</th><th>并行</th></tr>
+      <tr><td>第 1 章 什么是趋势</td><td>3</td><td>18 分钟</td><td>slot 1</td></tr>
+      <tr><td>第 2 章 趋势的阻尼运动</td><td>4</td><td>22 分钟</td><td>slot 2</td></tr>
+      <tr><td>第 3 章 均线与多空分界</td><td>3</td><td>19 分钟</td><td>slot 3</td></tr>
+      <tr><td>第 4 章 周线级别判断</td><td>3</td><td>16 分钟</td><td>待裁决</td></tr>
+     </table>
+    </div>
+   </details>
+
   </div>
  </div>
-
- <!-- 折叠：完整方案 + 起草过程 -->
- <details class="toolcard" style="margin-top:14px">
-  <summary><span class="tname">完整方案</span><span class="targs">概念图谱 · 术语表 · 分节计划</span></summary>
-  <div class="tout">
-   概念图谱：术语 26 · 别名 14 · 拒绝自环 2（<span class="num">趋势 / 阻尼运动·依赖动能 / M60 / 筹码峰 / 周期共振·依赖级别 / 假突破 …</span>）；术语名为正文与课件的校验基准，概念重名 409。<br>
-   分节计划：6 章各派一个逐节子代理，九步固定顺序（案例股 → 行情同步 → 行情读回 → 图示 → 回放课件 → 正文 → 其余课件 → 评审 → 溯源），并行度起步 3–4。
-  </div>
- </details>
- <details class="toolcard">
-  <summary><span class="tname">起草过程</span><span class="targs">综合 Agent · 基于 46 source units</span></summary>
-  <div class="tout">10:38 你触发了方案制作（素材集 2 · 课程目标 · 目录先验）→ 10:39 目录校验 5/6 通过 → 10:41 概念归一（别名 14 · 拒绝自环 2）→ 10:43 写入 方案/v3.md → 10:44 等待门禁①。<br>版本历史：v1 首稿 → v2 打回「合并 2/3 章」重起草 → <b>v3 当前</b>。</div>
- </details>
 
 </main>
 </div>
-</div></body></html>
+
+<!-- ================= Agent 面板 ================= -->
+<aside class="agent-rail" aria-label="制作 Agent">
+ <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
+ <input class="atab-in" type="radio" name="atab" id="atab-run">
+ <input class="atab-in" type="radio" name="atab" id="atab-files">
+
+ <div class="agent-head">
+  <span class="agent-ava">制</span>
+  <div class="agent-id"><b>制作 Agent</b><small>综合 Agent · 方案起草</small></div>
+  <span class="agent-live"><i class="dot-wait"></i>等待你确认</span>
+ </div>
+
+ <div class="agent-tabs">
+  <label for="atab-chat">对话</label>
+  <label for="atab-run">执行<span class="n">4</span></label>
+  <label for="atab-files">产物<span class="n">9</span></label>
+ </div>
+
+ <div class="agent-body">
+  <div class="agent-pane pane-chat">
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">制作 Agent · 10:43</div>
+     <div class="m-text"><p>已读取 2 份素材、128 units。大纲 v4 已起草；第 4 章匹配度 41%，需你决定。</p></div>
+     <div class="planw">
+      <div class="ph">执行计划 <span class="n">4/5</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>读取素材</span><span class="pn">128</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>目录校验</span><span class="pn">5/6</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>概念归一</span><span class="pn">26</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>起草 v4</span><span class="pn">10:43</span></div>
+      <div class="pw-item doing"><span class="tick"></span><span>等你确认</span><span class="pn">now</span></div>
+     </div>
+     <div class="tool-group">
+      <div class="tg-h">4 次工具调用 · 12.4k tokens</div>
+      <details class="tool"><summary><span class="tn">cloud_read_units</span><span class="ta">{...}</span><span class="ts">12.4s</span></summary><div class="tbody">{"units":128,"frames":42}</div></details>
+      <details class="tool"><summary><span class="tn">cloud_plan_write</span><span class="ta">{"version":4}</span><span class="ts">3.2s</span></summary><div class="tbody">{"path":"plan/v4.md","status":"draft"}</div></details>
+     </div>
+    </div>
+   </div>
+
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 10:41</div><div class="m-text"><p>「假突破」统一改成「诱多」。</p></div></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">制作 Agent · 10:43</div>
+     <div class="m-text"><p>已改名 1 处：<b>「假突破」→「诱多」</b>。章数不变。</p></div>
+    </div>
+   </div>
+
+   <!-- 大纲确认：内联打断卡 -->
+   <div class="interrupt" id="int-gate1">
+    <div class="ih"><span class="tag run">等待你确认</span> 课程大纲 v4</div>
+    <div class="it">第 4 章匹配度 41%，需你决定</div>
+    <div class="ia"><a class="btn sm" href="teacher-material.html">补充素材</a><button class="btn sm" onclick="document.getElementById('mismatch').scrollIntoView({behavior:'smooth',block:'center'})">修订提纲</button></div>
+    <div class="ia" style="margin-top:8px">
+     <button class="btn pri sm" disabled title="第 4 章待裁决，批准暂不可用">批准并开产</button>
+     <button class="btn sm" onclick="document.getElementById('outline').scrollIntoView({behavior:'smooth'})">微调方案</button>
+     <button class="btn sm" onclick="document.getElementById('plan-input').focus()">打回重起草</button>
+    </div>
+    
+   </div>
+
+  </div>
+
+  <!-- 执行页签 -->
+  <div class="agent-pane pane-run">
+   <div class="run-head">
+    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">制</span>综合 Agent · 方案起草<span class="st"><span class="tag ok">已完成</span></span></div>
+    <div class="rm"><span>model · producer-main</span><span>12.4k tokens</span><span>1m42s</span><span>4 calls</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>理解 Agent · 读取素材</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>128 units</span><span>42 frames</span><span>partial 2</span><span>12.4s</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>目录先验校验</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>5/6 通过</span><span>ch-04 41%</span><span>8.1s</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>概念归一</b><span class="st"><span class="tag ok">完成</span></span></div>
+    <div class="nm"><span>26 术语</span><span>14 别名</span><span>拒绝自环 2</span><span>5.7s</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>起草方案 v4</b><span class="st"><span class="tag warn">待确认</span></span></div>
+    <div class="nm"><span>plan/v4.md</span><span>draft</span><span>未锁定</span><span>3.2s</span></div>
+   </div>
+   
+  </div>
+
+  <!-- 产物页签 -->
+  <div class="agent-pane pane-files">
+   <div class="filetree">
+    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>workspace / TC-ZONGLUN<span class="n">9 files</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">plan/</span><span class="fs">4</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/v4.md</span><span class="fm"><span class="tag run">当前</span></span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/v3.md</span><span class="fs">10:39</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/outline.md</span><span class="fs">5/6</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/glossary.md</span><span class="fs">26</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">units/</span><span class="fs">128</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">sections/plan.json</span><span class="fs">6 节</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">trigger.json</span><span class="fs">10:38</span></div>
+   </div>
+   <div class="file-preview"># 总论卷 · 制作方案 v4（draft）
+status: 待确认
+chapters: 6 | concepts: 26 | aliases: 14
+open_issue: ch-04 match=0.41 < 0.60
+locked: false</div>
+   <p class="note" style="margin-top:8px">产物由 Agent 写入 workspace；教师的所有修改仍为 draft，签批/发布不在教师侧。</p>
+  </div>
+ </div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:34%"></i></span><span>34% · 12.4k / 36k</span></div>
+  <div class="quick"><button>合并章节</button><button>改术语</button><button>调整分节粒度</button></div>
+  <div class="composer">
+   <textarea id="plan-input" placeholder="输入修改指令，或使用上方快捷操作…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="附加素材"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用产物"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
+</div>
+<script>
+function focusPlan(text){
+  var c=document.getElementById('plan-input');
+  if(text) c.value=text;
+  c.focus();
+  c.scrollIntoView({block:'nearest'});
+}
+</script>
+</body></html>

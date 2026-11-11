@@ -1,0 +1,325 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>编排预览 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+.compose-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-hero);margin-bottom:10px}
+.compose-bar .lbl{font-size:11px;color:var(--p-mut)}
+.compose-bar select{max-width:190px}
+.blk .bt span.ty{display:inline-flex;align-items:center;gap:4px}
+.pv-cover{margin:0;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:18px 18px 16px;position:relative}
+.pv-cover .kicker{font:600 10px var(--font-mono);letter-spacing:.12em;color:#8fb6e8}
+.pv-cover h3{margin:6px 0 4px;font-size:18px;line-height:1.3}
+.pv-cover p{margin:0;font-size:11.5px;color:#b9c7da;line-height:1.6}
+.pv-cover .meta{display:flex;gap:10px;margin-top:12px;font-size:10.5px;color:#93a6bd;flex-wrap:wrap}
+.pv-cover .meta b{color:#fff;font-weight:600}
+.pv-sec{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--p-mut);border-bottom:1px dashed var(--p-line);padding-bottom:8px}
+.pv-sec .num{font:600 10px var(--font-mono);color:var(--p-pri);background:var(--p-pri-soft);border-radius:5px;padding:2px 6px}
+.pv-text{font-size:12.5px;line-height:1.85;color:var(--p-ink)}
+.pv-text p{margin:0 0 8px}
+.pv-text p:last-child{margin:0}
+.pv-text b{color:var(--p-pri)}
+.pv-cardgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv-card{border:1px solid var(--p-line);border-radius:9px;padding:9px 10px;font-size:11.5px;line-height:1.65;background:#fafbfd}
+.pv-card b{display:block;font-size:11.5px;margin-bottom:2px;color:var(--p-ink)}
+.pv-foot{display:flex;align-items:center;gap:8px;padding-top:9px;border-top:1px solid var(--p-line);font-size:11px;color:var(--p-mut)}
+.pv-foot .grow{flex:1}
+.pv-badge{font:600 10px var(--font-mono);color:#0f9d76;background:#eaf7f2;border-radius:4px;padding:2px 6px}
+@media(max-width:900px){.pv-cardgrid{grid-template-columns:1fr}}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9" r="1.6" fill="currentColor"/><path d="M4 18l5.5-5.5 3.5 3.5 3-3L20 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 14l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-quiz" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 9.5a2 2 0 1 1 2.6 1.9c-.6.2-.6.7-.6 1.2M11 15.5v.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M9 10v10" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+</svg>
+<div class="ops-app has-agent">
+
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div class="wb-col">
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><span><a href="teacher-workbench.html" style="color:var(--p-mut)">总论卷</a></span><span class="sep">/</span><b>编排预览</b>
+ <span class="right">
+  <span class="agent-pill ok"><i class="dot-ok"></i>Agent 空闲</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">编排预览</div></div>
+  <div class="a" style="flex-wrap:nowrap"><button class="btn pri" onclick="showTab(document.getElementById('tab-preview-btn'),'pane-preview')">生成预览</button></div>
+ </div>
+
+ <div class="stage-tabs" aria-label="阶段 2 · 内容生产">
+  <a href="teacher-assets.html">内容资产</a>
+  <a href="teacher-production.html">逐节生产</a>
+  <a href="teacher-compose.html" class="on">编排预览</a>
+ </div>
+
+ <div class="content-layout" style="grid-template-columns:minmax(0,1fr)">
+
+  <!-- 右：编排 / 预览 -->
+  <div>
+
+   <div class="ctabs" role="tablist">
+    <button class="on" id="tab-compose-btn" onclick="showTab(this,'pane-compose')">编排</button>
+    <button id="tab-preview-btn" onclick="showTab(this,'pane-preview')">预览</button>
+   </div>
+
+   <!-- 编排 -->
+   <div class="ctpane on" id="pane-compose">
+    <div class="compose-bar">
+     <span class="lbl">节</span>
+     <select class="fi" style="max-width:170px"><option>3.1 均线束 · 8 块</option><option>3.2 多空分界 · 待生成</option></select>
+     <span class="lbl">模板</span>
+     <select class="fi" style="max-width:170px"><option>标准讲解 · 图文回放</option><option>案例优先</option><option>快速复习</option></select>
+     <span style="flex:1"></span>
+     <button class="btn sm" onclick="focusCompose('把 3.1 的习题移到回放之后，结尾补一张小结卡。')">让 Agent 调顺序</button>
+    </div>
+
+    <div class="canvas">
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-layout"/></svg></span><div class="bt"><b>封面 · 章节入口</b><span class="ty">总论卷 · 第 3 章 · 3.1 均线束</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-layout"/></svg></span><div class="bt"><b>章节页 · 第 3 章 均线与多空分界</b><span class="ty">目标 3 条 · 承接第 2 章</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-file"/></svg></span><div class="bt"><b>正文 · 3.1 均线束</b><span class="ty">1,240 字 · draft v7 · 只读正文</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-image"/></svg></span><div class="bt"><b>图片 · 均线束结构图</b><span class="ty">SVG · 1440×900 · 替代文本已填</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-chart"/></svg></span><div class="bt"><b>K 线图 · M60 均线束回踩</b><span class="ty">600519 · 日线 · 3 个标注点 · 行情只读</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-play"/></svg></span><div class="bt"><b>回放 · 逐根回放</b><span class="ty">8 根 K 线 · 停在决策点</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-quiz"/></svg></span><div class="bt"><b>习题 · 即时自检</b><span class="ty">单选 · 3 选项 · 答案可回溯</span></div></div>
+     <div class="blk"><span class="drag">⋮⋮</span><span class="bi"><svg><use href="#i-file"/></svg></span><div class="bt"><b>正文 · 小结</b><span class="ty">3 条要点 · 与下节衔接</span></div></div>
+     <div class="blk add"><svg style="width:13px;height:13px"><use href="#i-plus"/></svg> 添加区块（正文片段 / 图片 / K 线图 / 回放 / 习题 / 小结）</div>
+    </div>
+
+       </div>
+
+   <!-- 预览 -->
+   <div class="ctpane" id="pane-preview">
+    <div class="preview">
+     <div class="pvhead">
+      <div class="t">第 3 章 均线与多空分界 <span class="tag ok">学员视图</span><span class="tag gray">第 3.1 节</span></div>
+      
+     </div>
+     <div class="pvbody">
+
+      <figure class="pv-cover">
+       <div class="kicker">TREND SUITE · 总论卷</div>
+       <h3>3.1 均线束：多头是否真的成立</h3>
+       <p>先看价格是否站上均线束，再用回踩确认支撑；跌破则证伪。</p>
+       <div class="meta"><span>时长 <b>12 min</b></span><span>难度 <b>进阶</b></span></div>
+      </figure>
+
+      <div class="pv-sec"><span class="num">01</span><b>本节先想一想</b><span>· 带着问题看</span></div>
+      <div class="pv-callout"><b>本节先想一想</b>价格站上均线束，就等于多头成立吗？先看随后三根 K 线如何回踩，再下结论。</div>
+
+      <div class="pv-sec"><span class="num">02</span><b>正文 · 均线束</b></div>
+      <div class="pv-text">
+       <p>均线束是<b>多条不同周期均线在同一价格区间收敛</b>的形态。它说明不同持仓成本的交易者在这一带达成短暂平衡，随后方向选择往往更干脆。</p>
+       <p>但「站上」只是第一步。真正的确认来自<b>回踩不破</b>：价格回落时，均线束仍能提供支撑，且回落量能收缩。</p>
+      </div>
+
+      <div class="pv-sec"><span class="num">03</span><b>结构图 · 均线束收敛与发散</b></div>
+      <div class="pv-chart">
+       <div class="ch"><span>图示 · 收敛 → 选择方向</span><span class="tag ok" style="background:#123a2e;color:#6ee7b7">SVG</span></div>
+       <div class="pv-bars" aria-label="均线收敛示意"><i style="height:44%"></i><i style="height:50%"></i><i style="height:47%" class="g"></i><i style="height:52%"></i><i style="height:49%"></i><i style="height:53%"></i><i style="height:66%"></i><i style="height:72%"></i><i style="height:69%" class="g"></i><i style="height:78%"></i></div>
+       <div class="pv-anno">均线收敛 · 放量选择方向 · 回踩确认</div>
+      </div>
+
+      <div class="pv-sec"><span class="num">04</span><b>K 线图 · M60 均线束回踩</b><span>· 600519 · 日线</span></div>
+      <div class="pv-chart">
+       <div class="ch"><span>600519 贵州茅台 · 2024-08-01 → 2024-09-30</span><span class="tag ok" style="background:#123a2e;color:#6ee7b7">行情只读</span></div>
+       <div class="pv-bars" aria-label="日 K 示意"><i style="height:38%"></i><i style="height:44%"></i><i style="height:41%" class="g"></i><i style="height:52%"></i><i style="height:58%"></i><i style="height:55%" class="g"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:68%"></i><i style="height:76%"></i><i style="height:71%" class="g"></i><i style="height:80%"></i><i style="height:86%"></i><i style="height:82%" class="g"></i><i style="height:90%"></i><i style="height:84%"></i><i style="height:88%"></i><i style="height:95%"></i></div>
+       <div class="pv-anno">2024-09-24 · 放量站上均线束 · 回踩不破</div>
+      </div>
+
+      <div class="pv-replay"><span class="play"><svg><use href="#i-play"/></svg></span><span><b>老师标注 · 逐根回放</b> · 8 根 K 线</span><span class="grow"></span><span class="chip mono">bar-replay-decision</span></div>
+
+      <div class="pv-sec"><span class="num">05</span><b>即时自检</b><span>· 1 道</span></div>
+      <div class="pv-check"><div class="q">回踩不破均线束，说明什么？</div><div class="o"><span>A · 趋势加速</span><span>B · 支撑有效</span><span>C · 必然反转</span></div></div>
+
+      <div class="pv-cardgrid">
+       <div class="pv-card"><b>本节要点</b>收敛看平衡，突破看量能，确认看回踩。</div>
+       <div class="pv-card"><b>下节衔接</b>均线束向上发散后，才进入多空分界的判断。</div>
+      </div>
+
+      <div class="pv-foot"><span class="pv-badge">DRAFT v7</span><span>内容由 Agent 生成 · 教研已审核元数据</span><span class="grow"></span><span>下一节 · 3.2 多空分界 →</span></div>
+
+     </div>
+    </div>
+       </div>
+
+  </div>
+ </div>
+
+</main>
+</div>
+
+<!-- ================= Agent 面板 ================= -->
+<aside class="agent-rail" aria-label="编排 Agent">
+ <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
+ <input class="atab-in" type="radio" name="atab" id="atab-run">
+ <input class="atab-in" type="radio" name="atab" id="atab-files">
+
+ <div class="agent-head">
+  <span class="agent-ava">编</span>
+  <div class="agent-id"><b>编排 Agent</b><small>3.1 均线束 · 区块编排</small></div>
+  <span class="agent-live"><i class="dot-ok"></i>就绪</span>
+ </div>
+
+ <div class="agent-tabs">
+  <label for="atab-chat">对话</label>
+  <label for="atab-run">执行<span class="n">1</span></label>
+  <label for="atab-files">产物<span class="n">3</span></label>
+ </div>
+
+ <div class="agent-body">
+  <div class="agent-pane pane-chat">
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">编排 Agent · 11:45</div>
+     <div class="m-text"><p>已排出 <b>8 个区块</b>，预计 12 分钟。</p></div>
+     <div class="planw">
+      <div class="ph">编排草案 v3 <span class="n">4/4</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>读取资产</span><span class="pn">7</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>生成区块</span><span class="pn">8</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>检查时长</span><span class="pn">12 min</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>渲染预览</span><span class="pn">完成</span></div>
+     </div>
+     <div class="tool-group">
+      <div class="tg-h">2 次工具调用 · 6.1k tokens · 48s</div>
+      <details class="tool"><summary><span class="tn">compose_render</span><span class="ta">{"template":"standard"}</span><span class="ts">3.9s</span></summary><div class="tbody">{"blocks":8,"minutes":12}</div></details>
+     </div>
+    </div>
+   </div>
+
+   <div class="suggest">
+    <span class="si"><svg style="width:13px;height:13px"><use href="#i-spark"/></svg></span>
+    <div class="st"><b>建议：习题移到回放之后，结尾补小结卡</b></div>
+    <button class="btn sm" onclick="focusCompose('采纳：把习题移到回放之后，并在结尾加一张「常见误判」小结卡。')">采纳</button>
+    <button class="btn sm">忽略</button>
+   </div>
+
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 11:49</div><div class="m-text"><p>按建议改，小结卡加「跌破均线束要减仓」。</p></div></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body"><div class="m-meta">编排 Agent · 11:50</div><div class="m-text"><p>移动 1 块、新增 1 块，正文不变。</p></div>
+     <div class="diff">
+      
+      <div class="dline"><span class="dt">移动</span><span>习题 · 即时自检：回放前 → 回放后</span></div>
+      <div class="dline"><span class="dt add">新增</span><span>小结卡 · 常见误判（含「跌破均线束要减仓」）</span></div>
+      <div class="dline"><span class="dt">时长</span><span>12 min → 13 min</span></div>
+     </div>
+    </div>
+   </div>
+
+   <div class="interrupt">
+    <div class="ih"><span class="tag run">等待你确认</span> 应用编排 v4</div>
+    
+    <p class="note" style="margin:6px 0">只调顺序，不改正文与行情数值</p>
+    <p>应用后写入编排 draft，可在「成品审核」提交；不触发发布、不改变教材正文版本。</p>
+    <div class="ia"><button class="btn pri sm">应用编排</button><button class="btn sm" onclick="focusCompose('先只移动习题，不加小结卡。')">调整</button><button class="btn sm">取消</button></div>
+   </div>
+
+  </div>
+
+  <div class="agent-pane pane-run">
+   <div class="run-head">
+    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">编</span>3.1 编排<span class="st"><span class="tag ok">4/4</span></span></div>
+    <div class="rm"><span>model · producer-main</span><span>6.1k tokens</span><span>48s</span></div>
+   </div>
+   <div class="run-node"><div class="nh"><b>读取已确认资产</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>7 项</span><span>全部 confirmed</span><span>1.2s</span></div></div>
+   <div class="run-node"><div class="nh"><b>按模板生成区块</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>8 块</span><span>标准讲解</span><span>2.4s</span></div></div>
+   <div class="run-node"><div class="nh"><b>检查依赖与时长</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>1 warning</span><span>习题位置</span></div></div>
+   <div class="run-node"><div class="nh"><b>渲染预览</b><span class="st"><span class="tag ok">完成</span></span></div><div class="nm"><span>学员视图</span><span>12 min</span><span>3.9s</span></div></div>
+  </div>
+
+  <div class="agent-pane pane-files">
+   <div class="filetree">
+    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>workspace / compose<span class="n">3 files</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-03/3.1.compose.json</span><span class="fs">v3</span></div>
+    <div class="file"><svg><use href="#i-layout"/></svg><span class="fn">ch-03/3.1.layout.json</span><span class="fs">8 块</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-03/3.1.preview.md</span><span class="fs">12 min</span></div>
+   </div>
+   <div class="file-preview"># 3.1.compose.json（draft）
+template: standard
+blocks:
+  1 cover
+  2 chapter
+  3 text   -> ch-03/textbook.md#3.1
+  4 image  -> ch-03/fig-01.svg
+  5 kline  -> ch-03/kline-01.json
+  6 replay -> bar-replay-decision
+  7 quiz   -> ch-03/quiz-01.json
+  8 summary
+minutes: 12</div>
+  </div>
+ </div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:28%"></i></span><span>28% · 10.1k / 36k</span></div>
+  <div class="quick"><button onclick="focusCompose('把习题移到回放之后。')">习题后移</button><button onclick="focusCompose('结尾补一张小结卡。')">加小结卡</button><button onclick="focusCompose('这一节压缩到 10 分钟。')">压缩时长</button></div>
+  <div class="composer">
+   <textarea id="compose-input" placeholder="描述编排改法，例如「习题放回放后」「开头加一道引子」…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="引用资产"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用章节"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
+</div>
+<script>
+function showTab(btn, id){
+  document.querySelectorAll('.ctabs button').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  document.querySelectorAll('.ctpane').forEach(function(p){p.classList.remove('on')});
+  document.getElementById(id).classList.add('on');
+}
+function focusCompose(text){
+  var c=document.getElementById('compose-input');
+  if(text) c.value=text;
+  c.focus();
+  c.scrollIntoView({block:'nearest'});
+}
+if(location.hash==='#preview'){
+  showTab(document.getElementById('tab-preview-btn'),'pane-preview');
+}
+</script>
+</body></html>

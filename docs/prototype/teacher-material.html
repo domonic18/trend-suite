@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>原始数据 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+.upload-hero{border:1.5px dashed #c9d3e2;border-radius:12px;background:#fafbfd;padding:26px 20px;text-align:center;transition:border-color .15s,background .15s}
+.upload-hero:hover{border-color:#9fb6e8;background:#f7faff}
+.upload-hero .uic{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #dbe5f6;color:var(--p-pri);display:grid;place-items:center;margin:0 auto 10px}
+.upload-hero .uic svg{width:21px;height:21px}
+.upload-hero b{display:block;font-size:15px}
+.upload-hero p{margin:2px 0 10px;color:var(--p-mut);font-size:12.5px}
+.upload-hero small{display:block;margin-top:9px;color:#9aa3b8;font-size:11px}
+.mdetail{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;border-top:1px dashed var(--p-line);margin-top:4px;padding:12px 2px 4px}
+.mdetail h4{margin:0 0 8px;font-size:11.5px;color:var(--p-mut);font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.mdetail h4 .grow{flex:1}
+.srch{display:flex;align-items:center;gap:5px;border:1px solid var(--p-line);border-radius:6px;padding:3px 7px;background:#fff;font-size:11px;color:var(--p-mut)}
+.srch input{border:none;outline:none;font-size:11px;width:92px;background:none}
+.mfoot{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+@media(max-width:1100px){.mdetail{grid-template-columns:1fr}}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+</svg>
+<div class="ops-app">
+
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
+  <div class="ops-g">当前课程 · 总论卷</div>
+  <a class="ops-i on" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div class="wb-col">
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><span><a href="teacher-workbench.html" style="color:var(--p-mut)">总论卷</a></span><span class="sep">/</span><b>原始数据</b>
+ <span class="right">
+  <span class="agent-pill"><i class="dot-ok"></i>转写服务正常</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div><div class="t">原始数据</div></div>
+  <div class="a"><a class="btn pri" href="teacher-textbook.html">生成教材 <svg style="width:12px;height:12px"><use href="#i-arrow"/></svg></a></div>
+ </div>
+
+ <!-- 上传：只保留一个动作 -->
+ <div class="ops-card">
+  <div class="h"><div><b>上传视频</b><small>mp4 / mov · ≤ 2GiB · 需含音频</small></div><span class="tag ok">自动转写</span></div>
+  <div class="b">
+   <div class="upload-hero">
+    <span class="uic"><svg><use href="#i-upload"/></svg></span>
+    <b>把视频拖到这里</b>
+    <p>或</p>
+    <button class="btn pri"><svg style="width:13px;height:13px"><use href="#i-plus"/></svg> 选择视频文件</button>
+    <small>上传后自动转写、抽取关键帧；断网会从断点续传。</small>
+   </div>
+  </div>
+ </div>
+
+ <!-- 视频列表 + 转写详情 -->
+ <div class="ops-card" id="list">
+  <div class="h"><div><b>视频与转写 · 4</b></div><span class="tag gray">转写中 1 · 完成 2 · 失败 1</span></div>
+  <div class="b" style="padding-top:2px">
+
+   <!-- 01 完成 -->
+   <details class="mat" open>
+    <summary class="up-row">
+     <div class="ut"><b>总论-01 · 趋势的定义</b><span>ast_8fe2 · 38:12 · 1.8GiB · 上传于 10:05</span></div>
+     <div><span class="st st-ok"><i></i>转写完成</span><span class="pct">128 units · 36 关键帧</span></div>
+     <div><div class="prog ok"><i style="width:100%"></i></div><span class="pct">100% · 用时 6m12s</span></div>
+     <div class="ua"><span class="btn sm" style="border:none;color:var(--p-pri);padding:2px 6px">收起</span></div>
+    </summary>
+
+    <div class="mdetail">
+     <div>
+      <h4>ASR 逐字稿 <span class="tag ok">128 units</span><span class="grow"></span><span class="srch"><svg style="width:11px;height:11px"><use href="#i-search"/></svg><input placeholder="搜关键词"></span></h4>
+      <div class="asr">
+       <div class="ah"><span>讲师 · 中文</span><span class="grow" style="flex:1"></span><span>置信度均值 96.4%</span></div>
+       <div class="seg"><span class="ts">00:00:12</span><span class="sp">讲师</span><span>趋势不是预测，而是对已经发生的价格结构的跟随。我们先把「趋势」这个词拆开。<span class="chip mono">u-128</span></span></div>
+       <div class="seg"><span class="ts">00:01:05</span><span class="sp">讲师</span><span>级别不成立，趋势就不成立。同一段行情，在日线上是趋势，放到周线上可能只是一次摆动。</span></div>
+       <div class="seg"><span class="ts">00:03:40</span><span class="sp">讲师</span><span>先定级别，再谈方向；这是后面所有判断的前提。<span class="chip mono">u-131</span></span></div>
+       <div class="seg"><span class="ts">00:06:18</span><span class="sp">学员</span><span>那如果高低点没有依次抬高，还能叫上升趋势吗？</span></div>
+       <div class="seg"><span class="ts">00:06:44</span><span class="sp">讲师</span><span>不能。摆动高低点被依次抬高，才构成上升趋势；否则只是反弹或震荡。</span></div>
+       <div class="seg"><span class="ts">00:09:05</span><span class="sp">讲师</span><span>判断趋势，先找证伪条件，再谈延续。跌破最近一个有效摆动低点，原假设就失效了。<span class="chip mono">u-145</span></span></div>
+       <div class="seg"><span class="ts">00:12:30</span><span class="sp">讲师</span><span>这里的反例很重要：下跌中的反弹如果没有突破前高，仍然属于原级别的调整。</span></div>
+       <div class="seg"><span class="ts">00:18:02</span><span class="sp">讲师</span><span>所以本节你只需要记住一句话：先证伪，再确认；先定级别，再谈方向。</span></div>
+      </div>
+      <div class="mfoot"><span style="flex:1"></span><button class="btn sm">导出 txt</button><button class="btn sm">重新转写</button></div>
+     </div>
+
+     <div>
+      <h4>关键帧 <span class="tag ok">36 张</span><span class="grow"></span><span class="note">点击可放大</span></h4>
+      <div class="kfgrid">
+       <figure class="kf"><div class="thumb"><i style="height:38%"></i><i style="height:44%"></i><i style="height:41%" class="g"></i><i style="height:52%"></i><i style="height:58%"></i><i style="height:55%" class="g"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:68%"></i><i style="height:76%"></i></div><figcaption><span class="ts">00:03:40</span>级别示意</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:30%"></i><i style="height:36%"></i><i style="height:33%" class="g"></i><i style="height:42%"></i><i style="height:50%"></i><i style="height:47%"></i><i style="height:58%"></i><i style="height:66%"></i><i style="height:72%" class="g"></i><i style="height:80%"></i></div><figcaption><span class="ts">00:06:44</span>摆动低点</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:74%"></i><i style="height:68%"></i><i style="height:71%" class="g"></i><i style="height:60%"></i><i style="height:54%"></i><i style="height:57%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:38%" class="g"></i></div><figcaption><span class="ts">00:09:05</span>跌破证伪</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:42%"></i><i style="height:48%"></i><i style="height:45%" class="g"></i><i style="height:56%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:68%"></i><i style="height:74%"></i><i style="height:80%" class="g"></i></div><figcaption><span class="ts">00:12:30</span>反弹未破前高</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:66%"></i><i style="height:72%"></i><i style="height:69%" class="g"></i><i style="height:78%"></i><i style="height:84%"></i><i style="height:80%"></i><i style="height:88%"></i><i style="height:92%" class="g"></i></div><figcaption><span class="ts">00:15:18</span>趋势延续</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:58%"></i><i style="height:52%"></i><i style="height:55%" class="g"></i><i style="height:46%"></i><i style="height:50%"></i><i style="height:44%" class="g"></i><i style="height:40%"></i><i style="height:36%"></i></div><figcaption><span class="ts">00:18:02</span>结论页</figcaption></figure>
+      </div>
+     </div>
+    </div>
+
+    <div class="mfoot" style="padding-bottom:10px">
+     <a class="btn pri sm" href="teacher-textbook.html">用这份逐字稿生成教材</a>
+     <span style="flex:1"></span>
+     <button class="btn sm">删除素材</button>
+    </div>
+   </details>
+
+   <!-- 02 转写中 -->
+   <details class="mat">
+    <summary class="up-row">
+     <div class="ut"><b>总论-02 · 趋势的阻尼运动</b><span>ast_9d31 · 41:05 · 1.9GiB · 上传于 10:07</span></div>
+     <div><span class="st st-run"><i></i>转写中</span><span class="pct">已转 62% 可读</span></div>
+     <div><div class="prog"><i style="width:62%"></i></div><span class="pct">62% · 预计 4 分钟</span></div>
+     <div class="ua"><span class="btn sm" style="border:none;color:var(--p-pri);padding:2px 6px">查看进度</span></div>
+    </summary>
+    <div style="border-top:1px dashed var(--p-line);padding:12px 2px 10px">
+     <div class="pipe">
+      <div class="p done"><b>上传</b>100% · 1.9GiB</div>
+      <div class="p done"><b>抽音频</b>完成 41:05</div>
+      <div class="p cur"><b>ASR 转写</b>62% · 已出 79 units</div>
+      <div class="p"><b>关键帧</b>48% · 17 张</div>
+      <div class="p"><b>索引</b>等待</div>
+     </div>
+     <div class="transcript" style="border-top:none;padding-top:10px">
+      <div><span class="ts">00:00:08</span>趋势的运行像阻尼运动：动能一次次衰减，直到新的驱动出现。<span class="chip">unit_0231</span></div>
+      <div><span class="ts">00:06:22</span>均线粘合的本质，是不同周期的持仓成本趋于一致。<span class="chip">unit_0248</span></div>
+      <div class="partial">后续 38% 转写中；已转部分可以先看，但暂时不能作为大纲锁定依据。</div>
+     </div>
+     <div class="mfoot"><button class="btn sm">暂停转写</button><button class="btn sm">取消</button><span style="flex:1"></span><span class="note">完成时通知你</span></div>
+    </div>
+   </details>
+
+   <!-- 03 排队 -->
+   <details class="mat">
+    <summary class="up-row">
+     <div class="ut"><b>总论-03 · 实盘复盘</b><span>ast_a7b0 · 36:48 · 1.7GiB · 上传于 10:08</span></div>
+     <div><span class="st st-mut"><i></i>排队中</span><span class="pct">前方 1 个任务</span></div>
+     <div><div class="prog"><i style="width:0"></i></div><span class="pct">未开始</span></div>
+     <div class="ua"><span class="btn sm" style="border:none;padding:2px 6px">取消</span></div>
+    </summary>
+   </details>
+
+   <!-- 04 失败 -->
+   <details class="mat">
+    <summary class="up-row">
+     <div class="ut"><b>总论-04 · 筹码分布</b><span>ast_c1d4 · 22:10 · 0.9GiB · 上传于 10:12</span></div>
+     <div><span class="st st-err"><i></i>失败</span><span class="pct">未检测到音频流</span></div>
+     <div><div class="prog err"><i style="width:8%"></i></div><span class="pct">校验未通过 · 未入队</span></div>
+     <div class="ua"><span class="btn sm" style="border:none;color:var(--p-pri);padding:2px 6px">重新上传</span></div>
+    </summary>
+    <div style="border-top:1px dashed var(--p-line);padding:10px 2px 4px">
+     <p class="note" style="margin:0">这个文件只有视频流，没有音频轨，转写无法开始。半成品已清理，不会占用素材配额。换一个带音轨的版本重新上传即可。</p>
+    </div>
+   </details>
+
+  </div>
+ </div>
+
+</main>
+</div>
+</div>
+</body></html>

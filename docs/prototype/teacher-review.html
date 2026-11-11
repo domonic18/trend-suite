@@ -1,109 +1,316 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>成品审核 · 总论卷 · 生产工作台</title>
-<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css">
-</head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+.ritem .rmeta .tag{font-size:10px;padding:0 5px}
+.pv-bars span{flex:1;background:#3DBE9B;border-radius:1px 1px 0 0;min-height:3px;opacity:.85;display:block}
+.pv-bars span.g{background:#e05d68}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-todo" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-</svg><div class="ops-app">
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4.2 3.4c-.5.4-.8.2-.8-.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="ops-app has-agent">
+
 <aside class="ops-sb">
  <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
  <nav class="ops-menu">
   <div class="ops-g">课程</div>
-  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>课程内容</a>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 待审核</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
   <div class="ops-g">当前课程 · 总论卷</div>
-  <a class="ops-i" href="teacher-plan.html"><svg><use href="#i-plan"/></svg>素材与方案</a>
-  <a class="ops-i" href="teacher-production.html"><svg><use href="#i-board"/></svg>逐节生产</a>
-  <a class="ops-i on" href="teacher-review.html"><svg><use href="#i-check-c"/></svg>成品审核</a>
-  <a class="ops-i" href="teacher-production.html#todo"><svg><use href="#i-todo"/></svg>人工待办<span class="cnt">2</span></a>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
  </nav>
  <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
 </aside>
-<div>
+
+<div class="wb-col">
 <header class="ops-top">
- <span><a href="teacher-workbench.html" style="color:var(--p-mut)">课程内容</a></span><span class="sep">/</span><b>总论卷 · 成品审核</b>
- <span class="right"><span>教师写入恒为 draft</span><a href="index.html">原型索引</a></span>
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><b>总论卷 · 成品审核</b>
+ <span class="right">
+  <span class="agent-pill warn"><i class="dot-wait"></i>Agent 等待你审核</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
 </header>
 <main class="ops-main">
 
- <div class="ops-ph" style="max-width:880px;margin:0 auto">
-  <div><div class="t">总论卷 <span class="tag warn" style="vertical-align:2px">门禁② · 等你审核</span></div><div class="s">TC-ZONGLUN · 6 节全部产出 · 评审自评全过线（最低 8.4）</div></div>
+ <div class="ops-ph">
+  <div><div class="t">成品审核 <span class="tag warn" style="vertical-align:2px">待你决定</span></div></div>
+  <div class="a" style="flex-wrap:nowrap"><a class="btn sm" href="student-course.html">打开完整预览</a></div>
  </div>
 
- <div class="journey">
+ <div class="nextaction">
+  <span class="na-ic"><svg><use href="#i-spark"/></svg></span>
+  <div class="na-txt"><b>6 节全部完成，建议先看最低分第 3 章（8.4）</b></div>
+  <a class="btn pri" href="#sec-03">审核第 3 章</a>
+ </div>
 
-  <!-- 阶段 1-2（完成，折叠） -->
-  <a class="jstep done" href="teacher-plan.html"><span class="jn">✓</span><div><b>素材与方案</b><span class="js">方案 v3 已批准</span></div><span class="chev">›</span></a>
-  <a class="jstep done" href="teacher-production.html"><span class="jn">✓</span><div><b>逐节生产</b><span class="js">6/6 节 · 九步完成 · 溯源已上报</span></div><span class="chev">›</span></a>
-
-  <!-- 阶段 3（当前，展开） -->
-  <div class="jstep cur">
-   <div style="display:flex;align-items:center;gap:12px;flex:1"><span class="jn">3</span><div><b>成品审核</b><span class="js">先预览成品，再做决定</span></div></div>
+ <div class="review-split" id="review-list">
+  <div>
+   <div class="rlist">
+    <div class="ritem"><b>第 1 章 什么是趋势</b><div class="rmeta"><span class="tag ok">通过</span><span class="sc">8.8</span></div><div class="rbar"><i style="width:88%"></i></div></div>
+    <div class="ritem"><b>第 2 章 趋势的阻尼运动</b><div class="rmeta"><span class="tag ok">通过</span><span class="sc">8.6</span></div><div class="rbar"><i style="width:86%"></i></div></div>
+    <div class="ritem on" id="sec-03"><b>第 3 章 均线与多空分界</b><div class="rmeta"><span class="tag warn">最低分</span><span class="sc">8.4</span></div><div class="rbar"><i style="width:84%"></i></div></div>
+    <div class="ritem"><b>第 4 章 周线级别判断</b><div class="rmeta"><span class="tag ok">通过</span><span class="sc">8.5</span></div><div class="rbar"><i style="width:85%"></i></div></div>
+    <div class="ritem"><b>第 5 章 筹码密集与发散</b><div class="rmeta"><span class="tag ok">通过</span><span class="sc">8.7</span></div><div class="rbar"><i style="width:87%"></i></div></div>
+    <div class="ritem"><b>第 6 章 综合研判框架</b><div class="rmeta"><span class="tag ok">通过</span><span class="sc">8.9</span></div><div class="rbar"><i style="width:89%"></i></div></div>
+   </div>
   </div>
-  <div class="jbody">
 
-   <!-- 第 1 步：预览 -->
-   <div class="abanner" style="background:var(--p-pri-soft);border-color:#d4e3ff">
-    <div class="ab-txt">
-     <span class="ab-title" style="color:var(--p-pri)">第 1 步 · 预览成品</span>
-     <p>与学员端同构渲染：hero 节头 / 四型 callout / 术语边注 / A·B 类图示 / 对比滑块 / 老师标注 + 逐根回放判断 / 画中画联动 / 滚动叙事 / 即时自检</p>
+  <div>
+   <div class="preview">
+    <div class="pvhead">
+     <div class="t">第 3 章 均线与多空分界 <span class="tag ok">8.4 · 通过</span></div>
+     <a href="teacher-textbook.html" style="font-size:11.5px;color:var(--p-pri);margin-top:5px;display:inline-block">查看教材正文 →</a>
     </div>
-    <div class="ab-actions"><a class="btn pri" href="student-course.html">打开逐节预览 →</a></div>
+    <div class="pvbody">
+     <div class="pv-callout"><b>本节先想一想</b>价格站上均线束，就等于多头成立吗？先看随后三根 K 线如何回踩，再下结论。</div>
+     <div class="pv-chart">
+      <div class="ch"><span>M60 · 日线</span><span class="tag ok">行情已读回</span><span class="tag gray">回放已校验</span></div>
+      <div class="pv-bars" aria-label="日 K 示意"><span style="height:38%"></span><span style="height:44%"></span><span style="height:41%" class="g"></span><span style="height:52%"></span><span style="height:58%"></span><span style="height:55%" class="g"></span><span style="height:64%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:76%"></span><span style="height:71%" class="g"></span><span style="height:80%"></span><span style="height:86%"></span><span style="height:82%" class="g"></span><span style="height:90%"></span><span style="height:84%"></span><span style="height:88%"></span><span style="height:95%"></span></div>
+      <div class="pv-anno">2024-09-24 · 放量站上均线束 · 回踩不破</div>
+     </div>
+     <div class="pv-replay"><span class="play"><svg><use href="#i-play"/></svg></span><span><b>老师标注 · 逐根回放</b> · 8 根 K 线</span><span class="grow"></span><span class="chip mono">bar-replay-decision</span></div>
+     <div class="pv-check"><div class="q">即时自检 · 回踩不破均线束，说明什么？</div><div class="o"><span>A · 趋势加速</span><span>B · 支撑有效</span><span>C · 必然反转</span></div></div>
+    </div>
    </div>
 
    <!-- rubric -->
-   <div class="panel-h" style="margin-bottom:8px"><div><b>评审 Agent 自评 · rubric 十维</b><small>通过线 8.0 ·「行情数值可核」为一票否决项</small></div><span class="tag ok">全过线 · 最低 8.4</span></div>
-   <div class="rub" style="margin-bottom:14px">
-    <div class="r"><span>grounded · 行情可核（一票否决）</span><span class="t"><i style="width:95%"></i></span><span class="sc">9.5</span></div>
-    <div class="r"><span>术语准确</span><span class="t"><i style="width:88%"></i></span><span class="sc">8.8</span></div>
-    <div class="r"><span>结构完整</span><span class="t"><i style="width:85%"></i></span><span class="sc">8.5</span></div>
-    <div class="r"><span style="color:#9aa3b8">其余 7 维</span><span class="note">已折叠 · 均 ≥ 8.4</span><span></span></div>
+   <div class="ops-card" style="margin-top:14px">
+    <div class="h"><div><b>评审 Agent 自评 · 十维</b></div><span class="tag ok">全部过线</span></div>
+    <div class="b" style="padding-top:6px">
+     <div class="rub">
+      <div class="r"><span>grounded · 行情可核（一票否决）</span><span class="t"><i style="width:91%"></i></span><span class="sc">9.1</span></div>
+      <div class="r"><span>术语准确</span><span class="t"><i style="width:84%"></i></span><span class="sc">8.4</span></div>
+      <div class="r"><span>结构完整</span><span class="t"><i style="width:86%"></i></span><span class="sc">8.6</span></div>
+      <div class="r"><span>图示可读</span><span class="t"><i style="width:85%"></i></span><span class="sc">8.5</span></div>
+     </div>
+     <details class="toolcard" style="margin-top:10px">
+      <summary><span class="tname">其余 6 维</span><span class="targs">均 ≥ 8.4 · 逐段修改指令已折叠</span></summary>
+      <div class="tout">
+       分节粒度 8.4 · 论证密度 8.6 · 案例贴合 8.7 · 课件断言 8.8 · 回放一致性 8.9 · 语言风格 8.6。<br>
+       逐段修改指令：sec-zl-03#p12「均线组」→「均线束」；sec-zl-03#p18 分节 3.2/3.3 建议合并（非阻塞）。
+      </div>
+     </details>
+    </div>
    </div>
 
    <!-- 就绪度 -->
-   <div class="panel-h" id="readiness" style="margin-bottom:8px"><div><b>发布就绪度 · 五门禁</b><small>只读 · 与发布同源判定（全绿才可交接）</small></div><span class="tag gray">4/5</span></div>
-   <div style="margin-bottom:14px">
-    <div class="choice-row"><span class="tag ok">通过</span><b>图示解析</b><span class="note">22/22 可解析</span></div>
-    <div class="choice-row"><span class="tag ok">通过</span><b>课件断言证明</b><span class="note">36/36 断言齐备</span></div>
-    <div class="choice-row"><span class="tag ok">通过</span><b>片段窗</b><span class="note">9/9 落在已发布正文内</span></div>
-    <div class="choice-row"><span class="tag ok">通过</span><b>标注与回放</b><span class="note">43 锚点 · 交易日可核</span></div>
-    <div class="choice-row"><span class="tag err">未通过</span><b>终审签批</b><span class="note">待运营（对指纹 9f78 4726 … 签名；改内容即失效须重签）</span></div>
-   </div>
-
-   <!-- 第 2 步：决定 -->
-   <div class="abanner warn" id="audit">
-    <div class="ab-txt">
-     <span class="ab-title">第 2 步 · 做出决定</span>
-     <p><b>通过</b>＝交接运营签批发布；<b>reject</b>＝附修改指令回灌重写（回灌后复审）。内容指纹 <span class="num">9f78 4726 …</span>——改内容即已签批失效（须重签）。</p>
+   <div class="ops-card" id="readiness">
+    <div class="h"><div><b>发布就绪度 · 五项条件</b></div><span class="tag gray">4/5</span></div>
+    <div class="b" style="padding-top:6px">
+     <div class="readiness">
+      <div class="rrow"><span class="tag ok">通过</span><b>图示解析</b><span class="note">22/22</span></div>
+      <div class="rrow"><span class="tag ok">通过</span><b>课件断言</b><span class="note">36/36</span></div>
+      <div class="rrow"><span class="tag ok">通过</span><b>片段窗</b><span class="note">9/9</span></div>
+      <div class="rrow"><span class="tag ok">通过</span><b>标注与回放</b><span class="note">43 锚点</span></div>
+      <div class="rrow"><span class="tag gray">待运营</span><b>终审签批</b><span class="note">教师侧不提供入口</span></div>
+     </div>
     </div>
-    <div class="ab-actions"><a class="btn pri" href="ops-publish.html">通过 · 交接运营</a><a class="btn" href="teacher-production.html">reject · 回灌</a></div>
    </div>
 
-   <!-- 折叠 -->
-   <details class="toolcard">
+   <!-- 结构化编辑三抽屉 -->
+   <div class="ops-card">
+    <div class="h"><div><b>结构化编辑</b></div></div>
+    <div class="b" style="padding-top:6px">
+     <div class="drawer3">
+      <details>
+       <summary>节元数据<span class="chev">▾</span></summary>
+       <div class="db">标题 / 摘要 / 关键词 / 节序；保存后进入 draft，若已签批则标记 approval_stale。</div>
+      </details>
+      <details>
+       <summary>案例股清单<span class="chev">▾</span></summary>
+       <div class="db">ch-03：贵州茅台（600519）、宁德时代（300750）；周期口径日线，回放窗口 2024-09。</div>
+      </details>
+      <details>
+       <summary>术语<span class="chev">▾</span></summary>
+       <div class="db">均线束（别名 均线组 · draft）；假突破（别名 诱多 · draft）。改名走归档 + 新建，归档可逆。</div>
+      </details>
+     </div>
+    </div>
+   </div>
+
+   <!-- 评审往返 -->
+   <details class="toolcard" style="margin-top:14px">
     <summary><span class="tname">评审往返记录</span><span class="targs">含一次 reject → 回灌 → 复审</span></summary>
     <div class="tout">
-     <span class="num">14:20</span> 第 1 轮：sec-zl-02 自评 <b style="color:#d9483f">7.4 · reject</b>（「阻尼/动能衰竭」混用 3 处 · 分节过细）→ 按逐段修改指令回灌 1/3<br>
+     <span class="num">14:20</span> 第 1 轮：sec-zl-02 自评 <b style="color:#b3352c">7.4 · reject</b>（「阻尼/动能衰竭」混用 3 处 · 分节过细）→ 按逐段修改指令回灌 1/3<br>
      <span class="num">14:24</span> 重写完成 → 提交复审<br>
-     <span class="num">15:02</span> 第 2 轮复审：<b style="color:#0b7a5c">8.6 · approve</b>；grounded 行情可核通过。6 节全过线，等待门禁②。
+     <span class="num">15:02</span> 第 2 轮复审：<b style="color:#0b7a5c">8.6 · approve</b>；6 节全过线，等待你的决定。
     </div>
    </details>
-   <details class="toolcard">
-    <summary><span class="tname">结构化编辑 · 三抽屉</span><span class="targs">节元数据 / 案例股清单 / 术语</span></summary>
-    <div class="tout">
-     写恒为 <span class="num">draft</span>；正文 DSL 不在工作台手改（绕过行情与术语校验）——改正文走生产回灌。<br>
-     术语示例：假突破（别名 诱多 · draft）／阻尼运动（别名 动能衰竭 · <b style="color:#b37400">archived</b>，可恢复）。改名走「归档 + 新建」，未解引用在就绪度显形。
+
+   <!-- 交接状态（只读） -->
+   <div class="ops-card" id="handoff" style="margin-top:14px">
+    <div class="h"><div><b>交接运营</b></div><span class="tag gray">未开始</span></div>
+    <div class="b" style="padding-top:6px">
+     <div class="choice-row"><span class="jn" style="width:22px;height:22px;border-radius:50%;background:var(--p-soft);display:grid;place-items:center;font-size:11px">1</span><b>审核通过</b><span class="note">在右侧对话中决定</span></div>
+     <div class="choice-row"><span class="jn" style="width:22px;height:22px;border-radius:50%;background:var(--p-soft);display:grid;place-items:center;font-size:11px">2</span><b>通知运营</b><span class="note">运营收到待签批任务</span></div>
+     <div class="choice-row"><span class="jn" style="width:22px;height:22px;border-radius:50%;background:var(--p-soft);display:grid;place-items:center;font-size:11px">3</span><b>签批发布</b><span class="note">由运营执行，失败可回滚</span></div>
+     <div class="choice-row"><span class="jn" style="width:22px;height:22px;border-radius:50%;background:var(--p-soft);display:grid;place-items:center;font-size:11px">4</span><b>学员可见</b><span class="note">按进度开放</span></div>
     </div>
-   </details>
+   </div>
+
+  </div>
+ </div>
+
+</main>
+</div>
+
+<!-- ================= Agent 面板 ================= -->
+<aside class="agent-rail" aria-label="评审 Agent">
+ <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
+ <input class="atab-in" type="radio" name="atab" id="atab-run">
+ <input class="atab-in" type="radio" name="atab" id="atab-files">
+
+ <div class="agent-head">
+  <span class="agent-ava">评</span>
+  <div class="agent-id"><b>评审 Agent</b><small>成品审核 · 逐节自评</small></div>
+  <span class="agent-live"><i class="dot-wait"></i>等待你审核</span>
+ </div>
+
+ <div class="agent-tabs">
+  <label for="atab-chat">对话</label>
+  <label for="atab-run">执行<span class="n">6</span></label>
+  <label for="atab-files">产物<span class="n">12</span></label>
+ </div>
+
+ <div class="agent-body">
+  <div class="agent-pane pane-chat">
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">评审 Agent · 15:04</div>
+     <div class="m-text"><p>6 节全部完成。第 3 章 <b>8.4</b> 最低；发布就绪度 <b>4/5</b>，仅差运营签批。</p></div>
+     <div class="planw">
+      <div class="ph">审核计划 <span class="n">6/6 节已自评 · 1 项待你决定</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 1 章 · 8.8</span><span class="pn">通过</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 2 章 · 8.6（退回 1 次）</span><span class="pn">通过</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 3 章 · 8.4</span><span class="pn">通过</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 4 章 · 8.5（补素材后）</span><span class="pn">通过</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 5 章 · 8.7</span><span class="pn">通过</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>第 6 章 · 8.9</span><span class="pn">通过</span></div>
+      <div class="pw-item doing"><span class="tick"></span><span>审核决定 · 等你</span><span class="pn">now</span></div>
+     </div>
+    </div>
+   </div>
+
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 15:08</div><div class="m-text"><p>第 3 章分节偏细，3.2 / 3.3 合并；术语统一用「均线束」。</p></div></div>
+   </div>
+
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body"><div class="m-meta">评审 Agent · 15:08</div><div class="m-text"><p>已把这两条填入退回表单：目标 <b>sec-zl-03</b>，问题类型「分节粒度 + 术语」，回灌预算 <b>0/3 → 1/3</b>。你可以在下方表单里补充严重度，或直接确认退回。</p></div></div>
+   </div>
+
+   <!-- 审核决定：内联打断卡 -->
+   <div class="interrupt" id="int-gate2">
+    <div class="ih"><span class="tag run">等待你审核</span> 成品审核 · 通过还是退回？</div>
+    <div class="ia">
+     <button class="btn pri sm">通过并交接运营</button>
+     <button class="btn sm" onclick="document.getElementById('reject-form').open=true">退回重写</button>
+    </div>
+    <details class="reject-form" id="reject-form">
+     <summary>填写结构化退回意见（已预填 2 项）</summary>
+     <div class="rf">
+      <div class="fr"><span class="note" style="width:52px">目标节</span><select class="fi"><option>第 3 章 · sec-zl-03</option><option>第 2 章 · sec-zl-02</option><option>全部 6 节</option></select></div>
+      <div class="fr"><span class="note" style="width:52px">问题类型</span><span class="chip">分节粒度</span><span class="chip">术语</span><span class="chip">grounded</span><span class="chip">图示</span></div>
+      <textarea class="fi" style="min-height:58px">3.2 / 3.3 合并为「均线束的支撑与回踩」；全文「均线组」统一为「均线束」。</textarea>
+      <div class="fr"><span class="note">回灌预算 0/3 · 退回后 1/3；预计 4 分钟返回复审</span></div>
+      <div><button class="btn pri sm">提交退回并回灌</button></div>
+     </div>
+    </details>
+   </div>
 
   </div>
 
-  <!-- 阶段 4（折叠） -->
-  <a class="jstep" href="ops-publish.html"><span class="jn">4</span><div><b>交接运营</b><span class="js">签批（指纹）→ 发布（迁移先行 · 可回滚）→ 学员可见</span></div><span class="chev">›</span></a>
+  <!-- 执行页签 -->
+  <div class="agent-pane pane-run">
+   <div class="run-head">
+    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">评</span>评审 Agent · 十维自评<span class="st"><span class="tag ok">已完成</span></span></div>
+    <div class="rm"><span>6 sections</span><span>10 dims</span><span>2 rejects</span><span>15:04</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>ch-01 什么是趋势</b><span class="st"><span class="tag ok">8.8</span></span></div>
+    <div class="nm"><span>grounded 9.5</span><span>术语 8.8</span><span>approve</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>ch-02 趋势的阻尼运动</b><span class="st"><span class="tag ok">8.6</span></span></div>
+    <div class="nm"><span>第 1 轮 7.4 reject</span><span>回灌 1/3</span><span>复审 8.6</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>ch-03 均线与多空分界</b><span class="st"><span class="tag warn">8.4 · 最低</span></span></div>
+    <div class="nm"><span>grounded 9.1</span><span>术语 8.4</span><span>分节 8.4</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>ch-04 周线级别判断</b><span class="st"><span class="tag ok">8.5</span></span></div>
+    <div class="nm"><span>补素材后重评</span><span>grounded 8.9</span><span>approve</span></div>
+   </div>
+   <div class="run-node">
+    <div class="nh"><b>ch-05 · ch-06</b><span class="st"><span class="tag ok">8.7 / 8.9</span></span></div>
+    <div class="nm"><span>全过线</span><span>无未决项</span></div>
+   </div>
+  </div>
 
+  <!-- 产物页签 -->
+  <div class="agent-pane pane-files">
+   <div class="filetree">
+    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>workspace / TC-ZONGLUN / reviews<span class="n">12 files</span></div>
+    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">reviews/</span><span class="fs">6</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-01.json</span><span class="fs">8.8</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-02.json</span><span class="fs">8.6</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-03.json</span><span class="fm"><span class="tag warn">8.4</span></span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-04.json</span><span class="fs">8.5</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">ch-05.json · ch-06.json</span><span class="fs">8.7 / 8.9</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">report.md</span><span class="fs">15:04</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">readiness.json</span><span class="fs">4/5</span></div>
+    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">fingerprint.txt</span><span class="fs">9f78…</span></div>
+   </div>
+   <div class="file-preview"># review / ch-03.json
+score: 8.4
+verdict: approve
+dimensions:
+  grounded: 9.1
+  terminology: 8.4
+  structure: 8.6
+  figure: 8.5
+blocking: []
+notes: 分节 3.2/3.3 可合并（非阻塞）</div>
+  </div>
  </div>
-</main>
-</div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:48%"></i></span><span>48% · 17.3k / 36k</span></div>
+  <div class="quick"><button>汇总问题</button><button>退回第 3 章</button></div>
+  <div class="composer">
+   <textarea placeholder="输入退回意见，或直接说「通过」…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="附加材料"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用章节"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
 </div></body></html>
