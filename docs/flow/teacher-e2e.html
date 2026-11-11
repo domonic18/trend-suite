@@ -15037,5 +15037,82 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
     });
   </script>
+
+<!-- trend-suite: 原型页跳转注入（人工追加；archify 再生成后需按 docs/design/README.md 重放，勿手改生成代码本体） -->
+<style>
+.ts-proto-chip{cursor:pointer}
+.ts-proto-chip rect{fill:#5e6ad2;fill-opacity:.92}
+.ts-proto-chip:hover rect{fill:#7a84e0}
+.ts-proto-chip text{fill:#fff;font-size:10px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em}
+#ts-proto-panel{position:fixed;right:16px;bottom:16px;z-index:9999;background:#111318;border:1px solid #23262f;border-radius:10px;padding:10px 12px;font:12.5px/1.7 ui-sans-serif,system-ui,-apple-system,"PingFang SC",sans-serif;color:#e6e8ee;box-shadow:0 12px 32px rgba(0,0,0,.45);max-width:320px}
+#ts-proto-panel b{display:block;margin-bottom:4px;font-size:12px}
+#ts-proto-panel a{display:block;color:#8ea0f2;text-decoration:none;padding:1px 0}
+#ts-proto-panel a:hover{color:#c3c8f5}
+#ts-proto-panel .ts-toggle{cursor:pointer;color:#8b93a7;font-size:11px;user-select:none}
+</style>
+<script>
+(function () {
+  var MAP = {
+  "ops_account": "../design/ops-accounts.html",
+  "h_brief": "../design/teacher-workbench.html",
+  "c_upload": "../design/teacher-workbench.html#upload",
+  "c_pipeline": "../design/teacher-workbench.html#materials",
+  "a_understand": "../design/teacher-workbench.html#materials",
+  "h_trigger": "../design/teacher-workbench.html#trigger",
+  "a_synthesis": "../design/teacher-plan.html",
+  "h_plan": "../design/teacher-plan.html#gate",
+  "a_section": "../design/teacher-production.html",
+  "a_review": "../design/teacher-review.html",
+  "c_readiness": "../design/teacher-review.html#readiness",
+  "h_audit": "../design/teacher-review.html#audit",
+  "ops_signoff": "../design/ops-publish.html#signoff",
+  "ops_publish": "../design/ops-publish.html#publish",
+  "x_outline": "../design/teacher-plan.html#mismatch",
+  "x_material": "../design/teacher-production.html#suspend",
+  "x_rework": "../design/teacher-production.html#todo"
+};
+  var NS = 'http://www.w3.org/2000/svg';
+  var nodes = document.querySelectorAll('.diagram-container > svg g[data-node-id]');
+  var labels = {}, found = {};
+  nodes.forEach(function (g) {
+    var id = g.getAttribute('data-node-id');
+    if (!MAP[id]) return;
+    var rect = g.querySelector('rect');
+    var w = 120, x = 0, y = 0;
+    if (rect) { w = rect.width.baseVal.value || 120; x = rect.x.baseVal.value || 0; y = rect.y.baseVal.value || 0; }
+    var a = document.createElementNS(NS, 'a');
+    a.setAttribute('href', MAP[id]); a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener');
+    a.setAttribute('class', 'ts-proto-chip'); a.setAttribute('aria-label', '查看原型页');
+    var r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', x + w - 50); r.setAttribute('y', y + 3);
+    r.setAttribute('width', 46); r.setAttribute('height', 16); r.setAttribute('rx', 4);
+    var t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', x + w - 27); t.setAttribute('y', y + 15); t.setAttribute('text-anchor', 'middle');
+    t.textContent = '原型';
+    a.appendChild(r); a.appendChild(t);
+    a.addEventListener('click', function (e) { e.stopPropagation(); });
+    g.appendChild(a);
+    found[id] = MAP[id];
+    labels[id] = g.getAttribute('data-node-label') || id;
+  });
+  var panel = document.createElement('div');
+  panel.id = 'ts-proto-panel';
+  var html = '<b>本流程对应原型页 <span class="ts-toggle">收起</span></b>';
+  Object.keys(MAP).forEach(function (id) {
+    if (!found[id]) return;
+    html += '<a href="' + found[id] + '" target="_blank" rel="noopener">' + labels[id] + ' · ' + id + '</a>';
+  });
+  if (Object.keys(found).length === 0) html += '<span style="color:#8b93a7">未找到可映射节点</span>';
+  panel.innerHTML = html;
+  panel.querySelector('.ts-toggle').addEventListener('click', function () {
+    var links = panel.querySelectorAll('a');
+    var hidden = links[0] && links[0].style.display === 'none';
+    links.forEach(function (a) { a.style.display = hidden ? '' : 'none'; });
+    this.textContent = hidden ? '收起' : '展开';
+  });
+  document.body.appendChild(panel);
+})();
+</script>
+
 </body>
 </html>
