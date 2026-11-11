@@ -8,8 +8,8 @@
 |---|---|---|
 | `requirement/` | 需求文档 | `主题需求v版本.md`，**版本迭代并存**（v1.0 → v2.0 不覆盖旧版） |
 | `arch/` | 架构设计 | `NN主题.md`（如 `01整体架构设计.md`），按主题编号 |
-| `design/` | 原型图：HTML 静态原型页 + `assets/`（logo/favicon 等素材） | 页面名.html |
-| `flow/` | 端到端流程图：Archify 交互式 HTML（同名 `.candidate.json` 为可编辑源） | 页面名.html |
+| `design/` | 原型图：HTML 静态原型页 + `assets/`（共享样式底座 tokens.css / family-*.css 等素材），入口 `design/index.html` | 页面名.html |
+| `flow/` | 端到端流程图：Archify 交互式 HTML（同名 `.candidate.json` 为可编辑源；页面内「原型」跳转芯片为人工注入，再生成后需重放，见 design/README.md） | 页面名.html |
 | `plan/` | 实施计划 / 重构方案 | `01-方案名.md` |
 | `ops/` | 运维（部署 Runbook、监控、配置） | `NN主题.md` |
 | `review/` | 评审记录（架构 Review、验收） | `01-主题Review.md` |
