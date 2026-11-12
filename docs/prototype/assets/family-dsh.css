@@ -73,6 +73,10 @@ body.dsh-light {
   --s-brand-deep: #10795c;
   --s-brand-ink: #ffffff;
   --s-brand-soft: rgba(23, 147, 111, .12);
+  --s-warn: #b9821a;  --s-warn-soft: rgba(185, 130, 26, .12);
+  --s-err: #d94848;   --s-err-soft: rgba(217, 72, 72, .10);
+  --s-ok: #0e9f6e;    --s-ok-soft: rgba(14, 159, 110, .12);
+  --s-info: #4a7fd6;  --s-info-soft: rgba(74, 127, 214, .10);
   --s-hair: rgba(0, 0, 0, .10);
   --s-trench: #f0f0f3;
   --s-kbd-bg: rgba(0, 0, 0, .08);
@@ -292,7 +296,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .m-ai .md h4 { font-size: 14px; color: var(--s-ink); margin: 14px 0 6px; }
 .m-ai .md ul { margin: 0 0 10px 18px; }
 .m-ai .md li { margin: 3px 0; }
-.m-ai .md code { font: 500 12px var(--s-mono); background: var(--s-elev); border: 1px solid var(--s-line); border-radius: 5px; padding: 1px 6px; color: #9fd8c5; }
+.m-ai .md code { font: 500 12px var(--s-mono); background: var(--s-trench); border: 1px solid var(--s-line); border-radius: 5px; padding: 1px 6px; color: var(--s-brand); }
 
 /* 状态 chips 行（已完成 · 用时 xx）*/
 .m-status { display: flex; gap: 6px; align-items: center; margin: 2px 0 14px; flex-wrap: wrap; }
@@ -302,8 +306,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* 引用芯片（等宽 · 点击回跳原片）*/
 .segc {
   display: inline-block; font: 500 11px var(--s-mono);
-  background: #20232a; border: 1px solid #33404d; border-radius: 5px;
-  padding: 1px 7px; color: #7fd7bc; margin: 0 4px 3px 0; cursor: pointer;
+  background: var(--s-side2); border: 1px solid var(--s-line); border-radius: 5px;
+  padding: 1px 7px; color: var(--s-brand); margin: 0 4px 3px 0; cursor: pointer;
 }
 .segc:hover { border-color: var(--s-brand); }
 .segc-note { font-size: 11px; color: var(--s-ink4); margin-top: 5px; }
@@ -316,8 +320,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .notice svg { flex: none; margin-top: 2px; }
 .notice .act { margin-left: auto; font-weight: 600; color: var(--s-brand); white-space: nowrap; cursor: pointer; }
-.notice.warn { background: var(--s-warn-soft); border-color: rgba(232, 182, 76, .3); color: #ecd3a0; }
-.notice.warn .act { color: #f5d898; }
+.notice.warn { background: var(--s-warn-soft); border-color: color-mix(in srgb, var(--s-warn) 35%, transparent); color: var(--s-warn); }
+.notice.warn .act { color: var(--s-warn); font-weight: 650; }
 .notice.empty { color: var(--s-ink3); }
 .notice.empty .act { color: var(--s-info); }
 
@@ -472,3 +476,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .bt-hd .bt-title { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--s-ink2); }
 .bt-hd .dim { margin-left: auto; }
 .bt-body { flex: 1; overflow-y: auto; padding: 8px 14px; }
+
+/* 底部状态栏控制簇（窗口左下角：命令模式 / 主题切换）*/
+.bt-actions { display: flex; align-items: center; gap: 6px; }
+.stbtn {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+  border-radius: 6px; border: 1px solid var(--s-line);
+  color: var(--s-ink3); font-size: 11.5px; white-space: nowrap; cursor: pointer;
+  background: none;
+}
+.stbtn:hover { color: var(--s-ink); border-color: var(--s-brand); }
+.stbtn .cv { color: var(--s-ink2); font-weight: 600; }
+.stbtn svg { opacity: .8; }
+
+/* composer 模式 chips 交互态 */
+.mode { cursor: pointer; }
+.mode .cv { color: var(--s-ink); }
+.mode.off { opacity: .5; }
+.mode.off .cv { color: var(--s-ink3); }
