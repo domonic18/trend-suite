@@ -5,20 +5,21 @@
 /* ============================================================
    课件呈现子系统（.cw）：移植自 trend-studio「教材呈现原型」
    docs/producer/prototype/section-preview.html（课件目标效果）
-   —— 在 dsh 窗口内同构渲染，固定深色，自成一套课件 token
+   —— 在 DSH 同构外壳内渲染，固定深色，自成一套课件 token
+   （R30：token 对齐 DSH 石墨中性色 #151517 系）
    ============================================================ */
 .cw{
-  --c-bg:#11141a; --c-surface:#1a1f28; --c-surface2:#222833; --c-surface3:#2a313e;
-  --c-text:#eef1f6; --c-text2:#aab3c2; --c-text3:#7d8798; --c-line:#2c3441;
-  --c-brand:#7ea2ff; --c-brand-soft:#1e2a48;
-  --c-up:#d9483f; --c-down:#17a06e;
-  --c-warn:#e0a44a; --c-warn-soft:#3a2f18; --c-danger:#ef6a5f; --c-danger-soft:#3a211f;
-  --c-ok:#3ecf8e; --c-ok-soft:#17352b; --c-info-soft:#1c2740;
+  --c-bg:#151517; --c-surface:#1b1c20; --c-surface2:#222327; --c-surface3:#2a2b30;
+  --c-text:#f4f5f7; --c-text2:#c6cbd3; --c-text3:#949aa5; --c-line:#2e2f34;
+  --c-brand:#3DBE9B; --c-brand-soft:#1c2f2a;
+  --c-up:#e05d68; --c-down:#31a984;
+  --c-warn:#e0a44a; --c-warn-soft:#33290f; --c-danger:#ef6a5f; --c-danger-soft:#321d1b;
+  --c-ok:#3ecf8e; --c-ok-soft:#152e26; --c-info-soft:#1a2635;
   --c-shadow:0 1px 2px rgba(0,0,0,.2), 0 8px 28px rgba(0,0,0,.28);
   --c-shadow-lg:0 12px 48px rgba(0,0,0,.45);
   --c-radius:16px; --c-radius-sm:10px;
   --c-serif:"Songti SC","Noto Serif SC",Georgia,serif;
-  padding:0 26px 60px; color:var(--c-text); font-size:15px; line-height:1.85;
+  padding:0 0 60px; color:var(--c-text); font-size:15px; line-height:1.85;
 }
 .cw a{color:var(--c-brand)}
 .cw .page{max-width:860px;margin:0 auto}
@@ -31,14 +32,14 @@
 .cw .tiny{color:var(--c-text3);font-size:12px}
 
 /* ---- 课件内目录条 + 阅读进度 ---- */
-.cw-top{position:sticky;top:0;z-index:20;margin:0 -26px 16px;padding:9px 26px 0;
-  background:color-mix(in srgb, var(--d-win) 92%, transparent);backdrop-filter:blur(12px)}
+.cw-top{position:sticky;top:0;z-index:20;margin:0 0 16px;padding:9px 0 0;
+  background:color-mix(in srgb, var(--s-bg) 92%, transparent);backdrop-filter:blur(12px)}
 .cw-top .toc{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none;padding-bottom:8px}
 .cw-top .toc::-webkit-scrollbar{display:none}
 .cw-top .toc a{text-decoration:none;color:var(--c-text2);font-size:12px;padding:4px 10px;border-radius:999px;white-space:nowrap}
 .cw-top .toc a:hover{background:var(--c-surface2)}
 .cw-top .toc a.active{background:var(--c-brand-soft);color:var(--c-brand);font-weight:600}
-.cw-top .progress{height:2px;background:var(--d-line-soft);border-radius:1px;overflow:hidden}
+.cw-top .progress{height:2px;background:#232325;border-radius:1px;overflow:hidden}
 .cw-top .progress i{display:block;height:100%;width:0;background:var(--c-brand);transition:width .1s linear}
 
 /* ---- Hero 节头 ---- */
@@ -46,7 +47,7 @@
 .cw .hero::after{content:"";position:absolute;right:-70px;top:-80px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--c-brand-soft),transparent 70%);opacity:.8}
 .cw .hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;position:relative}
 .cw .chip{font-size:12px;padding:4px 11px;border-radius:999px;background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-text2)}
-.cw .chip.primary{background:var(--c-brand);color:#10141c;border-color:transparent;font-weight:600}
+.cw .chip.primary{background:var(--c-brand);color:#0b1512;border-color:transparent;font-weight:600}
 .cw .hero h1{position:relative;font-size:31px;line-height:1.35;margin:0 0 12px;letter-spacing:-.4px;color:var(--c-text)}
 .cw .hero .lead{max-width:620px;position:relative}
 .cw .hero-foot{display:flex;flex-wrap:wrap;gap:18px;margin-top:20px;padding-top:16px;border-top:1px solid var(--c-line);position:relative}
@@ -112,7 +113,7 @@
 /* ---- 前后对比滑块 ---- */
 .cw .compare{position:relative;border-radius:var(--c-radius);overflow:hidden;border:1px solid var(--c-line);margin:16px 0}
 .cw .compare canvas{display:block;width:100%;height:auto}
-.cw .compare .label{position:absolute;top:10px;font-size:11px;padding:3px 9px;border-radius:6px;background:rgba(20,25,35,.72);color:#fff;backdrop-filter:blur(4px)}
+.cw .compare .label{position:absolute;top:10px;font-size:11px;padding:3px 9px;border-radius:6px;background:rgba(18,20,24,.72);color:#fff;backdrop-filter:blur(4px)}
 .cw .compare .label.l{left:10px}
 .cw .compare .label.r{right:10px}
 .cw .compare .handle{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);pointer-events:none}
@@ -125,7 +126,7 @@
 .cw .kline-head .title{font-weight:650;font-size:13.5px;margin-right:auto;color:var(--c-text)}
 .cw .kbtn{border:1px solid var(--c-line);background:var(--c-surface2);color:var(--c-text2);font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:.15s}
 .cw .kbtn:hover{border-color:var(--c-brand);color:var(--c-brand)}
-.cw .kbtn.on{background:var(--c-brand);color:#10141c;border-color:transparent;font-weight:600}
+.cw .kbtn.on{background:var(--c-brand);color:#0b1512;border-color:transparent;font-weight:600}
 .cw .kline-head select{border:1px solid var(--c-line);background:var(--c-surface2);color:var(--c-text2);font-size:12px;padding:5px 8px;border-radius:8px;cursor:pointer}
 .cw .kline-stage{position:relative;background:var(--c-surface)}
 #kchart{display:block;width:100%;height:320px;touch-action:none}
@@ -155,7 +156,7 @@
 .cw .verdict.show{display:block}
 .cw .verdict .vh{font-weight:700;color:var(--c-brand);margin-bottom:4px}
 .cw .verdict .vmeta{margin-top:8px;font-size:11px;color:var(--c-text3)}
-.cw .verdict .vbtn{margin-top:10px;border:0;background:var(--c-brand);color:#10141c;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:600}
+.cw .verdict .vbtn{margin-top:10px;border:0;background:var(--c-brand);color:#0b1512;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:600}
 .cw .replay-summary{display:none;margin-top:14px;padding:14px 17px;border-radius:var(--c-radius);background:var(--c-surface);border:1px solid var(--c-line);box-shadow:var(--c-shadow);font-size:13px;line-height:1.8;color:var(--c-text2)}
 .cw .replay-summary.show{display:block}
 .cw .replay-summary b{color:var(--c-brand)}
@@ -176,8 +177,8 @@
 
 /* ---- 画中画 ---- */
 .cw .pip{display:grid;grid-template-columns:280px 1fr;gap:16px;margin:18px 0}
-.cw .video{border-radius:var(--c-radius);overflow:hidden;background:#141821;color:#fff;box-shadow:var(--c-shadow);display:flex;flex-direction:column}
-.cw .video-screen{height:150px;position:relative;background:radial-gradient(circle at 32% 30%,#2b3a5c,#141821 70%);display:flex;align-items:center;justify-content:center}
+.cw .video{border-radius:var(--c-radius);overflow:hidden;background:#10131a;color:#fff;box-shadow:var(--c-shadow);display:flex;flex-direction:column}
+.cw .video-screen{height:150px;position:relative;background:radial-gradient(circle at 32% 30%,#2b3a5c,#10131a 70%);display:flex;align-items:center;justify-content:center}
 .cw .video-screen .play{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
 .cw .video-screen .play:hover{background:rgba(255,255,255,.28);transform:scale(1.05)}
 .cw .video-screen .stamp{position:absolute;bottom:9px;right:10px;font-size:11px;background:rgba(0,0,0,.5);padding:2px 7px;border-radius:5px}
@@ -188,7 +189,7 @@
 .cw .transcript{padding:10px 12px 12px;max-height:186px;overflow-y:auto}
 .cw .transcript .tl{font-size:11.5px;color:#aeb8ca;padding:5px 7px;border-radius:6px;cursor:pointer;line-height:1.6;display:flex;gap:8px}
 .cw .transcript .tl:hover{background:rgba(255,255,255,.07)}
-.cw .transcript .tl.active{background:rgba(126,162,255,.18);color:#fff}
+.cw .transcript .tl.active{background:rgba(61,190,155,.18);color:#fff}
 .cw .transcript .tl time{color:#7f8ba3;font-variant-numeric:tabular-nums;flex:none}
 .cw .pip-chart{position:relative}
 #kchart2{display:block;width:100%;height:340px}
@@ -221,336 +222,525 @@
 .cw .checklist input{margin-top:5px;accent-color:var(--c-brand)}
 .cw .footnote{margin-top:40px;padding-top:16px;border-top:1px solid var(--c-line);font-size:11.5px;color:var(--c-text3);line-height:1.8}
 @media (max-width:820px){.cw .g3,.cw .g2,.cw .pip,.cw .scrolly,.cw .with-note{grid-template-columns:1fr}.cw .toc{display:none}}
-</style></head><body><div class="win"><div class="tbar"><div class="dots"><i style="background:#F0564F"></i><i style="background:#F2BD3D"></i><i style="background:#59C05A"></i></div><div class="ttl" style="flex:1;text-align:center">趋势伴学 · 课程页 / 播放器</div><span class="hz">dsh <b>0.2.1</b> · trend-student</span></div>
-<div class="navrow">
- <a class="pt" href="student-system.html">体系</a>
- <a class="pt" href="student-chat.html">对话</a>
- <a class="pt on" href="student-course.html">课程</a>
- <a class="pt" href="student-class.html">课堂</a>
- <a class="qp" href="portal-account.html">浏览播放 <b>免费</b></a>
- <a class="home" href="portal.html">官网</a>
-</div>
-<div class="cols" style="grid-template-columns:216px 1fr">
- <div class="side">
-  <div class="ptabs" style="margin:-14px -9px 10px;padding:0 9px"><div class="ptab on">课程页</div></div>
-  <h4>总论卷 · 6 节</h4>
-  <div class="ss" style="color:var(--mut)">1 什么是趋势 <span style="margin-left:auto;color:var(--jade)">✓</span></div>
-  <div class="ss on">2 趋势的阻尼运动</div>
-  <div class="ss">3 均线与多空分界</div>
-  <div class="ss">4 周线级别判断</div>
-  <div class="ss">5 筹码密集与发散</div>
-  <div class="ss">6 综合研判框架</div>
-  <h4>延伸</h4>
-  <a class="ss" href="student-chat.html">向本节提问</a>
-  <a class="ss" href="student-class.html">本节互动课堂</a>
-  <a class="ss" href="portal.html#features">站点功能（公开）</a>
+
+/* ---- 明亮模式（R32：课程页切到 DSH light）课件 token 翻转 ---- */
+.dsh-light .cw{
+  --c-bg:#ffffff; --c-surface:#f7f8fa; --c-surface2:#eef0f3; --c-surface3:#e4e7ec;
+  --c-text:#171a20; --c-text2:#3f444d; --c-text3:#6b7280; --c-line:#e3e6eb;
+  --c-brand:#17936f; --c-brand-soft:#e2f4ee;
+  --c-up:#e05252; --c-down:#0f9960;
+  --c-warn:#b9821a; --c-warn-soft:#fdf4e3; --c-danger:#d94848; --c-danger-soft:#fdeceb;
+  --c-ok:#0e9f6e; --c-ok-soft:#e6f6ef; --c-info-soft:#eaf1fb;
+  --c-shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 20px rgba(16,24,40,.07);
+  --c-shadow-lg:0 12px 40px rgba(16,24,40,.12);
+}
+</style></head><body class="dsh-light"><div class="dsh">
+<div class="dsh-row has-right">
+
+<!-- ================= 侧栏（框架 + 插件注入 · 章节树）================= -->
+<aside class="sb">
+ <div class="sb-brand">
+  <span class="mark">势</span>
+  <span class="nm"><b>DeepSeek Harness</b><small>预览版 · 趋势伴学插件</small></span>
+  <button class="tgl" title="折叠侧栏" type="button"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 5h16M4 12h11M4 19h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19 8l3 4-3 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
  </div>
- <div class="chat" style="overflow:auto" id="cwScroll">
-  <div class="sys empty" style="margin:12px 22px 0">播放会话已过期（或片段窗不在本节已发布正文内），已自动重新签发，请重试。<span class="act">重试</span></div>
+ <a class="sb-new" href="student-chat.html">
+  <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  新会话 <span class="kbd">⌘N</span>
+ </a>
+ <nav class="sb-nav">
+  <a class="sb-row plugin on" href="student-system.html" title="trend-student 插件提供"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>我的课程</a>
+  <button class="sb-row" type="button" title="框架面板（原型静态）"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>插件</button>
+  <button class="sb-row" type="button" title="框架面板（原型静态）"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>自动化任务</button>
+  <button class="sb-row" type="button" title="框架面板（原型静态）"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="10" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="16" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="4" y="10" width="4" height="4" rx="1" fill="currentColor"/><rect x="4" y="16" width="4" height="4" rx="1" fill="currentColor"/><path d="M10 12h10M10 18h10M14 10v4m4 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>更多</button>
+ </nav>
+ <div class="sb-ws">
+  <div class="ws-hd">
+   <span class="lb">总论卷 <small>· 6 节</small></span>
+   <span class="act"><button class="icon-btn" title="搜索章节"><svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></span>
+  </div>
+  <div class="ws-list">
+   <div class="ws-g">章节</div>
+   <a class="ws-item" href="student-course.html"><span class="dot done"></span>1 什么是趋势<span class="st done">✓</span></a>
+   <a class="ws-item on" href="student-course.html"><span class="dot live"></span>2 趋势的阻尼运动</a>
+   <a class="ws-item" href="student-course.html"><span class="dot"></span>3 均线与多空分界</a>
+   <a class="ws-item" href="student-course.html"><span class="dot"></span>4 周线级别判断</a>
+   <a class="ws-item" href="student-course.html"><span class="dot"></span>5 筹码密集与发散</a>
+   <a class="ws-item" href="student-course.html"><span class="dot"></span>6 综合研判框架</a>
+   <div class="ws-g">延伸</div>
+   <a class="ws-item" href="student-chat.html"><span class="dot"></span>向本节提问</a>
+  </div>
+  <div class="ws-fade"></div>
+ </div>
+ <div class="sb-foot">
+  <a class="foot-row" href="portal-account.html">
+   <span class="ava">明</span>
+   <span class="un"><b>xiaoming</b><small>余额 13 次 · 浏览播放免费</small></span>
+   <span class="gear icon-btn" title="账号与额度"><svg width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5v2M12 18.5v2M4.9 7.5l1.7 1M17.4 15.5l1.7 1M4.9 16.5l1.7-1M17.4 8.5l1.7-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+  </a>
+ </div>
+</aside>
+<div class="handle" title="拖拽调整宽度"></div>
 
-  <!-- ================= 课件呈现（目标效果，同构渲染） ================= -->
-  <div class="cw">
-   <div class="cw-top">
-    <nav class="toc" id="toc">
-     <a href="#s1">导读</a><a href="#s2">概念图示</a><a href="#s3">判断依据</a><a href="#s4">交互 K 线</a><a href="#s5">画中画</a><a href="#s6">滚动叙事</a><a href="#s7">自检</a>
-    </nav>
-    <div class="progress"><i id="cwBar"></i></div>
-   </div>
-   <div class="page">
+<!-- ================= 中央列（课件呈现）================= -->
+<main class="main">
+ <header class="hd">
+  <nav class="crumbs"><span>总论卷</span><span class="sep">/</span><b>第 2 节 · 趋势的阻尼运动</b></nav>
+  <div class="hd-chips">
+   <span class="chip"><span class="dot"></span>学习中</span>
+   <span class="chip mono">sec-zl-02</span>
+   <span class="chip free">浏览播放免费</span>
+  </div>
+  <div class="corner">
+   <button class="icon-btn" data-action="toggle-bottom" title="终端" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+   <button class="icon-btn" data-action="toggle-right" title="展开 / 收起右栏" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15 4v16" stroke="currentColor" stroke-width="1.6"/></svg></button>
+   <a class="icon-btn" href="student-chat.html" title="向本节提问"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></a>
+   <button class="icon-btn" title="更多" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></button>
+  </div>
+ </header>
+ <nav class="tabs">
+  <a class="tab on" href="student-course.html">课件</a>
+  <a class="tab" href="student-course.html#s4">练习</a>
+  <a class="tab" href="student-course.html#s7">自检</a>
+ </nav>
+ <div class="body">
+  <div class="scroll" id="cwScroll">
+   <div class="col wide">
 
-    <!-- 1. Hero + 目标卡 -->
-    <section class="section" id="s1">
-     <div class="hero">
-      <div class="hero-meta">
-       <span class="chip primary">第 2 节</span>
-       <span class="chip">趋势交易体系 · 总论卷</span>
-       <span class="chip">sec-zl-02</span>
-       <span class="chip">学习中</span>
-      </div>
-      <h1>趋势的阻尼运动</h1>
-      <p class="lead">这一节要解决的只有一个问题：趋势推进之后，我们凭什么判断它「动能还在衰减中延续」，而不是「已经结束」？先把节奏的尺子立起来——幅度、均线、量能，三者共验，缺一不可。</p>
-      <div class="hero-foot">
-       <div><b>约 18 分钟</b>建议学习时长</div>
-       <div><b>3 个</b>核心概念</div>
-       <div><b>1 段</b>课程原片</div>
-       <div><b>2 组</b>交互练习</div>
-      </div>
-     </div>
-     <div class="grid g3">
-      <div class="card"><div class="num">01</div><h3>能说清阻尼的定义</h3><p>用自己的话复述「回撤力度逐次衰减」与幅度、均线、量能三证据的关系，不靠背术语。</p></div>
-      <div class="card"><div class="num">02</div><h3>能在图上标出节奏</h3><p>给定一段真实行情，标出逐次衰减的回撤，并判断节奏是否仍在延续。</p></div>
-      <div class="card"><div class="num">03</div><h3>能识别最常见的误判</h3><p>知道「把阻尼当加仓信号」错在哪个环节，以及用什么条件先证伪自己。</p></div>
-     </div>
-     <details class="think">
-      <summary>先想一想 · 再往下看</summary>
-      <div class="body">找一段你最近看到的「涨得很顺」的行情，先不借助任何指标，用一句话写下：你会怎么判断它还能不能延续？依据是什么？看完这一节后回来对照，看看你的依据里缺了哪一条。</div>
-     </details>
-     <div class="callout rule">
-      <div class="ct">◆ 本节定位</div>
-      <p>本节的每个判断都对应课程原片中的具体时间锚。遇到不确定的表述，点击段落旁的时间码可直接回到老师讲解的那一段；图示中的术语均来自总论卷术语表（已批准）。</p>
-     </div>
-    </section>
-
-    <!-- 2. 概念图示 -->
-    <section class="section" id="s2">
-     <div class="eyebrow">CONCEPT · 概念图示</div>
-     <h2>两种图，两种可信度</h2>
-     <div class="with-note">
-      <div>
-       <p>「阻尼运动」是总论卷里最容易被当成玄学的一个概念。它描述的其实是：一段趋势推进之后，价格回撤的力度会逐次衰减，就像弹簧停下来之前的几次小幅摆动。理解它，重点是<strong>衰减的方向</strong>，不是把它画成某条特定的曲线。</p>
-       <p>所以这里有意放了两张图：左边是帮助建立直觉的概念插画，右边是能逐条回溯的结构化图。它们在教材里承担完全不同的责任，不能互相替代。</p>
-      </div>
-      <aside class="sidenote">
-       <b>阻尼运动</b>
-       趋势推进后回撤力度逐次衰减的结构，用于描述节奏而非预测价位。<br>
-       <span class="src">来源：总论卷术语表 · 已批准 · 原片 08:42</span>
-      </aside>
-     </div>
-     <div class="grid g2">
-      <figure class="figure" style="margin:0">
-       <div class="figure-head"><span class="title">A 类 · 概念类比插画</span><span class="badge ai">AI 示意图 · 非考点</span></div>
-       <div class="figure-body">
-        <svg viewBox="0 0 340 210" role="img" aria-label="弹簧振子逐次衰减的概念插画">
-         <defs><linearGradient id="gA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7ea2ff" stop-opacity=".16"/><stop offset="1" stop-color="#7ea2ff" stop-opacity="0"/></linearGradient></defs>
-         <rect x="0" y="0" width="340" height="210" fill="#222833" rx="10"/>
-         <path d="M12 105 H328" stroke="#2c3441" stroke-width="1" stroke-dasharray="4 5"/>
-         <path d="M12 42 C50 42 55 105 92 105 S130 152 168 105 S205 70 240 105 S272 96 328 96" fill="none" stroke="#7ea2ff" stroke-width="2.5" stroke-linecap="round" opacity=".85"/>
-         <rect x="12" y="105" width="316" height="98" fill="url(#gA)"/>
-         <g fill="#7ea2ff" opacity=".9"><circle cx="92" cy="105" r="4"/><circle cx="168" cy="105" r="4"/><circle cx="240" cy="105" r="4"/><circle cx="328" cy="96" r="4"/></g>
-         <g font-size="10" fill="#7d8798" font-family="sans-serif"><text x="14" y="198">推进</text><text x="286" y="198">趋于平衡 →</text></g>
-        </svg>
-       </div>
-       <figcaption><b>图 A · 直觉层</b>　只传递「摆动幅度逐次变小」这一个意思。图内不含任何文字、数值与术语，标签由渲染层叠加；标注意为「AI 生成示意，非真实行情、不作为判断依据」。</figcaption>
-      </figure>
-      <figure class="figure" style="margin:0">
-       <div class="figure-head"><span class="title">B 类 · 结构化依赖关系</span><span class="badge struct">可校验 · 可溯源</span></div>
-       <div class="figure-body">
-        <svg viewBox="0 0 340 210" role="img" aria-label="概念依赖结构化图">
-         <rect x="0" y="0" width="340" height="210" fill="#222833" rx="10"/>
-         <g font-family="sans-serif" font-size="11" text-anchor="middle">
-          <g><rect x="18" y="24" width="88" height="34" rx="8" fill="#1a1f28" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="45" fill="#eef1f6">幅度</text></g>
-          <g><rect x="18" y="88" width="88" height="34" rx="8" fill="#1a1f28" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="109" fill="#eef1f6">均线</text></g>
-          <g><rect x="18" y="152" width="88" height="34" rx="8" fill="#1a1f28" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="173" fill="#eef1f6">量能</text></g>
-          <g><rect x="168" y="72" width="106" height="40" rx="8" fill="#1e2a48" stroke="#7ea2ff" stroke-width="1.5"/><text x="221" y="96" fill="#7ea2ff" font-weight="600">阻尼成立</text></g>
-          <g><rect x="168" y="140" width="106" height="36" rx="8" fill="#1a1f28" stroke="#2c3441"/><text x="221" y="162" fill="#aab3c2">证伪条件</text></g>
-         </g>
-         <g stroke="#7d8798" stroke-width="1.3" fill="none" marker-end="url(#ar)">
-          <path d="M106 41 C136 41 140 82 168 86"/><path d="M106 105 H168"/><path d="M106 169 C136 169 140 100 168 98"/><path d="M221 112 V140"/>
-         </g>
-         <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="#7d8798"/></marker></defs>
-         <g font-size="9" fill="#7d8798" font-family="sans-serif"><text x="288" y="96">原片 03:12</text><text x="288" y="162">原片 11:05</text></g>
-        </svg>
-       </div>
-       <figcaption><b>图 B · 事实层</b>　由结构化图规约确定性渲染。每个节点、每条箭头都挂 citation（原片时间锚），术语必须 ∈ glossary，云端可复检。图上的每个字都能被回溯——这是 B 类图能进考点的原因。</figcaption>
-      </figure>
-     </div>
-     <div class="callout misuse">
-      <div class="ct">✕ 常见误用</div>
-      <p>把 A 类插画的曲线形状当成真实形态去套行情，是这一节最常见的错误。插画只负责建立直觉；任何涉及「什么条件成立、什么条件证伪」的判断，一律以 B 类图和原片为准。</p>
-     </div>
-     <div class="compare" id="compare">
-      <canvas id="cmpCanvas" width="860" height="220"></canvas>
-      <span class="label l">正确：结构破坏后先证伪</span>
-      <span class="label r">误判：把反弹当趋势延续</span>
-      <div class="handle" id="cmpHandle"></div>
-      <input type="range" id="cmpRange" min="5" max="95" value="50" aria-label="拖动对比正确与错误标注" />
-     </div>
-     <p class="tiny">↑ 前后对比滑块：同一段行情，左侧是老师的标注，右侧是学员最常见的误判。拖动中缝对照，比两张图上下排列更容易看出差别在哪一根 K 线上。</p>
-    </section>
-
-    <!-- 3. 判断依据 -->
-    <section class="section" id="s3">
-     <div class="eyebrow">RULE · 判断依据</div>
-     <h2>三步立尺子</h2>
-     <div class="with-note">
-      <div>
-       <div class="steps">
-        <div class="step"><div><h3>先定方向：摆动高低点是否同向抬高</h3><p>不看均线、不看指标，只标出相邻两次摆动的高低点。方向是结构问题，不是指标问题。</p></div></div>
-        <div class="step"><div><h3>再定级别：这一段在哪个时间尺度上成立</h3><p>日线成立不等于 30 分钟成立。级别错配是后面所有误判的源头。</p></div></div>
-        <div class="step"><div><h3>最后定节奏：回撤力度是否逐次衰减</h3><p>这就是阻尼运动的位置。它决定的是「怎么持有」，不是「要不要进」。</p></div></div>
-       </div>
-      </div>
-      <aside class="sidenote">
-       <b>先证伪，再确认</b>
-       三步里任何一步不成立，都先回到「震荡」假设，而不是找理由维持原判断。<br>
-       <span class="src">来源：原片 14:20 · 术语表「证伪条件」</span>
-      </aside>
-     </div>
-     <div class="callout def">
-      <div class="ct">◇ 定义</div>
-      <p><strong>阻尼运动</strong>：在给定级别上，趋势推进后的回撤力度逐次衰减、且不破坏前一次结构低点的节奏描述。定义里的「给定级别」不能省略，它描述节奏而非预测价位。</p>
-     </div>
-     <div class="callout risk">
-      <div class="ct">⚠ 风险提示</div>
-      <p>本节所有图例用于教学，不构成任何投资建议。教材中的行情区间仅为课程讲解当时的历史片段，不代表当前市场状态。</p>
-     </div>
-     <div class="card" style="margin-top:14px">
-      <h3>这一节在课程里的位置</h3>
-      <div class="steps" style="margin-top:12px">
-       <div class="step"><div><h3>总论 1 · 立尺子</h3><p>方向 / 级别 / 节奏的三步框架。</p></div></div>
-       <div class="step"><div><h3>总论 2 · 阻尼运动</h3><p>你正在这里。节奏的具体化。</p></div></div>
-       <div class="step"><div><h3>筹码分布 / 综合研判</h3><p>持仓结构与检查单的落地。</p></div></div>
-      </div>
-     </div>
-    </section>
-
-    <!-- 4. 交互 K 线 -->
-    <section class="section" id="s4">
-     <div class="eyebrow">EXPLORE · 交互行情</div>
-     <h2>回到当时的那张图</h2>
-     <p class="muted">下面是课程讲解对应的历史区间（演示数据）。<b>老师标注</b>来自 DSL 容器块，每个点都能点开看原话、时间码与出处；<b>逐根回放</b>会在关键位置停下来，先让你判断，再揭晓老师当时的结论。作答只在本机，不上传。</p>
-     <div class="kline">
-      <div class="kline-head">
-       <span class="title">教学行情 · 案例股 sz000713</span>
-       <button class="kbtn on" id="btnMa">MA5 / MA10</button>
-       <select id="markFilter" aria-label="标注层筛选">
-        <option value="all">标注：全部</option>
-        <option value="structure">只看结构点</option>
-        <option value="invalidation">只看证伪点</option>
-        <option value="rhythm">只看节奏点</option>
-        <option value="off">关闭标注</option>
-       </select>
-       <button class="kbtn" id="btnWeek">周线</button>
-       <button class="kbtn" id="btnReplay">▶ 逐根回放</button>
-       <button class="kbtn" id="btnStep">单步</button>
-       <button class="kbtn" id="btnSpeed">速度 1×</button>
-      </div>
-      <div class="replay-bar" id="replayBar">
-       <span id="replayState">已暂停</span>
-       <div class="replay-track" id="replayTrack"><i id="replayFill"></i></div>
-       <b id="replayCount">0 / 78 根</b>
-       <button class="kbtn" id="btnReset">重置</button>
-      </div>
-      <div class="kline-stage">
-       <canvas id="kchart"></canvas>
-       <div class="ktip" id="ktip"></div>
-       <div class="mark-card" id="markCard"></div>
-      </div>
-      <div class="decision" id="decision">
-       <div class="dt">⏸ 判断点 · 先别看后面</div>
-       <div class="dq" id="decisionQ"></div>
-       <div class="dopts" id="decisionOpts"></div>
-       <div class="verdict" id="verdict">
-        <div class="vh" id="verdictHead"></div>
-        <div id="verdictText"></div>
-        <div class="vmeta" id="verdictMeta"></div>
-        <button class="vbtn" id="btnContinue">继续揭晓 →</button>
-       </div>
-      </div>
-      <div class="kline-foot">
-       <div class="legend">
-        <span><i style="background:#e0a44a"></i>MA5</span>
-        <span><i style="background:#7b8fd4"></i>MA10</span>
-        <span><i style="background:var(--c-up)"></i>涨</span>
-        <span><i style="background:var(--c-down)"></i>跌</span>
-       </div>
-       <span id="kHint">滚轮缩放 · 拖拽平移 · 点标注看原话</span>
-       <span>周期：日线 / 周线 · 前复权 · 不构成投资建议</span>
-       <a class="jump" id="jumpLink" href="#s5">↗ 回原片 00:00</a>
-      </div>
-     </div>
-     <div class="replay-summary" id="replaySummary"></div>
-     <div class="marklegend">
-      <span><i style="background:var(--c-brand)"></i>结构点 · 摆动高低点</span>
-      <span><i style="background:var(--c-danger)"></i>证伪点 · 结构破坏</span>
-      <span><i style="background:var(--c-ok)"></i>节奏点 · 回撤衰减</span>
-      <span><i style="background:var(--c-warn)"></i>◆ 判断点（回放会在此暂停）</span>
-     </div>
-    </section>
-
-    <!-- 5. 画中画联动 -->
-    <section class="section" id="s5">
-     <div class="eyebrow">SYNC · 画中画联动</div>
-     <h2>老师讲的那根，就在这里亮着</h2>
-     <p class="muted">视频仍然用课程原片（已有老师标注，不重做），只是把转写文字、播放位置和右侧 K 线接起来。点击任意一句转写，视频跳到对应秒、右侧同步高亮当时讲到的那根 K 线。</p>
-     <div class="pip">
-      <div class="video">
-       <div class="video-screen">
-        <svg class="graphic" viewBox="0 0 300 156" preserveAspectRatio="none" aria-hidden="true">
-         <path d="M0 120 L26 108 L52 116 L78 88 L104 96 L130 62 L156 74 L182 48 L208 56 L234 34 L260 42 L300 22" fill="none" stroke="#7ea2ff" stroke-width="2" opacity=".8"/>
-         <g stroke="#7ea2ff" opacity=".35"><path d="M0 130 H300 M0 100 H300 M0 70 H300 M0 40 H300"/></g>
-         <path d="M182 48 L208 56" stroke="#ffd479" stroke-width="3" stroke-linecap="round"/>
-        </svg>
-        <div class="play" id="playBtn">▶</div>
-        <span class="wm">水印 · xiaoming</span>
-        <span class="stamp" id="videoStamp">00:00 / 18:24</span>
-       </div>
-       <div class="video-bar"><i id="videoBar"></i></div>
-       <div class="transcript" id="transcript"></div>
-      </div>
-      <div class="pip-chart">
-       <span class="pip-hint">↑ 与视频同步高亮</span>
-       <canvas id="kchart2"></canvas>
-      </div>
-     </div>
-     <div class="callout rule">
-      <div class="ct">◆ 签名播放说明</div>
-      <p>播放走签名会话：窗口校验、到点自动停、水印已叠加；过期或越窗时给出可读提示并自动换签，不静默黑屏。内容消费免费，不消耗额度。</p>
-     </div>
-    </section>
-
-    <!-- 6. 滚动叙事 -->
-    <section class="section" id="s6">
-     <div class="eyebrow">SCROLLY · 渐进叙事</div>
-     <h2>跟着节奏，一层层加上去</h2>
-     <div class="scrolly">
-      <div class="scrolly-steps" id="scrollySteps">
-       <div data-step="0"><h3>① 只有价格</h3><p>先看裸 K。此时最容易犯的错，是急着给每段波动贴标签。</p></div>
-       <div data-step="1"><h3>② 标出摆动高低点</h3><p>加上结构点之后，方向才第一次变得可讨论。</p></div>
-       <div data-step="2"><h3>③ 加上级别</h3><p>同一个位置在不同级别上结论相反，这一步决定后面所有判断。</p></div>
-       <div data-step="3"><h3>④ 最后看节奏</h3><p>回撤力度逐次衰减，才是「阻尼运动」要描述的东西。</p></div>
-      </div>
-      <div class="scrolly-visual" id="scrollyVisual">
-       <svg viewBox="0 0 340 150" id="scrollySvg" aria-label="随滚动逐层叠加的结构图">
-        <path id="svLine" d="M10 118 C40 112 52 84 78 92 S112 118 138 76 S172 104 198 60 S232 82 258 44 S292 58 330 30" fill="none" stroke="#7ea2ff" stroke-width="2.4"/>
-        <g id="svDots"></g><g id="svTags"></g>
-       </svg>
-       <div class="bar-row"><span>方向</span><div class="track"><i id="bar1" style="width:0%"></i></div></div>
-       <div class="bar-row"><span>级别</span><div class="track"><i id="bar2" style="width:0%"></i></div></div>
-       <div class="bar-row"><span>节奏</span><div class="track"><i id="bar3" style="width:0%"></i></div></div>
-       <p class="tiny" id="scrollyHint" style="margin:10px 0 0">向下滚动，图解会跟着讲解逐层展开 ↓</p>
-      </div>
-     </div>
-    </section>
-
-    <!-- 7. 自检 -->
-    <section class="section" id="s7">
-     <div class="eyebrow">CHECK · 自检</div>
-     <h2>你会用了吗</h2>
-     <div class="quiz">
-      <div class="q">下面哪种情况，最应该先回到「震荡」假设？</div>
-      <div class="opts" id="quizOpts">
-       <button class="opt" data-ok="0">A. 日线摆动高点抬高，但 30 分钟图上结构反复被破坏</button>
-       <button class="opt" data-ok="1">B. 同一级别上，摆动低点被有效跌破，且回撤一次比一次深</button>
-       <button class="opt" data-ok="0">C. 成交量在突破时温和放大，随后缩量回踩</button>
-      </div>
-      <div class="feedback" id="quizFeedback"></div>
-     </div>
-     <div class="card">
-      <h3>离开这一节前，确认三件事</h3>
-      <div class="checklist">
-       <label><input type="checkbox" /> 我能不靠指标，在裸 K 上标出相邻两次摆动的高低点</label>
-       <label><input type="checkbox" /> 我能在结论里明确写出「这是在哪个级别上成立」</label>
-       <label><input type="checkbox" /> 遇到反例时，我会先证伪自己，而不是找理由维持原判断</label>
-      </div>
-     </div>
-     <div class="callout misuse" style="margin-top:16px">
-      <div class="ct">✕ 最容易带走的误解</div>
-      <p>「阻尼运动＝回撤越来越小＝可以加仓」。课程里它只描述节奏，不含任何仓位建议；把描述当信号，是这一节之后最常出现的问题。</p>
-     </div>
-    </section>
-
-    <div class="footnote">
-     课件呈现 · 总论卷第 2 节 · 趋势的阻尼运动 · 2026-11-11<br>
-     本页为静态原型：行情、转写、时间锚均为演示数据，术语与章节信息取自总论卷术语表（已批准）；课件目标效果对齐 trend-studio 教材呈现原型（hero 节头 / 四型 callout / 术语边注 / 先想一想 / A·B 类图示 / 对比滑块 / 老师标注 + 逐根回放判断 / 画中画联动 / 滚动叙事 / 即时自检），与教师端成品审核预览同构渲染。<br>
-     阅读进度已上报（时长取最大值，完成不回退）· 内容契约版本校验：不兼容时提示升级，不静默降级。
+    <!-- 签名会话异常条（x_expired）-->
+    <div class="notice warn">
+     <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 3L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9.5v5M12 17.4v.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+     <span>播放会话已过期（或片段窗不在本节已发布正文内），已自动重新签发，请重试。</span>
+     <span class="act">重试</span>
     </div>
+
+   <!-- ================= 课件呈现（目标效果，同构渲染） ================= -->
+   <div class="cw">
+    <div class="cw-top">
+     <nav class="toc" id="toc">
+      <a href="#s1">导读</a><a href="#s2">概念图示</a><a href="#s3">判断依据</a><a href="#s4">交互 K 线</a><a href="#s5">画中画</a><a href="#s6">滚动叙事</a><a href="#s7">自检</a>
+     </nav>
+     <div class="progress"><i id="cwBar"></i></div>
+    </div>
+    <div class="page">
+
+     <!-- 1. Hero + 目标卡 -->
+     <section class="section" id="s1">
+      <div class="hero">
+       <div class="hero-meta">
+        <span class="chip primary">第 2 节</span>
+        <span class="chip">趋势交易体系 · 总论卷</span>
+        <span class="chip">sec-zl-02</span>
+        <span class="chip">学习中</span>
+       </div>
+       <h1>趋势的阻尼运动</h1>
+       <p class="lead">这一节要解决的只有一个问题：趋势推进之后，我们凭什么判断它「动能还在衰减中延续」，而不是「已经结束」？先把节奏的尺子立起来——幅度、均线、量能，三者共验，缺一不可。</p>
+       <div class="hero-foot">
+        <div><b>约 18 分钟</b>建议学习时长</div>
+        <div><b>3 个</b>核心概念</div>
+        <div><b>1 段</b>课程原片</div>
+        <div><b>2 组</b>交互练习</div>
+       </div>
+      </div>
+      <div class="grid g3">
+       <div class="card"><div class="num">01</div><h3>能说清阻尼的定义</h3><p>用自己的话复述「回撤力度逐次衰减」与幅度、均线、量能三证据的关系，不靠背术语。</p></div>
+       <div class="card"><div class="num">02</div><h3>能在图上标出节奏</h3><p>给定一段真实行情，标出逐次衰减的回撤，并判断节奏是否仍在延续。</p></div>
+       <div class="card"><div class="num">03</div><h3>能识别最常见的误判</h3><p>知道「把阻尼当加仓信号」错在哪个环节，以及用什么条件先证伪自己。</p></div>
+      </div>
+      <details class="think">
+       <summary>先想一想 · 再往下看</summary>
+       <div class="body">找一段你最近看到的「涨得很顺」的行情，先不借助任何指标，用一句话写下：你会怎么判断它还能不能延续？依据是什么？看完这一节后回来对照，看看你的依据里缺了哪一条。</div>
+      </details>
+      <div class="callout rule">
+       <div class="ct">◆ 本节定位</div>
+       <p>本节的每个判断都对应课程原片中的具体时间锚。遇到不确定的表述，点击段落旁的时间码可直接回到老师讲解的那一段；图示中的术语均来自总论卷术语表（已批准）。</p>
+      </div>
+     </section>
+
+     <!-- 2. 概念图示 -->
+     <section class="section" id="s2">
+      <div class="eyebrow">CONCEPT · 概念图示</div>
+      <h2>两种图，两种可信度</h2>
+      <div class="with-note">
+       <div>
+        <p>「阻尼运动」是总论卷里最容易被当成玄学的一个概念。它描述的其实是：一段趋势推进之后，价格回撤的力度会逐次衰减，就像弹簧停下来之前的几次小幅摆动。理解它，重点是<strong>衰减的方向</strong>，不是把它画成某条特定的曲线。</p>
+        <p>所以这里有意放了两张图：左边是帮助建立直觉的概念插画，右边是能逐条回溯的结构化图。它们在教材里承担完全不同的责任，不能互相替代。</p>
+       </div>
+       <aside class="sidenote">
+        <b>阻尼运动</b>
+        趋势推进后回撤力度逐次衰减的结构，用于描述节奏而非预测价位。<br>
+        <span class="src">来源：总论卷术语表 · 已批准 · 原片 08:42</span>
+       </aside>
+      </div>
+      <div class="grid g2">
+       <figure class="figure" style="margin:0">
+        <div class="figure-head"><span class="title">A 类 · 概念类比插画</span><span class="badge ai">AI 示意图 · 非考点</span></div>
+        <div class="figure-body">
+         <svg viewBox="0 0 340 210" role="img" aria-label="弹簧振子逐次衰减的概念插画">
+          <defs><linearGradient id="gA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7ea2ff" stop-opacity=".16"/><stop offset="1" stop-color="#7ea2ff" stop-opacity="0"/></linearGradient></defs>
+          <rect x="0" y="0" width="340" height="210" fill="var(--c-surface2)" rx="10"/>
+          <path d="M12 105 H328" stroke="var(--c-line)" stroke-width="1" stroke-dasharray="4 5"/>
+          <path d="M12 42 C50 42 55 105 92 105 S130 152 168 105 S205 70 240 105 S272 96 328 96" fill="none" stroke="#7ea2ff" stroke-width="2.5" stroke-linecap="round" opacity=".85"/>
+          <rect x="12" y="105" width="316" height="98" fill="url(#gA)"/>
+          <g fill="#7ea2ff" opacity=".9"><circle cx="92" cy="105" r="4"/><circle cx="168" cy="105" r="4"/><circle cx="240" cy="105" r="4"/><circle cx="328" cy="96" r="4"/></g>
+          <g font-size="10" fill="var(--c-text3)" font-family="sans-serif"><text x="14" y="198">推进</text><text x="286" y="198">趋于平衡 →</text></g>
+         </svg>
+        </div>
+        <figcaption><b>图 A · 直觉层</b>　只传递「摆动幅度逐次变小」这一个意思。图内不含任何文字、数值与术语，标签由渲染层叠加；标注意为「AI 生成示意，非真实行情、不作为判断依据」。</figcaption>
+       </figure>
+       <figure class="figure" style="margin:0">
+        <div class="figure-head"><span class="title">B 类 · 结构化依赖关系</span><span class="badge struct">可校验 · 可溯源</span></div>
+        <div class="figure-body">
+         <svg viewBox="0 0 340 210" role="img" aria-label="概念依赖结构化图">
+          <rect x="0" y="0" width="340" height="210" fill="var(--c-surface2)" rx="10"/>
+          <g font-family="sans-serif" font-size="11" text-anchor="middle">
+           <g><rect x="18" y="24" width="88" height="34" rx="8" fill="var(--c-surface)" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="45" fill="var(--c-text)">幅度</text></g>
+           <g><rect x="18" y="88" width="88" height="34" rx="8" fill="var(--c-surface)" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="109" fill="var(--c-text)">均线</text></g>
+           <g><rect x="18" y="152" width="88" height="34" rx="8" fill="var(--c-surface)" stroke="#7ea2ff" stroke-width="1.5"/><text x="62" y="173" fill="var(--c-text)">量能</text></g>
+           <g><rect x="168" y="72" width="106" height="40" rx="8" fill="var(--c-brand-soft)" stroke="#7ea2ff" stroke-width="1.5"/><text x="221" y="96" fill="#7ea2ff" font-weight="600">阻尼成立</text></g>
+           <g><rect x="168" y="140" width="106" height="36" rx="8" fill="var(--c-surface)" stroke="var(--c-line)"/><text x="221" y="162" fill="var(--c-text2)">证伪条件</text></g>
+          </g>
+          <g stroke="#949aa5" stroke-width="1.3" fill="none" marker-end="url(#ar)">
+           <path d="M106 41 C136 41 140 82 168 86"/><path d="M106 105 H168"/><path d="M106 169 C136 169 140 100 168 98"/><path d="M221 112 V140"/>
+          </g>
+          <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="var(--c-text3)"/></marker></defs>
+          <g font-size="9" fill="var(--c-text3)" font-family="sans-serif"><text x="288" y="96">原片 03:12</text><text x="288" y="162">原片 11:05</text></g>
+         </svg>
+        </div>
+        <figcaption><b>图 B · 事实层</b>　由结构化图规约确定性渲染。每个节点、每条箭头都挂 citation（原片时间锚），术语必须 ∈ glossary，云端可复检。图上的每个字都能被回溯——这是 B 类图能进考点的原因。</figcaption>
+       </figure>
+      </div>
+      <div class="callout misuse">
+       <div class="ct">✕ 常见误用</div>
+       <p>把 A 类插画的曲线形状当成真实形态去套行情，是这一节最常见的错误。插画只负责建立直觉；任何涉及「什么条件成立、什么条件证伪」的判断，一律以 B 类图和原片为准。</p>
+      </div>
+      <div class="compare" id="compare">
+       <canvas id="cmpCanvas" width="860" height="220"></canvas>
+       <span class="label l">正确：结构破坏后先证伪</span>
+       <span class="label r">误判：把反弹当趋势延续</span>
+       <div class="handle" id="cmpHandle"></div>
+       <input type="range" id="cmpRange" min="5" max="95" value="50" aria-label="拖动对比正确与错误标注" />
+      </div>
+      <p class="tiny">↑ 前后对比滑块：同一段行情，左侧是老师的标注，右侧是学员最常见的误判。拖动中缝对照，比两张图上下排列更容易看出差别在哪一根 K 线上。</p>
+     </section>
+
+     <!-- 3. 判断依据 -->
+     <section class="section" id="s3">
+      <div class="eyebrow">RULE · 判断依据</div>
+      <h2>三步立尺子</h2>
+      <div class="with-note">
+       <div>
+        <div class="steps">
+         <div class="step"><div><h3>先定方向：摆动高低点是否同向抬高</h3><p>不看均线、不看指标，只标出相邻两次摆动的高低点。方向是结构问题，不是指标问题。</p></div></div>
+         <div class="step"><div><h3>再定级别：这一段在哪个时间尺度上成立</h3><p>日线成立不等于 30 分钟成立。级别错配是后面所有误判的源头。</p></div></div>
+         <div class="step"><div><h3>最后定节奏：回撤力度是否逐次衰减</h3><p>这就是阻尼运动的位置。它决定的是「怎么持有」，不是「要不要进」。</p></div></div>
+        </div>
+       </div>
+       <aside class="sidenote">
+        <b>先证伪，再确认</b>
+        三步里任何一步不成立，都先回到「震荡」假设，而不是找理由维持原判断。<br>
+        <span class="src">来源：原片 14:20 · 术语表「证伪条件」</span>
+       </aside>
+      </div>
+      <div class="callout def">
+       <div class="ct">◇ 定义</div>
+       <p><strong>阻尼运动</strong>：在给定级别上，趋势推进后的回撤力度逐次衰减、且不破坏前一次结构低点的节奏描述。定义里的「给定级别」不能省略，它描述节奏而非预测价位。</p>
+      </div>
+      <div class="callout risk">
+       <div class="ct">⚠ 风险提示</div>
+       <p>本节所有图例用于教学，不构成任何投资建议。教材中的行情区间仅为课程讲解当时的历史片段，不代表当前市场状态。</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+       <h3>这一节在课程里的位置</h3>
+       <div class="steps" style="margin-top:12px">
+        <div class="step"><div><h3>总论 1 · 立尺子</h3><p>方向 / 级别 / 节奏的三步框架。</p></div></div>
+        <div class="step"><div><h3>总论 2 · 阻尼运动</h3><p>你正在这里。节奏的具体化。</p></div></div>
+        <div class="step"><div><h3>筹码分布 / 综合研判</h3><p>持仓结构与检查单的落地。</p></div></div>
+       </div>
+      </div>
+     </section>
+
+     <!-- 4. 交互 K 线 -->
+     <section class="section" id="s4">
+      <div class="eyebrow">EXPLORE · 交互行情</div>
+      <h2>回到当时的那张图</h2>
+      <p class="muted">下面是课程讲解对应的历史区间（演示数据）。<b>老师标注</b>来自 DSL 容器块，每个点都能点开看原话、时间码与出处；<b>逐根回放</b>会在关键位置停下来，先让你判断，再揭晓老师当时的结论。作答只在本机，不上传。</p>
+      <div class="kline">
+       <div class="kline-head">
+        <span class="title">教学行情 · 案例股 sz000713</span>
+        <button class="kbtn on" id="btnMa">MA5 / MA10</button>
+        <select id="markFilter" aria-label="标注层筛选">
+         <option value="all">标注：全部</option>
+         <option value="structure">只看结构点</option>
+         <option value="invalidation">只看证伪点</option>
+         <option value="rhythm">只看节奏点</option>
+         <option value="off">关闭标注</option>
+        </select>
+        <button class="kbtn" id="btnWeek">周线</button>
+        <button class="kbtn" id="btnReplay">▶ 逐根回放</button>
+        <button class="kbtn" id="btnStep">单步</button>
+        <button class="kbtn" id="btnSpeed">速度 1×</button>
+       </div>
+       <div class="replay-bar" id="replayBar">
+        <span id="replayState">已暂停</span>
+        <div class="replay-track" id="replayTrack"><i id="replayFill"></i></div>
+        <b id="replayCount">0 / 78 根</b>
+        <button class="kbtn" id="btnReset">重置</button>
+       </div>
+       <div class="kline-stage">
+        <canvas id="kchart"></canvas>
+        <div class="ktip" id="ktip"></div>
+        <div class="mark-card" id="markCard"></div>
+       </div>
+       <div class="decision" id="decision">
+        <div class="dt">⏸ 判断点 · 先别看后面</div>
+        <div class="dq" id="decisionQ"></div>
+        <div class="dopts" id="decisionOpts"></div>
+        <div class="verdict" id="verdict">
+         <div class="vh" id="verdictHead"></div>
+         <div id="verdictText"></div>
+         <div class="vmeta" id="verdictMeta"></div>
+         <button class="vbtn" id="btnContinue">继续揭晓 →</button>
+        </div>
+       </div>
+       <div class="kline-foot">
+        <div class="legend">
+         <span><i style="background:#e0a44a"></i>MA5</span>
+         <span><i style="background:#7b8fd4"></i>MA10</span>
+         <span><i style="background:var(--c-up)"></i>涨</span>
+         <span><i style="background:var(--c-down)"></i>跌</span>
+        </div>
+        <span id="kHint">滚轮缩放 · 拖拽平移 · 点标注看原话</span>
+        <span>周期：日线 / 周线 · 前复权 · 不构成投资建议</span>
+        <a class="jump" id="jumpLink" href="#s5">↗ 回原片 00:00</a>
+       </div>
+      </div>
+      <div class="replay-summary" id="replaySummary"></div>
+      <div class="marklegend">
+       <span><i style="background:var(--c-brand)"></i>结构点 · 摆动高低点</span>
+       <span><i style="background:var(--c-danger)"></i>证伪点 · 结构破坏</span>
+       <span><i style="background:var(--c-ok)"></i>节奏点 · 回撤衰减</span>
+       <span><i style="background:var(--c-warn)"></i>◆ 判断点（回放会在此暂停）</span>
+      </div>
+     </section>
+
+     <!-- 5. 画中画联动 -->
+     <section class="section" id="s5">
+      <div class="eyebrow">SYNC · 画中画联动</div>
+      <h2>老师讲的那根，就在这里亮着</h2>
+      <p class="muted">视频仍然用课程原片（已有老师标注，不重做），只是把转写文字、播放位置和右侧 K 线接起来。点击任意一句转写，视频跳到对应秒、右侧同步高亮当时讲到的那根 K 线。</p>
+      <div class="pip">
+       <div class="video">
+        <div class="video-screen">
+         <svg class="graphic" viewBox="0 0 300 156" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 120 L26 108 L52 116 L78 88 L104 96 L130 62 L156 74 L182 48 L208 56 L234 34 L260 42 L300 22" fill="none" stroke="#7ea2ff" stroke-width="2" opacity=".8"/>
+          <g stroke="#7ea2ff" opacity=".35"><path d="M0 130 H300 M0 100 H300 M0 70 H300 M0 40 H300"/></g>
+          <path d="M182 48 L208 56" stroke="#ffd479" stroke-width="3" stroke-linecap="round"/>
+         </svg>
+         <div class="play" id="playBtn">▶</div>
+         <span class="wm">水印 · xiaoming</span>
+         <span class="stamp" id="videoStamp">00:00 / 18:24</span>
+        </div>
+        <div class="video-bar"><i id="videoBar"></i></div>
+        <div class="transcript" id="transcript"></div>
+       </div>
+       <div class="pip-chart">
+        <span class="pip-hint">↑ 与视频同步高亮</span>
+        <canvas id="kchart2"></canvas>
+       </div>
+      </div>
+      <div class="callout rule">
+       <div class="ct">◆ 签名播放说明</div>
+       <p>播放走签名会话：窗口校验、到点自动停、水印已叠加；过期或越窗时给出可读提示并自动换签，不静默黑屏。内容消费免费，不消耗额度。</p>
+      </div>
+     </section>
+
+     <!-- 6. 滚动叙事 -->
+     <section class="section" id="s6">
+      <div class="eyebrow">SCROLLY · 渐进叙事</div>
+      <h2>跟着节奏，一层层加上去</h2>
+      <div class="scrolly">
+       <div class="scrolly-steps" id="scrollySteps">
+        <div data-step="0"><h3>① 只有价格</h3><p>先看裸 K。此时最容易犯的错，是急着给每段波动贴标签。</p></div>
+        <div data-step="1"><h3>② 标出摆动高低点</h3><p>加上结构点之后，方向才第一次变得可讨论。</p></div>
+        <div data-step="2"><h3>③ 加上级别</h3><p>同一个位置在不同级别上结论相反，这一步决定后面所有判断。</p></div>
+        <div data-step="3"><h3>④ 最后看节奏</h3><p>回撤力度逐次衰减，才是「阻尼运动」要描述的东西。</p></div>
+       </div>
+       <div class="scrolly-visual" id="scrollyVisual">
+        <svg viewBox="0 0 340 150" id="scrollySvg" aria-label="随滚动逐层叠加的结构图">
+         <path id="svLine" d="M10 118 C40 112 52 84 78 92 S112 118 138 76 S172 104 198 60 S232 82 258 44 S292 58 330 30" fill="none" stroke="#7ea2ff" stroke-width="2.4"/>
+         <g id="svDots"></g><g id="svTags"></g>
+        </svg>
+        <div class="bar-row"><span>方向</span><div class="track"><i id="bar1" style="width:0%"></i></div></div>
+        <div class="bar-row"><span>级别</span><div class="track"><i id="bar2" style="width:0%"></i></div></div>
+        <div class="bar-row"><span>节奏</span><div class="track"><i id="bar3" style="width:0%"></i></div></div>
+        <p class="tiny" id="scrollyHint" style="margin:10px 0 0">向下滚动，图解会跟着讲解逐层展开 ↓</p>
+       </div>
+      </div>
+     </section>
+
+     <!-- 7. 自检 -->
+     <section class="section" id="s7">
+      <div class="eyebrow">CHECK · 自检</div>
+      <h2>你会用了吗</h2>
+      <div class="quiz">
+       <div class="q">下面哪种情况，最应该先回到「震荡」假设？</div>
+       <div class="opts" id="quizOpts">
+        <button class="opt" data-ok="0">A. 日线摆动高点抬高，但 30 分钟图上结构反复被破坏</button>
+        <button class="opt" data-ok="1">B. 同一级别上，摆动低点被有效跌破，且回撤一次比一次深</button>
+        <button class="opt" data-ok="0">C. 成交量在突破时温和放大，随后缩量回踩</button>
+       </div>
+       <div class="feedback" id="quizFeedback"></div>
+      </div>
+      <div class="card">
+       <h3>离开这一节前，确认三件事</h3>
+       <div class="checklist">
+        <label><input type="checkbox" /> 我能不靠指标，在裸 K 上标出相邻两次摆动的高低点</label>
+        <label><input type="checkbox" /> 我能在结论里明确写出「这是在哪个级别上成立」</label>
+        <label><input type="checkbox" /> 遇到反例时，我会先证伪自己，而不是找理由维持原判断</label>
+       </div>
+      </div>
+      <div class="callout misuse" style="margin-top:16px">
+       <div class="ct">✕ 最容易带走的误解</div>
+       <p>「阻尼运动＝回撤越来越小＝可以加仓」。课程里它只描述节奏，不含任何仓位建议；把描述当信号，是这一节之后最常出现的问题。</p>
+      </div>
+     </section>
+
+     <div class="footnote">
+      课件呈现 · 总论卷第 2 节 · 趋势的阻尼运动 · 2026-11-12<br>
+      本页为静态原型：行情、转写、时间锚均为演示数据，术语与章节信息取自总论卷术语表（已批准）；课件目标效果对齐 trend-studio 教材呈现原型（hero 节头 / 四型 callout / 术语边注 / 先想一想 / A·B 类图示 / 对比滑块 / 老师标注 + 逐根回放判断 / 画中画联动 / 滚动叙事 / 即时自检），与教师端成品审核预览同构渲染；外壳为 DSH 同构三栏（R30）。<br>
+      阅读进度已上报（时长取最大值，完成不回退）· 内容契约版本校验：不兼容时提示升级，不静默降级。
+     </div>
+
+    </div>
+   </div>
 
    </div>
   </div>
- </div>
-</div></div>
 
+  <!-- 底部阅读条（类 composer 位置）-->
+  <div class="composer-seat">
+   <div class="comp-note" style="margin-bottom:0">
+    <span>阅读进度 46% · 时长取最大值 · 完成不回退</span>
+    <span class="r">本节内容消费免费 · 仅智能问答计额度 · <a class="lnk" href="student-chat.html">带着疑问提问 →</a></span>
+   </div>
+  </div>
+ </div>
+</main>
+
+<!-- ================= 右栏（框架 文件/终端 + 插件 播放器/标注/笔记 · 页签原地切换）================= -->
+<aside class="right">
+ <nav class="right-tabs">
+  <button class="rtab" data-pane="files" type="button" title="工作区文件（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>文件</button>
+  <button class="rtab" data-pane="term" type="button" title="终端（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端</button>
+  <button class="rtab on" data-pane="player" type="button" title="签名播放器（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
+  <button class="rtab" data-pane="marks" type="button" title="老师标注（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3v16M5 8l7-5 7 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>标注</button>
+  <button class="rtab" data-pane="notes" type="button" title="本节笔记（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>笔记</button>
+ </nav>
+ <div class="right-body">
+
+  <!-- 面板：文件（框架）-->
+  <div class="rpane" data-pane="files">
+   <div class="h">工作区 · trend-student</div>
+   <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">sec-zl-02</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">courseware.html</span><span class="ro">只读</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">kline-daily.json</span><span class="ro">只读</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">annotations.json</span><span class="ro">只读</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">transcript.txt</span><span class="ro">只读</span></div>
+   <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">workspace</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">notes.md</span><span class="ro">可写</span></div>
+   <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">replay-answers.local</span><span class="ro">本机</span></div>
+   <div class="dim" style="margin-top:8px">逐根回放作答只落本机（replay-answers.local），不上传。</div>
+  </div>
+
+  <!-- 面板：终端（框架）-->
+  <div class="rpane" data-pane="term">
+   <div class="term"><span class="t">10:20:11</span> [trend-student] 打开课程页：sec-zl-02
+<span class="t">10:20:12</span> [trend-student] 课件渲染 · 契约 v3 校验 <span class="ok">通过</span>
+<span class="t">10:20:12</span> [trend-student] 行情同步：日线 78 根 · 周线 16 根（前复权）
+<span class="t">10:20:13</span> [trend-student] 签名会话签发（窗校验通过 · 水印叠加）
+<span class="t">10:26:40</span> [trend-student] 进度上报：46%（幂等 · 取最大值）</div>
+  </div>
+
+  <!-- 面板：播放器（插件 · 签名会话）-->
+  <div class="rpane on" data-pane="player">
+   <div class="card">
+    <div class="kv"><span class="k">窗校验</span><span style="color:var(--s-brand)">通过</span></div>
+    <div class="kv"><span class="k">水印</span><span>xiaoming · 已叠加</span></div>
+    <div class="kv"><span class="k">当前片段</span><span>原片 00:00 / 18:24</span></div>
+    <div class="kv"><span class="k">周期口径</span><span>日线 / 周线可切</span></div>
+    <div class="kv"><span class="k">复权</span><span>前复权 · 常驻声明</span></div>
+    <div class="dim" style="margin-top:6px">过期或越窗自动换签并提示，不静默黑屏；内容消费免费不耗额度。</div>
+   </div>
+   <div class="h">播放控制</div>
+   <div class="card">
+    <div style="display:flex;gap:6px"><button class="tbtn" type="button">暂停</button><button class="tbtn" type="button">重播本段</button></div>
+    <div class="dim" style="margin-top:7px">画中画联动（课件第 5 节）与右栏共用同一签名会话。</div>
+   </div>
+  </div>
+
+  <!-- 面板：标注 -->
+  <div class="rpane" data-pane="marks">
+   <div class="h">本节老师标注</div>
+   <a class="seg-row" href="#s4"><span class="tt">05:40</span><span class="tx">摆动高点 · 结构点</span></a>
+   <a class="seg-row on" href="#s4"><span class="tt">08:42</span><span class="tx">节奏衰减 · 节奏点</span></a>
+   <a class="seg-row" href="#s4"><span class="tt">11:05</span><span class="tx">结构破坏 · 证伪点</span></a>
+   <a class="seg-row" href="#s4"><span class="tt">16:08</span><span class="tx">节奏衰减 · 节奏点</span></a>
+   <div class="dim" style="margin-top:6px">点击列表定位到交互 K 线；在图上点标注点可看老师原话、时间码与术语出处。</div>
+   <div class="h">图例</div>
+   <div class="card">
+    <div class="kv"><span class="k"><span style="color:var(--s-brand)">●</span> 结构点</span><span>摆动高低点</span></div>
+    <div class="kv"><span class="k"><span style="color:#ef6a5f">●</span> 证伪点</span><span>结构破坏</span></div>
+    <div class="kv"><span class="k"><span style="color:#3ecf8e">●</span> 节奏点</span><span>回撤衰减</span></div>
+    <div class="kv"><span class="k"><span style="color:var(--s-warn)">◆</span> 判断点</span><span>回放暂停作答</span></div>
+   </div>
+  </div>
+
+  <!-- 面板：笔记 -->
+  <div class="rpane" data-pane="notes">
+   <div class="h">学习状态</div>
+   <div class="card">
+    <div class="kv"><span class="k">本节进度</span><span>学习中 · 46%</span></div>
+    <div class="qbar" style="margin:8px 0"><i style="width:46%"></i></div>
+    <div class="kv"><span class="k">逐根回放</span><span>未完成</span></div>
+    <div class="kv"><span class="k">即时自检</span><span>未作答</span></div>
+    <div class="dim" style="margin-top:6px">阅读进度幂等上报：时长取最大值，完成不回退。</div>
+   </div>
+   <div class="h">本节笔记</div>
+   <div class="card">
+    <div class="dim" style="font-family:var(--s-serif);font-size:12.5px;line-height:1.9">先定方向 → 再定级别 → 最后定节奏；任何一步不成立，先回到震荡假设……</div>
+    <div class="dim" style="margin-top:6px">只在本机保存，不上云、不进指标。</div>
+   </div>
+   <div class="h">延伸</div>
+   <div class="card">
+    <a class="lnk" style="display:block" href="student-chat.html">向本节提问（计额度）</a>
+    <a class="lnk" style="display:block;margin-top:6px" href="portal.html#features">站点功能（公开）</a>
+   </div>
+  </div>
+
+ </div>
+</aside>
+
+</div><!-- /dsh-row -->
+
+<!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
+<section class="dsh-bottom">
+ <header class="bt-hd">
+  <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · trend-student 插件运行时</span>
+  <span class="dim">NodeJS 诊断</span>
+  <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+ </header>
+ <div class="bt-body">
+  <pre class="term"><span class="t">10:20:11</span> [dsh] 插件加载：trend-student v0.2.1（内容契约 v3 · 兼容）
+<span class="t">10:20:12</span> [trend-student] 课件渲染 · 契约 v3 校验通过 · 教材正文 P95 1.2s
+<span class="t">10:20:13</span> [trend-student] 签名会话签发（窗校验通过 · 水印叠加）
+<span class="t">10:20:13</span> [trend-student] 行情同步：日线 78 根 · 周线 16 根（前复权 · 周期声明常驻）
+<span class="t">10:26:40</span> [trend-student] 进度上报：46%（幂等 · 时长取最大值 · 完成不回退）</pre>
+ </div>
+</section>
+
+</div>
+<script src="assets/dsh-right.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1082,7 +1272,7 @@
       entries.forEach(function (en) {
         if (en.isIntersecting) setStep(parseInt(en.target.getAttribute('data-step'), 10));
       });
-    }, { rootMargin: '-30% 0px -45% 0px', threshold: 0 });
+    }, { root: scroller, rootMargin: '-30% 0px -45% 0px', threshold: 0 });
     stepEls.forEach(function (el) { io.observe(el); });
   }
   setStep(0);

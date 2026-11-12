@@ -1,32 +1,106 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>首启向导 · 趋势伴学</title>
 <link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-dsh.css">
-</head><body><div class="win"><div class="tbar"><div class="dots"><i style="background:#F0564F"></i><i style="background:#F2BD3D"></i><i style="background:#59C05A"></i></div><div class="ttl" style="flex:1;text-align:center">趋势伴学 · 首启向导</div><span class="hz">dsh <b>0.2.1</b> · trend-student</span></div><div style="display:flex;flex-direction:column;align-items:center;padding:52px 48px 40px">
- <div style="width:52px;height:52px;border-radius:50%;background:var(--jade-bg);border:1px solid #2A5B4E;display:grid;place-items:center">
-   <svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#3DBE9B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
- <div style="font-size:19px;font-weight:650;margin-top:14px">安装完成，只剩一步</div>
- <div class="dim" style="margin-top:5px;text-align:center">无需配置任何模型——推理由云端供给，登录即用</div>
- <div style="display:flex;gap:7px;align-items:center;margin:22px 0 26px">
-   <span style="width:22px;height:3px;border-radius:2px;background:var(--jade)"></span>
-   <span style="width:22px;height:3px;border-radius:2px;background:#2A2E37"></span>
-   <span class="dim" style="margin-left:6px;font-size:11.5px">登录并绑定设备</span>
+<style>
+/* 页内补充：DSH 空会话居中布局（composerSeat 垂直居中的空态）*/
+.blank{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px;min-height:0}
+.blank-inner{width:460px;max-width:100%}
+.steps{display:flex;align-items:center;gap:7px;margin:26px 0 30px;justify-content:center}
+.steps i{width:26px;height:3px;border-radius:2px;background:#3a3a40}
+.steps i.on{background:var(--s-brand)}
+.steps span{font-size:11.5px;color:var(--s-ink4);margin-left:4px}
+.code-card{background:var(--s-elev);border:1px solid var(--s-line);border-radius:var(--s-r-md);padding:22px 24px}
+.brand-mark{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#2fa383,#3DBE9B);display:grid;place-items:center;color:var(--s-brand-ink);font-size:26px;font-weight:800;margin:0 auto}
+</style></head><body><div class="dsh">
+<div class="dsh-row">
+
+<!-- ================= 侧栏（登录前 · 框架品牌与预置面板）================= -->
+<aside class="sb">
+ <div class="sb-brand">
+  <span class="mark">势</span>
+  <span class="nm"><b>DeepSeek Harness</b><small>预览版 · 首启向导</small></span>
+  <button class="tgl" title="折叠侧栏" type="button"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 5h16M4 12h11M4 19h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19 8l3 4-3 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
  </div>
- <div style="width:400px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:20px 22px">
-  <div style="display:flex;gap:16px;align-items:center">
-   <div>
-    <div style="font:600 30px var(--mono);letter-spacing:10px;color:#fff">8427</div>
-    <div class="dim" style="margin-top:2px;text-align:center">用户码</div>
-   </div>
-   <div style="width:1px;height:52px;background:var(--line)"></div>
-   <div class="dim" style="flex:1">已在浏览器自动打开授权页，核对页面显示的数字后点击「批准」。授权码 10 分钟内有效。</div>
+ <nav class="sb-nav">
+  <div class="sb-row" style="color:var(--s-ink4);cursor:default" title="trend-student 插件 · 登录后加载"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>我的课程</div>
+  <div class="sb-row" style="color:var(--s-ink4);cursor:default" title="框架面板"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l1.2 1.2L7.4 5M4 12l1.2 1.2L7.4 11M4 18l1.2 1.2L7.4 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>插件</div>
+  <div class="sb-row" style="color:var(--s-ink4);cursor:default" title="框架面板"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>自动化任务</div>
+  <div class="sb-row" style="color:var(--s-ink4);cursor:default" title="框架面板"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="10" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="16" y="4" width="4" height="4" rx="1" fill="currentColor"/><rect x="4" y="10" width="4" height="4" rx="1" fill="currentColor"/><rect x="4" y="16" width="4" height="4" rx="1" fill="currentColor"/><path d="M10 12h10M10 18h10M14 10v4m4 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>更多</div>
+ </nav>
+ <div class="sb-ws">
+  <div class="ws-list" style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--s-ink4);font-size:12px;gap:8px">
+   <svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+   <span style="text-align:center;line-height:1.7">工作区与课程树<br>登录后加载</span>
   </div>
-  <div class="kv" style="margin-top:14px;border-top:1px solid var(--line2);padding-top:10px">
-    <span class="k">授权页</span><a class="lnk" style="font:500 11.5px var(--mono)" href="portal-device-auth.html">https://trend.example.com/device · 已打开</a></div>
  </div>
- <div class="dim" style="margin-top:24px;text-align:center">等待批准中…… 批准后自动进入学习<br>令牌只存本机凭据库 · 设备与账号绑定 · 可随时解绑</div>
- <div style="margin-top:22px;display:flex;gap:10px">
-  <a class="lnk" href="portal-device-auth.html">打开授权页原型</a>
-  <span class="dim">·</span>
-  <a class="lnk" href="student-system.html">批准后进入体系页（演示）</a>
+ <div class="sb-foot">
+  <div class="foot-row" style="cursor:default">
+   <span class="ava" style="background:var(--s-side2);color:var(--s-ink4)">?</span>
+   <span class="un"><b style="color:var(--s-ink3)">未登录</b><small>等待设备授权…</small></span>
+  </div>
  </div>
-</div></div></body></html>
+</aside>
+<div class="handle" title="拖拽调整宽度"></div>
+
+<!-- ================= 中央列（DSH 空会话居中空态）================= -->
+<main class="main">
+ <header class="hd">
+  <nav class="crumbs"><b>首启向导</b></nav>
+  <div class="hd-chips"><span class="chip">v0.2.1</span></div>
+  <div class="corner">
+   <button class="icon-btn" data-action="toggle-bottom" title="终端" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+   <button class="icon-btn" title="设置" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5v2M12 18.5v2M4.9 7.5l1.7 1M17.4 15.5l1.7 1M4.9 16.5l1.7-1M17.4 8.5l1.7-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+ </header>
+ <div class="body">
+  <div class="blank">
+   <div class="blank-inner">
+    <div class="brand-mark">势</div>
+    <div style="text-align:center;font-size:19px;font-weight:650;margin-top:16px">安装完成，只剩一步</div>
+    <div class="dim" style="text-align:center;margin-top:5px">无需配置任何模型——推理由云端供给，登录即用</div>
+    <div class="steps"><i class="on"></i><i></i><span>登录并绑定设备</span></div>
+
+    <div class="code-card">
+     <div style="display:flex;gap:18px;align-items:center">
+      <div>
+       <div style="font:600 30px var(--s-mono);letter-spacing:10px;color:var(--s-ink)">8427</div>
+       <div class="dim" style="margin-top:2px;text-align:center">用户码</div>
+      </div>
+      <div style="width:1px;height:52px;background:var(--s-line)"></div>
+      <div class="dim" style="flex:1">已在浏览器自动打开授权页，核对页面显示的数字后点击「批准」。授权码 10 分钟内有效。</div>
+     </div>
+     <div class="kv" style="margin-top:16px;border-top:1px solid var(--s-line2);padding-top:10px">
+      <span class="k">授权页</span><a class="lnk" style="font:500 11.5px var(--s-mono)" href="portal-device-auth.html">trend.example.com/device · 已打开</a>
+     </div>
+    </div>
+
+    <div class="dim" style="text-align:center;margin-top:22px">等待批准中…… 批准后自动进入学习<br>令牌只存本机凭据库 · 设备与账号绑定 · 可随时解绑</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
+     <a class="tbtn" href="portal-device-auth.html">打开授权页原型</a>
+     <a class="tbtn jade" href="student-system.html">批准后进入我的课程（演示）</a>
+    </div>
+   </div>
+  </div>
+ </div>
+</main>
+
+</div><!-- /dsh-row -->
+
+<!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
+<section class="dsh-bottom">
+ <header class="bt-hd">
+  <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · 首启运行时</span>
+  <span class="dim">NodeJS 诊断</span>
+  <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+ </header>
+ <div class="bt-body">
+  <pre class="term"><span class="t">11:02:01</span> [dsh] 运行时启动 · 平台模型通道就绪（云端供给 · 零配置）
+<span class="t">11:02:02</span> [dsh] 等待插件：trend-student（登录后加载）
+<span class="t">11:02:03</span> [auth] 设备码已生成（8427）· 授权页已拉起 · 10 分钟内有效
+<span class="t">11:02:03</span> [auth] 等待批准…… grant 只存本机凭据库</pre>
+ </div>
+</section>
+
+</div>
+<script src="assets/dsh-right.js"></script>
+</body></html>
