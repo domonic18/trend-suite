@@ -1,0 +1,890 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教材编辑 · 1.1 趋势的定义 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+[hidden]{display:none!important}
+/* 编辑画布 + 右侧检查器 */
+.ed-layout{display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:14px;align-items:start}
+.ed-canvas{min-width:0}
+.ed-hint{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;font-size:12px;color:var(--p-mut)}
+.ed-hint .k{font:600 10px var(--font-mono);border:1px solid var(--p-line);border-radius:5px;padding:1px 6px;background:#fff;color:var(--p-ink)}
+.doc-card{background:#fff;border:1px solid var(--p-line);border-radius:12px;overflow:hidden}
+.doc-top{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--p-line);font-size:11px;color:var(--p-mut);white-space:nowrap}
+.doc-top .grow{flex:1;min-width:0}
+.doc-top .dirty{font:500 10.5px var(--font-mono);color:#8a5a00;background:#fff6e5;border-radius:5px;padding:1px 6px}
+.doc-top .dirty[hidden]{display:none}
+.doc-top .chip{font-size:10px}
+
+/* 文档（节选 1.1，保留教材的阅读尺度） */
+.doc{padding:28px 34px 32px;max-width:720px;margin:0 auto;font-size:13.5px;line-height:1.95;color:#25324a}
+.doc-kicker{font:600 10.5px var(--font-mono);letter-spacing:.08em;color:var(--p-pri);margin-bottom:6px}
+.doc h1{font-size:23px;line-height:1.35;margin:0 0 8px;color:var(--p-ink);letter-spacing:-.01em}
+.doc-lead{font-size:14px;color:var(--p-mut);margin:0 0 18px;padding-bottom:16px;border-bottom:1px solid #eef1f6}
+.doc h2{font-size:15.5px;margin:24px 0 8px;color:var(--p-ink)}
+.doc p{margin:0 0 11px;position:relative}
+.doc-rule{font-size:11.5px;color:var(--p-mut);border-left:2px solid #bcd0f7;padding-left:10px;margin:0 0 16px;line-height:1.75}
+.doc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.doc-cards div{border:1px solid var(--p-line);border-radius:9px;padding:9px 10px;background:#fafbfd}
+.doc-cards b{display:block;font:600 10px var(--font-mono);color:var(--p-pri);margin-bottom:3px}
+.doc-cards span{font-size:11.5px;color:var(--p-ink);line-height:1.6}
+.doc-note{margin:0 0 12px;padding:9px 11px;border-left:2px solid #c7d7f5;background:#f8faff;border-radius:0 8px 8px 0;font-size:11px;line-height:1.7;color:var(--p-mut)}
+.doc-note b{display:block;color:var(--p-ink);font-size:11.5px;margin-bottom:2px}
+.doc-note em{display:block;margin-top:5px;font-style:normal;font-size:10px;color:#9aa3b8}
+.doc-warn{margin:0 0 16px;border-radius:9px;padding:10px 12px;font-size:12px;line-height:1.75}
+.doc-warn b{display:block;font-size:10.5px;letter-spacing:.04em;margin-bottom:2px}
+.doc-warn.def{background:#f6f9ff;border-left:3px solid #2563eb}
+.doc-warn.def b{color:#1e4fd8}
+.doc-cite{font:500 9.5px var(--font-mono);background:#eef4ff;color:#2563eb;border-radius:4px;padding:1px 5px;margin-left:3px;white-space:nowrap}
+
+/* 图：可替换 */
+.doc-media{margin:4px 0 16px;border:1px solid var(--p-line);border-radius:10px;overflow:hidden;background:#fff}
+.doc-media .media-box{line-height:0;background:#0f172a}
+.doc-media .media-box svg,.doc-media .media-box img{display:block;width:100%;height:auto}
+.doc-media figcaption{padding:7px 11px;font-size:11px;color:var(--p-mut);border-top:1px solid var(--p-line);background:#fafbfd;line-height:1.6}
+.doc-media .mono{font:500 9.5px var(--font-mono);color:#9aa3b8;float:right}
+
+/* K 线（由属性驱动渲染） */
+.doc-kline{border:1px solid #1e293b;border-radius:10px;overflow:hidden;background:#0f172a;margin:0 0 14px}
+.kl-head{display:flex;align-items:center;gap:6px;padding:8px 10px;color:#cbd5e1;font-size:10.5px;border-bottom:1px solid #1e293b;flex-wrap:wrap}
+.kl-head b{font:600 11.5px var(--font-mono);color:#e2e8f0}
+.kl-head .grow{flex:1}
+.kl-tag{font:600 9.5px var(--font-mono);border-radius:5px;padding:1px 6px}
+.kl-tag.ok{background:#0c2b23;color:#6ee7b7}
+.kl-tag.part{background:#2c2510;color:#fbbf24}
+.kl-tag.none{background:#2a1216;color:#fca5a5}
+.kl-stage{line-height:0}
+.kl-stage svg{display:block;width:100%;height:auto}
+.kl-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:6px 10px;border-top:1px solid #1e293b;color:#64748b;font-size:9.5px}
+.kl-foot i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px}
+.doc-ann{border:1px solid #f4d7d7;background:#fffafa;border-radius:9px;padding:10px 12px;margin:0 0 16px}
+.doc-ann .ah{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--p-mut)}
+.doc-ann .ah b{color:var(--p-ink);font-size:12px}
+.doc-ann p{margin:7px 0 6px;font-size:12.5px;color:#3b465c}
+.doc-ann .af{font-size:10.5px;color:#9aa3b8}
+.doc-bignum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.doc-bignum div{border:1px solid var(--p-line);border-radius:9px;padding:9px 10px;background:#fff}
+.doc-bignum b{display:block;font:650 20px/1.2 var(--font-mono);color:var(--p-pri)}
+.doc-bignum span{font-size:10.5px;color:var(--p-mut)}
+.doc-src{margin-top:20px;padding-top:12px;border-top:1px dashed var(--p-line);font-size:11px;color:#9aa3b8;line-height:1.8}
+
+/* 选中态：所有可编辑元素共用 */
+.doc [data-e]{position:relative;transition:outline-color .12s,box-shadow .12s}
+.doc [data-e]:hover{outline:1px dashed #b9c9e6;outline-offset:3px;border-radius:5px}
+.doc [data-e].ed-sel{outline:2px solid #2563eb;outline-offset:3px;border-radius:5px;overflow:visible}
+.doc [data-e].ed-sel::before{content:attr(data-label);position:absolute;left:-3px;top:-21px;background:#2563eb;color:#fff;font:600 9.5px/1 var(--font-mono);padding:3px 6px;border-radius:4px;white-space:nowrap;z-index:2}
+.doc-media.ed-sel::before,.doc-kline.ed-sel::before{top:5px;left:5px}
+.doc-media.ed-sel{outline-offset:2px}
+.doc-kline.ed-sel{outline-offset:2px}
+.doc [data-e].ed-locked{background:linear-gradient(0deg,#f7f9fd,#f7f9fd)}
+.doc [data-e].ed-locked::after{content:"事实段 · 锚保护";position:absolute;right:0;top:-19px;font:600 9px var(--font-mono);color:#8a5a00;background:#fff6e5;border:1px solid #f0e2bd;border-radius:4px;padding:2px 5px}
+
+/* 浮动工具条 */
+.ftool{position:fixed;z-index:80;display:flex;align-items:center;gap:2px;padding:4px;background:#0f172a;border-radius:9px;box-shadow:0 10px 30px rgba(15,23,42,.32)}
+.ftool[hidden]{display:none}
+.ftool button,.ftool .sw,.ftool select{border:none;background:transparent;color:#cbd5e1;font-family:inherit;font-size:11px;line-height:1;height:26px;min-width:26px;padding:0 6px;border-radius:6px;cursor:pointer}
+.ftool button:hover,.ftool .sw:hover{background:#1e293b;color:#fff}
+.ftool button.dis{opacity:.35;cursor:not-allowed}
+.ftool select{background:#111c30;color:#cbd5e1;border:1px solid #334155;height:24px;padding:0 3px}
+.ftool .sep{width:1px;height:16px;background:#334155;margin:0 3px}
+.ftool .sw{display:inline-grid;place-items:center}
+.ftool .sw i{display:block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.35)}
+.ftool .t-act{color:#bfdbfe;font-weight:600}
+
+/* 检查器 */
+.ed-insp{position:sticky;top:64px;background:#fff;border:1px solid var(--p-line);border-radius:12px;display:flex;flex-direction:column;max-height:calc(100vh - 76px);overflow:hidden}
+.ed-insp .ih{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--p-line);font-size:13px;font-weight:700;color:var(--p-ink)}
+.ed-insp .ih .ty{margin-left:auto;font:500 10px var(--font-mono);color:var(--p-mut);background:var(--p-soft);border-radius:5px;padding:1px 6px}
+.ed-insp .ib{flex:1;overflow-y:auto;padding:12px 14px}
+.ed-insp .if{flex:none;padding:9px 14px;border-top:1px solid var(--p-line);background:#fafbfd;font-size:10.5px;line-height:1.7;color:var(--p-mut)}
+.ed-insp .if b{color:var(--p-ink)}
+.insp-empty{padding:26px 6px;text-align:center;color:var(--p-mut);font-size:12.5px;line-height:1.9}
+.insp-empty .ic{width:34px;height:34px;margin:0 auto 10px;border-radius:9px;background:var(--p-soft);display:grid;place-items:center;color:#9aa3b8}
+.insp-empty .ic svg{width:17px;height:17px}
+.ins-t{font-size:11px;font-weight:700;letter-spacing:.05em;color:#9aa3b8;margin:0 0 8px}
+.ins-t:not(:first-child){margin-top:16px}
+.ins-kv{display:grid;gap:6px;margin-bottom:12px}
+.ins-kv>div{display:flex;gap:8px;align-items:baseline;font-size:12px}
+.ins-kv span{flex:none;width:64px;color:var(--p-mut)}
+.ins-kv b{font-weight:600;color:var(--p-ink);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ins-kv b .mono{font:500 10.5px var(--font-mono);color:#6b7ba0}
+.ins-note{font-size:11.5px;line-height:1.75;color:var(--p-mut);background:#f6f9ff;border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.ins-note.warn{background:#fff6e5;color:#8a5a00}
+.ins-note.ok{background:#f0fbf7;color:#0b7d5e}
+.ins-note[hidden]{display:none}
+.ins-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ins-actions .btn{flex:1;justify-content:center;min-width:96px}
+.ins-tabs{display:flex;gap:2px;padding:2px;background:#f1f4f9;border-radius:8px;margin:0 0 10px}
+.ins-tabs button{flex:1;border:none;background:none;font-family:inherit;font-size:11.5px;color:var(--p-mut);padding:5px 0;border-radius:6px;cursor:pointer}
+.ins-tabs button.on{background:#fff;color:var(--p-pri);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.1)}
+.ins-tab[hidden]{display:none}
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lib-c{border:1px solid var(--p-line);border-radius:8px;background:#fff;padding:4px;text-align:left;cursor:pointer;transition:.12s;font-family:inherit}
+.lib-c:hover{border-color:#b9c6dd;box-shadow:0 3px 10px rgba(16,24,40,.07)}
+.lib-c.on{border-color:var(--p-pri);box-shadow:0 0 0 1px var(--p-pri)}
+.lib-th{display:block;border-radius:5px;overflow:hidden;background:#0f172a;line-height:0}
+.lib-th svg{display:block;width:100%;height:auto}
+.lib-c b{display:block;font-size:10.5px;color:var(--p-ink);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.lib-c small{display:block;font:500 9px var(--font-mono);color:#9aa3b8}
+.lib-empty{padding:16px 6px;text-align:center;font-size:11.5px;color:var(--p-mut)}
+.up-zone{display:block;border:1.5px dashed #c9d3e2;border-radius:9px;padding:18px 10px;text-align:center;color:var(--p-mut);font-size:12px;background:#fafbfd;cursor:pointer;line-height:1.7}
+.up-zone b{display:block;color:var(--p-ink);font-size:12.5px;margin-bottom:2px}
+.up-zone.on{border-color:var(--p-pri);background:var(--p-pri-soft);color:var(--p-pri)}
+.ins-field{display:grid;gap:4px;margin-bottom:10px}
+.ins-field>span{font-size:11px;color:var(--p-mut)}
+.ins-field .fi{height:30px;font-size:12.5px}
+.ins-seg{display:flex;background:#f1f4f9;border-radius:8px;padding:2px}
+.ins-seg span{flex:1;text-align:center;font-size:12px;color:var(--p-mut);padding:5px 0;border-radius:6px;cursor:pointer;user-select:none}
+.ins-seg span.on{background:#fff;color:var(--p-ink);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.08)}
+.ins-state{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-ink);margin:2px 0 10px}
+.ins-state .dot{width:7px;height:7px;border-radius:50%;flex:none;background:#9aa3b8}
+.ins-state.ok .dot{background:#0f9d76}
+.ins-state.part .dot{background:#d48806}
+.ins-state.none .dot{background:#d9483f}
+.ins-state .n{margin-left:auto;font:500 10.5px var(--font-mono);color:#9aa3b8}
+
+/* 轻提示 */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:95;background:#0f172a;color:#e2e8f0;font-size:12.5px;padding:9px 14px;border-radius:9px;box-shadow:0 14px 40px rgba(15,23,42,.32);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;display:flex;align-items:center;gap:10px;max-width:min(560px,90vw)}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{border:1px solid #334155;background:#111c30;color:#bfdbfe;border-radius:6px;font-family:inherit;font-size:11px;padding:3px 8px;cursor:pointer}
+.toast button:hover{border-color:#4b6584}
+
+@media(max-width:1180px){
+ .ed-layout{grid-template-columns:1fr}
+ .ed-insp{position:static;max-height:none}
+}
+@media(max-width:900px){
+ .doc{padding:20px 18px 24px}
+ .doc-note{float:none;width:auto;margin:0 0 12px}
+ .doc-cards,.doc-bignum{grid-template-columns:1fr}
+}
+</style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/><path d="M4 18l5.5-6 4 4.5 2.5-2.5L20 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 15l4-4 3 2.5 4-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M4 9h10a5 5 0 0 1 0 10H9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 5L4 9l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 9H10a5 5 0 0 0 0 10h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 5l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="ops-app">
+
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
+  <div class="sb-course" data-sb-course>
+   <button class="sbc-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="切换课程">
+    <span class="dot-run"></span>
+    <span class="sbc-t"><b>总论卷</b><small>生产中 · 3/6 章</small></span>
+    <svg class="sbc-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+   </button>
+   <div class="sbc-pop" role="menu" aria-label="切换课程">
+    <div class="sbc-h">切换课程</div>
+    <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="总论卷" data-meta="生产中 · 3/6 章">
+     <span class="dot-run"></span><span class="sbc-t"><b>总论卷</b><small>6 章 · 26 节 · 生产中</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-idle" data-name="筹码分布卷" data-meta="草稿 · 暂无章节">
+     <span class="dot-idle"></span><span class="sbc-t"><b>筹码分布卷</b><small>空课程 · 未上传素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-ok" data-name="趋势交易基础" data-meta="已发布 · 22 节">
+     <span class="dot-ok"></span><span class="sbc-t"><b>趋势交易基础</b><small>6 章 · 22 节 · 已发布</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="sbc-f"><a href="teacher-workbench.html">＋ 新建课程</a></div>
+   </div>
+  </div>
+  <div class="ops-g">当前课程</div>
+  <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
+  <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div>
+<header class="ops-top">
+ <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><span><a href="teacher-workbench.html" style="color:var(--p-mut)">总论卷</a></span><span class="sep">/</span><span><a href="teacher-textbook.html" style="color:var(--p-mut)">教材</a></span><span class="sep">/</span><b>编辑</b>
+ <span class="right"><span id="saveState">已保存 · v7 draft</span><a href="index.html" class="note">原型索引</a></span>
+</header>
+<main class="ops-main">
+
+ <div class="ops-ph">
+  <div>
+   <div class="t">教材编辑 <span class="tag warn" style="vertical-align:2px">v7 · draft</span></div>
+   <div class="s">在渲染后的教材上直接改：点段落改文字与样式，点图片换图，点 K 线图改行情属性。所有写入仍是 draft，保存时跑轻校验。</div>
+  </div>
+  <div class="a">
+   <button class="btn sm" id="btnUndo" title="撤销（⌘Z）"><svg style="width:13px;height:13px;vertical-align:-2px"><use href="#i-undo"/></svg> 撤销</button>
+   <button class="btn sm" id="btnRedo" title="重做（⇧⌘Z）"><svg style="width:13px;height:13px;vertical-align:-2px"><use href="#i-redo"/></svg> 重做</button>
+   <a class="btn" href="teacher-textbook.html">返回教材</a>
+   <a class="btn" href="student-course.html">预览学员效果</a>
+   <button class="btn pri" id="btnSave">保存草稿</button>
+  </div>
+ </div>
+
+ <div class="ed-layout">
+
+  <section class="ed-canvas">
+   <div class="ed-hint">
+    <span class="k">单击</span><span>选中段落 / 图片 / K 线图</span>
+    <span class="k">双击</span><span>直接改文字</span>
+    <span class="k">⌘Z</span><span>撤销</span>
+    <span style="margin-left:auto;color:#9aa3b8">事实段带「锚保护」标记，只能改样式</span>
+   </div>
+
+   <div class="doc-card">
+    <div class="doc-top">
+     <span><a href="teacher-textbook.html" style="color:var(--p-mut)">ch-01</a></span><span style="color:#c3ccdd">/</span><b style="color:var(--p-ink)">1.1 趋势的定义</b>
+     <span class="grow"></span>
+     <span class="dirty" id="dirty" hidden>0 处未保存</span>
+     <span class="dt-meta" style="display:flex;gap:6px"><span>1,630 字</span><span>·</span><span>更新于 11:42</span></span>
+    </div>
+
+    <article class="doc" id="edDoc">
+     <div class="doc-kicker">第 1 章 · 什么是趋势</div>
+     <h1 id="b-title" data-e="text" data-label="标题">1.1 趋势的定义</h1>
+     <p class="doc-lead" id="b-lead" data-e="text" data-label="导语">先定级别，再谈方向；先找证伪条件，再谈延续。</p>
+     <p class="doc-rule" id="b-rule" data-e="text" data-label="提示条">◆ 本节定位 · 每个判断都挂在原片时间锚上：点时间码回原片，点图示看关键帧，点标注看老师原话。</p>
+
+     <div class="doc-cards">
+      <div data-e="text" data-label="目标卡" id="b-card1"><b>01</b><span>说清「给定级别」</span></div>
+      <div data-e="text" data-label="目标卡" id="b-card2"><b>02</b><span>在图上标出摆动高低点</span></div>
+      <div data-e="text" data-label="目标卡" id="b-card3"><b>03</b><span>先写证伪条件，再谈延续</span></div>
+     </div>
+
+     <h2 id="b-h2a" data-e="text" data-label="二级标题">一、级别先于方向</h2>
+     <aside class="doc-note" id="b-note" data-e="text" data-label="术语边注"><b>级别</b>同一段行情在日线、周线上的结论可能相反。定义里的「给定级别」不能省略。<em>术语表 · 原片 03:12</em></aside>
+     <p id="b-p1" data-e="text" data-label="正文段落">趋势是价格在某一级别上形成的、可被高低点结构验证的方向性运动。<span class="doc-cite">原片 02:14</span></p>
+     <p id="b-p2" data-e="text" data-label="正文段落">级别不成立，趋势就不成立；同一段行情在日线上是趋势，在周线上可能只是一次摆动。<span class="doc-cite">原片 03:12</span></p>
+
+     <div class="doc-warn def" id="b-def" data-e="text" data-label="定义块"><b>◇ 定义 · 趋势</b>在给定级别上，摆动高点与摆动低点同向抬高（或降低），且回撤不破坏前一次结构低点（高点）的价格运动。</div>
+
+     <p id="b-fact" class="ed-locked" data-e="text" data-label="事实段">本节示例区间取 2019-03-01 至 2019-05-31，日线共 40 个交易日；区间内所有价格数值均由行情服务读回，不由模型生成。</p>
+
+     <figure class="doc-media" id="img-1" data-e="image" data-label="图片" data-asset="ast_53cc88">
+      <div class="media-box" id="mediaBox">
+       <svg viewBox="0 0 640 200" role="img" aria-label="均线束示意图：价格上穿后回踩不破，均线由粘合转为多头排列">
+        <rect width="640" height="200" fill="#0f172a"/>
+        <g stroke="#1e293b" stroke-width="1"><path d="M36 40H604M36 80H604M36 120H604M36 160H604"/></g>
+        <path d="M40 150L88 142L136 146L184 132L232 134L280 116L328 120L376 100L424 104L472 84L520 88L568 70L600 74" fill="none" stroke="#94a3b8" stroke-width="1.6"/>
+        <polyline points="40,158 88,153 136,150 184,145 232,141 280,136 328,130 376,124 424,117 472,110 520,103 568,96 600,91" fill="none" stroke="#e0a44a" stroke-width="1.8"/>
+        <polyline points="40,161 88,157 136,155 184,151 232,148 280,144 328,139 376,134 424,128 472,122 520,116 568,110 600,105" fill="none" stroke="#7b8fd4" stroke-width="1.8"/>
+        <polyline points="40,164 88,162 136,160 184,157 232,154 280,151 328,147 376,143 424,138 472,133 520,128 568,123 600,118" fill="none" stroke="#3DBE9B" stroke-width="1.8"/>
+        <path d="M328 120V52" stroke="#60a5fa" stroke-width="1" stroke-dasharray="4 4" opacity=".8"/>
+        <text x="334" y="50" fill="#60a5fa" font-size="10" font-family="monospace">均线束粘合 → 多头排列</text>
+        <text x="40" y="190" fill="#475569" font-size="9" font-family="monospace">MA5 / MA10 / MA20 · 2019-03 → 2019-05</text>
+       </svg>
+      </div>
+      <figcaption><b>图 1-2 · 均线束与多空分界</b>　价格上穿粘合的均线束后回踩不破，均线由粘合转为多头排列。<span class="mono">assetId=ast_53cc88</span></figcaption>
+     </figure>
+
+     <h2 id="b-h2b" data-e="text" data-label="二级标题">二、回到当时的那张图</h2>
+     <p id="b-p3" data-e="text" data-label="正文段落">把判断放回原片对应的历史区间。下面的 K 线、均线与成交量都由客户端按结构化数据渲染；图上的行情属性可以在这里直接查看和修改。</p>
+
+     <div class="doc-kline" id="kl" data-e="kline" data-label="K 线图">
+      <div class="kl-head">
+       <b id="kl-code">SZ000713 · 日线 · 前复权</b>
+       <span id="kl-range">2019-03 → 2019-05</span>
+       <span class="grow"></span>
+       <span class="kl-tag ok" id="kl-tag">已采集</span>
+      </div>
+      <div class="kl-stage"><svg id="kl-svg" viewBox="0 0 640 250" role="img" aria-label="案例股 K 线回放"></svg></div>
+      <div class="kl-foot"><span><i style="background:#e05d68"></i>涨</span><span><i style="background:#31a984"></i>跌</span><span><i style="background:#e0a44a"></i>MA5</span><span><i style="background:#7b8fd4"></i>MA10</span><span style="margin-left:auto" id="kl-count">40 根日线</span></div>
+     </div>
+
+     <div class="doc-ann" id="b-ann" data-e="text" data-label="老师标注">
+      <div class="ah"><span class="tag" style="background:#fff1f1;color:#a83a36">证伪点</span><b>2019-05-17 · 结构破坏</b><span style="margin-left:auto" class="mono">u-145 · 09:05</span></div>
+      <p>「但这个位置结构被破坏了，先证伪，别急着确认。」</p>
+      <div class="af">关联术语：证伪条件 · 结构破坏　·　行情：SZ000713 日线</div>
+     </div>
+
+     <div class="doc-bignum">
+      <div id="b-bn1" data-e="text" data-label="关键数字"><b>3</b><span>个摆动低点依次抬高</span></div>
+      <div id="b-bn2" data-e="text" data-label="关键数字"><b>1</b><span>条前低构成的证伪线</span></div>
+      <div id="b-bn3" data-e="text" data-label="关键数字"><b>2</b><span>个级别：日线成立，周线待确认</span></div>
+     </div>
+
+     <div class="doc-warn misuse" id="b-warn" data-e="text" data-label="风险提示" style="background:#fff6f6;border-left:3px solid #d9534f"><b style="color:#a83a36">✕ 常见误用</b>把下跌中的反弹当成趋势反转。反弹未突破前一个摆动高点之前，仍属于原级别的调整。</div>
+
+     <div class="doc-src">本节 6 个事实段落均可回溯到 ASR 片段 su_128 / su_131 / su_145；行情数值由行情服务读回，不由模型生成。轻量编辑只改表现层与措辞，不新增或删除事实段，不移除 <span class="mono">[[unit:]]</span> 锚。</div>
+    </article>
+   </div>
+  </section>
+
+  <aside class="ed-insp" aria-label="元素检查器">
+   <div class="ih">检查器<span class="ty" id="inspType">未选中</span></div>
+   <div class="ib">
+
+    <div id="inspEmpty" class="insp-empty">
+     <div class="ic"><svg><use href="#i-text"/></svg></div>
+     点击正文段落、图片或 K 线图<br>选中后在这里查看来源与属性
+    </div>
+
+    <div id="inspText" hidden>
+     <div class="ins-t">文本元素</div>
+     <div class="ins-kv">
+      <div><span>元素</span><b id="t-el">p</b></div>
+      <div><span>来源</span><b id="t-src">原片 02:14</b></div>
+      <div><span>样式</span><b id="t-style">默认</b></div>
+     </div>
+     <div class="ins-note" id="t-note">改动只影响表现层与措辞。保存时轻校验：锚点仍在、行情数值未变才通过。</div>
+     <div class="ins-note warn" id="t-lock" hidden>事实段受锚保护：可以改样式，措辞与数值变更被拒绝，需走生产回灌。</div>
+     <div class="ins-actions">
+      <button class="btn sm" id="btnEditText">编辑文字</button>
+      <button class="btn sm" id="btnAgent">让 Agent 重写整段</button>
+     </div>
+    </div>
+
+    <div id="inspImg" hidden>
+     <div class="ins-t">图片</div>
+     <div class="ins-kv">
+      <div><span>素材</span><b id="i-id" class="mono">ast_53cc88</b></div>
+      <div><span>名称</span><b id="i-name">均线束与多空分界</b></div>
+      <div><span>类型</span><b id="i-kind">图示 · 640×200</b></div>
+     </div>
+     <div class="ins-tabs" id="imgTabs">
+      <button data-tab="lib" class="on">素材库</button><button data-tab="search">搜索</button><button data-tab="upload">上传</button>
+     </div>
+     <div class="ins-tab" id="tab-lib"><div class="lib-grid" id="libGrid"></div></div>
+     <div class="ins-tab" id="tab-search" hidden>
+      <div class="ins-field"><span>按名称或类型搜索</span><input class="fi" id="libQ" type="text" placeholder="例如：均线 / 量能 / 周线"></div>
+      <div class="lib-grid" id="libResults"></div>
+     </div>
+     <div class="ins-tab" id="tab-upload" hidden>
+      <label class="up-zone" id="upZone"><b>拖入图片或点击上传</b><span style="font-size:11px">PNG / JPG / WEBP · 上传后写入素材库并替换当前图片</span><input type="file" id="upInput" accept="image/png,image/jpeg,image/webp" hidden></label>
+     </div>
+     <div class="ins-note" style="margin-top:10px">替换会记录新旧素材 ID，可回退原图；删除后可撤销。</div>
+     <div class="ins-actions">
+      <button class="btn sm" id="btnRevert" hidden>回退原图</button>
+      <button class="btn sm" id="btnDelImg" style="color:#a83a36;border-color:#f3cfcb">删除图片</button>
+     </div>
+    </div>
+
+    <div id="inspKline" hidden>
+     <div class="ins-t">K 线属性</div>
+     <div class="ins-field"><span>股票代码</span><input class="fi" id="k-code" type="text" value="SZ000713" spellcheck="false"></div>
+     <div class="ins-field"><span>显示周期</span><div class="ins-seg" id="k-period"><span data-p="day" class="on">日线</span><span data-p="week">周线</span></div></div>
+     <div class="ins-field"><span>起始时间</span><input class="fi" id="k-start" type="date" value="2019-03-01"></div>
+     <div class="ins-t">数据状态</div>
+     <div class="ins-state ok" id="k-state"><i class="dot"></i><span id="k-state-t">已采集</span><b class="n" id="k-state-n">40 / 40 根</b></div>
+     <div class="ins-note" id="k-note">改代码或周期会重读行情并重校验；未采集时图面显示占位，不伪造数据。</div>
+     <button class="btn sm pri blk" id="k-fetch" hidden>去采集（加入行情同步队列）</button>
+    </div>
+
+   </div>
+   <div class="if" id="inspFoot">轻校验：<b>锚点 6 / 6</b> · 数值未变 · 结构未改</div>
+  </aside>
+
+ </div>
+</main>
+</div>
+</div>
+
+<!-- 素材库缩略图（真实 SVG，替换时直接克隆） -->
+<template id="tpl-a"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><path d="M8 70L30 64L52 66L74 54L96 57L118 44L140 48L152 38" fill="none" stroke="#94a3b8" stroke-width="1.2"/><polyline points="8,72 30,69 52,66 74,62 96,57 118,52 140,47 152,43" fill="none" stroke="#e0a44a" stroke-width="1.3"/><polyline points="8,74 30,72 52,70 74,67 96,64 118,60 140,56 152,53" fill="none" stroke="#7b8fd4" stroke-width="1.3"/><polyline points="8,76 30,75 52,73 74,71 96,69 118,66 140,63 152,61" fill="none" stroke="#3DBE9B" stroke-width="1.3"/></svg></template>
+<template id="tpl-b"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><rect x="8" y="34" width="144" height="18" fill="#1d3a63" opacity=".8"/><path d="M8 62L28 56L48 58L68 44L88 48L108 36L128 40L152 26" fill="none" stroke="#60a5fa" stroke-width="1.6"/><path d="M8 34H152" stroke="#f87171" stroke-width="1" stroke-dasharray="3 3"/><path d="M8 52H152" stroke="#34d399" stroke-width="1" stroke-dasharray="3 3"/><text x="112" y="30" fill="#f87171" font-size="7" font-family="monospace">多空分界</text></svg></template>
+<template id="tpl-c"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><g stroke="#1e293b"><path d="M8 22H152M8 45H152M8 68H152"/></g><g><path d="M20 60V34" stroke="#e05d68" stroke-width="1"/><rect x="16" y="38" width="8" height="18" fill="#e05d68"/><path d="M42 48V26" stroke="#31a984" stroke-width="1"/><rect x="38" y="30" width="8" height="14" fill="#31a984"/><path d="M64 40V22" stroke="#e05d68" stroke-width="1"/><rect x="60" y="25" width="8" height="12" fill="#e05d68"/><path d="M86 46V30" stroke="#e05d68" stroke-width="1"/><rect x="82" y="33" width="8" height="10" fill="#e05d68"/><path d="M108 38V20" stroke="#31a984" stroke-width="1"/><rect x="104" y="23" width="8" height="12" fill="#31a984"/><path d="M130 32V18" stroke="#e05d68" stroke-width="1"/><rect x="126" y="21" width="8" height="8" fill="#e05d68"/></g></svg></template>
+<template id="tpl-d"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><g fill="#31a984" opacity=".75"><rect x="12" y="58" width="10" height="22"/><rect x="30" y="50" width="10" height="30"/><rect x="48" y="62" width="10" height="18"/><rect x="66" y="40" width="10" height="40"/><rect x="84" y="52" width="10" height="28"/></g><g fill="#e05d68" opacity=".75"><rect x="102" y="46" width="10" height="34"/><rect x="120" y="34" width="10" height="46"/><rect x="138" y="26" width="10" height="54"/></g><path d="M8 80H152" stroke="#334155"/></svg></template>
+<template id="tpl-e"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><path d="M8 74L28 66L48 58L68 46L88 40L108 32L128 26L152 20" fill="none" stroke="#94a3b8" stroke-width="1.2"/><g fill="#60a5fa" opacity=".55"><rect x="18" y="46" width="26" height="4" rx="2"/><rect x="14" y="53" width="34" height="4" rx="2"/><rect x="22" y="60" width="20" height="4" rx="2"/><rect x="30" y="39" width="14" height="4" rx="2"/></g><g fill="#f87171" opacity=".5"><rect x="104" y="34" width="30" height="4" rx="2"/><rect x="96" y="41" width="40" height="4" rx="2"/><rect x="110" y="27" width="24" height="4" rx="2"/></g></svg></template>
+<template id="tpl-f"><svg viewBox="0 0 160 90"><rect width="160" height="90" fill="#0f172a"/><g><path d="M16 66V46" stroke="#e05d68" stroke-width="1"/><rect x="12" y="50" width="8" height="12" fill="#e05d68"/><path d="M34 56V36" stroke="#e05d68" stroke-width="1"/><rect x="30" y="40" width="8" height="12" fill="#e05d68"/><path d="M52 44V26" stroke="#e05d68" stroke-width="1"/><rect x="48" y="29" width="8" height="12" fill="#e05d68"/><path d="M78 50V38" stroke="#31a984" stroke-width="1"/><rect x="74" y="41" width="8" height="7" fill="#31a984"/><path d="M100 44V26" stroke="#31a984" stroke-width="1"/><rect x="96" y="29" width="8" height="12" fill="#31a984"/><path d="M122 38V22" stroke="#e05d68" stroke-width="1"/><rect x="118" y="25" width="8" height="10" fill="#e05d68"/><path d="M144 30V16" stroke="#31a984" stroke-width="1"/><rect x="140" y="19" width="8" height="9" fill="#31a984"/></g><rect x="60" y="18" width="12" height="44" fill="#1d3a63" opacity=".5"/><text x="60" y="14" fill="#60a5fa" font-size="7" font-family="monospace">缺口</text></svg></template>
+
+<div class="ftool" id="ftool" hidden>
+ <button data-cmd="bold" title="加粗"><b>B</b></button>
+ <button data-cmd="italic" title="斜体"><i>I</i></button>
+ <button data-cmd="underline" title="下划线"><u>U</u></button>
+ <span class="sep"></span>
+ <span class="sw" data-cmd="color" data-v="#25324a" title="正文色"><i style="background:#25324a"></i></span>
+ <span class="sw" data-cmd="color" data-v="#2563eb" title="强调蓝"><i style="background:#2563eb"></i></span>
+ <span class="sw" data-cmd="color" data-v="#0f9d76" title="结论绿"><i style="background:#0f9d76"></i></span>
+ <span class="sw" data-cmd="color" data-v="#c2410c" title="警示橙"><i style="background:#c2410c"></i></span>
+ <select id="fsize" title="字号">
+  <option value="12">12</option><option value="13.5" selected>13.5</option><option value="15">15</option><option value="18">18</option><option value="23">23</option>
+ </select>
+ <span class="sep"></span>
+ <button data-cmd="alignL" title="左对齐">左</button>
+ <button data-cmd="alignC" title="居中">中</button>
+ <button data-cmd="alignR" title="右对齐">右</button>
+ <span class="sep"></span>
+ <button data-cmd="edit" class="t-act" title="直接改文字">编辑文字</button>
+ <button data-cmd="clear" title="清除格式">清除</button>
+</div>
+
+<div class="ftool" id="imgAct" hidden>
+ <button data-imga="replace" title="替换图片"><svg style="width:12px;height:12px;vertical-align:-2px"><use href="#i-swap"/></svg> 替换</button>
+ <span class="sep"></span>
+ <button data-imga="delete" style="color:#fca5a5" title="删除图片"><svg style="width:12px;height:12px;vertical-align:-2px"><use href="#i-trash"/></svg> 删除</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var doc=document.getElementById('edDoc');
+var ftool=document.getElementById('ftool');
+var imgAct=document.getElementById('imgAct');
+var inspType=document.getElementById('inspType');
+var dirtyEl=document.getElementById('dirty');
+var toastEl=document.getElementById('toast');
+var selId=null, selType=null, selected=null;
+
+/* ---------------- 历史（撤销 / 重做） ---------------- */
+var kState={code:'SZ000713',period:'day',start:'2019-03-01'};
+var history=[], hpos=-1, saveBase=0;
+
+function snap(){
+  return {html:doc.innerHTML,k:{code:kState.code,period:kState.period,start:kState.start}};
+}
+function initHistory(){ history=[snap()]; hpos=0; saveBase=0; syncDirty(); }
+function push(){
+  history=history.slice(0,hpos+1);
+  history.push(snap());
+  hpos=history.length-1;
+  syncDirty();
+}
+function restore(){
+  var h=history[hpos];
+  doc.innerHTML=h.html;
+  kState={code:h.k.code,period:h.k.period,start:h.k.start};
+  selected=null; selId=null; selType=null;
+  hideTools(); showInspector('none');
+  syncKline();
+  syncDirty();
+}
+function undo(){ if(hpos<=0){toast('没有可撤销的修改');return;} hpos--; restore(); }
+function redo(){ if(hpos>=history.length-1){toast('没有可重做的修改');return;} hpos++; restore(); }
+function syncDirty(){
+  var n=hpos-saveBase;
+  if(n>0){ dirtyEl.hidden=false; dirtyEl.textContent=n+' 处未保存'; }
+  else{ dirtyEl.hidden=true; }
+  document.getElementById('btnUndo').classList.toggle('dis',hpos<=0);
+  document.getElementById('btnRedo').classList.toggle('dis',hpos>=history.length-1);
+}
+
+/* ---------------- 选择与检查器 ---------------- */
+function hideTools(){ ftool.hidden=true; imgAct.hidden=true; }
+function clearSel(){
+  if(selected) selected.classList.remove('ed-sel');
+  selected=null;
+}
+function select(el){
+  if(!el) return;
+  clearSel();
+  selected=el; selId=el.id; selType=el.dataset.e;
+  el.classList.add('ed-sel');
+  showInspector(selType);
+  placeTools();
+  syncTextPanel();
+}
+function showInspector(type){
+  document.getElementById('inspEmpty').hidden = type!=='none';
+  document.getElementById('inspText').hidden = type!=='text';
+  document.getElementById('inspImg').hidden = type!=='image';
+  document.getElementById('inspKline').hidden = type!=='kline';
+  inspType.textContent = type==='text'?'文本':type==='image'?'图片':type==='kline'?'K 线图':'未选中';
+  document.getElementById('inspFoot').innerHTML = type==='kline'
+    ? '改代码或周期会重读行情；<b>读回失败显示占位</b>，不伪造数据'
+    : '轻校验：<b>锚点 6 / 6</b> · 数值未变 · 结构未改';
+}
+function placeTools(){
+  if(!selected) return;
+  var r=selected.getBoundingClientRect();
+  if(selType==='text'){
+    var t=Math.max(8,r.top-58);
+    ftool.style.top=t+'px';
+    ftool.style.left=Math.max(8,Math.min(r.left,window.innerWidth-360))+'px';
+    ftool.hidden=false; imgAct.hidden=true;
+  }else if(selType==='image'){
+    imgAct.style.top=Math.max(8,r.top+8)+'px';
+    imgAct.style.left=Math.max(8,Math.min(r.right-160,window.innerWidth-180))+'px';
+    imgAct.hidden=false; ftool.hidden=true;
+  }else{ hideTools(); }
+}
+window.addEventListener('scroll',function(){ if(selected) placeTools(); },{passive:true});
+window.addEventListener('resize',function(){ if(selected) placeTools(); });
+
+doc.addEventListener('click',function(e){
+  var t=e.target.closest('[data-e]');
+  if(!t||!doc.contains(t)) return;
+  e.preventDefault();
+  select(t);
+  if(t.dataset.e==='image') openImagePanel(t);
+  if(t.dataset.e==='kline') syncKlinePanel();
+});
+doc.addEventListener('dblclick',function(e){
+  var t=e.target.closest('[data-e="text"]');
+  if(!t||!doc.contains(t)) return;
+  if(t.classList.contains('ed-locked')){ toast('事实段受锚保护：只能改样式，措辞变更需走生产回灌'); return; }
+  startTextEdit(t);
+});
+
+/* ---------------- 文本样式 ---------------- */
+function syncTextPanel(){
+  if(!selected||selType!=='text') return;
+  var el=selected;
+  document.getElementById('t-el').textContent=(el.tagName.toLowerCase())+' · '+el.id;
+  document.getElementById('t-src').textContent=el.id==='b-fact'?'行情服务 · 2019-03→05':(el.id==='b-ann'?'原片 09:05':'原片 02:14');
+  var bits=[];
+  if(el.style.fontWeight==='700') bits.push('加粗');
+  if(el.style.fontStyle==='italic') bits.push('斜体');
+  if(el.style.textDecoration.indexOf('underline')>-1) bits.push('下划线');
+  if(el.style.color) bits.push('颜色 '+el.style.color);
+  if(el.style.fontSize) bits.push('字号 '+el.style.fontSize);
+  if(el.style.textAlign) bits.push({left:'左对齐',center:'居中',right:'右对齐'}[el.style.textAlign]||el.style.textAlign);
+  document.getElementById('t-style').textContent=bits.length?bits.join(' · '):'默认';
+  var locked=el.classList.contains('ed-locked');
+  document.getElementById('t-lock').hidden=!locked;
+  document.getElementById('t-note').hidden=locked;
+  document.getElementById('btnEditText').disabled=locked;
+  document.getElementById('btnEditText').style.opacity=locked?.45:1;
+  var fs=document.getElementById('fsize');
+  if(el.style.fontSize) fs.value=parseFloat(el.style.fontSize);
+  ftool.querySelectorAll('[data-cmd="bold"]').forEach(function(b){ b.style.color=el.style.fontWeight==='700'?'#93c5fd':'#cbd5e1'; });
+  ftool.querySelectorAll('[data-cmd="italic"]').forEach(function(b){ b.style.color=el.style.fontStyle==='italic'?'#93c5fd':'#cbd5e1'; });
+}
+function startTextEdit(el){
+  if(!el||el.classList.contains('ed-locked')) return;
+  var before=el.innerHTML;
+  el.setAttribute('contenteditable','true');
+  el.style.outline='2px solid #0f9d76';
+  el.focus();
+  var r=document.createRange(); r.selectNodeContents(el);
+  var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  function done(){
+    el.removeAttribute('contenteditable');
+    el.style.outline='';
+    el.removeEventListener('blur',done);
+    if(el.innerHTML!==before){ push(); toast('文字已修改 · 轻校验通过（锚点未动）'); }
+  }
+  el.addEventListener('blur',done);
+}
+ftool.addEventListener('click',function(e){
+  var b=e.target.closest('[data-cmd]');
+  if(!b||!selected||selType!=='text') return;
+  var cmd=b.dataset.cmd;
+  var el=selected;
+  if(cmd==='bold') el.style.fontWeight = el.style.fontWeight==='700'?'':'700';
+  else if(cmd==='italic') el.style.fontStyle = el.style.fontStyle==='italic'?'':'italic';
+  else if(cmd==='underline') el.style.textDecoration = el.style.textDecoration.indexOf('underline')>-1?'':'underline';
+  else if(cmd==='color') el.style.color=b.dataset.v;
+  else if(cmd==='alignL') el.style.textAlign='left';
+  else if(cmd==='alignC') el.style.textAlign='center';
+  else if(cmd==='alignR') el.style.textAlign='right';
+  else if(cmd==='edit'){ startTextEdit(el); return; }
+  else if(cmd==='clear'){ el.removeAttribute('style'); el.style.cssText=''; }
+  push();
+  syncTextPanel();
+});
+document.getElementById('fsize').addEventListener('change',function(){
+  if(!selected||selType!=='text') return;
+  selected.style.fontSize=this.value+'px';
+  push(); syncTextPanel();
+});
+document.getElementById('btnEditText').addEventListener('click',function(){
+  if(!selected||selType!=='text') return;
+  if(selected.classList.contains('ed-locked')){ toast('事实段受锚保护：不能直接改文字'); return; }
+  startTextEdit(selected);
+});
+document.getElementById('btnAgent').addEventListener('click',function(){
+  toast('已把这一段的上下文发给教材 Agent · 改动会落在当前单元');
+});
+
+/* ---------------- 图片：素材库 / 搜索 / 上传 ---------------- */
+var ASSETS=[
+ {id:'ast_53cc88',name:'均线束与多空分界',kind:'图示',w:640,h:200,tpl:'tpl-a'},
+ {id:'ast_71de20',name:'多空分界带',kind:'图示',w:160,h:90,tpl:'tpl-b'},
+ {id:'ast_84c1a7',name:'周线级别结构',kind:'图表',w:160,h:90,tpl:'tpl-c'},
+ {id:'ast_92b3f4',name:'量能萎缩对比',kind:'图表',w:160,h:90,tpl:'tpl-d'},
+ {id:'ast_a105de',name:'筹码密集与发散',kind:'图表',w:160,h:90,tpl:'tpl-e'},
+ {id:'ast_b7f390',name:'缺口回补',kind:'截图',w:160,h:90,tpl:'tpl-f'}
+];
+var curFig=null, origAsset=null, figOrig={};
+function assetById(id){ for(var i=0;i<ASSETS.length;i++) if(ASSETS[i].id===id) return ASSETS[i]; return null; }
+function tplHTML(id){ var t=document.getElementById(id); return t?t.innerHTML:''; }
+function libCard(a){
+  return '<button class="lib-c" data-a="'+a.id+'"><span class="lib-th">'+tplHTML(a.tpl)+'</span><b>'+a.name+'</b><small>'+a.kind+' · '+a.w+'×'+a.h+'</small></button>';
+}
+function renderLib(list,box){
+  box.innerHTML=list.length?list.map(libCard).join(''):'<div class="lib-empty" style="grid-column:1/-1">没有匹配的素材</div>';
+}
+document.getElementById('libGrid').innerHTML=ASSETS.map(libCard).join('');
+document.getElementById('libResults').innerHTML=ASSETS.map(libCard).join('');
+function openImagePanel(fig){
+  curFig=fig;
+  var a=assetById(fig.dataset.asset);
+  document.getElementById('i-id').textContent=fig.dataset.asset;
+  document.getElementById('i-name').textContent=a?a.name:(fig.dataset.localName||'本地上传图片');
+  document.getElementById('i-kind').textContent=a?(a.kind+' · '+a.w+'×'+a.h):'本地上传';
+  document.getElementById('btnRevert').hidden=!(figOrig[fig.id]&&figOrig[fig.id].asset!==fig.dataset.asset);
+  setTab('lib');
+}
+function setTab(name){
+  document.querySelectorAll('#imgTabs button').forEach(function(b){ b.classList.toggle('on',b.dataset.tab===name); });
+  ['lib','search','upload'].forEach(function(t){ document.getElementById('tab-'+t).hidden=(t!==name); });
+}
+document.getElementById('imgTabs').addEventListener('click',function(e){
+  var b=e.target.closest('[data-tab]'); if(!b) return; setTab(b.dataset.tab);
+});
+function pickAsset(id){
+  if(!curFig) return;
+  var a=assetById(id); if(!a) return;
+  if(!figOrig[curFig.id]) figOrig[curFig.id]={asset:curFig.dataset.asset,html:curFig.querySelector('.media-box').innerHTML,caption:curFig.querySelector('figcaption').innerHTML,name:(assetById(curFig.dataset.asset)||{}).name};
+  curFig.dataset.asset=a.id;
+  var box=curFig.querySelector('.media-box');
+  box.innerHTML=tplHTML(a.tpl);
+  curFig.querySelector('figcaption').innerHTML='<b>图 1-2 · '+a.name+'</b>　<span class="mono">assetId='+a.id+'</span>';
+  push();
+  document.getElementById('i-id').textContent=a.id;
+  document.getElementById('i-name').textContent=a.name;
+  document.getElementById('i-kind').textContent=a.kind+' · '+a.w+'×'+a.h;
+  document.getElementById('btnRevert').hidden=false;
+  toast('已替换为「'+a.name+'」· 旧素材 '+figOrig[curFig.id].asset+' 已留痕');
+  openImagePanel(curFig);
+}
+document.getElementById('libGrid').addEventListener('click',function(e){
+  var b=e.target.closest('[data-a]'); if(b) pickAsset(b.dataset.a);
+});
+document.getElementById('libResults').addEventListener('click',function(e){
+  var b=e.target.closest('[data-a]'); if(b) pickAsset(b.dataset.a);
+});
+document.getElementById('libQ').addEventListener('input',function(){
+  var q=this.value.trim().toLowerCase();
+  renderLib(ASSETS.filter(function(a){ return !q || (a.name+a.kind).toLowerCase().indexOf(q)>-1; }),document.getElementById('libResults'));
+});
+document.getElementById('btnRevert').addEventListener('click',function(){
+  if(!curFig) return;
+  var o=figOrig[curFig.id]; if(!o) return;
+  curFig.dataset.asset=o.asset;
+  curFig.querySelector('.media-box').innerHTML=o.html;
+  curFig.querySelector('figcaption').innerHTML=o.caption;
+  push();
+  document.getElementById('btnRevert').hidden=true;
+  openImagePanel(curFig);
+  toast('已回退到原图 '+(o.name||o.asset));
+});
+function deleteImage(){
+  if(!curFig) return;
+  var fig=curFig;
+  fig.remove();
+  clearSel(); hideTools(); showInspector('none');
+  push();
+  toast('图片已删除 · 保存后生效', '撤销', function(){ undo(); });
+}
+document.getElementById('btnDelImg').addEventListener('click',deleteImage);
+imgAct.addEventListener('click',function(e){
+  var b=e.target.closest('[data-imga]'); if(!b) return;
+  if(b.dataset.imga==='replace'){ setTab('lib'); }
+  else deleteImage();
+});
+var upZone=document.getElementById('upZone');
+var upInput=document.getElementById('upInput');
+function handleFile(file){
+  if(!file||!curFig) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var fig=curFig;
+    if(!figOrig[fig.id]) figOrig[fig.id]={asset:fig.dataset.asset,html:fig.querySelector('.media-box').innerHTML,caption:fig.querySelector('figcaption').innerHTML,name:(assetById(fig.dataset.asset)||{}).name};
+    var localId='local_'+Date.now().toString(36);
+    fig.dataset.asset=localId;
+    fig.dataset.localName=file.name;
+    fig.querySelector('.media-box').innerHTML='<img src="'+reader.result+'" alt="'+file.name+'">';
+    fig.querySelector('figcaption').innerHTML='<b>本地上传 · '+file.name+'</b>　<span class="mono">'+Math.round(file.size/1024)+' KB</span>';
+    push();
+    document.getElementById('i-id').textContent=localId;
+    document.getElementById('i-name').textContent=file.name;
+    document.getElementById('i-kind').textContent='本地上传';
+    document.getElementById('btnRevert').hidden=false;
+    toast('已上传并替换 · '+file.name);
+  };
+  reader.readAsDataURL(file);
+}
+upInput.addEventListener('change',function(){ handleFile(this.files[0]); });
+upZone.addEventListener('dragover',function(e){ e.preventDefault(); upZone.classList.add('on'); });
+upZone.addEventListener('dragleave',function(){ upZone.classList.remove('on'); });
+upZone.addEventListener('drop',function(e){
+  e.preventDefault(); upZone.classList.remove('on');
+  if(e.dataTransfer.files&&e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+/* ---------------- K 线：属性 → 行情读回 → 渲染 ---------------- */
+var quotes={
+ 'SZ000713|day':{have:40,need:40},
+ 'SZ000713|week':{have:10,need:26},
+ 'SH600519|day':{have:0,need:40},
+ 'SH600519|week':{have:0,need:26}
+};
+var fetching=false;
+function qkey(){ return kState.code+'|'+kState.period; }
+function qstate(){
+  var q=quotes[qkey()]||{have:0,need:kState.period==='week'?26:40};
+  if(q.have<=0) return {s:'none',q:q};
+  if(q.have<q.need) return {s:'part',q:q};
+  return {s:'ok',q:q};
+}
+function hashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+function seq(seed){ return function(){ seed=(Math.imul(seed,1664525)+1013904223)>>>0; return seed/4294967296; }; }
+function addMonths(iso,days){
+  var t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+days);
+  var m=t.getMonth()+1; return t.getFullYear()+'-'+(m<10?'0':'')+m;
+}
+function renderKline(){
+  var svg=document.getElementById('kl-svg'); if(!svg) return;
+  var st=qstate(), n=st.s==='none'?0:st.q.have, period=kState.period;
+  var w=640,h=250,left=44,right=16,top=20,bottom=52;
+  var grid='';
+  for(var g=0;g<4;g++){
+    var y=top+(h-top-bottom)/3*g;
+    grid+='<path d="M'+left+' '+y.toFixed(1)+'H'+(w-right)+'" stroke="#1e293b" stroke-width="1"/>';
+  }
+  if(n===0){
+    svg.innerHTML='<rect width="'+w+'" height="'+h+'" fill="#0f172a"/>'+grid+
+      '<rect x="'+(left+80)+'" y="86" width="392" height="70" rx="8" fill="#111c30" stroke="#334155" stroke-dasharray="5 5"/>'+
+      '<text x="320" y="115" fill="#e2e8f0" font-size="12" font-family="sans-serif" text-anchor="middle">行情未采集 · 不伪造数据</text>'+
+      '<text x="320" y="136" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">'+kState.code+' · '+(period==='week'?'周线':'日线')+' · 加入同步队列后自动读回</text>';
+    return;
+  }
+  var rnd=seq(hashStr(qkey()+'|'+n));
+  var series=[],p=100;
+  for(var i=0;i<n;i++){
+    var o=p, c=p+(rnd()-0.44)*3.6, hi=Math.max(o,c)+rnd()*1.6, lo=Math.min(o,c)-rnd()*1.6;
+    series.push({o:o,c:c,h:hi,l:lo,v:0.35+rnd()*0.65}); p=c;
+  }
+  var hi=Math.max.apply(null,series.map(function(d){return d.h;}));
+  var lo=Math.min.apply(null,series.map(function(d){return d.l;}));
+  var py=function(v){ return (h-bottom-6)-((v-lo)/(hi-lo||1))*((h-bottom-6)-(top+10)); };
+  var step=(w-left-right)/n, bw=Math.max(3,Math.min(9,step*0.56)), out='';
+  out+='<rect width="'+w+'" height="'+h+'" fill="#0f172a"/>'+grid;
+  series.forEach(function(d,i){
+    var cx=left+step*(i+0.5);
+    var up=d.c>=d.o, col=up?'#e05d68':'#31a984';
+    var y1=py(Math.max(d.o,d.c)), y2=py(Math.min(d.o,d.c));
+    out+='<path d="M'+cx.toFixed(1)+' '+py(d.h).toFixed(1)+'V'+py(d.l).toFixed(1)+'" stroke="'+col+'" stroke-width="1.1"/>';
+    out+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1.4,(y2-y1)).toFixed(1)+'" fill="'+col+'" rx=".5"/>';
+    var vh=d.v*22, vy=h-16-vh;
+    out+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+vy.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+vh.toFixed(1)+'" fill="'+col+'" opacity=".45" rx=".5"/>';
+  });
+  function ma(k,color){
+    var pts=[];
+    for(var i=k-1;i<n;i++){
+      var s=0; for(var j=i-k+1;j<=i;j++) s+=series[j].c;
+      pts.push((left+step*(i+0.5)).toFixed(1)+','+py(s/k).toFixed(1));
+    }
+    return pts.length?'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="1.4" opacity=".9"/>':'';
+  }
+  out+=ma(Math.min(5,n),'#e0a44a')+ma(Math.min(10,n),'#7b8fd4');
+  out+='<text x="'+(left+2)+'" y="'+(h-20)+'" fill="#475569" font-size="8" font-family="monospace">VOL</text>';
+  svg.innerHTML=out;
+}
+function syncKline(){
+  var st=qstate();
+  var codeEl=document.getElementById('kl-code'); if(!codeEl) return;
+  codeEl.textContent=kState.code+' · '+(kState.period==='week'?'周线':'日线')+' · 前复权';
+  var barsPer=st.s==='none'?0:st.q.have;
+  document.getElementById('kl-range').textContent=kState.start.slice(0,7)+' → '+addMonths(kState.start,kState.period==='week'?barsPer*7:barsPer*1.5);
+  var tag=document.getElementById('kl-tag');
+  tag.className='kl-tag '+st.s;
+  tag.textContent=st.s==='ok'?'已采集':st.s==='part'?'部分采集':'未采集';
+  document.getElementById('kl-count').textContent=barsPer+' 根'+(kState.period==='week'?'周线':'日线');
+  renderKline();
+}
+function syncKlinePanel(){
+  if(!selected||selType!=='kline') return;
+  document.getElementById('k-code').value=kState.code;
+  document.getElementById('k-start').value=kState.start;
+  document.querySelectorAll('#k-period span').forEach(function(s){ s.classList.toggle('on',s.dataset.p===kState.period); });
+  var st=qstate();
+  var row=document.getElementById('k-state');
+  row.className='ins-state '+st.s;
+  document.getElementById('k-state-t').textContent=st.s==='ok'?'已采集':st.s==='part'?'部分采集':'未采集';
+  document.getElementById('k-state-n').textContent=st.q.have+' / '+st.q.need+' 根';
+  document.getElementById('k-fetch').hidden=(st.s==='ok');
+  document.getElementById('k-fetch').disabled=false;
+  document.getElementById('k-fetch').textContent=st.s==='none'?'去采集（加入行情同步队列）':'补齐缺失数据（加入同步队列）';
+  document.getElementById('k-note').hidden=false;
+}
+function klineChanged(msg){
+  syncKline();
+  syncKlinePanel();
+  push();
+  toast(msg);
+}
+document.getElementById('k-code').addEventListener('change',function(){
+  var v=this.value.trim().toUpperCase();
+  if(!v){ this.value=kState.code; return; }
+  kState.code=v;
+  klineChanged('已重读 '+v+' 行情 · 轻校验通过');
+});
+document.getElementById('k-start').addEventListener('change',function(){
+  if(!this.value) return;
+  kState.start=this.value;
+  klineChanged('起始时间已更新 · 重读行情区间');
+});
+document.getElementById('k-period').addEventListener('click',function(e){
+  var s=e.target.closest('[data-p]'); if(!s) return;
+  kState.period=s.dataset.p;
+  klineChanged('周期已切到'+(kState.period==='week'?'周线':'日线')+' · 重读行情');
+});
+document.getElementById('k-fetch').addEventListener('click',function(){
+  if(fetching) return;
+  fetching=true;
+  var btn=this; var key=qkey();
+  btn.disabled=true; btn.textContent='已加入队列 · 同步中…';
+  setTimeout(function(){
+    var q=quotes[key];
+    if(!q){ q={have:0,need:kState.period==='week'?26:40}; quotes[key]=q; }
+    q.have=q.need;
+    fetching=false;
+    syncKline(); syncKlinePanel(); push();
+    toast('行情同步完成 · 已读回 '+q.need+' 根 · 图面已重绘');
+  },1400);
+});
+
+/* ---------------- 保存 / 键盘 ---------------- */
+document.getElementById('btnUndo').addEventListener('click',undo);
+document.getElementById('btnRedo').addEventListener('click',redo);
+document.getElementById('btnSave').addEventListener('click',function(){
+  var n=hpos-saveBase;
+  if(n<=0){ toast('没有需要保存的修改'); return; }
+  saveBase=hpos;
+  syncDirty();
+  document.querySelector('.ops-ph .tag').className='tag ok';
+  document.querySelector('.ops-ph .tag').textContent='v8 · draft';
+  document.querySelector('#saveState').textContent='已保存 v8 · 轻校验通过';
+  document.getElementById('inspFoot').innerHTML='轻校验：<b>锚点 6 / 6</b> · 数值未变 · 结构未改';
+  toast('已保存 v8 draft · 内容指纹已更新 · 原签批失效（approval_stale）');
+});
+document.addEventListener('keydown',function(e){
+  var meta=e.metaKey||e.ctrlKey;
+  if(meta&&e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); }
+  else if(meta&&e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); }
+  else if(e.key==='Escape'){ clearSel(); hideTools(); showInspector('none'); }
+});
+
+/* ---------------- 轻提示 ---------------- */
+var toastTimer=null;
+function toast(msg,actionLabel,action){
+  toastEl.innerHTML='<span>'+msg+'</span>'+(actionLabel?'<button id="toastAct">'+actionLabel+'</button>':'');
+  toastEl.classList.add('on');
+  if(actionLabel){
+    document.getElementById('toastAct').onclick=function(){ toastEl.classList.remove('on'); if(action) action(); };
+  }
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ toastEl.classList.remove('on'); },actionLabel?6000:3200);
+}
+
+/* ---------------- 启动 ---------------- */
+initHistory();
+syncKline();
+showInspector('none');
+})();
+</script>
+<script src="assets/sb-course.js" defer></script>
+</body></html>

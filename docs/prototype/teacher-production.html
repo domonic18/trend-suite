@@ -30,8 +30,27 @@
  <nav class="ops-menu">
   <div class="ops-g">课程</div>
   <a class="ops-i" href="teacher-workbench.html"><svg><use href="#i-book"/></svg>所有课程</a>
-  <div class="sb-course"><select class="fi" aria-label="切换课程"><option>总论卷 · 生产中</option><option>筹码分布卷 · 草稿</option><option>趋势交易基础 · 已发布</option></select></div>
-  <div class="ops-g">当前课程 · 总论卷</div>
+  <div class="sb-course" data-sb-course>
+   <button class="sbc-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="切换课程">
+    <span class="dot-run"></span>
+    <span class="sbc-t"><b>总论卷</b><small>生产中 · 3/6 章</small></span>
+    <svg class="sbc-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+   </button>
+   <div class="sbc-pop" role="menu" aria-label="切换课程">
+    <div class="sbc-h">切换课程</div>
+    <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="总论卷" data-meta="生产中 · 3/6 章">
+     <span class="dot-run"></span><span class="sbc-t"><b>总论卷</b><small>6 章 · 26 节 · 生产中</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-idle" data-name="筹码分布卷" data-meta="草稿 · 暂无章节">
+     <span class="dot-idle"></span><span class="sbc-t"><b>筹码分布卷</b><small>空课程 · 未上传素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-ok" data-name="趋势交易基础" data-meta="已发布 · 22 节">
+     <span class="dot-ok"></span><span class="sbc-t"><b>趋势交易基础</b><small>6 章 · 22 节 · 已发布</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="sbc-f"><a href="teacher-workbench.html">＋ 新建课程</a></div>
+   </div>
+  </div>
+  <div class="ops-g">当前课程</div>
   <a class="ops-i" href="teacher-material.html"><svg><use href="#i-run"/></svg>原始数据</a>
   <a class="ops-i" href="teacher-textbook.html"><svg><use href="#i-file"/></svg>教材<span class="cnt">3/6</span></a>
   <div class="ops-g">用量</div>
@@ -333,4 +352,5 @@ retry_at: 12:26</div>
  </div>
 </aside>
 
-</div></body></html>
+</div><script src="assets/sb-course.js" defer></script>
+</body></html>
