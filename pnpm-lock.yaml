@@ -12,7 +12,7 @@ importers:
         specifier: ^2.3.0
         version: 2.11.10
 
-  apps/backend:
+  apps/cloud:
     dependencies:
       fastify:
         specifier: ^5.0.0
