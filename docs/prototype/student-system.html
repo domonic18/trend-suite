@@ -28,7 +28,7 @@
 .sec-t{display:flex;align-items:center;gap:10px;margin:22px 0 10px}
 .sec-t b{font-size:15px}
 .sec-t .r{margin-left:auto;font-size:11.5px;color:var(--s-ink4)}
-</style></head><body><div class="dsh">
+</style></head><body class="dsh-light"><div class="dsh">
 <div class="dsh-row has-right">
 
 <!-- ================= 侧栏（框架 + 插件注入）================= -->
@@ -147,17 +147,16 @@
  </div>
 </main>
 
-<!-- ================= 右栏（框架 文件/终端 + 插件 学习路径/最近）================= -->
+<!-- ================= 右栏（统一三页签：文件 / 终端 / 播放器）================= -->
 <aside class="right">
  <nav class="right-tabs">
   <button class="rtab" data-pane="files" type="button" title="工作区文件（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>文件</button>
   <button class="rtab" data-pane="term" type="button" title="终端（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端</button>
-  <button class="rtab on" data-pane="path" type="button" title="学习路径（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>学习路径</button>
-  <button class="rtab" data-pane="recent" type="button" title="最近（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>最近</button>
+  <button class="rtab on" data-pane="player" type="button" title="下一节预览（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
  </nav>
  <div class="right-body">
 
-  <!-- 面板：文件（框架）-->
+  <!-- 面板：文件（工作区文件树 + 最近会话 + 快速入口）-->
   <div class="rpane" data-pane="files">
    <div class="h">工作区 · trend-student</div>
    <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">courseware（已发布）</span></div>
@@ -166,9 +165,19 @@
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">notes.md</span><span class="ro">可写</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">progress.json</span><span class="ro">自动</span></div>
    <div class="dim" style="margin-top:8px">课程树来自云端已发布清单；未发布与草稿不可见。</div>
+   <div class="h">最近会话</div>
+   <div class="card">
+    <a class="lnk" style="display:block" href="student-chat.html">总论卷答疑 · 今天</a>
+    <a class="lnk" style="display:block;margin-top:6px" href="student-chat.html">阻尼运动提问 · 昨天</a>
+   </div>
+   <div class="h">快速入口</div>
+   <div class="card">
+    <a class="lnk" style="display:block" href="portal-account.html">额度与充值</a>
+    <a class="lnk" style="display:block;margin-top:6px" href="portal.html">返回官网</a>
+   </div>
   </div>
 
-  <!-- 面板：终端（框架）-->
+  <!-- 面板：终端（插件运行日志）-->
   <div class="rpane" data-pane="term">
    <div class="term"><span class="t">09:12:03</span> [dsh] 插件加载：trend-student v0.2.1
 <span class="t">09:12:04</span> [trend-student] 课程清单同步完成 · <span class="ok">1.2s</span>
@@ -176,10 +185,19 @@
 <span class="t">09:12:05</span> [trend-student] 进度上报：第 2 节 46%（幂等 · 取最大值）</div>
   </div>
 
-  <!-- 面板：学习路径（插件）-->
-  <div class="rpane on" data-pane="path">
+  <!-- 面板：播放器（下一节预览 + 复习清单）-->
+  <div class="rpane on" data-pane="player">
+   <div class="vid">
+    <div class="vid-screen">
+     <div class="play"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></div>
+     <span class="wm">水印 · xiaoming</span>
+     <span class="stamp">下一节 · 峰值转换</span>
+    </div>
+    <div class="vid-bar"><i style="width:0%"></i></div>
+   </div>
+   <div class="dim" style="margin-top:8px">下一节预览 · 进入课程页后签发播放（免费）</div>
+   <div class="h">下一节</div>
    <div class="card">
-    <b class="t">下一节</b>
     <div style="font-size:13px;margin-bottom:2px">筹码分布卷 · 第 3 节 峰值转换</div>
     <div class="kv"><span class="k">卷进度</span><span>2/8 节</span></div>
     <div class="qbar" style="margin:8px 0"><i style="width:25%"></i></div>
@@ -193,20 +211,6 @@
    </div>
   </div>
 
-  <!-- 面板：最近（插件）-->
-  <div class="rpane" data-pane="recent">
-   <div class="h">最近会话</div>
-   <div class="card">
-    <a class="lnk" style="display:block" href="student-chat.html">总论卷答疑 · 今天</a>
-    <a class="lnk" style="display:block;margin-top:6px" href="student-chat.html">阻尼运动提问 · 昨天</a>
-   </div>
-   <div class="h">快速入口</div>
-   <div class="card">
-    <a class="lnk" style="display:block" href="portal-account.html">额度与充值</a>
-    <a class="lnk" style="display:block;margin-top:6px" href="portal.html">返回官网</a>
-   </div>
-  </div>
-
  </div>
 </aside>
 
@@ -215,6 +219,10 @@
 <!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
 <section class="dsh-bottom">
  <header class="bt-hd">
+ <div class="bt-actions">
+  <button class="stbtn" data-cycle="自动,每次询问" title="命令模式（权限预设）· 点击切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 7l4 4-4 4M11 15h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>命令模式 · <span class="cv">自动</span></button>
+  <button class="stbtn" data-action="toggle-theme" title="明亮 / 暗黑模式切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>主题 · <span class="cv">明亮</span></button>
+ </div>
   <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · trend-student 插件运行时</span>
   <span class="dim">NodeJS 诊断</span>
   <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>

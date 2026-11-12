@@ -21,7 +21,7 @@
 .usage-tbl th{text-align:left;font-weight:600;color:var(--s-ink4);padding:5px 8px;border-bottom:1px solid var(--s-line)}
 .usage-tbl td{padding:6px 8px;border-bottom:1px solid var(--s-line2);color:var(--s-ink2)}
 .usage-tbl td.mono{font-family:var(--s-mono);font-size:11.5px}
-</style></head><body><div class="dsh">
+</style></head><body class="dsh-light"><div class="dsh">
 <div class="dsh-row has-right">
 
 <!-- ================= 侧栏（DSH sidebarCol · 框架组件 + 插件注入）================= -->
@@ -193,9 +193,9 @@
    <div class="composer">
     <textarea class="inp" rows="1" placeholder="向课程提问… / 指令 · @ 引用片段"></textarea>
     <div class="composer-bar">
-     <button class="mode" title="权限预设（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.4-3.4 8-8 9-4.6-1-8-4.6-8-9V7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.8 12l2.2 2.2 4.2-4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>自动</button>
-     <button class="mode" title="Agent 预设（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Default</button>
-     <button class="mode" title="自动附上当前学习位置，只在本机内存（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>上下文 · 第 2 节 11:20 <span class="x">关</span></button>
+     <button class="mode" data-cycle="自动,每次询问" title="权限预设（框架）· 点击切换" type="button"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.4-3.4 8-8 9-4.6-1-8-4.6-8-9V7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.8 12l2.2 2.2 4.2-4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="cv">自动</span></button>
+     <button class="mode" data-cycle="Default,精讲" title="Agent 预设（框架）· 点击切换" type="button"><svg width="13" height="13" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="cv">Default</span></button>
+     <button class="mode" data-action="toggle-ctx" title="自动附上当前学习位置，只在本机内存（插件）· 点击开关" type="button"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>上下文 · 第 2 节 11:20 <span class="x">关</span></button>
      <button class="mic" title="语音提问 · 单次 ≤ 60 秒 · 转写计入额度" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
      <a class="quota-pill" href="portal-account.html" title="余额透明 · 点击进入额度中心">余额 <b>13</b> 次</a>
      <button class="send" title="发送" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -209,18 +209,16 @@
  </div>
 </main>
 
-<!-- ================= 右栏（框架页签 文件/终端 + 插件页签 播放器/片段/笔记）================= -->
+<!-- ================= 右栏（统一三页签：文件 / 终端 / 播放器）================= -->
 <aside class="right">
  <nav class="right-tabs">
   <button class="rtab" data-pane="files" type="button" title="工作区文件（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>文件</button>
   <button class="rtab" data-pane="term" type="button" title="终端（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端</button>
   <button class="rtab on" data-pane="player" type="button" title="签名播放器（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
-  <button class="rtab" data-pane="segs" type="button" title="引用片段（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>片段</button>
-  <button class="rtab" data-pane="notes" type="button" title="本机笔记（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>笔记</button>
  </nav>
  <div class="right-body">
 
-  <!-- 面板：文件（框架）-->
+  <!-- 面板：文件（工作区文件树 + 本机笔记 + 隐私）-->
   <div class="rpane" data-pane="files">
    <div class="h">工作区 · trend-student</div>
    <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">workspace</span></div>
@@ -231,10 +229,19 @@
    <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">transcripts</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">su-0417.txt</span><span class="ro">只读</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">su-1120.txt</span><span class="ro">只读</span></div>
-   <div class="dim" style="margin-top:8px">课件与转写为云端发布内容，本地只读；笔记与进度在工作区可写。</div>
+   <div class="h">本机笔记（notes.md）</div>
+   <div class="card">
+    <div class="dim" style="font-family:var(--s-serif);font-size:12.5px;line-height:1.9">阻尼 = 本级别动能衰减，不是次级别回调；三证据：幅度递减 + 均线粘合 + 量能萎缩……</div>
+    <div class="dim" style="margin-top:6px">只在本机保存，不上云、不进指标。</div>
+   </div>
+   <div class="h">隐私</div>
+   <div class="card">
+    <div style="display:flex;align-items:center;gap:9px"><span class="dim" style="flex:1">指标上报（默认关闭 · 可撤回）</span><span class="sw"></span></div>
+    <div class="dim" style="margin-top:6px">学习上下文永不进指标，只在本机内存处理。</div>
+   </div>
   </div>
 
-  <!-- 面板：终端（框架）-->
+  <!-- 面板：终端（插件运行日志）-->
   <div class="rpane" data-pane="term">
    <div class="term"><span class="t">14:32:01</span> [trend-student] 签名会话已签发（窗校验通过）
 <span class="t">14:32:05</span> [检索] 命中 3 片段 · <span class="ok">286ms</span>
@@ -245,7 +252,7 @@
    <div class="dim" style="margin-top:8px">插件运行日志本地留存，音频与转写仅内存流转、不落盘不进日志。</div>
   </div>
 
-  <!-- 面板：播放器（插件）-->
+  <!-- 面板：播放器（签名播放 + 引用片段）-->
   <div class="rpane on" data-pane="player">
    <div class="vid">
     <div class="vid-screen">
@@ -262,33 +269,11 @@
     <div class="kv"><span class="k">自动暂停</span><span>播 30–60s 后暂停</span></div>
     <div style="display:flex;gap:6px;margin-top:9px"><button class="tbtn" type="button">暂停</button><button class="tbtn" type="button">重播本段</button></div>
    </div>
-  </div>
-
-  <!-- 面板：片段（插件）-->
-  <div class="rpane" data-pane="segs">
    <div class="h">本答引用片段</div>
    <div class="seg-row on"><span class="tt">08:42</span><span class="tx">注意这里回撤的力度，一次比一次轻……</span></div>
    <div class="seg-row"><span class="tt">11:20</span><span class="tx">同一张图换个级别，结论可能完全相反……</span></div>
    <div class="seg-row"><span class="tt">14:20</span><span class="tx">三步里任何一步不成立，先回到震荡假设……</span></div>
-   <div class="dim" style="margin-top:6px">点击片段 = 回跳播放器并高亮 30–60 秒（seek ≤ 2s）</div>
-   <div class="h">延伸</div>
-   <div class="card">
-    <a class="lnk" style="display:block" href="student-course.html">打开本节课程页（免费）</a>
-   </div>
-  </div>
-
-  <!-- 面板：笔记（插件）-->
-  <div class="rpane" data-pane="notes">
-   <div class="h">本会话笔记</div>
-   <div class="card">
-    <div class="dim" style="font-family:var(--s-serif);font-size:12.5px;line-height:1.9">阻尼 = 本级别动能衰减，不是次级别回调；三证据：幅度递减 + 均线粘合 + 量能萎缩……</div>
-    <div class="dim" style="margin-top:6px">只在本机保存，不上云、不进指标。</div>
-   </div>
-   <div class="h">隐私</div>
-   <div class="card">
-    <div style="display:flex;align-items:center;gap:9px"><span class="dim" style="flex:1">指标上报（默认关闭 · 可撤回）</span><span class="sw"></span></div>
-    <div class="dim" style="margin-top:6px">学习上下文永不进指标，只在本机内存处理。</div>
-   </div>
+   <div class="dim" style="margin-top:6px">点击片段 = 回跳播放器并高亮 30–60 秒（seek ≤ 2s）· <a class="lnk" href="student-course.html">打开本节课程页（免费）</a></div>
   </div>
 
  </div>
@@ -299,6 +284,10 @@
 <!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
 <section class="dsh-bottom">
  <header class="bt-hd">
+ <div class="bt-actions">
+  <button class="stbtn" data-cycle="自动,每次询问" title="命令模式（权限预设）· 点击切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 7l4 4-4 4M11 15h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>命令模式 · <span class="cv">自动</span></button>
+  <button class="stbtn" data-action="toggle-theme" title="明亮 / 暗黑模式切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>主题 · <span class="cv">明亮</span></button>
+ </div>
   <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · trend-student 插件运行时</span>
   <span class="dim">NodeJS 诊断</span>
   <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>

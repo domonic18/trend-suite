@@ -628,21 +628,19 @@
  </div>
 </main>
 
-<!-- ================= 右栏（框架 文件/终端 + 插件 播放器/标注/笔记 · 页签原地切换）================= -->
+<!-- ================= 右栏（统一三页签：文件 / 终端 / 播放器）================= -->
 <aside class="right">
  <nav class="right-tabs">
   <button class="rtab" data-pane="files" type="button" title="工作区文件（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>文件</button>
   <button class="rtab" data-pane="term" type="button" title="终端（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端</button>
-  <button class="rtab on" data-pane="player" type="button" title="签名播放器（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
-  <button class="rtab" data-pane="marks" type="button" title="老师标注（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 3v16M5 8l7-5 7 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>标注</button>
-  <button class="rtab" data-pane="notes" type="button" title="本节笔记（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>笔记</button>
+  <button class="rtab on" data-pane="player" type="button" title="签名播放器 + 老师标注（插件）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
  </nav>
  <div class="right-body">
 
-  <!-- 面板：文件（框架）-->
+  <!-- 面板：文件（工作区文件树 + 学习状态）-->
   <div class="rpane" data-pane="files">
-   <div class="h">工作区 · trend-student</div>
-   <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">sec-zl-02</span></div>
+   <div class="h">工作区 · sec-zl-02</div>
+   <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">courseware</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">courseware.html</span><span class="ro">只读</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">kline-daily.json</span><span class="ro">只读</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">annotations.json</span><span class="ro">只读</span></div>
@@ -650,54 +648,7 @@
    <div class="file-row dir"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="nm">workspace</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">notes.md</span><span class="ro">可写</span></div>
    <div class="file-row sub"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="nm">replay-answers.local</span><span class="ro">本机</span></div>
-   <div class="dim" style="margin-top:8px">逐根回放作答只落本机（replay-answers.local），不上传。</div>
-  </div>
-
-  <!-- 面板：终端（框架）-->
-  <div class="rpane" data-pane="term">
-   <div class="term"><span class="t">10:20:11</span> [trend-student] 打开课程页：sec-zl-02
-<span class="t">10:20:12</span> [trend-student] 课件渲染 · 契约 v3 校验 <span class="ok">通过</span>
-<span class="t">10:20:12</span> [trend-student] 行情同步：日线 78 根 · 周线 16 根（前复权）
-<span class="t">10:20:13</span> [trend-student] 签名会话签发（窗校验通过 · 水印叠加）
-<span class="t">10:26:40</span> [trend-student] 进度上报：46%（幂等 · 取最大值）</div>
-  </div>
-
-  <!-- 面板：播放器（插件 · 签名会话）-->
-  <div class="rpane on" data-pane="player">
-   <div class="card">
-    <div class="kv"><span class="k">窗校验</span><span style="color:var(--s-brand)">通过</span></div>
-    <div class="kv"><span class="k">水印</span><span>xiaoming · 已叠加</span></div>
-    <div class="kv"><span class="k">当前片段</span><span>原片 00:00 / 18:24</span></div>
-    <div class="kv"><span class="k">周期口径</span><span>日线 / 周线可切</span></div>
-    <div class="kv"><span class="k">复权</span><span>前复权 · 常驻声明</span></div>
-    <div class="dim" style="margin-top:6px">过期或越窗自动换签并提示，不静默黑屏；内容消费免费不耗额度。</div>
-   </div>
-   <div class="h">播放控制</div>
-   <div class="card">
-    <div style="display:flex;gap:6px"><button class="tbtn" type="button">暂停</button><button class="tbtn" type="button">重播本段</button></div>
-    <div class="dim" style="margin-top:7px">画中画联动（课件第 5 节）与右栏共用同一签名会话。</div>
-   </div>
-  </div>
-
-  <!-- 面板：标注 -->
-  <div class="rpane" data-pane="marks">
-   <div class="h">本节老师标注</div>
-   <a class="seg-row" href="#s4"><span class="tt">05:40</span><span class="tx">摆动高点 · 结构点</span></a>
-   <a class="seg-row on" href="#s4"><span class="tt">08:42</span><span class="tx">节奏衰减 · 节奏点</span></a>
-   <a class="seg-row" href="#s4"><span class="tt">11:05</span><span class="tx">结构破坏 · 证伪点</span></a>
-   <a class="seg-row" href="#s4"><span class="tt">16:08</span><span class="tx">节奏衰减 · 节奏点</span></a>
-   <div class="dim" style="margin-top:6px">点击列表定位到交互 K 线；在图上点标注点可看老师原话、时间码与术语出处。</div>
-   <div class="h">图例</div>
-   <div class="card">
-    <div class="kv"><span class="k"><span style="color:var(--s-brand)">●</span> 结构点</span><span>摆动高低点</span></div>
-    <div class="kv"><span class="k"><span style="color:#ef6a5f">●</span> 证伪点</span><span>结构破坏</span></div>
-    <div class="kv"><span class="k"><span style="color:#3ecf8e">●</span> 节奏点</span><span>回撤衰减</span></div>
-    <div class="kv"><span class="k"><span style="color:var(--s-warn)">◆</span> 判断点</span><span>回放暂停作答</span></div>
-   </div>
-  </div>
-
-  <!-- 面板：笔记 -->
-  <div class="rpane" data-pane="notes">
+   <div class="dim" style="margin-top:8px">课件与转写为云端发布内容，本地只读；逐根回放作答只落本机，不上传。</div>
    <div class="h">学习状态</div>
    <div class="card">
     <div class="kv"><span class="k">本节进度</span><span>学习中 · 46%</span></div>
@@ -706,10 +657,47 @@
     <div class="kv"><span class="k">即时自检</span><span>未作答</span></div>
     <div class="dim" style="margin-top:6px">阅读进度幂等上报：时长取最大值，完成不回退。</div>
    </div>
-   <div class="h">本节笔记</div>
+  </div>
+
+  <!-- 面板：终端（插件运行日志）-->
+  <div class="rpane" data-pane="term">
+   <div class="term"><span class="t">10:20:11</span> [trend-student] 打开课程页：sec-zl-02
+<span class="t">10:20:12</span> [trend-student] 课件渲染 · 契约 v3 校验 <span class="ok">通过</span>
+<span class="t">10:20:12</span> [trend-student] 行情同步：日线 78 根 · 周线 16 根（前复权）
+<span class="t">10:20:13</span> [trend-student] 签名会话签发（窗校验通过 · 水印叠加）
+<span class="t">10:26:40</span> [trend-student] 进度上报：46%（幂等 · 取最大值）</div>
+  </div>
+
+  <!-- 面板：播放器（签名会话 + 老师标注 + 图例）-->
+  <div class="rpane on" data-pane="player">
+   <div class="vid">
+    <div class="vid-screen">
+     <div class="play"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></div>
+     <span class="wm">水印 · xiaoming</span>
+     <span class="stamp">00:00 / 18:24</span>
+    </div>
+    <div class="vid-bar"><i style="width:0%"></i></div>
+   </div>
+   <div class="h">签名会话</div>
    <div class="card">
-    <div class="dim" style="font-family:var(--s-serif);font-size:12.5px;line-height:1.9">先定方向 → 再定级别 → 最后定节奏；任何一步不成立，先回到震荡假设……</div>
-    <div class="dim" style="margin-top:6px">只在本机保存，不上云、不进指标。</div>
+    <div class="kv"><span class="k">窗校验</span><span style="color:var(--s-brand)">通过</span></div>
+    <div class="kv"><span class="k">水印</span><span>xiaoming · 已叠加</span></div>
+    <div class="kv"><span class="k">周期口径</span><span>日线 / 周线可切</span></div>
+    <div class="kv"><span class="k">复权</span><span>前复权 · 常驻声明</span></div>
+    <div class="dim" style="margin-top:6px">过期或越窗自动换签并提示，不静默黑屏；内容消费免费不耗额度。</div>
+   </div>
+   <div class="h">本节老师标注</div>
+   <a class="seg-row" href="#s4"><span class="tt">05:40</span><span class="tx">摆动高点 · 结构点</span></a>
+   <a class="seg-row on" href="#s4"><span class="tt">08:42</span><span class="tx">节奏衰减 · 节奏点</span></a>
+   <a class="seg-row" href="#s4"><span class="tt">11:05</span><span class="tx">结构破坏 · 证伪点</span></a>
+   <a class="seg-row" href="#s4"><span class="tt">16:08</span><span class="tx">节奏衰减 · 节奏点</span></a>
+   <div class="dim" style="margin-top:6px">点击列表定位到交互 K 线；在图上点标注点可看老师原话与术语出处。</div>
+   <div class="h">图例</div>
+   <div class="card">
+    <div class="kv"><span class="k"><span style="color:var(--c-brand)">●</span> 结构点</span><span>摆动高低点</span></div>
+    <div class="kv"><span class="k"><span style="color:var(--c-danger)">●</span> 证伪点</span><span>结构破坏</span></div>
+    <div class="kv"><span class="k"><span style="color:var(--c-ok)">●</span> 节奏点</span><span>回撤衰减</span></div>
+    <div class="kv"><span class="k"><span style="color:var(--s-warn)">◆</span> 判断点</span><span>回放暂停作答</span></div>
    </div>
    <div class="h">延伸</div>
    <div class="card">
@@ -726,6 +714,10 @@
 <!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
 <section class="dsh-bottom">
  <header class="bt-hd">
+ <div class="bt-actions">
+  <button class="stbtn" data-cycle="自动,每次询问" title="命令模式（权限预设）· 点击切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 7l4 4-4 4M11 15h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>命令模式 · <span class="cv">自动</span></button>
+  <button class="stbtn" data-action="toggle-theme" title="明亮 / 暗黑模式切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>主题 · <span class="cv">明亮</span></button>
+ </div>
   <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · trend-student 插件运行时</span>
   <span class="dim">NodeJS 诊断</span>
   <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>

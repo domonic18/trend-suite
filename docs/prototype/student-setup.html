@@ -11,8 +11,8 @@
 .steps span{font-size:11.5px;color:var(--s-ink4);margin-left:4px}
 .code-card{background:var(--s-elev);border:1px solid var(--s-line);border-radius:var(--s-r-md);padding:22px 24px}
 .brand-mark{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#2fa383,#3DBE9B);display:grid;place-items:center;color:var(--s-brand-ink);font-size:26px;font-weight:800;margin:0 auto}
-</style></head><body><div class="dsh">
-<div class="dsh-row">
+</style></head><body class="dsh-light"><div class="dsh">
+<div class="dsh-row has-right">
 
 <!-- ================= 侧栏（登录前 · 框架品牌与预置面板）================= -->
 <aside class="sb">
@@ -48,6 +48,7 @@
   <nav class="crumbs"><b>首启向导</b></nav>
   <div class="hd-chips"><span class="chip">v0.2.1</span></div>
   <div class="corner">
+   <button class="icon-btn" data-action="toggle-right" title="展开 / 收起右栏" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15 4v16" stroke="currentColor" stroke-width="1.6"/></svg></button>
    <button class="icon-btn" data-action="toggle-bottom" title="终端" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
    <button class="icon-btn" title="设置" type="button"><svg width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5v2M12 18.5v2M4.9 7.5l1.7 1M17.4 15.5l1.7 1M4.9 16.5l1.7-1M17.4 8.5l1.7-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
@@ -84,11 +85,43 @@
  </div>
 </main>
 
+<!-- ================= 右栏（统一三页签 · 登录前锁定态）================= -->
+<aside class="right">
+ <nav class="right-tabs">
+  <button class="rtab on" data-pane="files" type="button" title="工作区文件（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>文件</button>
+  <button class="rtab" data-pane="term" type="button" title="终端（框架）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端</button>
+  <button class="rtab" data-pane="player" type="button" title="签名播放器（插件 · 登录后可用）"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>播放器</button>
+ </nav>
+ <div class="right-body">
+
+  <div class="rpane on" data-pane="files">
+   <div class="h">工作区</div>
+   <div class="card"><div class="dim">登录并绑定设备后，trend-student 插件加载课程工作区（课件只读 / 笔记可写）。</div></div>
+  </div>
+
+  <div class="rpane" data-pane="term">
+   <div class="term"><span class="t">11:02:01</span> [dsh] 运行时启动 · 平台模型通道就绪
+<span class="t">11:02:02</span> [dsh] 等待插件：trend-student（登录后加载）
+<span class="t">11:02:03</span> [auth] 设备码已生成（8427）· 等待批准</div>
+  </div>
+
+  <div class="rpane" data-pane="player">
+   <div class="h">播放器</div>
+   <div class="card"><div class="dim">登录后可签发课程原片播放（内容消费免费）。</div></div>
+  </div>
+
+ </div>
+</aside>
+
 </div><!-- /dsh-row -->
 
 <!-- ================= 底部终端行（DSH bottomRow · 可收起）================= -->
 <section class="dsh-bottom">
  <header class="bt-hd">
+ <div class="bt-actions">
+  <button class="stbtn" data-cycle="自动,每次询问" title="命令模式（权限预设）· 点击切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 7l4 4-4 4M11 15h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>命令模式 · <span class="cv">自动</span></button>
+  <button class="stbtn" data-action="toggle-theme" title="明亮 / 暗黑模式切换" type="button"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>主题 · <span class="cv">明亮</span></button>
+ </div>
   <span class="bt-title"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M4 6l4 4-4 4M12 14h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>终端 · 首启运行时</span>
   <span class="dim">NodeJS 诊断</span>
   <button class="icon-btn bt-close" title="收起" type="button"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
