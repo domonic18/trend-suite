@@ -1,5 +1,5 @@
 /* ============================================================
-   trend-suite 原型全局设计 token（移植自 trend-studio 已验证实现）
+   trend-suite 原型全局设计 token（移植自 已验证实现）
    用法：每页 <link rel="stylesheet" href="assets/tokens.css"> + 所属族 base
    规范：docs/design/README.md 三族视觉 · 红涨绿跌 · 零 emoji · 16px 线性图标
    ============================================================ */
@@ -28,7 +28,7 @@
   --err: #ef5b5b;    --err-deep: #d9483f;
   --info: #6ea8ff;
 
-  /* ============ 门户族（浅色官网 · trend-studio portal）============ */
+  /* ============ 门户族（浅色官网 · 同类门户）============ */
   --p-bg: #ffffff;
   --p-soft: #f6f8fc;          /* 间隔区块底 */
   --p-panel: #ffffff;
@@ -49,7 +49,7 @@
             linear-gradient(180deg, #f8fbff, #ffffff);
   --p-cta: linear-gradient(120deg, #11203d, #1d3b74);  /* 深色 CTA band */
 
-  /* ============ 工作台族（深色控制台 · trend-studio admin）============ */
+  /* ============ 工作台族（深色控制台 · 同类 Admin）============ */
   --a-bg: #0c0e12;
   --a-panel: #111318;
   --a-panel-soft: #151821;
@@ -68,7 +68,7 @@
   --a-warn: #e8b64c;  --a-warn-soft: rgba(232, 182, 76, .13);
   --a-err: #ef5b5b;   --a-err-soft: rgba(239, 91, 91, .13);
 
-  /* ============ dsh 客户端族（石墨 · trend-studio widgets）============ */
+  /* ============ dsh 客户端族（石墨 · 同类组件）============ */
   --d-bg: #0f1013;            /* 窗外桌面底 */
   --d-win: #131418;           /* 窗口底 */
   --d-panel: #1a1c22;         /* 面板 */
