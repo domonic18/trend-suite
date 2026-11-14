@@ -1,9 +1,10 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,29 +13,348 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# ============================================================
+# 统一命名规范（变量=非密配置，secret=凭据；两环境同名、按 GitHub Environment 隔离）
+#
+#   仓库级 secret（两环境共用一套镜像仓库）：
+#     TCR_NAMESPACE   镜像命名空间
+#     TCR_USERNAME    TCR 用户名
+#     TCR_PASSWORD    TCR 密码
+#   环境级（GitHub Environments `staging` 与 `production` 各配一份，名称完全相同）：
+#     var   DEPLOY_HOST    部署目标主机（user@host）
+#     var   DEPLOY_PATH    服务器部署目录
+#     secret DEPLOY_SSH_KEY      部署私钥
+#     secret DEPLOY_KNOWN_HOSTS  主机指纹
+#
+#   环境路由：push main → environment `production`（tag main-<sha>）
+#             push develop → environment `staging`（tag develop-<sha>）
+#   两环境 secret/variable 同名，deploy job 的步骤因此完全一致。
+# ============================================================
+env:
+  # 镜像仓库地址与命名空间走仓库变量/secret：开源仓库不写死任何环境的仓库地址
+  TCR_REGISTRY: ${{ vars.TCR_REGISTRY }}
+  TCR_NAMESPACE: ${{ secrets.TCR_NAMESPACE }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+
 jobs:
+  # ---------------------------------------------------------------- 静态检查
   check:
     name: Check / 类型检查
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9.15.9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-
-  test:
-    name: Test / 单元与契约测试
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
-        with: { version: 9.15.9 }
+        with:
+          version: 9.15.9
+
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install / 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: Check / 类型检查
+        run: pnpm check
+
+  # ---------------------------------------------------------------- 测试
+  test:
+    name: Test / 单元与契约测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        # 必须与生产同款：检索依赖 pgvector 扩展与 pg_trgm
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: trend_suite
+          POSTGRES_PASSWORD: trend_suite
+          POSTGRES_DB: trend_suite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trend_suite -d trend_suite"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # 两个库必须不同：测试会重放迁移并清空目标库，指向同一个库会抹掉开发数据
+      DATABASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/trend_suite
+      TEST_DATABASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/trend_suite_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install / 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test database / 建测试库
+        run: |
+          docker exec "${{ job.services.postgres.id }}" \
+            psql -U trend_suite -d postgres -c "CREATE DATABASE trend_suite_test OWNER trend_suite"
+
+      # 媒体管线测试需要 ffmpeg 现场转出夹具（arch/05 §3）；runner 镜像不带，
+      # 缺了会静默失败在夹具构建上，报错还看不出缺的是什么。
+      - name: Install ffmpeg / 安装 ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Test / 跑全仓测试
+        run: pnpm test
+
+  # ---------------------------------------------------------------- 镜像构建
+  build:
+    name: Build / 构建镜像
+    # 境内自托管 runner 构建并推镜像仓库（跨境推送链路不稳定，见前身系统实测记录）；
+    # 常驻 ci-builder 构建器配了国内镜像源且缓存跨 job 持久。
+    runs-on: [self-hosted]
+    # 仓库为 public：PR（含 fork）绝不在自托管机上执行仓库代码。
+    # 镜像构建只在主干 push 上跑——develop 的 push 同样构建（staging 发布用），
+    # Dockerfile 写坏了在进 main 之前就会暴露。workflow_dispatch 是发布前演练入口。
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')) || github.event_name == 'workflow_dispatch'
+    # 预算 = 构建 20 + 推送 35（内含三次 600s 看门狗）+ 收尾
+    timeout-minutes: 60
+    needs: [check, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      # 常驻 buildx 构建器：不用 setup-buildx-action（临时 builder 无镜像源配置，
+      # Docker Hub 直连拉不到 node:22-alpine，且缓存不持久）
+      - name: Select builder / 选择构建器
+        run: docker buildx use ci-builder
+
+      # 镜像仓库路径由 secret 拼装；缺失就明确失败，
+      # 不推到写死在 YAML 里的命名空间（推错仓库等于把坏镜像发到线上）
+      - name: Preconditions / 前置校验
+        run: |
+          set -eu
+          [ -n "${{ env.TCR_REGISTRY }}" ] || { echo "ERROR: 未配置仓库变量 TCR_REGISTRY" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
+          [ -n "${{ env.IMAGE_NAME }}" ] || { echo "ERROR: 未配置仓库变量 IMAGE_NAME" >&2; exit 1; }
+          echo "镜像目标：${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}"
+
+      - name: Resolve tag / 解析镜像标签（<branch>-<sha7>，不可变）
+        id: vars
+        run: |
+          sha_short="$(git rev-parse --short=7 "$GITHUB_SHA")"
+          case "$GITHUB_REF" in
+            refs/heads/main)    tag="main-${sha_short}" ;;
+            refs/heads/develop) tag="develop-${sha_short}" ;;
+            # 手动触发（发布前演练）可以落在任意分支上，按分支名打 tag
+            *)                 tag="$(basename "$GITHUB_REF" | tr '/' '-')-${sha_short}" ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=$TCR_REGISTRY/$TCR_NAMESPACE/$IMAGE_NAME:$tag" >> "$GITHUB_OUTPUT"
+
+      # id 供重试条件用：登录失败属配置错误，不进重试（避免白建镜像且盖住真错）
+      - name: Login TCR / 登录镜像仓库
+        id: login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.TCR_REGISTRY }}
+          username: ${{ secrets.TCR_USERNAME }}
+          password: ${{ secrets.TCR_PASSWORD }}
+
+      # 只构建不入库：load 进本地 docker，推送交给后面的独立步骤——挂死时只需重推，不必重建。
+      # --provenance=false：TCR 不认 OCI attestation 附加清单
+      - name: Build / 本地构建镜像
+        id: build
+        timeout-minutes: 20
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+        run: |
+          set -euo pipefail
+          docker buildx build --builder ci-builder --platform linux/amd64 \
+            --build-arg GIT_SHA="$GITHUB_SHA" \
+            --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --file apps/cloud/deploy/Dockerfile --load --provenance=false \
+            --tag "$IMAGE" .
+
+      # 每次推送自带看门狗：docker push 走跨境链路，卡住时不会自己返回，
+      # 也不认超时参数；runner 是 macOS（BSD userland，无 GNU timeout），
+      # 故用「后台进程 + 轮询 ps 状态」实现单次 600 秒上限，超时杀掉后重试。
+      - name: Push to TCR / 推送镜像
+        id: push
+        continue-on-error: true
+        timeout-minutes: 35
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          PUSH_ATTEMPTS: 3
+          PUSH_DEADLINE_S: 600
+        run: |
+          set -euo pipefail
+
+          push_once() {
+            local image="$1" limit_s="$2" pid waited=0 stat
+            docker push "$image" &
+            pid=$!
+            while :; do
+              stat="$(ps -o stat= -p "$pid" 2>/dev/null || true)"
+              case "$stat" in
+                ""|Z*) break ;;
+              esac
+              if [ "$waited" -ge "$limit_s" ]; then
+                echo "[push] 单次推送超过 ${limit_s}s 仍无进展，终止本次尝试" >&2
+                kill -TERM "$pid" 2>/dev/null || true
+                sleep 2
+                kill -KILL "$pid" 2>/dev/null || true
+                wait "$pid" 2>/dev/null || true
+                return 124
+              fi
+              sleep 5
+              waited=$((waited + 5))
+            done
+            wait "$pid"
+          }
+
+          attempt=1
+          while [ "$attempt" -le "$PUSH_ATTEMPTS" ]; do
+            echo "[push] 第 $attempt/$PUSH_ATTEMPTS 次：$IMAGE"
+            if push_once "$IMAGE" "$PUSH_DEADLINE_S"; then
+              exit 0
+            fi
+            echo "[push] 第 $attempt 次失败" >&2
+            attempt=$((attempt + 1))
+            # 不用 `[ ... ] && sleep`：条件为假时复合命令返回 1，set -e 下会误终止
+            if [ "$attempt" -le "$PUSH_ATTEMPTS" ]; then
+              sleep 10
+            fi
+          done
+          echo "[push] $PUSH_ATTEMPTS 次全部失败" >&2
+          exit 1
+
+      - name: Conclude build outcome / 构建推送结论裁定
+        if: always()
+        # 裁定顺序 = 登录 → 构建 → 推送：前一步失败时后一步 outcome 是 skipped，
+        # 不按顺序判就会把「登录失败」报成「构建失败」
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+        run: |
+          if [ "${{ steps.login.outcome }}" != "success" ]; then
+            echo "[FAIL] 镜像仓库登录失败（配置问题，重试无意义）" >&2
+            exit 1
+          fi
+          if [ "${{ steps.build.outcome }}" != "success" ]; then
+            echo "[FAIL] 镜像构建失败" >&2
+            exit 1
+          fi
+          if [ "${{ steps.push.outcome }}" = "success" ]; then
+            echo "[OK] 镜像推送成功：$IMAGE"
+          else
+            echo "[FAIL] 镜像推送失败（重试耗尽）" >&2
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------- 部署（staging / production 统一）
+  deploy:
+    name: Deploy ${{ github.ref == 'refs/heads/main' && 'Production / 生产环境发布' || 'Staging / 测试环境发布' }}
+    runs-on: ubuntu-latest
+    needs: [build]
+    # 环境路由：main → production（生产），develop → staging（测试）
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    # 同名 secret/variable 按环境隔离（DEPLOY_HOST / DEPLOY_PATH / DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS）
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    timeout-minutes: 60
+    # 同一环境串行发布，绝不并发；不同环境互不阻塞
+    concurrency:
+      group: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      # 部署目标环境（deploy.sh 的 --env）：main → prod，develop → staging
+      DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 主机与路径走环境变量、密钥走环境 secret，缺任何一项都明确失败，
+      # 不带着半套配置继续发布（否则 ssh 会用空 host 报一堆看不懂的错）
+      - name: Preconditions / 前置校验
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}）" >&2; exit 1; }
+          [ -n "$DEPLOY_PATH" ] || { echo "ERROR: 未配置环境变量 DEPLOY_PATH" >&2; exit 1; }
+          [ -n "$DEPLOY_SSH_KEY" ] || { echo "ERROR: 未配置环境 secret DEPLOY_SSH_KEY" >&2; exit 1; }
+          [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "ERROR: 未配置环境 secret DEPLOY_KNOWN_HOSTS" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
+
+      - name: Setup SSH key / 配置免密密钥与主机指纹
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Resolve tag / 解析镜像标签
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short=7 "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
+
+      - name: Snapshot server state / 记录发布前现场
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.${{ env.DEPLOY_ENV }} 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null"
+
+      - name: Sync deploy assets / 同步部署资产到服务器
+        # 送什么：部署脚本、compose、Caddy 配置、备份脚本。
+        # 迁移文件不进资产包——迁移随应用镜像走（migrate 服务与应用同镜像），
+        # 线上执行的迁移必然与本次发布的代码同 commit。
+        # 插件分发件（coach tarball + releases.json）就绪后在此追加进资产包。
+        run: |
+          set -eu
+          cd apps/cloud
+          COPYFILE_DISABLE=1 tar -czf /tmp/deploy-assets.tar.gz \
+            cicd/deploy.sh \
+            deploy/caddy/Caddyfile \
+            scripts/ops/backup.sh \
+            docker-compose-prod.yml
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            /tmp/deploy-assets.tar.gz "$DEPLOY_HOST:/tmp/deploy-assets.tar.gz"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            sudo bash -s -- "$DEPLOY_PATH" "$GITHUB_SHA" <<'REMOTE'
+          set -eu
+          cd "$1"
+          # --no-same-owner：不让归档里的 uid/gid 覆盖服务器属主
+          tar --no-same-owner -xzf /tmp/deploy-assets.tar.gz
+          rm -f /tmp/deploy-assets.tar.gz
+          chmod 755 cicd/deploy.sh scripts/ops/backup.sh
+          printf '%s\n' "$2" > .deploy-commit
+          # 资产落地完整性校验：缺任何一项都中止，不带着半套资产继续发布
+          for f in cicd/deploy.sh deploy/caddy/Caddyfile scripts/ops/backup.sh docker-compose-prod.yml; do
+              [ -f "$f" ] || { echo "ERROR: 资产缺失：$f" >&2; exit 1; }
+          done
+          # 运行期目录：数据都在 workspace/ 下（compose 挂载点）
+          mkdir -p workspace/postgres workspace/pipeline workspace/caddy/data workspace/caddy/config workspace/backups
+          # app 容器以 node（uid 1000）写入管线目录
+          chown -R 1000:1000 workspace/pipeline
+          echo "--- 已同步：部署资产齐全 ---"
+          REMOTE
+
+      - name: Deploy / 发布（备份 → 迁移先行 → 换容器 → 健康检查 → 失败自动回滚）
+        # --image-repo 与 build job 的推送目标同源（同一组 env），
+        # 服务器拉的仓库与 CI 推的仓库严格一致，不会因 namespace 变更而拉空
+        env:
+          BRANCH_TAG: ${{ github.ref == 'refs/heads/main' && 'main' || 'develop' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env '${{ env.DEPLOY_ENV }}' --tag '${{ env.BRANCH_TAG }}-${{ steps.vars.outputs.sha_short }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
+
+      - name: Verify / 核对发布结果
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && echo '--- 状态文件 ---' && cat .deploy-state && echo '--- 容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}'"

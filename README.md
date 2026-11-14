@@ -1,14 +1,15 @@
 # trend-suite
 
-monorepo（pnpm + Turborepo）：后端服务 + 双插件（生产端 / 学员端）+ 跨端契约包。
+monorepo（pnpm + Turborepo）：云端服务 + 学员端插件 + 跨端契约包。
 
 ## 目录
 
-- `apps/cloud` — @trend-suite/cloud：云端服务（Fastify + PostgreSQL，契约真相源）
-- `apps/producer` — @trend-suite/producer：生产端插件
-- `apps/coach` — @trend-suite/coach：学员端插件
+- `apps/cloud` — @trend-suite/cloud：云端服务（**Next.js App Router + PostgreSQL**）：门户（SSG/ISR）/ 管理台 / 教师生成工作台 / 全部 API + 生产 Agent（deepagents TS，见 `docs/arch/05`）+ 媒体管线 / 额度计费
+- `apps/coach` — @trend-suite/coach：学员端 DSH 插件（host / client / shared 三分）
 - `packages/contracts` — @trend-suite/contracts：跨端契约单一真相源（zod）
-- `docs/` — 全部项目文档（requirement / arch / prototype 原型图 / plan / ops / review / standard），入口 [docs/README.md](docs/README.md)
+- `docs/` — 全部项目文档（requirement / arch / prototype 原型图 / flow 流程图 / ops 运维 / standard 规范），入口 [docs/README.md](docs/README.md)
+
+> 教师端为浏览器工作台（云端提供），无独立插件；生产 Agent 工艺包（skills/SKILL.md）位于 cloud 内，随 deepagents 挂载。
 
 边界、纪律与命令详见 [AGENTS.md](AGENTS.md)。
 

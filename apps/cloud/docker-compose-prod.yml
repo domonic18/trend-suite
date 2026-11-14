@@ -1,1 +1,98 @@
-# 生产 compose（app + db + migrate profile + caddy）：发布唯一入口是 cicd/deploy.sh，见 docs/ops/01部署Runbook.md。
+# 部署 compose（app + db + migrate profile + caddy）——staging 与 production 共用一份：
+#   测试环境：docker compose --env-file .env.staging -f docker-compose-prod.yml ...（CI 自动，develop 分支）
+#   生产环境：docker compose --env-file .env.prod    -f docker-compose-prod.yml ...（CI 自动，main 分支）
+# 发布唯一入口是 cicd/deploy.sh（备份 → 迁移先行 → 换容器 → 健康检查 → 失败回滚），
+# 不要手工 compose up。约束见 docs/arch/02云端服务架构.md §8.1。
+#
+# 【项目名】不写死 name:——compose 项目名取部署目录名，两环境靠目录名区分
+#   （trend-suite-staging / trend-suite）。写死同一个 name 会让两个环境抢同一批容器：
+#   staging 的 compose up 会直接替换掉生产的 app 容器（生产即中断），而两边看起来都“成功”。
+# 【env_file】由调用方导出 ENV_FILE 指定，且是必填——不导出就直接失败：
+#   漏导出时若给了默认值，staging 容器会静默加载 .env.prod（域名与数据库口令串环境）。
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?在 env 文件设置 POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?在 env 文件设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?在 env 文件设置 POSTGRES_DB}
+    volumes:
+      - ./workspace/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  app:
+    build:
+      # 构建上下文是 monorepo 根目录（pnpm workspace），见 apps/cloud/deploy/Dockerfile。
+      # 线上发布不走这条路：镜像由 CI 构建并推 TCR，服务器只 pull（deploy.sh 带 --no-build）。
+      context: ../..
+      dockerfile: apps/cloud/deploy/Dockerfile
+    image: ${TREND_IMAGE_REPO:-<registry>/<namespace>/trend-suite}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: ${ENV_FILE:?未设置 ENV_FILE（deploy.sh 会导出；缺了会加载错环境的配置）}
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3940"
+      # 密码含特殊字符时需先 URL 编码
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # 迁移由独立 migrate 步骤执行（发布前先行），应用不再启动即迁移
+      MIGRATE_ON_START: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # 管线工作区与 HLS 输出必须在同一挂载点内，HLS 才能原子 rename（arch/05 §3.2）
+      - ./workspace/pipeline:/data
+      # 媒体定案走 COS（生产），无此项；local 模式（开发测试）媒体走 /media
+      - ${MEDIA_HOST_DIR:-./workspace/media}:/media
+    networks: [edge, backend]
+
+  # 迁移是一次性动作，不常驻：profile 让 compose up 不启动它，
+  # 发布时用 `docker compose run --rm --no-deps --pull never -T migrate` 触发。
+  # 与应用同一个镜像——迁移文件随镜像版本化，线上执行的迁移必然与本次发布的代码同 commit。
+  migrate:
+    image: ${TREND_IMAGE_REPO:-<registry>/<namespace>/trend-suite}:${IMAGE_TAG:-latest}
+    profiles: [migrate]
+    command: ["node", "--import", "tsx", "scripts/db/migrate.ts"]
+    restart: "no"
+    env_file: ${ENV_FILE:?未设置 ENV_FILE（deploy.sh 会导出；缺了会加载错环境的配置）}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    # 宿主端口变量化：production 沿用前身系统让出的 80/443
+    # （切换时前身系统先迁到 8081/8443 让位）；staging 用 8080/8443。
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?在 env 文件设置 DOMAIN}
+      # TLS_ARG 留空 = 走公网 ACME（生产，占用 80/443 时签发）；
+      # 置 internal = 用 caddy 内置 CA 自签（预发：80 被前身系统占着，ACME 签不出来）
+      TLS_ARG: ${TLS_ARG:-}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./workspace/caddy/data:/data
+      - ./workspace/caddy/config:/config
+    networks: [edge]
+
+networks:
+  edge:
+  backend:
+
+# 持久化数据统一由 ./workspace 承接（postgres / pipeline / caddy），不使用命名卷。

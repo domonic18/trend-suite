@@ -1,0 +1,25 @@
+# 由 docker-compose-prod.yml 挂载；DOMAIN 来自 env 文件（staging / production 各自的 .env.*）。
+# 公网域名自动签发 Let's Encrypt 证书；localhost 自动使用本地 CA。
+#
+# TLS_ARG 由 env 文件给出：留空 = 公网 ACME（生产，占着 80/443 才签得出来）；
+# 置 internal = caddy 内置 CA 自签（预发：80 端口被前身系统占用，ACME HTTP-01 走不通）。
+{$DOMAIN} {
+	encode zstd gzip
+
+	tls {$TLS_ARG:}
+
+	# SSE 必须关缓冲：agent 运行流（langgraph-sdk 兼容帧）与进度推送
+	# 依赖服务端即时下发，缓冲会把流攒成批
+	reverse_proxy app:3940 {
+		flush_interval -1
+	}
+
+	header {
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
