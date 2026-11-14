@@ -26,7 +26,8 @@ trend-suite/
 │   └── coach/               # 学员端插件（src/ host/client/shared 三分，见 docs/arch/04）
 ├── packages/
 │   └── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
-└── .github/workflows/       # CI/CD（check / test / build / deploy：develop→staging，main→production）
+└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：develop→staging，main→production）
+├── eslint.config.mjs       # 仓级 eslint 扁平配置（typescript-eslint recommended，pnpm lint 从根跑）
 ```
 
 ## 3. 硬约束

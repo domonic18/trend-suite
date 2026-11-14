@@ -2,9 +2,29 @@ name: CI/CD
 
 on:
   pull_request:
+    branches: [main, develop]
   push:
     branches: [main, develop]
   workflow_dispatch:
+    # 手动触发时的跳过开关（仿 aitech-hub/ai-invest 家族惯例）：紧急发版可跳过测试/静态检查，
+    # 类型检查与迁移守卫不跳过——它们防的是「发出去才发现坏」，不是风格问题。
+    inputs:
+      skip_lint:
+        description: "跳过静态检查阶段（eslint）"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      skip_test:
+        description: "跳过测试阶段（单元测试）"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 permissions:
   contents: read
@@ -31,13 +51,81 @@ concurrency:
 #   两环境 secret/variable 同名，deploy job 的步骤因此完全一致。
 # ============================================================
 env:
+  # 强制 GitHub Actions 使用 Node.js 24 runtime（checkout/setup-node 等，消弃用警告；
+  # 与 aitech-hub/ai-invest 同惯例）
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   # 镜像仓库地址与命名空间走仓库变量/secret：开源仓库不写死任何环境的仓库地址
   TCR_REGISTRY: ${{ vars.TCR_REGISTRY }}
   TCR_NAMESPACE: ${{ secrets.TCR_NAMESPACE }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 
 jobs:
+  # ---------------------------------------------------------------- Dockerfile 检查
+  # hadolint 无 darwin-arm64 原生版，故放 GitHub 托管 runner（家族惯例）。
+  # failure-threshold: error——warning 级不拦发布（钉版本一类 warning 与既有
+  # 写法冲突，逐条改会污染镜像定义）。
+  dockerfile-lint:
+    name: Dockerfile 检查（hadolint）
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/cloud/deploy/Dockerfile
+          failure-threshold: error
+
+      # 迁移载体一致性断言（仿 aitech-hub）：线上迁移由应用镜像内 migrate.ts 执行
+      # （compose migrate profile 与应用同镜像），镜像必须携带 db/migrations 与
+      # scripts/db——漂移的现实来源只有两处：.dockerignore 排除、Dockerfile 漏 COPY。
+      # 静态断言（不构建镜像）：镜像 2 层安装动辄数分钟，而这两处都是文本可判的。
+      - name: 断言镜像携带迁移集
+        run: |
+          set -eu
+          if grep -qE '(^|/)apps/cloud/db(/|$)' .dockerignore; then
+            echo "ERROR: .dockerignore 排除了 apps/cloud/db/，镜像将不带迁移集" >&2
+            exit 1
+          fi
+          if grep -qE '(^|/)apps/cloud/scripts(/|$)' .dockerignore; then
+            echo "ERROR: .dockerignore 排除了 apps/cloud/scripts/，镜像将不带迁移入口" >&2
+            exit 1
+          fi
+          if ! grep -q 'COPY --from=build /app/apps/cloud/db' apps/cloud/deploy/Dockerfile; then
+            echo "ERROR: Dockerfile 未把 db/ COPY 进 runtime 阶段" >&2
+            exit 1
+          fi
+          if ! grep -q 'COPY --from=build /app/apps/cloud/scripts' apps/cloud/deploy/Dockerfile; then
+            echo "ERROR: Dockerfile 未把 scripts/ COPY 进 runtime 阶段" >&2
+            exit 1
+          fi
+          echo "迁移载体断言通过：镜像将携带仓库 $(ls apps/cloud/db/migrations | wc -l | tr -d ' ') 个迁移"
+
   # ---------------------------------------------------------------- 静态检查
+  # 步骤级跳过开关：job 级跳过会经 needs 链级联跳掉 build（同 test job 的处置）
+  lint:
+    name: Lint / 静态检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - name: Install / 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint / 跑 eslint
+        if: github.event.inputs.skip_lint != 'true'
+        run: pnpm lint
+
   check:
     name: Check / 类型检查
     runs-on: ubuntu-latest
@@ -110,8 +198,181 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
+      # 跳过开关挂在步骤级而非 job 级：build job needs 整组检查线，
+      # job 级跳过会把 build 一起跳掉（needs 链上 skipped 即级联跳过）
       - name: Test / 跑全仓测试
+        if: github.event.inputs.skip_test != 'true'
         run: pnpm test
+
+  # ---------------------------------------------------------------- 迁移守卫
+  # db/migrations/ 是 schema 单一真相源；发布走「迁移先行」硬门禁（deploy.sh），
+  # 守卫是 baseline 与增量漂移的唯一自动防线（仿 ai-invest 双守卫，PG 口径）。
+  # 守卫本体各约 1 分钟，无条件执行——曾因按路径条件跳过让 schema 漂移漏进主干。
+
+  # 从零重放守卫：空库全量应用 + 二次重放零新增（台账幂等）。
+  db-migration-guard:
+    name: 迁移守卫 / 从零重放
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        # 必须与生产同款：检索依赖 pgvector 扩展与 pg_trgm
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: trend_suite
+          POSTGRES_PASSWORD: trend_suite
+          POSTGRES_DB: trend_suite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trend_suite -d trend_suite"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install / 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: Create guard database / 建守卫库
+        run: |
+          docker exec "${{ job.services.postgres.id }}" \
+            psql -U trend_suite -d postgres -c "CREATE DATABASE migration_guard OWNER trend_suite"
+
+      # 从零全量应用（migrate.ts 语义见脚本头注释：台账制、逐迁移事务）
+      - name: Apply all migrations / 从零应用全部迁移
+        env:
+          DATABASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/migration_guard
+        run: |
+          expected="$(ls apps/cloud/db/migrations/*.sql | wc -l | tr -d ' ')"
+          out="$(pnpm --filter @trend-suite/cloud migrate)"
+          echo "$out"
+          grep -q "applied=${expected}," <<<"$out" \
+            || { echo "ERROR: 未应用全部迁移（期望 ${expected} 条）" >&2; exit 1; }
+
+      # 二次重放必须零新增（exactly-once 台账幂等）；同时台账表必须存在
+      - name: Replay idempotency / 幂等重放（应全量跳过）
+        env:
+          DATABASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/migration_guard
+        run: |
+          out="$(pnpm --filter @trend-suite/cloud migrate)"
+          echo "$out"
+          grep -q "applied=0," <<<"$out" \
+            || { echo "ERROR: 重放产生了新 applied，迁移不幂等" >&2; exit 1; }
+          docker exec "${{ job.services.postgres.id }}" \
+            psql -U trend_suite -d migration_guard -qAt \
+            -c "SELECT count(*) FROM _migrations" | grep -q '^[1-9]' \
+            || { echo "ERROR: _migrations 台账为空" >&2; exit 1; }
+
+  # 增量迁移守卫：从「线上 schema」出发验证增量路径，并断言增量结果与从零
+  # 重放一致（无 schema 漂移）。重放守卫只覆盖空库从零；真实的
+  # 「线上 schema → 新 schema」增量路径此前从未被自动验证过——
+  # 生产迁移事故正是从这条路径漏出来的。
+  # 基准 = origin/main 的迁移集（main 是发布线，生产当前跑的 schema 即由此重放而来；
+  # main ⊆ develop，故 develop 上新增的迁移落在增量侧）。
+  db-incremental-guard:
+    name: 迁移守卫 / 增量无漂移
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: trend_suite
+          POSTGRES_PASSWORD: trend_suite
+          POSTGRES_DB: trend_suite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trend_suite -d trend_suite"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 需要 origin/main 的完整迁移集作基准，浅克隆取不到
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install / 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: Create guard databases / 建守卫库
+        run: |
+          docker exec "${{ job.services.postgres.id }}" \
+            psql -U trend_suite -d postgres \
+            -c "CREATE DATABASE prod_schema OWNER trend_suite" \
+            -c "CREATE DATABASE fresh_schema OWNER trend_suite"
+
+      - name: Extract base migrations / 抽出主干迁移基准
+        run: |
+          set -eu
+          git fetch --no-tags origin main
+          mkdir -p base
+          git archive origin/main apps/cloud/db/migrations | tar -x -C base
+          echo "base migrations: $(ls base/apps/cloud/db/migrations | wc -l | tr -d ' ')"
+          echo "current migrations: $(ls apps/cloud/db/migrations | wc -l | tr -d ' ')"
+
+      # 主干迁移落 prod_schema（线上 schema 基准），随后增量应用本次分支的新迁移
+      - name: Apply base then incremental / 主干迁移 + 增量迁移
+        env:
+          BASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/prod_schema
+          CURRENT_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/prod_schema
+        run: |
+          set -eu
+          MIGRATIONS_DIR="$PWD/base/apps/cloud/db/migrations" DATABASE_URL="$BASE_URL" \
+            pnpm --filter @trend-suite/cloud migrate
+          DATABASE_URL="$CURRENT_URL" pnpm --filter @trend-suite/cloud migrate
+
+      # 从零重放全部迁移落 fresh_schema
+      - name: Apply all from zero / 从零重放全部迁移
+        env:
+          DATABASE_URL: postgres://trend_suite:trend_suite@127.0.0.1:5432/fresh_schema
+        run: pnpm --filter @trend-suite/cloud migrate
+
+      # 断言增量与从零无漂移：比对列、索引、约束清单
+      #（不比数据、不比 pg_dump 文本，避免格式噪声误报）；
+      # _migrations 是迁移台账本身，两边结构同、数据不同，排除
+      - name: Assert no schema drift / 断言增量与从零一致
+        run: |
+          set -eu
+          psql() { docker exec "${{ job.services.postgres.id }}" psql -U trend_suite "$@"; }
+          for db in prod_schema fresh_schema; do
+            psql -d "$db" -qAt -c "
+              SELECT table_name||'.'||column_name||':'||data_type||':'||is_nullable
+              FROM information_schema.columns
+              WHERE table_schema='public' AND table_name <> '_migrations' ORDER BY 1" > "/tmp/cols.$db"
+            psql -d "$db" -qAt -c "
+              SELECT tablename||'.'||indexname FROM pg_indexes
+              WHERE schemaname='public' AND tablename <> '_migrations' ORDER BY 1" > "/tmp/idx.$db"
+            psql -d "$db" -qAt -c "
+              SELECT conrelid::regclass::text||'.'||conname||':'||contype::text
+              FROM pg_constraint WHERE connamespace='public'::regnamespace ORDER BY 1" > "/tmp/con.$db"
+          done
+          failed=0
+          for kind in cols idx con; do
+            if ! diff -u "/tmp/$kind.prod_schema" "/tmp/$kind.fresh_schema"; then
+              echo "ERROR: $kind 漂移：增量路径与从零路径结果不一致" >&2
+              failed=1
+            fi
+          done
+          [ "$failed" -eq 0 ] || exit 1
+          echo "schema 一致：列/索引/约束三清单在增量与从零路径下完全相同"
 
   # ---------------------------------------------------------------- 镜像构建
   build:
@@ -125,7 +386,9 @@ jobs:
     if: (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')) || github.event_name == 'workflow_dispatch'
     # 预算 = 构建 20 + 推送 35（内含三次 600s 看门狗）+ 收尾
     timeout-minutes: 60
-    needs: [check, test]
+    # 检查线全绿后才进镜像构建（家族惯例：aitech-hub docker-release 同款 needs 集）；
+    # skip_lint / skip_test 是步骤级开关，lint/test job 本身恒成功，不会级联跳过 build
+    needs: [dockerfile-lint, lint, check, test, db-migration-guard, db-incremental-guard]
     steps:
       - uses: actions/checkout@v4
 
@@ -306,9 +569,12 @@ jobs:
         run: echo "sha_short=$(git rev-parse --short=7 "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
 
       - name: Snapshot server state / 记录发布前现场
+        # 快照是尽力而为的记录步骤：首部署时 compose 文件尚未同步（下一步才送），
+        # compose ps 失败不该中止发布；远程命令内 || true 只吞快照本身的失败，
+        # ssh 连不上仍会以非零退出（远程脚本根本没机会执行）
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.${{ env.DEPLOY_ENV }} 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null"
+            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.${{ env.DEPLOY_ENV }} 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null || true"
 
       - name: Sync deploy assets / 同步部署资产到服务器
         # 送什么：部署脚本、compose、Caddy 配置、备份脚本。
