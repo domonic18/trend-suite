@@ -67,6 +67,22 @@ services:
         condition: service_healthy
     networks: [backend]
 
+  # 种子账号与迁移同一个镜像、同一条发布链路：迁移后跑一次，幂等创建初始管理员
+  # （凭据来自 env 文件的 BOOTSTRAP_ADMIN_USERNAME / BOOTSTRAP_ADMIN_PASSWORD，不入仓库）。
+  # 未配置这两个变量时脚本自己跳过——不配也能发布，只是暂时没有管理账号。
+  seed:
+    image: ${TREND_IMAGE_REPO:-<registry>/<namespace>/trend-suite}:${IMAGE_TAG:-latest}
+    profiles: [migrate]
+    command: ["node", "--conditions=react-server", "--import", "tsx", "scripts/db/seed.ts"]
+    restart: "no"
+    env_file: ${ENV_FILE:?未设置 ENV_FILE（deploy.sh 会导出；缺了会加载错环境的配置）}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend]
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

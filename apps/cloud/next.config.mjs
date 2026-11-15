@@ -4,6 +4,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@trend-suite/contracts'],
+  webpack: (config) => {
+    // 契约包内部用 NodeNext 的 './x.js' 写法（Node 运行时要求显式扩展名），
+    // webpack 不认这个后缀 —— 把 .js 请求映射回 .ts 源文件。
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js': ['.ts', '.tsx', '.js'],
+    }
+    return config
+  },
 }
 
 export default nextConfig

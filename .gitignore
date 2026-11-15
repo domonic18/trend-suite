@@ -1,6 +1,8 @@
 node_modules/
 dist/
-lib/
+# 只忽略仓库根的 lib/ 构建产物：裸 lib/ 会连带吞掉各应用的 src/**/lib/ 源码目录
+#（git add 目录时静默跳过被忽略的文件，提交出去就是一堆「找不到模块」）
+/lib/
 build/
 coverage/
 .env
@@ -12,6 +14,8 @@ coverage/
 *.tgz
 # 运行期持久化数据统一放各应用 workspace/（不入库）
 workspace/
+# 过程性文档（开发计划等）：本地工作稿，不入库
+docs/plan/
 # 密钥与令牌永不入库
 .secret/
 cicd/monitoring/metrics_token
