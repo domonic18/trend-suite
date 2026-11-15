@@ -269,6 +269,14 @@ run_migrations() {
     compose run --rm --no-deps --pull never -T migrate
 }
 
+run_seed() {
+    # 种子与迁移同一个镜像、同一条发布链路：迁移后跑一次，幂等创建初始管理员。
+    # 幂等——重复发布不会产生第二个账号。失败即中止（旧版本继续服务）：
+    # 缺了管理账号后续操作无法进行，不带着残缺状态上线。
+    log "执行种子（幂等创建初始管理员；未配置凭据时脚本自行跳过）"
+    compose run --rm --no-deps --pull never -T seed
+}
+
 # ---------------------------------------------------------------- 镜像拉取
 
 # 镜像仓库路径（registry/namespace/repo）。
@@ -566,6 +574,11 @@ main() {
     if ! run_migrations; then
         restore_prev_tag "$previous" "$owner" "$previous_repo"
         fail "数据库迁移失败：已中止发布，旧版本继续服务（未换容器）"
+    fi
+
+    if ! run_seed; then
+        restore_prev_tag "$previous" "$owner" "$previous_repo"
+        fail "种子执行失败：已中止发布，旧版本继续服务（未换容器）"
     fi
 
     if ! compose up -d --wait --remove-orphans --no-build --pull never; then

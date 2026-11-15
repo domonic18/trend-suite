@@ -64,6 +64,9 @@ COPY --from=build /app/apps/cloud/public /app/apps/cloud/public
 # 迁移集与入口（compose migrate profile 与本镜像同容器运行，迁移随镜像版本化）
 COPY --from=build /app/apps/cloud/db /app/apps/cloud/db
 COPY --from=build /app/apps/cloud/scripts /app/apps/cloud/scripts
+# 服务端源码：seed 脚本要复用应用的口令哈希实现（scrypt），
+# 而运行期镜像只带 .next 编译产物——哈希算法只能有一份，不能在脚本里另抄一遍
+COPY --from=build /app/apps/cloud/src/server /app/apps/cloud/src/server
 USER node
 WORKDIR /app/apps/cloud
 EXPOSE 3940
