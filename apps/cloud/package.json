@@ -11,10 +11,11 @@
     "check": "tsc --noEmit",
     "build": "next build",
     "start": "next start",
-    "test": "node --import tsx --test test/*.test.ts",
+    "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\" \"src/**/*.test.ts\"",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "migrate": "node --env-file-if-exists=.env --import tsx scripts/db/migrate.ts",
+    "seed": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/db/seed.ts",
     "loadtest": "node scripts/ops/load-test.mjs"
   },
   "dependencies": {
@@ -23,7 +24,9 @@
     "pg": "^8.13.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tsx": "^4.0.0"
+    "server-only": "^0.0.1",
+    "tsx": "^4.0.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
