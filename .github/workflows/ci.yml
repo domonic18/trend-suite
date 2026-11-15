@@ -39,7 +39,7 @@ concurrency:
 #
 #   仓库级（两环境共用一套镜像仓库）：
 #     var   TCR_REGISTRY    镜像仓库地址
-#     var   TCR_NAMESPACE   镜像命名空间（非密配置，走变量）
+#     secret TCR_NAMESPACE  镜像命名空间（与凭据同层，公开仓日志遮蔽）
 #     var   IMAGE_NAME      镜像名
 #     secret TCR_USERNAME   TCR 用户名
 #     secret TCR_PASSWORD   TCR 密码
@@ -58,10 +58,10 @@ env:
   # 强制 GitHub Actions 使用 Node.js 24 runtime（checkout/setup-node 等，消弃用警告；
   # 与 aitech-hub/ai-invest 同惯例）
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  # 镜像仓库地址与命名空间走仓库变量：开源仓库不写死任何环境的仓库地址；
-  # 命名空间非凭据，按家族约定（08 §8.2.2）走 variables 而非 secrets
+  # 镜像仓库地址走仓库变量（公开端点无敏感度，开源仓库不写死）；命名空间与凭据
+  # 同层走 secrets——公开仓 CI 日志公开可见，secrets 自动遮蔽镜像坐标
   TCR_REGISTRY: ${{ vars.TCR_REGISTRY }}
-  TCR_NAMESPACE: ${{ vars.TCR_NAMESPACE }}
+  TCR_NAMESPACE: ${{ secrets.TCR_NAMESPACE }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 
 jobs:
@@ -408,7 +408,7 @@ jobs:
         run: |
           set -eu
           [ -n "${{ env.TCR_REGISTRY }}" ] || { echo "ERROR: 未配置仓库变量 TCR_REGISTRY" >&2; exit 1; }
-          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库变量 TCR_NAMESPACE" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
           [ -n "${{ env.IMAGE_NAME }}" ] || { echo "ERROR: 未配置仓库变量 IMAGE_NAME" >&2; exit 1; }
           echo "镜像目标：${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}"
 
@@ -561,7 +561,7 @@ jobs:
           [ -n "$DEPLOY_PATH" ] || { echo "ERROR: 未配置环境变量 DEPLOY_PATH" >&2; exit 1; }
           [ -n "$DEPLOY_SSH_KEY" ] || { echo "ERROR: 未配置环境 secret DEPLOY_SSH_KEY" >&2; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "ERROR: 未配置环境 secret DEPLOY_KNOWN_HOSTS" >&2; exit 1; }
-          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库变量 TCR_NAMESPACE" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
 
       - name: Setup SSH key / 配置免密密钥与主机指纹
         run: |
