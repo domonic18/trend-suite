@@ -7,7 +7,9 @@ export default tseslint.config(
     ignores: [
       "**/node_modules/**",
       "**/dist/**", // tsc 产物，非 lint 对象
+      "**/.next/**", // Next.js 编译产物，非 lint 对象
       "**/coverage/**",
+      "**/next-env.d.ts", // Next 生成文件
       "docs/**", // 需求/架构文档与 e2e 记录 HTML，非 lint 对象
     ],
   },
