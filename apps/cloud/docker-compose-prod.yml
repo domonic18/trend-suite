@@ -1,6 +1,6 @@
 # 部署 compose（app + db + migrate profile + caddy）——staging 与 production 共用一份：
-#   测试环境：docker compose --env-file .env.staging -f docker-compose-prod.yml ...（CI 自动，develop 分支）
-#   生产环境：docker compose --env-file .env.prod    -f docker-compose-prod.yml ...（CI 自动，main 分支）
+#   测试环境：docker compose --env-file .env.staging -f docker-compose-prod.yml ...（CI 自动，push main）
+#   生产环境：docker compose --env-file .env.prod    -f docker-compose-prod.yml ...（CI 自动，push v* tag）
 # 发布唯一入口是 cicd/deploy.sh（备份 → 迁移先行 → 换容器 → 健康检查 → 失败回滚），
 # 不要手工 compose up。约束见 docs/arch/02云端服务架构.md §8.1。
 #
@@ -36,12 +36,11 @@ services:
     restart: unless-stopped
     env_file: ${ENV_FILE:?未设置 ENV_FILE（deploy.sh 会导出；缺了会加载错环境的配置）}
     environment:
-      HOST: 0.0.0.0
+      # next start 读 HOSTNAME/PORT：容器内必须绑 0.0.0.0，宿主端口由 caddy 反代
+      HOSTNAME: 0.0.0.0
       PORT: "3940"
       # 密码含特殊字符时需先 URL 编码
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      # 迁移由独立 migrate 步骤执行（发布前先行），应用不再启动即迁移
-      MIGRATE_ON_START: "false"
     depends_on:
       db:
         condition: service_healthy
