@@ -26,7 +26,7 @@ trend-suite/
 │   └── coach/               # 学员端插件（src/ host/client/shared 三分，见 docs/arch/04）
 ├── packages/
 │   └── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
-└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main→staging，push v* tag→production）
+└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 同时发 staging（自动）与 production（人工审批后），镜像 tag 统一 main-<sha>）
 ├── eslint.config.mjs       # 仓级 eslint 扁平配置（typescript-eslint recommended，pnpm lint 从根跑）
 ```
 

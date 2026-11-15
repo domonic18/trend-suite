@@ -37,8 +37,11 @@ ENV NODE_ENV=production
 # 构建标识随镜像走：CI 注入 commit 与构建时间，/health 展示
 ARG GIT_SHA=dev
 ARG BUILD_TIME=unknown
+# 应用版本 = VERSION 文件 + 运行号（CI 注入），与 package.json version 同源
+ARG APP_VERSION=0.0.0-dev
 ENV APP_GIT_SHA=${GIT_SHA} \
-    APP_BUILD_TIME=${BUILD_TIME}
+    APP_BUILD_TIME=${BUILD_TIME} \
+    APP_VERSION=${APP_VERSION}
 # 媒体管线在 runtime 直接 spawn ffmpeg/ffprobe（arch/05 §3）；
 # 预建 /data 目录供容器直接运行（HLS 与管线工作区同卷，原子 rename）
 RUN apk add --no-cache ffmpeg \

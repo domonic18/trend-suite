@@ -5,7 +5,6 @@ on:
     branches: [main]
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
     # 手动触发时的跳过开关（仿 aitech-hub/ai-invest 家族惯例）：紧急发版可跳过测试/静态检查，
     # 类型检查与迁移守卫不跳过——它们防的是「发出去才发现坏」，不是风格问题。
@@ -50,9 +49,11 @@ concurrency:
 #     secret DEPLOY_KNOWN_HOSTS  主机指纹
 #
 #   单主干发布线（main 为主干，feature/fix 分支经 PR 合入 main）：
-#     push main        → 构建镜像（tag main-<sha>）→ 部署 environment `staging`
-#     push tag v<语义化> → 构建镜像（tag v<版本>）   → 部署 environment `production`
-#   两环境 secret/variable 同名，deploy job 的步骤因此完全一致。
+#     push main → 构建镜像（tag main-<sha>，不可变）
+#               → 部署 environment `staging`（自动）
+#               → 部署 environment `production`（人工审批后）
+#   两环境跑同一个镜像 tag，差异只在 env 文件与审批闸门。
+#   生产不由 git tag 驱动（家族统一模型：hub / portal / invest / studio 同款）。
 # ============================================================
 env:
   # 强制 GitHub Actions 使用 Node.js 24 runtime（checkout/setup-node 等，消弃用警告；
@@ -386,9 +387,9 @@ jobs:
     # 常驻 ci-builder 构建器配了国内镜像源且缓存跨 job 持久。
     runs-on: [self-hosted]
     # 仓库为 public：PR（含 fork）绝不在自托管机上执行仓库代码。
-    # 镜像构建只在发布线 push 上跑——main 的 push 构建 staging 镜像，
-    # v* tag 的 push 构建 production 镜像；workflow_dispatch 是发布前演练入口。
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))) || github.event_name == 'workflow_dispatch'
+    # 镜像构建只在发布线 push 上跑——main 的 push 构建镜像并触发两环境发布；
+    # workflow_dispatch 是发布前演练入口（只构建，不发布）。
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     # 预算 = 构建 20 + 推送 35（内含三次 600s 看门狗）+ 收尾
     timeout-minutes: 60
     # 检查线全绿后才进镜像构建（家族惯例：aitech-hub docker-release 同款 needs 集）；
@@ -417,14 +418,15 @@ jobs:
         run: |
           sha_short="$(git rev-parse --short=7 "$GITHUB_SHA")"
           case "$GITHUB_REF" in
-            # push main：staging 镜像 tag（短 sha 不可变）
+            # push main：镜像 tag = main-<sha>（短 sha 不可变；两环境同 tag，回滚即切回上一个）
             refs/heads/main) tag="main-${sha_short}" ;;
-            # push v* tag：production 镜像 tag 即版本号本身（deploy.sh 按 ^v 前缀白名单校验）
-            refs/tags/v*)    tag="${GITHUB_REF#refs/tags/}" ;;
             # 手动触发（发布前演练）可以落在任意分支上，按分支名打 tag
             *)               tag="$(basename "$GITHUB_REF" | tr '/' '-')-${sha_short}" ;;
           esac
+          # 应用版本 = VERSION 文件 + 运行号（家族惯例：acore-resouces / ai-invest 同款）
+          app_version="$(cat VERSION).${GITHUB_RUN_NUMBER}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
           echo "image=$TCR_REGISTRY/$TCR_NAMESPACE/$IMAGE_NAME:$tag" >> "$GITHUB_OUTPUT"
 
       # id 供重试条件用：登录失败属配置错误，不进重试（避免白建镜像且盖住真错）
@@ -448,6 +450,7 @@ jobs:
           docker buildx build --builder ci-builder --platform linux/amd64 \
             --build-arg GIT_SHA="$GITHUB_SHA" \
             --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg APP_VERSION="${{ steps.vars.outputs.app_version }}" \
             --file apps/cloud/deploy/Dockerfile --load --provenance=false \
             --tag "$IMAGE" .
 
@@ -525,26 +528,30 @@ jobs:
             echo "[FAIL] 镜像推送失败（重试耗尽）" >&2
             exit 1
           fi
-
-  # ---------------------------------------------------------------- 部署（staging / production 统一）
-  deploy:
-    name: Deploy ${{ startsWith(github.ref, 'refs/tags/v') && 'Production / 生产环境发布' || 'Staging / 测试环境发布' }}
+  # ---------------------------------------------------------------- 部署（staging / production 各一个 job）
+  # 家族统一模型（08 §8.5.1）：push main 同时喂两环境——
+  #   staging   ：自动发布（environment: staging）
+  #   production：environment: production 带人工审批闸门，审批通过才发布
+  # 两环境跑同一个镜像 tag（main-<sha7>，短 sha 不可变），差异只在 env 文件与审批。
+  # 生产不再由 git tag 驱动：tag 驱动会让「发布」与「版本号」两件事耦合，
+  # 镜像 tag 也被迫用版本串（同 tag 不同镜像的风险面）。
+  deploy-staging:
+    name: Deploy Staging / 测试环境发布
     runs-on: ubuntu-latest
     needs: [build]
-    # 单主干发布线：push main → staging（tag main-<sha>）；push v* tag → production（tag = 版本号）
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     # 同名 secret/variable 按环境隔离（DEPLOY_HOST / DEPLOY_PATH / DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS）
-    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+    environment: staging
     timeout-minutes: 60
-    # 同一环境串行发布，绝不并发；不同环境互不阻塞
+    # 同一环境串行发布，绝不并发
     concurrency:
-      group: deploy-${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+      group: deploy-staging
       cancel-in-progress: false
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-      # 部署目标环境（deploy.sh 的 --env）：v* tag → prod，main → staging
-      DEPLOY_ENV: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'staging' }}
+      # 部署目标环境（deploy.sh 的 --env）
+      DEPLOY_ENV: staging
 
     steps:
       - uses: actions/checkout@v4
@@ -557,7 +564,7 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -eu
-          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}）" >&2; exit 1; }
+          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: staging）" >&2; exit 1; }
           [ -n "$DEPLOY_PATH" ] || { echo "ERROR: 未配置环境变量 DEPLOY_PATH" >&2; exit 1; }
           [ -n "$DEPLOY_SSH_KEY" ] || { echo "ERROR: 未配置环境 secret DEPLOY_SSH_KEY" >&2; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "ERROR: 未配置环境 secret DEPLOY_KNOWN_HOSTS" >&2; exit 1; }
@@ -581,13 +588,12 @@ jobs:
         # ssh 连不上仍会以非零退出（远程脚本根本没机会执行）
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.${{ env.DEPLOY_ENV }} 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null || true"
+            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.staging 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.staging' docker compose --env-file .env.staging -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null || true"
 
       - name: Sync deploy assets / 同步部署资产到服务器
         # 送什么：部署脚本、compose、Caddy 配置、备份脚本。
         # 迁移文件不进资产包——迁移随应用镜像走（migrate 服务与应用同镜像），
         # 线上执行的迁移必然与本次发布的代码同 commit。
-        # 插件分发件（coach tarball + releases.json）就绪后在此追加进资产包。
         run: |
           set -eu
           cd apps/cloud
@@ -622,13 +628,100 @@ jobs:
         # --image-repo 与 build job 的推送目标同源（同一组 env），
         # 服务器拉的仓库与 CI 推的仓库严格一致，不会因 namespace 变更而拉空
         env:
-          # staging 镜像 tag = main-<sha7>；production 镜像 tag = v* 版本号本身（build job 同源）
-          IMAGE_TAG_RESOLVED: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('main-{0}', steps.vars.outputs.sha_short) }}
+          # 镜像 tag = main-<sha7>（与 build job 同源，两环境一致）
+          IMAGE_TAG_RESOLVED: ${{ format('main-{0}', steps.vars.outputs.sha_short) }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env '${{ env.DEPLOY_ENV }}' --tag '${{ env.IMAGE_TAG_RESOLVED }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
+            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env 'staging' --tag '${{ env.IMAGE_TAG_RESOLVED }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
 
       - name: Verify / 核对发布结果
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' && echo '--- 状态文件 ---' && cat .deploy-state && echo '--- 容器 ---' && sudo env ENV_FILE='.env.${{ env.DEPLOY_ENV }}' docker compose --env-file .env.${{ env.DEPLOY_ENV }} -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}'"
+            "cd '$DEPLOY_PATH' && echo '--- 状态文件 ---' && cat .deploy-state && echo '--- 容器 ---' && sudo env ENV_FILE='.env.staging' docker compose --env-file .env.staging -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}'"
+
+  deploy-production:
+    name: Deploy Production / 生产环境发布
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # 生产环境带人工审批闸门（08 §8.5.2）：审批通过才继续发布
+    environment: production
+    timeout-minutes: 60
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_ENV: prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preconditions / 前置校验
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: production）" >&2; exit 1; }
+          [ -n "$DEPLOY_PATH" ] || { echo "ERROR: 未配置环境变量 DEPLOY_PATH" >&2; exit 1; }
+          [ -n "$DEPLOY_SSH_KEY" ] || { echo "ERROR: 未配置环境 secret DEPLOY_SSH_KEY" >&2; exit 1; }
+          [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "ERROR: 未配置环境 secret DEPLOY_KNOWN_HOSTS" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
+
+      - name: Setup SSH key / 配置免密密钥与主机指纹
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Resolve tag / 解析镜像标签
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short=7 "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
+
+      - name: Snapshot server state / 记录发布前现场
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' 2>/dev/null || exit 0; echo '--- 状态文件 ---' && cat .deploy-state 2>/dev/null; echo '--- 当前 IMAGE_TAG ---' && grep -E '^IMAGE_TAG=' .env.prod 2>/dev/null; echo '--- 当前容器 ---' && sudo env ENV_FILE='.env.prod' docker compose --env-file .env.prod -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}' 2>/dev/null || true"
+
+      - name: Sync deploy assets / 同步部署资产到服务器
+        run: |
+          set -eu
+          cd apps/cloud
+          COPYFILE_DISABLE=1 tar -czf /tmp/deploy-assets.tar.gz \
+            cicd/deploy.sh \
+            deploy/caddy/Caddyfile \
+            scripts/ops/backup.sh \
+            docker-compose-prod.yml
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            /tmp/deploy-assets.tar.gz "$DEPLOY_HOST:/tmp/deploy-assets.tar.gz"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            sudo bash -s -- "$DEPLOY_PATH" "$GITHUB_SHA" <<'REMOTE'
+          set -eu
+          cd "$1"
+          tar --no-same-owner -xzf /tmp/deploy-assets.tar.gz
+          rm -f /tmp/deploy-assets.tar.gz
+          chmod 755 cicd/deploy.sh scripts/ops/backup.sh
+          printf '%s\n' "$2" > .deploy-commit
+          for f in cicd/deploy.sh deploy/caddy/Caddyfile scripts/ops/backup.sh docker-compose-prod.yml; do
+              [ -f "$f" ] || { echo "ERROR: 资产缺失：$f" >&2; exit 1; }
+          done
+          mkdir -p workspace/postgres workspace/pipeline workspace/caddy/data workspace/caddy/config workspace/backups
+          chown -R 1000:1000 workspace/pipeline
+          echo "--- 已同步：部署资产齐全 ---"
+          REMOTE
+
+      - name: Deploy / 发布（备份 → 迁移先行 → 换容器 → 健康检查 → 失败自动回滚）
+        env:
+          IMAGE_TAG_RESOLVED: ${{ format('main-{0}', steps.vars.outputs.sha_short) }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env 'prod' --tag '${{ env.IMAGE_TAG_RESOLVED }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
+
+      - name: Verify / 核对发布结果
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && echo '--- 状态文件 ---' && cat .deploy-state && echo '--- 容器 ---' && sudo env ENV_FILE='.env.prod' docker compose --env-file .env.prod -f docker-compose-prod.yml ps --format '{{.Service}} {{.Image}} {{.State}}'"

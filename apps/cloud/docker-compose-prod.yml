@@ -1,6 +1,6 @@
 # 部署 compose（app + db + migrate profile + caddy）——staging 与 production 共用一份：
 #   测试环境：docker compose --env-file .env.staging -f docker-compose-prod.yml ...（CI 自动，push main）
-#   生产环境：docker compose --env-file .env.prod    -f docker-compose-prod.yml ...（CI 自动，push v* tag）
+#   生产环境：docker compose --env-file .env.prod    -f docker-compose-prod.yml ...（CI 自动，push main 后经 production 审批）
 # 发布唯一入口是 cicd/deploy.sh（备份 → 迁移先行 → 换容器 → 健康检查 → 失败回滚），
 # 不要手工 compose up。约束见 docs/arch/02云端服务架构.md §8.1。
 #
