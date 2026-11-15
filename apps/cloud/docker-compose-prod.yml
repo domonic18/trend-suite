@@ -97,9 +97,9 @@ services:
       - "${HTTPS_PORT:-443}:443/udp"
     environment:
       DOMAIN: ${DOMAIN:?在 env 文件设置 DOMAIN}
-      # TLS_ARG 留空 = 走公网 ACME（生产，占用 80/443 时签发）；
-      # 置 internal = 用 caddy 内置 CA 自签（预发：80 被前身系统占着，ACME 签不出来）
-      TLS_ARG: ${TLS_ARG:-}
+      # TLS_LOCAL_CERTS 留空 = 走公网 ACME（生产，占用 80/443 时签发）；
+      # 置 local_certs = 用 caddy 内置 CA 自签（预发：80 被前身系统占着，ACME 签不出来）
+      TLS_LOCAL_CERTS: ${TLS_LOCAL_CERTS:-}
     volumes:
       - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./workspace/caddy/data:/data
