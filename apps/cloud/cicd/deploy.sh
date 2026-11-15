@@ -4,7 +4,7 @@
 #
 # 用法：
 #   sudo bash cicd/deploy.sh --env staging --tag main-<sha>  [--image-repo <registry/ns/repo>]
-#   sudo bash cicd/deploy.sh --env prod     --tag v<semver>   [--image-repo <registry/ns/repo>]
+#   sudo bash cicd/deploy.sh --env prod     --tag main-<sha>  [--image-repo <registry/ns/repo>]
 #
 # 流程：参数校验 → 预检 → .env.<env> 备份轮转 + 钉 IMAGE_TAG/TREND_IMAGE_REPO →
 #       数据库备份（前置）→ 拉镜像 → 数据库迁移（先行）→ 换容器 → 健康检查 →
@@ -12,8 +12,9 @@
 #
 # 设计约束（继承前身系统实战结论，详见 docs/ops/01部署Runbook.md）：
 #   - 部署逻辑只有这一份，可评审、可回溯；CI 不内联长命令
-#   - 单主干发布线（main 为主干）：push main 发 staging（tag main-<sha>），
-#     push v* tag 发 production（tag = 版本号本身）；两环境只差 env 文件与 tag 来源
+#   - 单主干发布线（main 为主干）：push main 同时发两环境（staging 自动、
+#     production 人工审批后），两环境跑同一个镜像 tag（main-<sha>），
+#     只差 env 文件与审批闸门；生产不由 git tag 驱动
 #   - 迁移先行：迁移失败则旧版本继续服务，零影响
 #   - 迁移与应用同一个镜像（镜像内含 migrations/）：线上执行的迁移必然与本次发布的代码同 commit
 #   - 失败自动回滚到上一个 tag，回滚保留现场（日志不删）
@@ -53,7 +54,8 @@ APP_SERVICES="app migrate"
 # 基础镜像服务：版本固定、服务器上长期存在，拉取失败可容忍（本地已有副本）
 BASE_SERVICES="db caddy"
 # 本环境合法的镜像 tag 形态（validate 按环境赋值）：
-# staging = ^main-[0-9a-f]{7,40}$；prod = ^v<semver>$。镜像清理按此过滤本地 tag
+# 两环境统一为 ^main-[0-9a-f]{7,40}$（短 sha 不可变；家族统一模型，08 §8.5.1）。
+# 镜像清理按此过滤本地 tag
 TAG_PATTERN=""
 TAG_DESC=""
 
@@ -65,8 +67,8 @@ usage() {
     cat <<'EOF'
 用法: bash cicd/deploy.sh --env <staging|prod> --tag <tag> [--image-repo <registry/ns/repo>]
 
-  --env   staging（测试环境，tag = main-<sha>）或 prod（生产环境，tag = v<语义化版本>）
-  --tag   staging 要求匹配 ^main-[0-9a-f]{7,40}$；prod 要求匹配 ^v[0-9]+.[0-9]+.[0-9]+…
+  --env   staging（测试环境）或 prod（生产环境）
+  --tag   镜像 tag，两环境一致，要求匹配 ^main-[0-9a-f]{7,40}$（短 sha 不可变）
   --image-repo  镜像仓库路径（registry/namespace/repo）。CI 必传：与本次推送的
                 仓库严格一致，避免 compose 里的默认路径与 CI 推送目标漂移。
                 省略时沿用 env 文件里已钉的 TREND_IMAGE_REPO。
@@ -90,7 +92,7 @@ parse_args() {
 }
 
 validate() {
-    # 环境名决定 env 文件与合法 tag 形态（单主干：staging=main-<sha>，prod=v<semver>）
+    # 环境名决定 env 文件（两环境同一镜像 tag 形态）
     case "$ENV_NAME" in
         staging) ENV_FILE=".env.staging" ;;
         prod)    ENV_FILE=".env.prod" ;;
@@ -99,22 +101,12 @@ validate() {
     # ENV_FILE 必须导出：compose 用它插值出服务的 env_file（容器读哪份环境配置）。
     # 不导出会退化成默认的 .env.prod —— staging 容器静默加载生产域名与生产库口令。
     export ENV_FILE
-    # tag 同时是镜像引用的一部分，只放行「本环境形态」白名单正则，
-    # 杜绝注入、误传 latest、以及把 staging 的 tag 发到生产（反之亦然）。
+    # tag 同时是镜像引用的一部分，只放行「短 sha 不可变」白名单正则，
+    # 杜绝注入、误传 latest、以及把可变的版本串当镜像 tag 用。
     # TAG_PATTERN 同时服务镜像清理的本地 tag 过滤（awk 正则，整体匹配）。
-    local tag_re
-    case "$ENV_NAME" in
-        staging)
-            tag_re="^main-[0-9a-f]{7,40}$"
-            TAG_PATTERN="^main-[0-9a-f]{7,40}$"
-            TAG_DESC="main-<sha>"
-            ;;
-        prod)
-            tag_re="^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$"
-            TAG_PATTERN="^v[0-9]+\\.[0-9]+\\.[0-9]+([.-][0-9A-Za-z.-]+)?$"
-            TAG_DESC="v<semver>"
-            ;;
-    esac
+    local tag_re="^main-[0-9a-f]{7,40}$"
+    TAG_PATTERN="^main-[0-9a-f]{7,40}$"
+    TAG_DESC="main-<sha>"
     echo "$IMAGE_TAG" | grep -Eq "$tag_re" \
         || fail "非法镜像 tag：${IMAGE_TAG}（环境 ${ENV_NAME} 要求匹配 ${tag_re}）"
     # 镜像仓库路径同样进 env 文件（compose 的 image 引用），按 registry/ns/repo 三段校验
@@ -432,8 +424,8 @@ cleanup_images() {
     # 列表里的 tag 永不删除（当前运行版本 + 回滚目标）；其余按仓库保留最新 N 个。
     # 仓库取 $CLEANUP_REPOS（本次目标仓库 + 回滚目标仓库），不取 env 文件里的当前值——
     # 回滚后那里指的是旧仓库，照它清理会漏掉本次刚拉下来的镜像。
-    # 只认本环境形态的 tag（staging=main-<sha>，prod=v<semver>）：
-    # 放行另一形态会让无关 tag 挤占「保留最新 N 个」的额度，挤掉回滚目标
+    # 只认本环境形态的 tag（两环境统一为 main-<sha>）：
+    # 放行无关 tag 会让它们挤占「保留最新 N 个」的额度，挤掉回滚目标
     local protect="$1" repo_path repo tags i t size images removed=0 freed=0
     if [ -z "$CLEANUP_REPOS" ]; then
         warn "未确定镜像仓库路径，跳过镜像清理"
