@@ -4,8 +4,8 @@
 #   docker build -f apps/cloud/deploy/Dockerfile -t trend-suite .
 #
 # 依赖用 pnpm 装（仓库锁定 pnpm@9.15.9）——workspace:* 依赖 npm 无法解析。
-# tsx 放在 dependencies（cloud/package.json）：dev watch、migrate CLI 与
-# 契约包（TS 直出）运行期都要用它。
+# tsx 放在 dependencies（cloud/package.json）：migrate CLI（db/migrations 的
+# SQL 执行入口 scripts/db/migrate.ts 经 tsx 直跑）与契约包（TS 直出）运行期都要用它。
 FROM node:22-alpine AS build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
@@ -18,12 +18,11 @@ RUN pnpm install --frozen-lockfile --filter @trend-suite/cloud...
 COPY apps/cloud apps/cloud
 COPY packages packages
 # 根 tsconfig 是 apps/cloud/tsconfig.json 的 extends 目标——
-# 少拷这一份，tsc 会报 TS5083（找不到基配置）并连带把 module 退回 esnext 之外的默认值，
-# 顶层 await 随之报错，构建阶段直接失败
+# 少拷这一份，tsc 会报 TS5083（找不到基配置），类型检查直接失败
 COPY tsconfig.base.json ./tsconfig.base.json
 RUN pnpm --filter @trend-suite/cloud build
 
-# 运行期依赖单独一版：只装生产依赖，镜像里不留 tsc/vite。
+# 运行期依赖单独一版：只装生产依赖，镜像里不留 tsc。
 FROM node:22-alpine AS prod-deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
@@ -56,7 +55,13 @@ COPY --from=prod-deps /app/packages/contracts/node_modules /app/packages/contrac
 COPY --from=build /app/packages/contracts/package.json /app/packages/contracts/package.json
 COPY --from=build /app/packages/contracts/src /app/packages/contracts/src
 COPY --from=build /app/apps/cloud/package.json /app/apps/cloud/package.json
-COPY --from=build /app/apps/cloud/dist /app/apps/cloud/dist
+# Next.js 产物：.next 是运行期所需的全部编译输出；
+# 运行期是全量生产依赖镜像（非 standalone），migrate 契约与 cloud 应用共用一个镜像
+COPY --from=build /app/apps/cloud/.next /app/apps/cloud/.next
+# 用 .mjs 配置：运行镜像无 typescript，.ts 配置会在 next start 时被现场编译并联网装 TS
+COPY --from=build /app/apps/cloud/next.config.mjs /app/apps/cloud/next.config.mjs
+COPY --from=build /app/apps/cloud/public /app/apps/cloud/public
+# 迁移集与入口（compose migrate profile 与本镜像同容器运行，迁移随镜像版本化）
 COPY --from=build /app/apps/cloud/db /app/apps/cloud/db
 COPY --from=build /app/apps/cloud/scripts /app/apps/cloud/scripts
 USER node
@@ -64,6 +69,5 @@ WORKDIR /app/apps/cloud
 EXPOSE 3940
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT??3940)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-# 入口路径由 tsconfig.build.json 的 outDir 决定（dist/server）；
-# 写错路径的表现是容器起来即退出、healthcheck 永远不通过、发布被自动回滚
-CMD ["node", "dist/server/index.js"]
+# next start 读 PORT/HOSTNAME 环境变量（compose 注入），默认监听 0.0.0.0
+CMD ["./node_modules/.bin/next", "start"]

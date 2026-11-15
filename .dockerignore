@@ -1,6 +1,8 @@
 # 构建上下文是 monorepo 根。排除项按包根锚定。
 **/node_modules
 /apps/*/dist
+/apps/*/.next
+**/tsconfig.tsbuildinfo
 /apps/*/lib
 /apps/*/test
 /apps/*/docs
