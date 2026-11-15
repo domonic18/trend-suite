@@ -2,9 +2,10 @@ name: CI/CD
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   push:
-    branches: [main, develop]
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
     # 手动触发时的跳过开关（仿 aitech-hub/ai-invest 家族惯例）：紧急发版可跳过测试/静态检查，
     # 类型检查与迁移守卫不跳过——它们防的是「发出去才发现坏」，不是风格问题。
@@ -36,27 +37,31 @@ concurrency:
 # ============================================================
 # 统一命名规范（变量=非密配置，secret=凭据；两环境同名、按 GitHub Environment 隔离）
 #
-#   仓库级 secret（两环境共用一套镜像仓库）：
-#     TCR_NAMESPACE   镜像命名空间
-#     TCR_USERNAME    TCR 用户名
-#     TCR_PASSWORD    TCR 密码
+#   仓库级（两环境共用一套镜像仓库）：
+#     var   TCR_REGISTRY    镜像仓库地址
+#     var   TCR_NAMESPACE   镜像命名空间（非密配置，走变量）
+#     var   IMAGE_NAME      镜像名
+#     secret TCR_USERNAME   TCR 用户名
+#     secret TCR_PASSWORD   TCR 密码
 #   环境级（GitHub Environments `staging` 与 `production` 各配一份，名称完全相同）：
 #     var   DEPLOY_HOST    部署目标主机（user@host）
 #     var   DEPLOY_PATH    服务器部署目录
 #     secret DEPLOY_SSH_KEY      部署私钥
 #     secret DEPLOY_KNOWN_HOSTS  主机指纹
 #
-#   环境路由：push main → environment `production`（tag main-<sha>）
-#             push develop → environment `staging`（tag develop-<sha>）
+#   单主干发布线（main 为主干，feature/fix 分支经 PR 合入 main）：
+#     push main        → 构建镜像（tag main-<sha>）→ 部署 environment `staging`
+#     push tag v<语义化> → 构建镜像（tag v<版本>）   → 部署 environment `production`
 #   两环境 secret/variable 同名，deploy job 的步骤因此完全一致。
 # ============================================================
 env:
   # 强制 GitHub Actions 使用 Node.js 24 runtime（checkout/setup-node 等，消弃用警告；
   # 与 aitech-hub/ai-invest 同惯例）
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  # 镜像仓库地址与命名空间走仓库变量/secret：开源仓库不写死任何环境的仓库地址
+  # 镜像仓库地址与命名空间走仓库变量：开源仓库不写死任何环境的仓库地址；
+  # 命名空间非凭据，按家族约定（08 §8.2.2）走 variables 而非 secrets
   TCR_REGISTRY: ${{ vars.TCR_REGISTRY }}
-  TCR_NAMESPACE: ${{ secrets.TCR_NAMESPACE }}
+  TCR_NAMESPACE: ${{ vars.TCR_NAMESPACE }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 
 jobs:
@@ -277,7 +282,7 @@ jobs:
   # 「线上 schema → 新 schema」增量路径此前从未被自动验证过——
   # 生产迁移事故正是从这条路径漏出来的。
   # 基准 = origin/main 的迁移集（main 是发布线，生产当前跑的 schema 即由此重放而来；
-  # main ⊆ develop，故 develop 上新增的迁移落在增量侧）。
+  # 单主干下 feature/fix 分支合入 main 前，新增迁移都落在增量侧）。
   db-incremental-guard:
     name: 迁移守卫 / 增量无漂移
     runs-on: ubuntu-latest
@@ -381,9 +386,9 @@ jobs:
     # 常驻 ci-builder 构建器配了国内镜像源且缓存跨 job 持久。
     runs-on: [self-hosted]
     # 仓库为 public：PR（含 fork）绝不在自托管机上执行仓库代码。
-    # 镜像构建只在主干 push 上跑——develop 的 push 同样构建（staging 发布用），
-    # Dockerfile 写坏了在进 main 之前就会暴露。workflow_dispatch 是发布前演练入口。
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')) || github.event_name == 'workflow_dispatch'
+    # 镜像构建只在发布线 push 上跑——main 的 push 构建 staging 镜像，
+    # v* tag 的 push 构建 production 镜像；workflow_dispatch 是发布前演练入口。
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))) || github.event_name == 'workflow_dispatch'
     # 预算 = 构建 20 + 推送 35（内含三次 600s 看门狗）+ 收尾
     timeout-minutes: 60
     # 检查线全绿后才进镜像构建（家族惯例：aitech-hub docker-release 同款 needs 集）；
@@ -403,19 +408,21 @@ jobs:
         run: |
           set -eu
           [ -n "${{ env.TCR_REGISTRY }}" ] || { echo "ERROR: 未配置仓库变量 TCR_REGISTRY" >&2; exit 1; }
-          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库变量 TCR_NAMESPACE" >&2; exit 1; }
           [ -n "${{ env.IMAGE_NAME }}" ] || { echo "ERROR: 未配置仓库变量 IMAGE_NAME" >&2; exit 1; }
           echo "镜像目标：${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}"
 
-      - name: Resolve tag / 解析镜像标签（<branch>-<sha7>，不可变）
+      - name: Resolve tag / 解析镜像标签（不可变）
         id: vars
         run: |
           sha_short="$(git rev-parse --short=7 "$GITHUB_SHA")"
           case "$GITHUB_REF" in
-            refs/heads/main)    tag="main-${sha_short}" ;;
-            refs/heads/develop) tag="develop-${sha_short}" ;;
+            # push main：staging 镜像 tag（短 sha 不可变）
+            refs/heads/main) tag="main-${sha_short}" ;;
+            # push v* tag：production 镜像 tag 即版本号本身（deploy.sh 按 ^v 前缀白名单校验）
+            refs/tags/v*)    tag="${GITHUB_REF#refs/tags/}" ;;
             # 手动触发（发布前演练）可以落在任意分支上，按分支名打 tag
-            *)                 tag="$(basename "$GITHUB_REF" | tr '/' '-')-${sha_short}" ;;
+            *)               tag="$(basename "$GITHUB_REF" | tr '/' '-')-${sha_short}" ;;
           esac
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "image=$TCR_REGISTRY/$TCR_NAMESPACE/$IMAGE_NAME:$tag" >> "$GITHUB_OUTPUT"
@@ -521,23 +528,23 @@ jobs:
 
   # ---------------------------------------------------------------- 部署（staging / production 统一）
   deploy:
-    name: Deploy ${{ github.ref == 'refs/heads/main' && 'Production / 生产环境发布' || 'Staging / 测试环境发布' }}
+    name: Deploy ${{ startsWith(github.ref, 'refs/tags/v') && 'Production / 生产环境发布' || 'Staging / 测试环境发布' }}
     runs-on: ubuntu-latest
     needs: [build]
-    # 环境路由：main → production（生产），develop → staging（测试）
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    # 单主干发布线：push main → staging（tag main-<sha>）；push v* tag → production（tag = 版本号）
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     # 同名 secret/variable 按环境隔离（DEPLOY_HOST / DEPLOY_PATH / DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS）
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
     timeout-minutes: 60
     # 同一环境串行发布，绝不并发；不同环境互不阻塞
     concurrency:
-      group: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      group: deploy-${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
       cancel-in-progress: false
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-      # 部署目标环境（deploy.sh 的 --env）：main → prod，develop → staging
-      DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+      # 部署目标环境（deploy.sh 的 --env）：v* tag → prod，main → staging
+      DEPLOY_ENV: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'staging' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -550,11 +557,11 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -eu
-          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}）" >&2; exit 1; }
+          [ -n "$DEPLOY_HOST" ] || { echo "ERROR: 未配置环境变量 DEPLOY_HOST（environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}）" >&2; exit 1; }
           [ -n "$DEPLOY_PATH" ] || { echo "ERROR: 未配置环境变量 DEPLOY_PATH" >&2; exit 1; }
           [ -n "$DEPLOY_SSH_KEY" ] || { echo "ERROR: 未配置环境 secret DEPLOY_SSH_KEY" >&2; exit 1; }
           [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "ERROR: 未配置环境 secret DEPLOY_KNOWN_HOSTS" >&2; exit 1; }
-          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库 secret TCR_NAMESPACE" >&2; exit 1; }
+          [ -n "${{ env.TCR_NAMESPACE }}" ] || { echo "ERROR: 未配置仓库变量 TCR_NAMESPACE" >&2; exit 1; }
 
       - name: Setup SSH key / 配置免密密钥与主机指纹
         run: |
@@ -615,10 +622,11 @@ jobs:
         # --image-repo 与 build job 的推送目标同源（同一组 env），
         # 服务器拉的仓库与 CI 推的仓库严格一致，不会因 namespace 变更而拉空
         env:
-          BRANCH_TAG: ${{ github.ref == 'refs/heads/main' && 'main' || 'develop' }}
+          # staging 镜像 tag = main-<sha7>；production 镜像 tag = v* 版本号本身（build job 同源）
+          IMAGE_TAG_RESOLVED: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('main-{0}', steps.vars.outputs.sha_short) }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env '${{ env.DEPLOY_ENV }}' --tag '${{ env.BRANCH_TAG }}-${{ steps.vars.outputs.sha_short }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
+            "cd '$DEPLOY_PATH' && sudo bash cicd/deploy.sh --env '${{ env.DEPLOY_ENV }}' --tag '${{ env.IMAGE_TAG_RESOLVED }}' --image-repo '${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}'"
 
       - name: Verify / 核对发布结果
         run: |
