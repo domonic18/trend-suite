@@ -1,19 +1,21 @@
 # 本地开发：只起 PostgreSQL（npm run db:up）。
+# 口令变量化（红名单：口令一律 ${VAR}）：默认值仅供本机单库开发，
+# 共享/线上环境必须经 --env-file 覆盖（见 .env.staging.example / .env.prod.example）。
 services:
   db:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
-      POSTGRES_USER: trend_suite
-      POSTGRES_PASSWORD: trend_suite
-      POSTGRES_DB: trend_suite
+      POSTGRES_USER: ${POSTGRES_USER:-trend_suite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trend_suite}
+      POSTGRES_DB: ${POSTGRES_DB:-trend_suite}
     ports:
       - "5435:5432"
     volumes:
       - ./workspace/postgres:/var/lib/postgresql/data
       - ./db/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trend_suite -d trend_suite"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 3s
       timeout: 3s
       retries: 20

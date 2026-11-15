@@ -2,7 +2,7 @@
    运营控制台底座（ops-*）· 后台管理布局 + 门户浅色色板
    依赖 assets/tokens.css 与 assets/family-portal.css（组件复用：
    panel/tbl/btn/tag/st/meter/strip/chk/bind/pub-steps/invite 等）
-   布局对齐 trend-studio admin（antd 风）：侧栏 + 顶栏 + 面卡表格
+   布局对齐 同类 Admin（antd 风）：侧栏 + 顶栏 + 面卡表格
    ============================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

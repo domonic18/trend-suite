@@ -1,7 +1,7 @@
 /* ============================================================
-   门户族共享底座 · 移植自 trend-studio 已实现 portal
+   门户族共享底座 · 移植自已实现的门户底座
    （apps/cloud/src/portal/styles.css + PortalLayout/Home/Login/Register/Account）
-   token 源：trend-studio portal --portal-*（蓝 #2563eb + 绿 #0f9d76）
+   token 源：同类门户 --portal-*（蓝 #2563eb + 绿 #0f9d76）
    适用：portal / portal-register / portal-login / portal-device-auth /
          portal-account / index
    ============================================================ */

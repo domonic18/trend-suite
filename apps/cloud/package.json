@@ -7,9 +7,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --watch --import tsx src/index.ts",
+    "dev": "next dev --port 3940 --hostname 127.0.0.1",
     "check": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "next build",
+    "start": "next start",
     "test": "node --import tsx --test test/*.test.ts",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
@@ -17,12 +18,18 @@
     "loadtest": "node scripts/ops/load-test.mjs"
   },
   "dependencies": {
-    "fastify": "^5.0.0",
-    "pino": "^9.0.0"
+    "@trend-suite/contracts": "workspace:*",
+    "next": "^15.5.0",
+    "pg": "^8.13.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.0.0"
   },
   "devDependencies": {
-    "tsx": "^4.0.0",
-    "typescript": "^5.6.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.6.0"
   }
 }

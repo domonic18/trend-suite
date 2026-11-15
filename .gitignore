@@ -6,6 +6,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.*.example
 *.log
 .DS_Store
 *.tgz
@@ -18,3 +19,8 @@ cicd/monitoring/metrics_token
 # 全局 excludesFile 忽略了 *.md；本仓文档体系全在 .md，显式反选（仓库级规则优先于全局）。
 !*.md
 
+
+# Next.js 产物
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo

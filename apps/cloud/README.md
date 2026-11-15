@@ -1,6 +1,6 @@
 # @trend-suite/cloud
 
-后端服务（Fastify + PostgreSQL）。文档在仓库根 `docs/`（需求 `requirement/`、架构 `arch/`、运维 `ops/`）。
+云端服务（Next.js App Router + PostgreSQL，全部 `/v1/*` API 走 Route Handlers）。文档在仓库根 `docs/`（需求 `requirement/`、架构 `arch/`、运维 `ops/`）。
 
 ## 常用命令
 

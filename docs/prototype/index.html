@@ -21,10 +21,9 @@
   <div class="ops-g">门户 · 公开网站</div>
   <a class="ops-i" href="portal.html"><svg><use href="#i-book"/></svg>主页</a>
   <div class="ops-g">学员端 · dsh 客户端</div>
-  <a class="ops-i" href="student-system.html"><svg><use href="#i-grid"/></svg>体系页</a>
+  <a class="ops-i" href="student-system.html"><svg><use href="#i-grid"/></svg>我的课程</a>
   <a class="ops-i" href="student-chat.html"><svg><use href="#i-film"/></svg>智能问答</a>
   <a class="ops-i" href="student-course.html"><svg><use href="#i-book"/></svg>课程页</a>
-  <a class="ops-i" href="student-class.html"><svg><use href="#i-check-c"/></svg>互动课堂</a>
   <div class="ops-g">教师 · 运营</div>
   <a class="ops-i" href="teacher-login.html"><svg><use href="#i-plan"/></svg>生产工作台</a>
   <a class="ops-i" href="ops-models.html"><svg><use href="#i-todo"/></svg>运营控制台</a>
@@ -34,7 +33,7 @@
 <div>
 <header class="ops-top">
  <b>原型索引</b>
- <span class="right"><span>20 个页面 + 2 个运行图</span><a href="README.md">prototype/README.md</a></span>
+ <span class="right"><span>23 个页面（含 5 个旧流程参考页）+ 2 个运行图</span><a href="README.md">prototype/README.md</a></span>
 </header>
 <main class="ops-main">
 
@@ -53,15 +52,16 @@
   <tr><td><b>个人中心 · 额度</b><div class="note num">portal-account.html</div></td><td class="note">余额 / 消耗明细 / 充值档位 / 设备与隐私</td><td><span class="chip mono">s_keep · x_quota</span></td><td style="text-align:right"><a class="btn sm" href="portal-account.html">打开</a></td></tr>
  </table></div></div>
 
-<div class="ops-card"><div class="h"><div><b>学员端 · dsh 客户端（student-*）</b><small>石墨窗口 · 玉绿 #3DBE9B · 红涨绿跌</small></div></div><div class="b" style="padding-top:8px">
+<div class="ops-card"><div class="h"><div><b>学员端 · dsh 客户端（student-*）</b><small>DSH 框架 + trend-student 插件 · 全视口三栏 · 默认明亮 · 右栏统一三页签</small></div></div><div class="b" style="padding-top:8px">
  <table class="tbl">
   <tr><th>页面</th><th>说明</th><th>对应流程节点</th><th></th></tr>
-  <tr><td><b>首启向导</b><div class="note num">student-setup.html</div></td><td class="note">安装完成只剩一步登录 · 用户码 8427</td><td><span class="chip mono">s_setup</span></td><td style="text-align:right"><a class="btn sm" href="student-setup.html">打开</a></td></tr>
-  <tr><td><b>体系页</b><div class="note num">student-system.html</div></td><td class="note">课程 → 章节 → 知识点树 · 选课与学习路径</td><td><span class="chip mono">s_learn</span></td><td style="text-align:right"><a class="btn sm" href="student-system.html">打开</a></td></tr>
-  <tr><td><b>智能问答</b><div class="note num">student-chat.html</div></td><td class="note">带引用回答 · 额度 pill · 空召回 · 语音入口</td><td><span class="chip mono">p_ask</span></td><td style="text-align:right"><a class="btn sm" href="student-chat.html">打开</a></td></tr>
-  <tr><td><b>课程页 / 播放器</b><div class="note num">student-course.html</div></td><td class="note">警示卡 · 片段卡 · 案例股 K 线 · 逐根回放 · 免费徽章</td><td><span class="chip mono">p_view · x_expired</span></td><td style="text-align:right"><a class="btn sm" href="student-course.html">打开</a></td></tr>
-  <tr><td><b>互动课堂</b><div class="note num">student-class.html</div></td><td class="note">本地 TTS 讲解 · K 线白板标注 · 随堂测验 · 不耗额度</td><td><span class="chip mono">s_keep</span></td><td style="text-align:right"><a class="btn sm" href="student-class.html">打开</a></td></tr>
- </table></div></div>
+  <tr><td><b>首启向导</b><div class="note num">student-setup.html</div></td><td class="note">DSH 空会话居中空态 · 安装完成只剩一步登录 · 用户码 8427</td><td><span class="chip mono">s_setup</span></td><td style="text-align:right"><a class="btn sm" href="student-setup.html">打开</a></td></tr>
+  <tr><td><b>我的课程 / 知识体系</b><div class="note num">student-system.html</div></td><td class="note">插件面板「我的课程」：课程→章节→知识点（懒加载）· 学习路径；右栏 文件/终端/播放器</td><td><span class="chip mono">s_learn</span></td><td style="text-align:right"><a class="btn sm" href="student-system.html">打开</a></td></tr>
+  <tr><td><b>智能问答（会话）</b><div class="note num">student-chat.html</div></td><td class="note">DSH 会话视图：对话/轨迹/用量三页签（工具调用卡 + 用量统计）· 用户右气泡 · composer 模式条（自动/Default 框架 chips + 上下文/额度插件 chips）；空召回 · 额度耗尽；右栏 文件（笔记·隐私）/终端/播放器（引用片段）</td><td><span class="chip mono">p_ask</span></td><td style="text-align:right"><a class="btn sm" href="student-chat.html">打开</a></td></tr>
+  <tr><td><b>课程页 / 播放器</b><div class="note num">student-course.html</div></td><td class="note">课件目标效果（hero/四型 callout/A·B 图示/对比滑块/逐根回放/画中画/滚动叙事/自检）在 DSH 三栏内渲染 · 右栏 文件（学习状态）/终端/播放器（签名会话·老师标注）· 底部插件运行时终端</td><td><span class="chip mono">p_view · x_expired</span></td><td style="text-align:right"><a class="btn sm" href="student-course.html">打开</a></td></tr>
+ </table>
+ <p class="note" style="margin:10px 2px 0">互动课堂在需求范围内（见学员端需求「互动课堂」），对应原型页待补。</p>
+</div></div>
 
 <div class="ops-card"><div class="h"><div><b>教师端 · 生产工作台</b><small>浅色后台 · 与门户/运营同族 · Agent 协作三栏</small></div></div><div class="b" style="padding-top:8px">
  <table class="tbl">
@@ -69,7 +69,8 @@
   <tr><td><b>登录 · 生产工作台</b><div class="note num">teacher-login.html</div></td><td class="note">producer 专属入口 · 分屏登录 · 零安装零密钥</td><td><span class="chip mono">B2</span></td><td style="text-align:right"><a class="btn sm" href="teacher-login.html">打开</a></td></tr>
   <tr><td><b>所有课程</b><div class="note num">teacher-workbench.html</div></td><td class="note">极简课程列表：三张课程卡 + 新建；点开即进入教材</td><td><span class="chip mono">h_brief</span></td><td style="text-align:right"><a class="btn sm" href="teacher-workbench.html">打开</a></td></tr>
   <tr><td><b>原始数据</b><div class="note num">teacher-material.html</div></td><td class="note">视频上传 → 解析 → ASR 逐字稿 + 关键帧；原始数据是 Agent 的唯一输入</td><td><span class="chip mono">c_upload</span></td><td style="text-align:right"><a class="btn sm" href="teacher-material.html">打开</a></td></tr>
-  <tr><td><b>教材</b><div class="note num">teacher-textbook.html</div></td><td class="note">三栏：章节/单元结构树 + 渲染后的 HTML 教材 + Agent 生成侧栏（todo / 工具调用 / skill / 流式输出 / HITL）</td><td><span class="chip mono">a_section · c_readiness</span></td><td style="text-align:right"><a class="btn sm" href="teacher-textbook.html">打开</a></td></tr>
+  <tr><td><b>教材</b><div class="note num">teacher-textbook.html</div></td><td class="note">三栏：章节/单元结构树 + 单元文档卡三页签（成品·渲染 HTML 教材含讲师关键帧 / 原片片段 / K 线回放；源文件；本单元产物）+ Agent 生成侧栏（todo / 工具调用 / skill / 流式输出 / HITL）</td><td><span class="chip mono">a_section · c_readiness</span></td><td style="text-align:right"><a class="btn sm" href="teacher-textbook.html">打开</a></td></tr>
+  <tr><td><b>教材轻量编辑</b><div class="note num">teacher-edit.html</div></td><td class="note">选中即改：正文段落/标题（加粗/斜体/下划线/颜色/字号/对齐/撤销重做）、图片（删除 / 素材库 / 库内搜索 / 本地上传 / 回退原图）、K 线属性（股票代码 / 日线周线 / 起始时间 / 采集状态，未采集占位 + 去采集）；事实段锚保护，保存跑轻校验</td><td><span class="chip mono">B6</span></td><td style="text-align:right"><a class="btn sm" href="teacher-edit.html">打开</a></td></tr>
  </table>
  <p class="note" style="margin:12px 2px 0">旧流程页面（不进入主导航，保留参考）：<a href="teacher-plan.html">课程大纲</a> · <a href="teacher-assets.html">内容资产</a> · <a href="teacher-production.html">逐节生产</a> · <a href="teacher-compose.html">编排预览</a> · <a href="teacher-review.html">成品审核</a></p>
 </div></div>
