@@ -33,6 +33,15 @@ export const notFound = (message = '资源不存在') =>
 
 export const conflict = (message: string) => new HttpError(409, 'conflict', message)
 
+export const payloadTooLarge = (message: string) =>
+  new HttpError(413, 'payload_too_large', message)
+
+export const unsupportedMediaType = (message: string) =>
+  new HttpError(415, 'unsupported_media_type', message)
+
+export const unprocessableMedia = (message: string) =>
+  new HttpError(422, 'unprocessable_media', message)
+
 export const tooManyRequests = (message = '操作过于频繁，请稍后再试') =>
   new HttpError(429, 'too_many_requests', message)
 

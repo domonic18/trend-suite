@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { ApiError, login } from '../api'
+import { ApiError } from '@/features/lib/http'
+import { login } from '../api'
 
 export function LoginForm() {
   const router = useRouter()

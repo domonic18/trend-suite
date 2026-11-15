@@ -230,6 +230,26 @@ preflight() {
     db_health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$db_id")"
     [ "$db_health" = "healthy" ] || [ "$db_health" = "running" ] \
         || fail "db 未就绪：$db_health"
+
+    prepare_runtime_dirs
+}
+
+# 运行期挂载目录：应用容器以 uid 1000(node) 运行，
+# 挂载点若由 docker 顺带创建，属主是 root，容器写不进去（上传落盘报 EACCES）。
+# 每次发布都确保目录在、且属主对得上——不依赖运维手工建目录。
+prepare_runtime_dirs() {
+    local pipeline_dir="$APP_ROOT/workspace/pipeline"
+    local host_media
+    host_media="$(env_get MEDIA_HOST_DIR './workspace/media')"
+    case "$host_media" in
+        /*) ;;
+        *) host_media="$APP_ROOT/$host_media" ;;
+    esac
+
+    mkdir -p "$pipeline_dir" "$host_media"
+    chown -R 1000:1000 "$pipeline_dir" "$host_media" 2>/dev/null \
+        || warn "运行期目录属主未能设为 1000:1000（容器内写媒体可能失败）：$pipeline_dir $host_media"
+    log "运行期目录就绪：$pipeline_dir、$host_media（属主 1000:1000）"
 }
 
 # ---------------------------------------------------------------- 备份

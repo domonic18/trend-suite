@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import type { CourseView } from '@trend-suite/contracts'
-import { ApiError, createCourse, listCourses } from '../api'
+import { ApiError } from '@/features/lib/http'
+import { createCourse, listCourses } from '../api'
 
 function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -81,6 +83,9 @@ export function CourseList() {
               <div className="meta">创建于 {formatTime(course.createdAt)}</div>
               <div className="foot">
                 <span>课程 ID {course.id}</span>
+                <Link className="btn link" href={`/workbench/courses/${course.id}`}>
+                  上传素材
+                </Link>
               </div>
             </article>
           ))}

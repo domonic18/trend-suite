@@ -38,3 +38,7 @@ export function listCoursesByOwner(ownerId: string): Promise<CourseRow[]> {
 export function listAllCourses(): Promise<CourseRow[]> {
   return query<CourseRow>(`SELECT ${COURSE_COLUMNS} FROM courses ORDER BY created_at DESC`)
 }
+
+export function findCourseById(id: string): Promise<CourseRow | null> {
+  return queryOne<CourseRow>(`SELECT ${COURSE_COLUMNS} FROM courses WHERE id = $1`, [id])
+}
