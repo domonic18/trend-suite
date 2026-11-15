@@ -42,6 +42,10 @@ ARG APP_VERSION=0.0.0-dev
 ENV APP_GIT_SHA=${GIT_SHA} \
     APP_BUILD_TIME=${BUILD_TIME} \
     APP_VERSION=${APP_VERSION}
+# 端口与 HEALTHCHECK 必须一致：next start 不设 PORT 时默认听 3000，
+# 而健康检查探的是 3940 —— 端口不显式钉住，容器会被判 unhealthy 触发回滚。
+ENV PORT=3940 \
+    HOSTNAME=0.0.0.0
 # 媒体管线在 runtime 直接 spawn ffmpeg/ffprobe（arch/05 §3）；
 # 预建 /data 目录供容器直接运行（HLS 与管线工作区同卷，原子 rename）
 RUN apk add --no-cache ffmpeg \

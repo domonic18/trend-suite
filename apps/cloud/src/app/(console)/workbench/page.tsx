@@ -6,6 +6,7 @@ import { isWorkbenchRole, type SessionUser } from '@trend-suite/contracts'
 import { logout, me } from '@/features/accounts/api'
 import { clearToken, getToken } from '@/features/accounts/session'
 import { CourseList } from '@/features/content/ui/CourseList'
+import { WorkbenchShell } from '@/features/shell/WorkbenchShell'
 
 type State =
   | { phase: 'loading' }
@@ -67,38 +68,19 @@ export default function WorkbenchPage() {
   }
 
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <div className="brand">
-            <span className="mk">趋</span>
-            趋势课程
-            <small>生产工作台</small>
-          </div>
-          <nav className="topnav">
-            <span className="on">所有课程</span>
-          </nav>
-          <div className="topbar-right">
-            <span>
-              {state.user.displayName ?? state.user.username} · {state.user.role}
-            </span>
-            <button type="button" className="btn link" onClick={onLogout}>
-              退出
-            </button>
-          </div>
+    <WorkbenchShell
+      user={state.user}
+      onLogout={onLogout}
+      nav={<span className="on">所有课程</span>}
+      crumb="生产工作台 / 所有课程"
+    >
+      <div className="page-head">
+        <div>
+          <h1>所有课程</h1>
+          <p className="sub">课程恒为草稿；签批与发布由运营执行。</p>
         </div>
-      </header>
-
-      <main className="wrap">
-        <div className="crumb">生产工作台 / 所有课程</div>
-        <div className="page-head">
-          <div>
-            <h1>所有课程</h1>
-            <p className="sub">课程恒为草稿；签批与发布由运营执行。</p>
-          </div>
-        </div>
-        <CourseList />
-      </main>
-    </>
+      </div>
+      <CourseList />
+    </WorkbenchShell>
   )
 }

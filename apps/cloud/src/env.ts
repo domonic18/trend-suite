@@ -8,6 +8,19 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL 未设置'),
   APP_ENV: z.enum(['local', 'staging', 'production']).default('local'),
   PORT: z.coerce.number().int().positive().default(3940),
+  // 媒体存储（arch/05 §3.2）：生产定案 cos，local 仅开发测试。
+  MEDIA_STORAGE: z.enum(['local', 'cos']).default('local'),
+  MEDIA_LOCAL_DIR: z.string().min(1).optional(),
+  // 直传凭据签名密钥：绑定素材 + 字节数 + 摘要 + 有效期（arch/05 §3.1）。
+  MEDIA_UPLOAD_SECRET: z.string().min(16, 'MEDIA_UPLOAD_SECRET 至少 16 个字符').optional(),
+  PIPELINE_MAX_SOURCE_SECONDS: z.coerce.number().int().positive().default(14400),
+  FFPROBE_PATH: z.string().min(1).default('ffprobe'),
+  // COS 骨架：桶与凭据到位前不启用。
+  COS_BUCKET: z.string().min(1).optional(),
+  COS_REGION: z.string().min(1).optional(),
+  COS_ENDPOINT: z.string().min(1).optional(),
+  COS_SECRET_ID: z.string().min(1).optional(),
+  COS_SECRET_KEY: z.string().min(1).optional(),
 })
 
 export type AppEnv = z.infer<typeof envSchema>

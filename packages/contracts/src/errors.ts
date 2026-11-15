@@ -12,6 +12,9 @@ export const errorCodes = [
   'conflict',
   'invalid_credentials',
   'too_many_requests',
+  'payload_too_large',
+  'unsupported_media_type',
+  'unprocessable_media',
   'internal_error',
 ] as const
 
