@@ -112,6 +112,10 @@ export class LocalMediaStore implements MediaStore {
     return `sources/${assetId}/source`
   }
 
+  framesDir(assetId: string): string {
+    return join(this.root, 'sources', assetId, 'frames')
+  }
+
   async probe(assetId: string): Promise<MediaProbe> {
     return probeMedia(await this.sourcePath(assetId))
   }

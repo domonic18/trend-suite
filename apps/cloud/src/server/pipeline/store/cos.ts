@@ -75,6 +75,10 @@ export class CosMediaStore implements MediaStore {
     return `sources/${assetId}/source`
   }
 
+  framesDir(_assetId: string): string {
+    throw new CosNotReadyError()
+  }
+
   async probe(_assetId: string): Promise<MediaProbe> {
     throw new CosNotReadyError()
   }

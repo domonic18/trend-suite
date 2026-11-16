@@ -2,10 +2,16 @@
 
 import {
   createMediaAssetResponse,
+  ingestResponse,
   mediaAssetListResponse,
   mediaAssetView,
+  mediaFrameListResponse,
+  transcriptResponse,
+  type IngestResponse,
   type MediaAssetView,
+  type MediaFrameListResponse,
   type MediaUploadTarget,
+  type TranscriptResponse,
 } from '@trend-suite/contracts'
 import { getToken } from '@/features/accounts/session'
 import { ApiError, apiRequest } from '@/features/lib/http'
@@ -15,6 +21,40 @@ export async function listAssets(courseId: string): Promise<MediaAssetView[]> {
     `/v1/admin/content/media-assets?courseId=${encodeURIComponent(courseId)}`,
   )
   return mediaAssetListResponse.parse(data).items
+}
+
+/** 触发加工（force=true 清旧产物重跑）。 */
+export async function ingestAsset(assetId: string, force = false): Promise<IngestResponse> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/ingest`,
+    { method: 'POST', body: JSON.stringify({ force }) },
+  )
+  return ingestResponse.parse(data)
+}
+
+/** 重试失败的任务：只补没做完的部分。 */
+export async function retryAsset(assetId: string): Promise<IngestResponse> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/retry`,
+    { method: 'POST' },
+  )
+  return ingestResponse.parse(data)
+}
+
+/** 逐字稿：转写进行中也返回已落库的段落。 */
+export async function getTranscript(assetId: string): Promise<TranscriptResponse> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/transcript`,
+  )
+  return transcriptResponse.parse(data)
+}
+
+/** 关键帧列表。 */
+export async function getFrames(assetId: string): Promise<MediaFrameListResponse> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/frames`,
+  )
+  return mediaFrameListResponse.parse(data)
 }
 
 export async function createAsset(

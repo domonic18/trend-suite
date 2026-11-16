@@ -15,6 +15,10 @@ export const errorCodes = [
   'payload_too_large',
   'unsupported_media_type',
   'unprocessable_media',
+  // 模型未配置：对应阶段不可用（arch/07 §9.1「缺失行为」）。
+  'model_not_configured',
+  // 素材加工终态失败（arch/05 §3.8）。
+  'processing_failed',
   'internal_error',
 ] as const
 

@@ -1,18 +1,32 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MAX_MEDIA_BYTES, type MediaAssetView } from '@trend-suite/contracts'
+import {
+  MAX_MEDIA_BYTES,
+  type MediaAssetView,
+  type MediaFrameView,
+  type TranscriptResponse,
+} from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { createAsset, listAssets, uploadToTarget } from '../api'
+import {
+  createAsset,
+  getFrames,
+  getTranscript,
+  ingestAsset,
+  listAssets,
+  retryAsset,
+  uploadToTarget,
+} from '../api'
+import { FrameGrid } from './FrameGrid'
+import { ProcessingSteps } from './ProcessingSteps'
+import { READINESS_TEXT, readinessOf } from './processing'
+import { TranscriptView } from './TranscriptView'
 
 type Uploading = { name: string; loaded: number; total: number }
 
-const STATUS_TEXT: Record<MediaAssetView['status'], string> = {
-  awaiting_upload: '等待上传',
-  uploaded: '已上传',
-  processing: '加工中',
-  ready: '就绪',
-  failed: '失败',
+type Detail = {
+  transcript: TranscriptResponse | null
+  frames: MediaFrameView[]
 }
 
 function formatSize(bytes: number): string {
@@ -34,9 +48,12 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [uploading, setUploading] = useState<Uploading | null>(null)
   const [retryFile, setRetryFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [detail, setDetail] = useState<Record<string, Detail>>({})
   const inputRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(async () => {
@@ -54,9 +71,39 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
     void refresh()
   }, [refresh])
 
+  const loadDetail = useCallback(async (assetId: string) => {
+    const [transcript, frames] = await Promise.all([
+      getTranscript(assetId).catch(() => null),
+      getFrames(assetId).catch(() => ({ items: [] })),
+    ])
+    setDetail((prev) => ({ ...prev, [assetId]: { transcript, frames: frames.items } }))
+  }, [])
+
+  /** 加工中的素材：轮询状态，转写中的段落边转边读。 */
+  const running = assets.some((a) => {
+    const r = readinessOf(a)
+    return r === 'running' || r === 'queued'
+  })
+
+  useEffect(() => {
+    if (!running) return
+    const timer = setInterval(() => {
+      void refresh()
+      if (expanded) void loadDetail(expanded)
+    }, 3_000)
+    return () => clearInterval(timer)
+  }, [running, expanded, refresh, loadDetail])
+
+  function toggle(assetId: string) {
+    const next = expanded === assetId ? null : assetId
+    setExpanded(next)
+    if (next) void loadDetail(next)
+  }
+
   const start = useCallback(
     async (file: File) => {
       setUploadError(null)
+      setActionError(null)
       setRetryFile(null)
       if (file.size > MAX_MEDIA_BYTES) {
         setUploadError(`文件 ${formatSize(file.size)} 超过单文件上限 2GiB，未发起上传`)
@@ -70,6 +117,8 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
           file,
           onProgress: (loaded, total) => setUploading({ name: file.name, loaded, total }),
         })
+        // 上传完成即入队加工：转写与抽帧在后台跑（arch/05 §3.7）。
+        await ingestAsset(created.asset.id).catch(() => undefined)
         await refresh()
       } catch (err) {
         setUploadError(err instanceof ApiError ? err.message : '上传失败，请重试')
@@ -80,6 +129,21 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
       }
     },
     [courseId, refresh],
+  )
+
+  /** 重试：只补没做完的部分，已转好的块不重算。 */
+  const retry = useCallback(
+    async (assetId: string) => {
+      setActionError(null)
+      try {
+        await retryAsset(assetId)
+        await refresh()
+        await loadDetail(assetId)
+      } catch (err) {
+        setActionError(err instanceof ApiError ? err.message : '重试失败，请稍后再试')
+      }
+    },
+    [refresh, loadDetail],
   )
 
   function onDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -102,6 +166,7 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
           ) : null}
         </div>
       ) : null}
+      {actionError ? <div className="notice err">{actionError}</div> : null}
 
       <div className="card upload-card">
         <div className="upload-head">
@@ -127,7 +192,7 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
           >
             选择视频文件
           </button>
-          <small>上传中断后可以重试，不会产生重复素材。</small>
+          <small>上传后自动转写、抽取关键帧；转写中的内容可以边转边读。</small>
           <input
             ref={inputRef}
             type="file"
@@ -156,8 +221,8 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
 
       <div className="page-head" style={{ marginTop: 26 }}>
         <div>
-          <h2>素材列表</h2>
-          <p className="sub">上传完成的录像会出现在这里，作为课程的原始素材。</p>
+          <h2>视频与转写</h2>
+          <p className="sub">上传完成的录像会在这里自动转写并抽取关键帧。</p>
         </div>
       </div>
 
@@ -166,22 +231,91 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
       ) : assets.length === 0 ? (
         <div className="empty">还没有素材。拖一段课程录像进来试试。</div>
       ) : (
-        <div className="cards">
-          {assets.map((asset) => (
-            <article className="card" key={asset.id}>
-              <div className="card-top">
-                <b>{asset.fileName}</b>
-                <span className={`tag ${asset.status}`}>{STATUS_TEXT[asset.status]}</span>
-              </div>
-              <div className="meta">
-                {asset.id}
-                {asset.byteSize !== null ? ` · ${formatSize(asset.byteSize)}` : ''}
-                {formatDuration(asset.durationS) ? ` · ${formatDuration(asset.durationS)}` : ''}
-                {asset.sha256 ? ` · sha256 ${asset.sha256.slice(0, 12)}…` : ''}
-              </div>
-              {asset.errorMessage ? <div className="meta err-text">{asset.errorMessage}</div> : null}
-            </article>
-          ))}
+        <div className="mat-list">
+          {assets.map((asset) => {
+            const readiness = readinessOf(asset)
+            const view = detail[asset.id]
+            const isOpen = expanded === asset.id
+            return (
+              <article className="card mat" key={asset.id}>
+                <div className="up-row">
+                  <div className="ut">
+                    <b>{asset.fileName}</b>
+                    <span>
+                      {asset.id}
+                      {asset.byteSize !== null ? ` · ${formatSize(asset.byteSize)}` : ''}
+                      {formatDuration(asset.durationS) ? ` · ${formatDuration(asset.durationS)}` : ''}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={`st st-${readiness}`}>
+                      <i />
+                      {READINESS_TEXT[readiness]}
+                    </span>
+                    <span className="pct">
+                      {readiness === 'ready'
+                        ? `${asset.segmentCount} 段 · ${asset.frameCount} 关键帧`
+                        : (asset.processMessage ?? '')}
+                    </span>
+                  </div>
+                  <div>
+                    <div className={readiness === 'failed' ? 'prog err' : 'prog'}>
+                      <i style={{ width: `${Math.round(asset.processProgress)}%` }} />
+                    </div>
+                    <span className="pct">
+                      {Math.round(asset.processProgress)}%{readiness === 'ready' ? ' · 就绪' : ''}
+                    </span>
+                  </div>
+                  <div className="ua">
+                    <button type="button" className="btn link" onClick={() => toggle(asset.id)}>
+                      {isOpen ? '收起' : '展开'}
+                    </button>
+                  </div>
+                </div>
+
+                {readiness === 'failed' ? (
+                  <div className="notice err">
+                    {asset.errorMessage ?? '加工失败'}
+                    <button type="button" className="btn link" onClick={() => void retry(asset.id)}>
+                      重试（不重算已完成部分）
+                    </button>
+                  </div>
+                ) : null}
+
+                {isOpen ? (
+                  <div className="mdetail">
+                    <ProcessingSteps asset={asset} />
+                    <div>
+                      <h4>
+                        ASR 逐字稿
+                        <span className="tag gray">
+                          {view?.transcript ? view.transcript.segments.length : asset.segmentCount} 段
+                        </span>
+                      </h4>
+                      {view?.transcript ? (
+                        <TranscriptView transcript={view.transcript} />
+                      ) : (
+                        <div className="empty">逐字稿加载中…</div>
+                      )}
+                    </div>
+                    <div>
+                      <h4>
+                        关键帧
+                        <span className="tag gray">
+                          {view ? view.frames.length : asset.frameCount} 张
+                        </span>
+                      </h4>
+                      {view ? (
+                        <FrameGrid frames={view.frames} />
+                      ) : (
+                        <div className="empty">关键帧加载中…</div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
         </div>
       )}
     </section>

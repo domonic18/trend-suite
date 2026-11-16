@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { mediaAssetStatus } from './enums.js'
 import { idShape } from './ids.js'
+import { jobStatus, processingStep } from './media-processing.js'
 
 /** 单文件上限 2GiB（教师端需求 T4 / arch/05 §3.1）。 */
 export const MAX_MEDIA_BYTES = 2 * 1024 * 1024 * 1024
@@ -31,6 +32,13 @@ export const mediaAssetView = z.object({
   audioOk: z.boolean(),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
+  // 加工进度（arch/05 §3.7）：阶段、百分比、当前提示、队列状态。
+  processStep: processingStep,
+  processProgress: z.number(),
+  processMessage: z.string().nullable(),
+  jobStatus: jobStatus.nullable(),
+  segmentCount: z.number(),
+  frameCount: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -50,8 +58,20 @@ export const createMediaAssetResponse = z.object({
 
 export const mediaAssetListResponse = z.object({ items: z.array(mediaAssetView) })
 
+/** 触发加工（重新转写 / 重试失败）：force=true 时清掉旧产物重跑。 */
+export const ingestRequest = z.object({
+  force: z.boolean().optional(),
+})
+
+export const ingestResponse = z.object({
+  asset: mediaAssetView,
+  jobId: z.string(),
+})
+
 export type CreateMediaAssetRequest = z.infer<typeof createMediaAssetRequest>
 export type MediaAssetView = z.infer<typeof mediaAssetView>
 export type MediaUploadTarget = z.infer<typeof mediaUploadTarget>
 export type CreateMediaAssetResponse = z.infer<typeof createMediaAssetResponse>
 export type MediaAssetListResponse = z.infer<typeof mediaAssetListResponse>
+export type IngestRequest = z.infer<typeof ingestRequest>
+export type IngestResponse = z.infer<typeof ingestResponse>
