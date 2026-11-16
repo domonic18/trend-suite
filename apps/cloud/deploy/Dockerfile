@@ -10,6 +10,12 @@ FROM node:22-alpine AS build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 ENV CI=true
+# 构建期包获取统一走 npmmirror：国际路由抖动时 pnpm 装依赖、corepack 拉
+# CLI、next 的 SWC 回退下载都会被掐断（2026-11-16 发布实锤多次）。
+# 正常装好的依赖里已含 @next/swc-linux-x64-*，next build 无需联网下载；
+# 这里只是兜底。只作用于构建期，运行期镜像不继承。
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
+    NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/cloud/package.json apps/cloud/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
@@ -27,6 +33,9 @@ FROM node:22-alpine AS prod-deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 ENV CI=true
+# 与 build 阶段同口径：构建期包获取走 npmmirror（见上）
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
+    NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/cloud/package.json apps/cloud/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
