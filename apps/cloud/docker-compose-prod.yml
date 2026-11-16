@@ -62,6 +62,12 @@ services:
       APP_ROLE: worker
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     command: ["node", "--conditions=react-server", "--import", "tsx", "src/worker.ts"]
+    # worker 是纯任务进程，不监听端口——不关掉会继承镜像里探 HTTP /health
+    # 的 HEALTHCHECK，永远 unhealthy，up --wait 直接判部署失败（2026-11-17
+    # staging 发布实锤：worker unhealthy 触发回滚，回滚目标又是无 worker
+    # 的旧镜像，崩溃循环连带回滚也失败）。
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy
