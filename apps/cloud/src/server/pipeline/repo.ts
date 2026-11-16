@@ -19,6 +19,11 @@ export type MediaAssetRow = {
   expected_byte_size: string | null
   expected_sha256: string | null
   upload_expires_at: Date | null
+  process_step: string
+  process_progress: string
+  process_message: string | null
+  segment_count: number
+  frame_count: number
   created_at: Date
   updated_at: Date
 }
@@ -40,6 +45,11 @@ const COLUMNS = [
   'expected_byte_size',
   'expected_sha256',
   'upload_expires_at',
+  'process_step',
+  'process_progress',
+  'process_message',
+  'segment_count',
+  'frame_count',
   'created_at',
   'updated_at',
 ].join(', ')

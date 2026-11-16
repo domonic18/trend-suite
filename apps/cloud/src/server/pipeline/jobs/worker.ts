@@ -1,0 +1,197 @@
+import 'server-only'
+import { hostname } from 'node:os'
+import { getMediaStore } from '../store'
+import { findAssetById } from '../repo'
+import {
+  ProcessingCancelledError,
+  ProcessingError,
+  runProcessing,
+} from '../processing/runner'
+import * as procRepo from '../processing/repo'
+import * as jobs from './repo'
+
+/**
+ * 加工 worker（arch/02 §4）：认领任务 → 跑阶段 → 回写状态。
+ * 与 Web 进程同一个镜像，靠 APP_ROLE=worker 区分（arch/02 §7）。
+ */
+
+const POLL_INTERVAL_MS = 2_000
+const HEARTBEAT_INTERVAL_MS = 10_000
+const RECLAIM_INTERVAL_MS = 30_000
+
+export function workerId(): string {
+  return `${hostname()}-${process.pid}`
+}
+
+/** 认领并跑一个任务。返回 true 表示确实处理了一个任务。 */
+export async function runWorkerOnce(id = workerId()): Promise<boolean> {
+  const job = await jobs.claimJob(id)
+  if (!job) return false
+
+  const timer = setInterval(() => {
+    void jobs.heartbeat(job.id).catch(() => undefined)
+  }, HEARTBEAT_INTERVAL_MS)
+
+  try {
+    const asset = await findAssetById(job.asset_id)
+    if (!asset) {
+      await jobs.failJob({
+        jobId: job.id,
+        code: 'asset_not_found',
+        message: '素材不存在',
+        retryable: false,
+      })
+      return true
+    }
+    if (!asset.source_path) {
+      await jobs.failJob({
+        jobId: job.id,
+        code: 'asset_source_missing',
+        message: '素材原片缺失',
+        retryable: false,
+      })
+      await procRepo.setAssetStatus({
+        assetId: asset.id,
+        status: 'failed',
+        errorCode: 'asset_source_missing',
+        errorMessage: '素材原片缺失',
+        message: '加工失败',
+        progress: 0,
+      })
+      return true
+    }
+
+    const durationS = asset.duration_s === null ? 0 : Number(asset.duration_s)
+    const sourcePath = await getMediaStore().sourcePath(asset.id)
+    const framesDir = getMediaStore().framesDir(asset.id)
+
+    await procRepo.setAssetStatus({ assetId: asset.id, status: 'processing' })
+
+    await runProcessing({
+      assetId: asset.id,
+      sourcePath,
+      durationS,
+      framesDir,
+      shouldCancel: async () => jobs.isCancelRequested(job.id),
+      onProgress: async (input) => {
+        await jobs.updateJobProgress({
+          jobId: job.id,
+          step: input.step,
+          progress: input.progress,
+        })
+        await procRepo.setAssetProgress({
+          assetId: asset.id,
+          step: input.step,
+          progress: input.progress,
+          message: input.message ?? null,
+        })
+      },
+    })
+
+    await jobs.completeJob(job.id)
+    await procRepo.setAssetProgress({
+      assetId: asset.id,
+      step: 'done',
+      progress: 100,
+      message: '就绪',
+    })
+    await procRepo.setAssetStatus({ assetId: asset.id, status: 'ready' })
+  } catch (err) {
+    if (err instanceof ProcessingCancelledError) {
+      await jobs.cancelJob(job.id)
+      await procRepo.setAssetStatus({
+        assetId: job.asset_id,
+        status: 'uploaded',
+        errorCode: 'canceled',
+        errorMessage: '已取消',
+        message: '已取消',
+        progress: 0,
+      })
+      return true
+    }
+    const retryable = err instanceof ProcessingError ? err.retryable : true
+    const code = err instanceof ProcessingError ? err.code : 'processing_failed'
+    const message = (err as Error).message
+    const outcome = await jobs.failJob({
+      jobId: job.id,
+      code,
+      message,
+      retryable,
+    })
+    if (outcome === 'queued') {
+      // 任务已回队列等自动重试——素材不算失败，否则页面上的「重试」按钮会撞上
+      // 「加工任务正在进行中」（任务确实还在队列里）。
+      await procRepo.setAssetStatus({
+        assetId: job.asset_id,
+        status: 'uploaded',
+        errorCode: code,
+        errorMessage: message,
+        message: '失败，将自动重试',
+        progress: 0,
+      })
+      return true
+    }
+    await procRepo.setAssetStatus({
+      assetId: job.asset_id,
+      status: 'failed',
+      errorCode: code,
+      errorMessage: message,
+      message: '加工失败',
+      progress: 0,
+    })
+  } finally {
+    clearInterval(timer)
+  }
+  return true
+}
+
+/** worker 主循环：空转时按固定间隔轮询；每 30s 回收心跳丢失的任务。 */
+export async function startWorker(): Promise<void> {
+  const id = workerId()
+  console.log(`[worker] 启动 ${id}`)
+  await reclaimAndSync().catch(() => 0)
+  let lastReclaim = Date.now()
+  for (;;) {
+    let handled = false
+    try {
+      handled = await runWorkerOnce(id)
+    } catch (err) {
+      console.error('[worker] 任务处理异常', err)
+    }
+    if (Date.now() - lastReclaim >= RECLAIM_INTERVAL_MS) {
+      lastReclaim = Date.now()
+      await reclaimAndSync().catch(() => 0)
+    }
+    if (!handled) await delay(POLL_INTERVAL_MS)
+  }
+}
+
+/** 回收僵尸任务并同步素材状态：回收成 failed 的素材标失败，回队列的标待重试。 */
+async function reclaimAndSync(): Promise<void> {
+  const reclaimed = await jobs.reclaimStaleJobs()
+  for (const row of reclaimed) {
+    if (row.status === 'failed') {
+      await procRepo.setAssetStatus({
+        assetId: row.asset_id,
+        status: 'failed',
+        errorCode: 'worker_heartbeat_lost',
+        errorMessage: '任务心跳超时，已回收',
+        message: '加工失败',
+        progress: 0,
+      })
+    } else {
+      await procRepo.setAssetStatus({
+        assetId: row.asset_id,
+        status: 'uploaded',
+        errorCode: 'worker_heartbeat_lost',
+        errorMessage: '任务心跳超时，已重新排队',
+        message: '心跳超时，已重新排队',
+        progress: 0,
+      })
+    }
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

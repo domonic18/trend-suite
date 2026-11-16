@@ -50,6 +50,9 @@ export interface MediaStore {
   /** 正式位的存储相对引用（本地：sources/<assetId>/source；COS：对象键）。 */
   sourceRef(assetId: string): string
 
+  /** 关键帧落盘目录（持久位，不能落临时区——帧要长期可取）。 */
+  framesDir(assetId: string): string
+
   /** 媒体流与时长校验。 */
   probe(assetId: string): Promise<MediaProbe>
 

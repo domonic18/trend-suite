@@ -1,6 +1,7 @@
 import 'server-only'
 import {
   MAX_MEDIA_BYTES,
+  type JobStatus,
   type MediaAssetView,
   type MediaUploadTarget,
   type SessionUser,
@@ -11,6 +12,7 @@ import { newId } from '@/server/lib/ids'
 import { getEnv } from '@/env'
 import { ProbeUnavailableError } from './probe'
 import * as repo from './repo'
+import { listLatestJobs } from './jobs/repo'
 import { getMediaStore } from './store'
 import {
   signUploadToken,
@@ -21,7 +23,7 @@ import {
 
 const UPLOAD_CONTENT_TYPE = 'application/octet-stream'
 
-function toAssetView(row: repo.MediaAssetRow): MediaAssetView {
+function toAssetView(row: repo.MediaAssetRow, jobStatus: JobStatus | null = null): MediaAssetView {
   return {
     id: row.id,
     courseId: row.course_id,
@@ -34,6 +36,12 @@ function toAssetView(row: repo.MediaAssetRow): MediaAssetView {
     audioOk: row.audio_ok,
     errorCode: row.error_code,
     errorMessage: row.error_message,
+    processStep: row.process_step as MediaAssetView['processStep'],
+    processProgress: Number(row.process_progress),
+    processMessage: row.process_message,
+    jobStatus,
+    segmentCount: row.segment_count,
+    frameCount: row.frame_count,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   }
@@ -82,7 +90,8 @@ export async function listAssets(
 ): Promise<MediaAssetView[]> {
   await getCourseForUser(user, courseId)
   const rows = await repo.listAssetsByCourse(courseId)
-  return rows.map(toAssetView)
+  const jobs = await listLatestJobs(rows.map((row) => row.id))
+  return rows.map((row) => toAssetView(row, jobs.get(row.id)?.status ?? null))
 }
 
 /**
