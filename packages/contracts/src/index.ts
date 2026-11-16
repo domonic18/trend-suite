@@ -8,5 +8,7 @@ export * from './auth.js'
 export * from './accounts.js'
 export * from './courses.js'
 export * from './media-assets.js'
+export * from './media-processing.js'
+export * from './models.js'
 
 export const healthResponse = z.object({ ok: z.literal(true) })
