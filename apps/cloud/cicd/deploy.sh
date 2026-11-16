@@ -49,8 +49,8 @@ CLEANUP_REPOS=""
 CLEANUP_DONE=0
 # 退出兜底是否可用：豁免版本名单算出来之前不装 trap（否则清理会误删回滚目标）
 TRAP_READY=0
-# 应用镜像服务（app 与 migrate 共用一个镜像，pull 一次即可）
-APP_SERVICES="app migrate"
+# 应用镜像服务（app / worker / migrate 共用一个镜像，pull 一次即可）
+APP_SERVICES="app worker migrate"
 # 基础镜像服务：版本固定、服务器上长期存在，拉取失败可容忍（本地已有副本）
 BASE_SERVICES="db caddy"
 # 本环境合法的镜像 tag 形态（validate 按环境赋值）：

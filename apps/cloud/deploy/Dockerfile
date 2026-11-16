@@ -74,6 +74,15 @@ COPY --from=build /app/apps/cloud/scripts /app/apps/cloud/scripts
 # 服务端源码：seed 脚本要复用应用的口令哈希实现（scrypt），
 # 而运行期镜像只带 .next 编译产物——哈希算法只能有一份，不能在脚本里另抄一遍
 COPY --from=build /app/apps/cloud/src/server /app/apps/cloud/src/server
+# worker 进程入口（arch/02 §7：同镜像，APP_ROLE=worker 区分）：
+# 加工 worker 要跑服务端代码，不能只带 .next 编译产物。
+# --conditions=react-server 让 'server-only' 解析为空模块，裸 node 才能加载这些文件。
+COPY --from=build /app/apps/cloud/src/env.ts /app/apps/cloud/src/env.ts
+COPY --from=build /app/apps/cloud/src/worker.ts /app/apps/cloud/src/worker.ts
+# tsx 靠 tsconfig 的 paths 解析 '@/' 别名；运行期镜像没有 .next 的类型产物，
+# 只拷这两份配置（根 tsconfig 是 apps/cloud 的 extends 目标，缺它别名解析不到）
+COPY --from=build /app/apps/cloud/tsconfig.json /app/apps/cloud/tsconfig.json
+COPY --from=build /app/tsconfig.base.json /app/tsconfig.base.json
 USER node
 WORKDIR /app/apps/cloud
 EXPOSE 3940
