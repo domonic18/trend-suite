@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import type { SessionUser } from '@trend-suite/contracts'
 import { isOpsRole } from './ops-role'
+import { BuildInfo } from './BuildInfo'
 
 /** 工作台外壳：顶栏 + 面包屑 + 内容区。课程列表页与原始数据页共用。 */
 export function WorkbenchShell(props: {
@@ -41,6 +42,7 @@ export function WorkbenchShell(props: {
       <main className="wrap">
         <div className="crumb">{props.crumb}</div>
         {props.children}
+        <BuildInfo />
       </main>
     </>
   )

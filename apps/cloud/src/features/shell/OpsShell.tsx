@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import type { SessionUser } from '@trend-suite/contracts'
+import { BuildInfo } from './BuildInfo'
 
 /** 运营控制台外壳：侧栏 + 顶栏 + 主区（原型 ops-models 的 .ops-app 布局）。 */
 export function OpsShell(props: {
@@ -56,7 +57,7 @@ export function OpsShell(props: {
             <span>密钥 AES-GCM 加密 · 明文不回显</span>
           </span>
         </header>
-        <main className="ops-main">{props.children}</main>
+        <main className="ops-main">{props.children}<BuildInfo /></main>
       </div>
     </div>
   )

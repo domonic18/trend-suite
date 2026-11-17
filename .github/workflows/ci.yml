@@ -449,6 +449,7 @@ jobs:
           set -euo pipefail
           docker buildx build --builder ci-builder --platform linux/amd64 \
             --build-arg GIT_SHA="$GITHUB_SHA" \
+            --build-arg BUILD_REF="${{ steps.vars.outputs.tag }}" \
             --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --build-arg APP_VERSION="${{ steps.vars.outputs.app_version }}" \
             --file apps/cloud/deploy/Dockerfile --load --provenance=false \

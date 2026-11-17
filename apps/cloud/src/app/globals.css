@@ -984,6 +984,13 @@ dialog::backdrop {
   color: var(--p-err);
 }
 
+.build-info {
+  margin-top: 28px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--p-faint);
+}
+
 .ops-top {
   position: sticky;
   top: 0;
