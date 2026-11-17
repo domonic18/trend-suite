@@ -387,6 +387,10 @@ a {
   padding: 4px 6px;
 }
 
+a.btn.link {
+  text-decoration: none;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -950,6 +954,21 @@ dialog::backdrop {
 .ops-user .ur {
   font-size: 11px;
   color: var(--p-mut);
+}
+
+.ops-user .bk {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--p-faint);
+  text-decoration: none;
+}
+
+.ops-user .bk:hover {
+  color: var(--p-pri);
+}
+
+.ops-user .bk + .out {
+  margin-left: 0;
 }
 
 .ops-user .out {

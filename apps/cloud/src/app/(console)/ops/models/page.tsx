@@ -7,14 +7,12 @@ import { logout, me } from '@/features/accounts/api'
 import { clearToken, getToken } from '@/features/accounts/session'
 import { OpsModelsPanel } from '@/features/models/ui/OpsModelsPanel'
 import { OpsShell } from '@/features/shell/OpsShell'
+import { isOpsRole } from '@/features/shell/ops-role'
 
 type State =
   | { phase: 'loading' }
   | { phase: 'denied'; user: SessionUser }
   | { phase: 'ready'; user: SessionUser }
-
-/** 运营控制台入口角色（arch/07 §9：运营只读模型配置，管理员可写）。 */
-const OPS_ROLES = ['operator', 'admin'] as const
 
 export default function OpsModelsPage() {
   const router = useRouter()
@@ -30,7 +28,7 @@ export default function OpsModelsPage() {
       try {
         const user = await me()
         if (cancelled) return
-        if (!OPS_ROLES.includes(user.role as (typeof OPS_ROLES)[number])) {
+        if (!isOpsRole(user)) {
           setState({ phase: 'denied', user })
           return
         }

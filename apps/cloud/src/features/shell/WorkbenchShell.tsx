@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import type { SessionUser } from '@trend-suite/contracts'
+import { isOpsRole } from './ops-role'
 
 /** 工作台外壳：顶栏 + 面包屑 + 内容区。课程列表页与原始数据页共用。 */
 export function WorkbenchShell(props: {
@@ -22,6 +23,11 @@ export function WorkbenchShell(props: {
           </div>
           {props.nav ? <nav className="topnav">{props.nav}</nav> : null}
           <div className="topbar-right">
+            {isOpsRole(props.user) ? (
+              <a className="btn link" href="/ops/models">
+                运营控制台
+              </a>
+            ) : null}
             <span>
               {props.user.displayName ?? props.user.username} · {props.user.role}
             </span>
