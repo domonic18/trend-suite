@@ -55,6 +55,8 @@ function toView(row: repo.ModelRow): ModelEntryView {
     cooldownUntil: row.cooldown_until ? row.cooldown_until.toISOString() : null,
     lastTestedAt: row.last_tested_at ? row.last_tested_at.toISOString() : null,
     lastTestResult: row.last_test_result,
+    lastTestLatencyMs: row.last_test_latency_ms,
+    lastTestError: row.last_test_error,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   }
@@ -254,6 +256,10 @@ export async function getAsrChannel(): Promise<AsrChannelView> {
       maxAudioSeconds: ASR_MAX_AUDIO_SECONDS,
       hotwordSupported: false,
       hotwordCount: 0,
+      lastTestedAt: null,
+      lastTestResult: null,
+      lastTestLatencyMs: null,
+      lastTestError: null,
       updatedAt: null,
     }
   }
@@ -272,6 +278,10 @@ export async function getAsrChannel(): Promise<AsrChannelView> {
     // MiniMax 专有转写接口当前没有热词参数，不假装支持。
     hotwordSupported: meta.hotwordSupported === true,
     hotwordCount: typeof meta.hotwordCount === 'number' ? meta.hotwordCount : 0,
+    lastTestedAt: row.last_tested_at ? row.last_tested_at.toISOString() : null,
+    lastTestResult: row.last_test_result,
+    lastTestLatencyMs: row.last_test_latency_ms,
+    lastTestError: row.last_test_error,
     updatedAt: row.updated_at.toISOString(),
   }
 }
@@ -309,14 +319,18 @@ export async function testModelEntry(id: string): Promise<ModelTestResultView> {
   }
 
   const testedAt = new Date()
+  const latencyMs = Date.now() - started
   await repo.updateModel(id, {
     lastTestedAt: testedAt,
     lastTestResult: outcome.ok ? 'ok' : 'failed',
+    lastTestLatencyMs: latencyMs,
+    // 失败原因随条目落库（≤500 字），列表内联展示；成功清空
+    lastTestError: outcome.ok ? null : outcome.message.slice(0, 500),
   })
   return {
     ok: outcome.ok,
     message: outcome.message,
-    latencyMs: Date.now() - started,
+    latencyMs,
     testedAt: testedAt.toISOString(),
   }
 }

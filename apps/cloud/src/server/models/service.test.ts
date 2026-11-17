@@ -259,3 +259,38 @@ test('封存可解封：roundtrip；密文被篡改按未配置处理', { skip }
   const tampered = `${parts[0]}:${parts[1]}:${parts[2]}:${'x'.repeat((parts[3]?.length ?? 4) || 4)}`
   assert.equal(openSecret(tampered), null)
 })
+
+test('连通性测试结果落条目：延迟与失败原因随视图返回，成功清空原因', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '测试台账',
+    purposes: ['llm'],
+    provider: 'X',
+    protocol: 'openai',
+    model: 'm-test',
+    apiKey: 'k-test-result',
+  })
+
+  // testModelEntry 会真实外呼，这里直接走 repo 写入验落库与视图映射链路
+  const repo = await import('./repo')
+  await repo.updateModel(entry.id, {
+    lastTestedAt: new Date(),
+    lastTestResult: 'failed',
+    lastTestLatencyMs: 1234,
+    lastTestError: '上游返回 400：unknown model x（原因随条目落库，≤500 字）',
+  })
+  const failed = (await listModelEntries()).find((e) => e.id === entry.id)
+  assert.equal(failed?.lastTestResult, 'failed')
+  assert.equal(failed?.lastTestLatencyMs, 1234)
+  assert.match(failed?.lastTestError ?? '', /unknown model/)
+
+  await repo.updateModel(entry.id, {
+    lastTestedAt: new Date(),
+    lastTestResult: 'ok',
+    lastTestLatencyMs: 890,
+    lastTestError: null,
+  })
+  const ok = (await listModelEntries()).find((e) => e.id === entry.id)
+  assert.equal(ok?.lastTestResult, 'ok')
+  assert.equal(ok?.lastTestLatencyMs, 890)
+  assert.equal(ok?.lastTestError, null)
+})

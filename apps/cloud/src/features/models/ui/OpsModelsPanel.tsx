@@ -83,6 +83,8 @@ type EntryForm = {
   name: string
   purposes: ModelPurpose[]
   provider: string
+  /** 自定义供应商（「其他」手填名称）：provider 存用户输入，select 停在「其他」。 */
+  custom: boolean
   protocol: ModelProtocol
   model: string
   baseUrl: string
@@ -95,6 +97,7 @@ const EMPTY_FORM: EntryForm = {
   name: '',
   purposes: ['llm'],
   provider: '',
+  custom: false,
   protocol: 'openai',
   model: '',
   baseUrl: '',
@@ -111,6 +114,8 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [form, setForm] = useState<EntryForm | null>(null)
   const [busy, setBusy] = useState(false)
+  /** 正在连通性测试的条目 id：行内按钮变「测试中…」，列表徽章同步。 */
+  const [testingIds, setTestingIds] = useState<ReadonlySet<string>>(new Set())
 
   const refresh = useCallback(async () => {
     try {
@@ -139,6 +144,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
       name: entry.name,
       purposes: entry.purposes,
       provider: entry.provider,
+      custom: entry.provider !== '' && !findProviderPreset(entry.provider),
       protocol: entry.protocol,
       model: entry.model,
       baseUrl: entry.baseUrl ?? '',
@@ -200,11 +206,18 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
   async function runTest(id: string) {
     setError(null)
     setNotice(null)
+    setTestingIds((prev) => new Set(prev).add(id))
     try {
       const result = await testModel(id)
       setNotice(`${result.ok ? '连通' : '不通'}：${result.message}（${result.latencyMs}ms）`)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '测试失败')
+    } finally {
+      setTestingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
     }
     await refresh()
   }
@@ -299,20 +312,24 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                   <td>{entry.apiKeyMasked ?? '未配置'}</td>
                   <td>{entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}</td>
                   <td>
-                    {entry.lastTestedAt ? (
-                      <>
-                        {entry.lastTestResult === 'ok' ? '正常' : '异常'}
-                        <span className="meta"> {entry.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
-                      </>
-                    ) : (
-                      '—'
-                    )}
+                    <TestBadge
+                      testing={testingIds.has(entry.id)}
+                      result={entry.lastTestResult}
+                      latencyMs={entry.lastTestLatencyMs}
+                      error={entry.lastTestError}
+                      testedAt={entry.lastTestedAt}
+                    />
                   </td>
                   <td className="num">
                     {canWrite ? (
                       <>
-                        <button type="button" className="btn link" onClick={() => void runTest(entry.id)}>
-                          测试
+                        <button
+                          type="button"
+                          className="btn link"
+                          disabled={testingIds.has(entry.id)}
+                          onClick={() => void runTest(entry.id)}
+                        >
+                          {testingIds.has(entry.id) ? '测试中…' : '测试'}
                         </button>
                         <button type="button" className="btn link" onClick={() => edit(entry)}>
                           编辑
@@ -397,6 +414,18 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                     {channel.hotwordSupported ? `${channel.hotwordCount} 个` : '该协议不支持热词注入'}
                   </td>
                 </tr>
+                <tr>
+                  <th>最后测试</th>
+                  <td colSpan={3}>
+                    <TestBadge
+                      testing={channel.modelId !== null && testingIds.has(channel.modelId)}
+                      result={channel.lastTestResult}
+                      latencyMs={channel.lastTestLatencyMs}
+                      error={channel.lastTestError}
+                      testedAt={channel.lastTestedAt}
+                    />
+                  </td>
+                </tr>
               </tbody>
             </table>
           ) : (
@@ -458,13 +487,18 @@ function EntryFormCard(props: {
 
   /** 选厂商：填协议（厂商支持 ∩ 用途允许）与该协议对应的端点地址。 */
   function pickProvider(provider: string) {
-    if (provider === OTHER_PROVIDER || provider === '') {
-      props.setForm({ ...form, provider: '' })
+    if (provider === '') {
+      props.setForm({ ...form, provider: '', custom: false })
+      return
+    }
+    if (provider === OTHER_PROVIDER) {
+      // 自定义供应商：清空预置，名称由用户在「供应商名称」里手填
+      props.setForm({ ...form, provider: '', custom: true })
       return
     }
     const picked = findProviderPreset(provider)
     if (!picked) {
-      props.setForm({ ...form, provider })
+      props.setForm({ ...form, provider, custom: false })
       return
     }
     const usable = availableProtocols(form.purposes, picked)
@@ -474,6 +508,7 @@ function EntryFormCard(props: {
     props.setForm({
       ...form,
       provider: picked.label,
+      custom: false,
       protocol,
       baseUrl: baseUrlUsable && endpoint ? endpoint : form.baseUrl,
     })
@@ -517,7 +552,7 @@ function EntryFormCard(props: {
           <span>供应商（选预置自动填端点）</span>
           <select
             className="input"
-            value={preset ? preset.value : form.provider === '' ? '' : OTHER_PROVIDER}
+            value={form.custom ? OTHER_PROVIDER : preset ? preset.value : ''}
             onChange={(e) => pickProvider(e.target.value)}
           >
             <option value="">请选择</option>
@@ -529,7 +564,7 @@ function EntryFormCard(props: {
             <option value={OTHER_PROVIDER}>其他（手动填写）</option>
           </select>
         </label>
-        {form.provider === '' || preset ? null : (
+        {form.custom ? (
           <label className="field">
             <span>供应商名称</span>
             <input
@@ -539,7 +574,7 @@ function EntryFormCard(props: {
               required
             />
           </label>
-        )}
+        ) : null}
         <label className="field">
           <span>调用协议</span>
           <select
@@ -607,6 +642,50 @@ function EntryFormCard(props: {
       </div>
     </form>
   )
+}
+
+/**
+ * 连通性测试三态徽章（对齐家族 aitech-hub TestStatusBadge 形态）：
+ * 测试中 → 「测试中…」；ok → 绿 ✓ + 延迟毫秒；failed → 红 ✗ 失败 + 截断原因
+ * （≤48 字，全文悬浮）；未测过 → —。
+ */
+function TestBadge(props: {
+  testing: boolean
+  result: string | null
+  latencyMs: number | null
+  error: string | null
+  testedAt: string | null
+}) {
+  const time = props.testedAt ? (
+    <span className="meta"> {props.testedAt.slice(0, 16).replace('T', ' ')}</span>
+  ) : null
+  if (props.testing) return <span className="meta">测试中…</span>
+  if (props.result === 'ok') {
+    return (
+      <>
+        <span className="ok-text" title={props.latencyMs != null ? `${props.latencyMs}ms` : undefined}>
+          ✓ {props.latencyMs ?? '?'}ms
+        </span>
+        {time}
+      </>
+    )
+  }
+  if (props.result === 'failed') {
+    const reason = (props.error ?? '').replace(/\s+/g, ' ').trim()
+    return (
+      <>
+        <span className="err-text" title={reason || undefined}>✗ 失败</span>
+        {reason ? (
+          <span className="meta" title={reason}>
+            {' '}
+            {reason.length > 48 ? `${reason.slice(0, 48)}…` : reason}
+          </span>
+        ) : null}
+        {time}
+      </>
+    )
+  }
+  return <>—</>
 }
 
 function BindingRow(props: {

@@ -35,6 +35,10 @@ export const modelEntryView = z.object({
   cooldownUntil: z.string().nullable(),
   lastTestedAt: z.string().nullable(),
   lastTestResult: z.string().nullable(),
+  /** 最近一次连通性测试的耗时（毫秒）；未测过为 null。 */
+  lastTestLatencyMs: z.number().int().nullable(),
+  /** 最近一次连通性测试的失败原因（截断 ≤500 字）；成功时清空为 null。 */
+  lastTestError: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -102,6 +106,11 @@ export const asrChannelView = z.object({
   /** 上游是否支持热词注入：MiniMax 专有转写接口当前不支持。 */
   hotwordSupported: z.boolean(),
   hotwordCount: z.number(),
+  /** 最近一次连通性测试：状态 / 耗时 / 失败原因（与条目同源）。 */
+  lastTestedAt: z.string().nullable(),
+  lastTestResult: z.string().nullable(),
+  lastTestLatencyMs: z.number().int().nullable(),
+  lastTestError: z.string().nullable(),
   updatedAt: z.string().nullable(),
 })
 

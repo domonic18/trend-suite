@@ -517,6 +517,10 @@ a.btn.link {
   color: var(--p-err);
 }
 
+.ok-text {
+  color: var(--p-acc);
+}
+
 /* ---------------- 对话框 ---------------- */
 dialog {
   border: none;

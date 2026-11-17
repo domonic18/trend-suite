@@ -16,6 +16,8 @@ export type ModelRow = {
   cooldown_until: Date | null
   last_tested_at: Date | null
   last_test_result: string | null
+  last_test_latency_ms: number | null
+  last_test_error: string | null
   created_at: Date
   updated_at: Date
 }
@@ -42,6 +44,8 @@ const COLUMNS = [
   'cooldown_until',
   'last_tested_at',
   'last_test_result',
+  'last_test_latency_ms',
+  'last_test_error',
   'created_at',
   'updated_at',
 ].join(', ')
@@ -130,6 +134,8 @@ export async function updateModel(
     cooldownUntil?: Date | null
     lastTestedAt?: Date | null
     lastTestResult?: string | null
+    lastTestLatencyMs?: number | null
+    lastTestError?: string | null
   },
 ): Promise<ModelRow> {
   const sets: string[] = []
@@ -153,6 +159,8 @@ export async function updateModel(
   if (input.cooldownUntil !== undefined) put('cooldown_until', input.cooldownUntil)
   if (input.lastTestedAt !== undefined) put('last_tested_at', input.lastTestedAt)
   if (input.lastTestResult !== undefined) put('last_test_result', input.lastTestResult)
+  if (input.lastTestLatencyMs !== undefined) put('last_test_latency_ms', input.lastTestLatencyMs)
+  if (input.lastTestError !== undefined) put('last_test_error', input.lastTestError)
 
   if (sets.length === 0) {
     const existing = await findModelById(id)
