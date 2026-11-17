@@ -26,8 +26,9 @@ const envSchema = z.object({
   // 关键帧采样间隔（arch/05 §3.6：场景检测 + 1 帧/15s）与数量上限。
   PIPELINE_FRAME_INTERVAL_SECONDS: z.coerce.number().int().positive().default(15),
   PIPELINE_MAX_FRAMES: z.coerce.number().int().positive().default(240),
-  // 模型密钥主密钥（base64url 编码的 32 字节）：模型条目密钥用它 AES-GCM 封装。
-  AI_KEY_MASTER_KEY: z.string().min(1).optional(),
+  // 凭据加密密钥（家族同款 ai-invest 命名；base64url 编码的 32 字节）：
+  // 模型条目密钥用它 AES-GCM 封装（arch/07 §9），一经使用不可更换。
+  CREDENTIAL_ENCRYPTION_KEY: z.string().min(1).optional(),
   // COS 骨架：桶与凭据到位前不启用。
   COS_BUCKET: z.string().min(1).optional(),
   COS_REGION: z.string().min(1).optional(),

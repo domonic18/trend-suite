@@ -81,7 +81,7 @@ export class KeySealUnavailableError extends Error {
 }
 
 function masterKey(): Buffer {
-  const raw = getEnv().AI_KEY_MASTER_KEY
+  const raw = getEnv().CREDENTIAL_ENCRYPTION_KEY
   if (!raw) throw new KeySealUnavailableError()
   const key = Buffer.from(raw, 'base64url')
   if (key.length !== SEAL_KEY_LEN) throw new KeySealUnavailableError()

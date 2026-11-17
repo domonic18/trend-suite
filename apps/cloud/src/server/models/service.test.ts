@@ -19,7 +19,7 @@ const skip = url ? false : '未配置 TEST_DATABASE_URL'
 
 // 32 字节随机主密钥（base64url），测试专用
 const MASTER_KEY = randomBytes(32).toString('base64url')
-process.env.AI_KEY_MASTER_KEY = MASTER_KEY
+process.env.CREDENTIAL_ENCRYPTION_KEY = MASTER_KEY
 process.env.MEDIA_STORAGE = 'local'
 
 before(async () => {
