@@ -9,7 +9,14 @@ import type {
   TaskBindingView,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { MODEL_PROVIDERS, OTHER_PROVIDER, findProviderPreset } from '../providers'
+import {
+  MODEL_PROVIDERS,
+  OTHER_PROVIDER,
+  findProviderPreset,
+  isPresetBaseUrl,
+  providerBaseUrl,
+  providerProtocols,
+} from '../providers'
 import {
   createModel,
   deleteModel,
@@ -58,6 +65,17 @@ function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
   return (Object.keys(PROTOCOL_LABELS) as ModelProtocol[]).filter((protocol) =>
     sets.every((list) => list.includes(protocol)),
   )
+}
+
+/** 可选协议 = 用途允许集 ∩ 厂商支持集；选了预置厂商后不再列出该厂商没有的协议。 */
+function availableProtocols(
+  purposes: ModelPurpose[],
+  preset: ReturnType<typeof findProviderPreset>,
+): ModelProtocol[] {
+  const allowed = allowedProtocols(purposes)
+  if (!preset) return allowed
+  const supported = providerProtocols(preset)
+  return allowed.filter((protocol) => supported.includes(protocol))
 }
 
 type EntryForm = {
@@ -413,6 +431,19 @@ function EntryFormCard(props: {
   onCancel: () => void
 }) {
   const { form } = props
+  const preset = findProviderPreset(form.provider)
+
+  /** 协议变了，地址跟着换成该厂商该协议的端点；手填地址不动。 */
+  function syncProtocol(next: EntryForm, protocol: ModelProtocol): EntryForm {
+    const picked = findProviderPreset(next.provider)
+    const endpoint = picked ? providerBaseUrl(picked, protocol) : null
+    const baseUrlUsable = next.baseUrl === '' || isPresetBaseUrl(next.baseUrl)
+    return {
+      ...next,
+      protocol,
+      baseUrl: baseUrlUsable && endpoint ? endpoint : next.baseUrl,
+    }
+  }
 
   /** 用途 toggle：至少一项；协议随所选用途交集收缩（当前协议不在交集内则重置为交集第一个）。 */
   function togglePurpose(purpose: ModelPurpose) {
@@ -421,34 +452,36 @@ function EntryFormCard(props: {
       : [...form.purposes, purpose]
     if (next.length === 0) return
     const allowed = allowedProtocols(next)
-    props.setForm({
-      ...form,
-      purposes: next,
-      protocol: allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai'),
-    })
+    const protocol = allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai')
+    props.setForm(syncProtocol({ ...form, purposes: next }, protocol))
   }
 
-  /** 选厂商：预置项自动填协议（在当前用途交集内才覆盖）与 Base URL（空或另一预置值才覆盖）。 */
+  /** 选厂商：填协议（厂商支持 ∩ 用途允许）与该协议对应的端点地址。 */
   function pickProvider(provider: string) {
     if (provider === OTHER_PROVIDER || provider === '') {
       props.setForm({ ...form, provider: '' })
       return
     }
-    const preset = findProviderPreset(provider)
-    if (!preset) {
+    const picked = findProviderPreset(provider)
+    if (!picked) {
       props.setForm({ ...form, provider })
       return
     }
-    const allowed = allowedProtocols(form.purposes)
-    const baseUrlUsable =
-      form.baseUrl === '' ||
-      MODEL_PROVIDERS.some((p) => p.baseUrl === form.baseUrl)
+    const usable = availableProtocols(form.purposes, picked)
+    const protocol = usable.includes(picked.protocol) ? picked.protocol : (usable[0] ?? form.protocol)
+    const endpoint = providerBaseUrl(picked, protocol)
+    const baseUrlUsable = form.baseUrl === '' || isPresetBaseUrl(form.baseUrl)
     props.setForm({
       ...form,
-      provider: preset.label,
-      protocol: allowed.includes(preset.protocol) ? preset.protocol : form.protocol,
-      baseUrl: baseUrlUsable ? preset.baseUrl : form.baseUrl,
+      provider: picked.label,
+      protocol,
+      baseUrl: baseUrlUsable && endpoint ? endpoint : form.baseUrl,
     })
+  }
+
+  /** 切协议：地址跟着换成该厂商该协议的端点（手填地址不动）。 */
+  function pickProtocol(protocol: ModelProtocol) {
+    props.setForm(syncProtocol(form, protocol))
   }
 
   return (
@@ -484,7 +517,7 @@ function EntryFormCard(props: {
           <span>供应商（选预置自动填端点）</span>
           <select
             className="input"
-            value={findProviderPreset(form.provider) ? form.provider : form.provider === '' ? '' : OTHER_PROVIDER}
+            value={preset ? preset.value : form.provider === '' ? '' : OTHER_PROVIDER}
             onChange={(e) => pickProvider(e.target.value)}
           >
             <option value="">请选择</option>
@@ -496,7 +529,7 @@ function EntryFormCard(props: {
             <option value={OTHER_PROVIDER}>其他（手动填写）</option>
           </select>
         </label>
-        {form.provider === '' || findProviderPreset(form.provider) ? null : (
+        {form.provider === '' || preset ? null : (
           <label className="field">
             <span>供应商名称</span>
             <input
@@ -512,11 +545,9 @@ function EntryFormCard(props: {
           <select
             className="input"
             value={form.protocol}
-            onChange={(e) =>
-              props.setForm({ ...form, protocol: e.target.value as ModelProtocol })
-            }
+            onChange={(e) => pickProtocol(e.target.value as ModelProtocol)}
           >
-            {allowedProtocols(form.purposes).map((protocol) => (
+            {availableProtocols(form.purposes, preset).map((protocol) => (
               <option key={protocol} value={protocol}>
                 {PROTOCOL_LABELS[protocol]}
               </option>
