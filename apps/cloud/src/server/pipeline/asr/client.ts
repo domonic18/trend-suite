@@ -2,6 +2,7 @@ import 'server-only'
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { getEnv } from '@/env'
+import { minimaxAsrUrl } from '@/server/models/endpoints'
 import { parseAsrResponse, type AsrResult } from './parse'
 
 /**
@@ -46,7 +47,7 @@ export async function transcribeFile(
 
   const url =
     channel.protocol === 'minimax'
-      ? `${channel.baseUrl}/v1/speech_to_text`
+      ? minimaxAsrUrl(channel.baseUrl)
       : `${channel.baseUrl}/audio/transcriptions`
 
   if (channel.protocol === 'minimax') {
