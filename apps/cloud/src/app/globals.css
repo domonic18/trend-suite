@@ -991,6 +991,30 @@ dialog::backdrop {
   color: var(--p-faint);
 }
 
+.purpose-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ptg {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border: 1px solid var(--p-line);
+  border-radius: 6px;
+  background: none;
+  color: var(--p-mut);
+  cursor: pointer;
+}
+
+.ptg.on {
+  border-color: var(--p-pri);
+  color: var(--p-pri);
+  background: var(--p-pri-soft);
+  font-weight: 600;
+}
+
 .ops-top {
   position: sticky;
   top: 0;

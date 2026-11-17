@@ -43,7 +43,7 @@ function toView(row: repo.ModelRow): ModelEntryView {
   return {
     id: row.id,
     name: row.name,
-    purpose: row.purpose as ModelEntryView['purpose'],
+    purposes: row.purposes as ModelEntryView['purposes'],
     provider: row.provider,
     protocol: row.protocol as ModelEntryView['protocol'],
     model: row.model,
@@ -51,7 +51,6 @@ function toView(row: repo.ModelRow): ModelEntryView {
     apiKeyMasked: plain === null ? null : maskSecret(plain),
     status: row.status as ModelEntryView['status'],
     isDefault: row.is_default,
-    capabilities: row.capabilities ?? [],
     cooldownUntil: row.cooldown_until ? row.cooldown_until.toISOString() : null,
     lastTestedAt: row.last_tested_at ? row.last_tested_at.toISOString() : null,
     lastTestResult: row.last_test_result,
@@ -80,9 +79,11 @@ export function normalizeBaseUrl(raw: string): string {
   return url
 }
 
-function assertProtocol(purpose: ModelPurpose, protocol: ModelProtocol): void {
-  if (!PROTOCOL_BY_PURPOSE[purpose].includes(protocol)) {
-    throw badRequest(`${purpose} 用途不支持 ${protocol} 协议`)
+function assertProtocol(purposes: ModelPurpose[], protocol: ModelProtocol): void {
+  // 多用途条目：协议必须在每个所选用途的允许集内（取交集判断）
+  const missing = purposes.filter((p) => !PROTOCOL_BY_PURPOSE[p].includes(protocol))
+  if (missing.length > 0) {
+    throw badRequest(`${missing.join('/')} 用途不支持 ${protocol} 协议`)
   }
 }
 
@@ -93,16 +94,15 @@ export async function listModelEntries(): Promise<ModelEntryView[]> {
 
 export async function createModelEntry(input: {
   name: string
-  purpose: ModelPurpose
+  purposes: ModelPurpose[]
   provider: string
   protocol: ModelProtocol
   model: string
   baseUrl?: string | undefined
   apiKey?: string | undefined
   isDefault?: boolean | undefined
-  capabilities?: string[] | undefined
 }): Promise<ModelEntryView> {
-  assertProtocol(input.purpose, input.protocol)
+  assertProtocol(input.purposes, input.protocol)
 
   let apiKeyEnc: string | null = null
   if (input.apiKey) {
@@ -116,19 +116,18 @@ export async function createModelEntry(input: {
     }
   }
 
-  if (input.isDefault) await repo.clearDefault(input.purpose)
+  if (input.isDefault) await repo.clearDefaults(input.purposes)
 
   const row = await repo.insertModel({
     id: newId('model'),
     name: input.name,
-    purpose: input.purpose,
+    purposes: input.purposes,
     provider: input.provider,
     protocol: input.protocol,
     model: input.model,
     baseUrl: input.baseUrl ? normalizeBaseUrl(input.baseUrl) : null,
     apiKeyEnc,
     isDefault: input.isDefault ?? false,
-    capabilities: input.capabilities ?? [],
     meta: {},
   })
   return toView(row)
@@ -141,8 +140,9 @@ export async function updateModelEntry(
   const existing = await repo.findModelById(id)
   if (!existing) throw notFound('模型条目不存在')
 
-  const purpose = existing.purpose as ModelPurpose
-  if (input.protocol) assertProtocol(purpose, input.protocol)
+  const purposes = (input.purposes ?? existing.purposes) as ModelPurpose[]
+  if (input.protocol) assertProtocol(purposes, input.protocol)
+  else if (input.purposes) assertProtocol(purposes, existing.protocol as ModelProtocol)
 
   // 密钥更新语义：空串保留原密钥（arch/07 §9.1）。
   let apiKeyEnc: string | null | undefined
@@ -161,10 +161,11 @@ export async function updateModelEntry(
     }
   }
 
-  if (input.isDefault) await repo.clearDefault(purpose, id)
+  if (input.isDefault) await repo.clearDefaults(purposes, id)
 
   const row = await repo.updateModel(id, {
     ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.purposes !== undefined ? { purposes: input.purposes } : {}),
     ...(input.provider !== undefined ? { provider: input.provider } : {}),
     ...(input.protocol !== undefined ? { protocol: input.protocol } : {}),
     ...(input.model !== undefined ? { model: input.model } : {}),
@@ -172,7 +173,6 @@ export async function updateModelEntry(
     ...(apiKeyEnc !== undefined ? { apiKeyEnc } : {}),
     ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
-    ...(input.capabilities !== undefined ? { capabilities: input.capabilities } : {}),
   })
   return toView(row)
 }
@@ -211,7 +211,7 @@ export async function updateTaskBinding(
 
   const primary = await repo.findModelById(input.primaryModelId)
   if (!primary) throw notFound('主模型条目不存在')
-  if (primary.purpose !== slot.purpose) {
+  if (!primary.purposes.includes(slot.purpose)) {
     throw badRequest(`主模型用途与槽位不符（槽位需要 ${slot.purpose}）`)
   }
   if (primary.status === 'disabled') throw badRequest('主模型已禁用，不能作为绑定')
@@ -222,7 +222,7 @@ export async function updateTaskBinding(
     }
     const backup = await repo.findModelById(input.backupModelId)
     if (!backup) throw notFound('备用模型条目不存在')
-    if (backup.purpose !== slot.purpose) {
+    if (!backup.purposes.includes(slot.purpose)) {
       throw badRequest(`备用模型用途与槽位不符（槽位需要 ${slot.purpose}）`)
     }
   }
@@ -287,17 +287,19 @@ export async function testModelEntry(id: string): Promise<ModelTestResultView> {
 
   const started = Date.now()
   let outcome: { ok: boolean; message: string }
-  if (row.purpose === 'asr') {
+  // 多用途条目按代表用途测试（专有协议优先）；其余用途共用同一 key/baseUrl。
+  const purposes = row.purposes as ModelPurpose[]
+  if (purposes.includes('asr')) {
     outcome = await testAsrChannel({ baseUrl: row.base_url, apiKey, model: row.model })
-  } else if (row.purpose === 'llm' || row.purpose === 'vlm') {
+  } else if (purposes.includes('embedding')) {
+    outcome = await testEmbeddingModel({ baseUrl: row.base_url, apiKey, model: row.model })
+  } else if (purposes.includes('llm') || purposes.includes('vlm')) {
     outcome = await testChatModel({
       protocol: row.protocol,
       baseUrl: row.base_url,
       apiKey,
       model: row.model,
     })
-  } else if (row.purpose === 'embedding') {
-    outcome = await testEmbeddingModel({ baseUrl: row.base_url, apiKey, model: row.model })
   } else {
     throw badRequest('该用途暂不支持连通性测试')
   }
