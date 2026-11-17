@@ -221,3 +221,30 @@ test('取消：running 任务被请求取消后，worker 在边界读到请求',
   )
   assert.equal(row?.status, 'canceled')
 })
+
+test('课程级任务与素材任务并存：认领互不干扰', { skip }, async () => {
+  const { courseId, assetId } = await makeAsset()
+  const assetJob = await jobs.enqueueJob({ assetId, kind: 'ingest' })
+  const courseJob = await jobs.enqueueJob({ courseId, kind: 'curriculum_draft' })
+
+  assert.equal(assetJob.asset_id, assetId)
+  assert.equal(assetJob.course_id, null)
+  assert.equal(courseJob.course_id, courseId)
+  assert.equal(courseJob.asset_id, null)
+
+  // 两个 worker 分别认领到不同任务
+  const first = await jobs.claimJob('worker-A')
+  const second = await jobs.claimJob('worker-B')
+  const claimedIds = [first?.id, second?.id].sort()
+  assert.deepEqual(claimedIds, [assetJob.id, courseJob.id].sort())
+
+  assert.equal(await jobs.claimJob('worker-C'), null)
+
+  // 课程任务幂等：同课同类型只留一个在跑
+  const again = await jobs.enqueueJob({ courseId, kind: 'curriculum_draft' })
+  assert.equal(again.id, courseJob.id)
+
+  // 课程任务可按课程查回
+  const found = await jobs.findJobByCourse({ courseId, kind: 'curriculum_draft' })
+  assert.equal(found?.id, courseJob.id)
+})
