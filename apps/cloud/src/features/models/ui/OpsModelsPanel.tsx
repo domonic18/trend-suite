@@ -129,43 +129,13 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
     })
   }
 
-  /** 用途 toggle：至少一项；协议随所选用途交集收缩（当前协议不在交集内则重置为交集第一个）。 */
-  function togglePurpose(purpose: ModelPurpose) {
-    if (!form) return
-    const next = form.purposes.includes(purpose)
-      ? form.purposes.filter((p) => p !== purpose)
-      : [...form.purposes, purpose]
-    if (next.length === 0) return
-    const allowed = allowedProtocols(next)
-    setForm({
-      ...form,
-      purposes: next,
-      protocol: allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai'),
-    })
-  }
-
-  /** 选厂商：预置项自动填协议（在当前用途交集内才覆盖）与 Base URL（空或另一预置值才覆盖）。 */
-  function pickProvider(provider: string) {
-    if (!form) return
-    if (provider === OTHER_PROVIDER || provider === '') {
-      setForm({ ...form, provider: '' })
-      return
-    }
-    const preset = findProviderPreset(provider)
-    if (!preset) {
-      setForm({ ...form, provider })
-      return
-    }
-    const allowed = allowedProtocols(form.purposes)
-    const baseUrlUsable =
-      form.baseUrl === '' ||
-      MODEL_PROVIDERS.some((p) => p.baseUrl === form.baseUrl)
-    setForm({
-      ...form,
-      provider: preset.label,
-      protocol: allowed.includes(preset.protocol) ? preset.protocol : form.protocol,
-      baseUrl: baseUrlUsable ? preset.baseUrl : form.baseUrl,
-    })
+  /** ASR 渠道的编辑目标：默认 asr 条目优先，其次任意含 asr 用途的条目。 */
+  function findAsrEntry(): ModelEntryView | null {
+    return (
+      models.find((m) => m.purposes.includes('asr') && m.isDefault) ??
+      models.find((m) => m.purposes.includes('asr')) ??
+      null
+    )
   }
 
   async function submit(event: React.FormEvent) {
@@ -276,129 +246,13 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
           )}
 
           {form ? (
-            <form className="entry-form" onSubmit={submit}>
-              <h4>{form.id ? '编辑模型条目' : '新增模型条目'}</h4>
-              <div className="grid2">
-                <label className="field">
-                  <span>名称</span>
-                  <input
-                    className="input"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    required
-                  />
-                </label>
-                <div className="field">
-                  <span>用途（可多选）</span>
-                  <div className="purpose-toggles">
-                    {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
-                      <button
-                        key={purpose}
-                        type="button"
-                        className={form.purposes.includes(purpose) ? 'ptg on' : 'ptg'}
-                        aria-pressed={form.purposes.includes(purpose)}
-                        onClick={() => togglePurpose(purpose)}
-                      >
-                        {PURPOSE_LABELS[purpose]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className="field">
-                  <span>供应商（选预置自动填端点）</span>
-                  <select
-                    className="input"
-                    value={findProviderPreset(form.provider) ? form.provider : form.provider === '' ? '' : OTHER_PROVIDER}
-                    onChange={(e) => pickProvider(e.target.value)}
-                  >
-                    <option value="">请选择</option>
-                    {MODEL_PROVIDERS.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                    <option value={OTHER_PROVIDER}>其他（手动填写）</option>
-                  </select>
-                </label>
-                {form.provider === '' || findProviderPreset(form.provider) ? null : (
-                  <label className="field">
-                    <span>供应商名称</span>
-                    <input
-                      className="input"
-                      value={form.provider}
-                      onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                      required
-                    />
-                  </label>
-                )}
-                <label className="field">
-                  <span>调用协议</span>
-                  <select
-                    className="input"
-                    value={form.protocol}
-                    onChange={(e) =>
-                      setForm({ ...form, protocol: e.target.value as ModelProtocol })
-                    }
-                  >
-                    {allowedProtocols(form.purposes).map((protocol) => (
-                      <option key={protocol} value={protocol}>
-                        {PROTOCOL_LABELS[protocol]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>模型名</span>
-                  <input
-                    className="input"
-                    value={form.model}
-                    list="provider-model-examples"
-                    onChange={(e) => setForm({ ...form, model: e.target.value })}
-                    required
-                  />
-                  <datalist id="provider-model-examples">
-                    {(findProviderPreset(form.provider)?.modelExamples ?? []).map((m) => (
-                      <option key={m} value={m} />
-                    ))}
-                  </datalist>
-                </label>
-                <label className="field">
-                  <span>Base URL（可修改）</span>
-                  <input
-                    className="input"
-                    value={form.baseUrl}
-                    placeholder="https://api.example.com"
-                    onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
-                  />
-                </label>
-                <label className="field">
-                  <span>{form.id ? '密钥（留空保留原密钥）' : '密钥'}</span>
-                  <input
-                    className="input"
-                    type="password"
-                    value={form.apiKey}
-                    placeholder={form.id ? '留空即保留原密钥' : ''}
-                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                  />
-                </label>
-                <label className="field">
-                  <span>默认条目</span>
-                  <input
-                    type="checkbox"
-                    checked={form.isDefault}
-                    onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
-                  />
-                </label>
-              </div>
-              <div className="mfoot">
-                <button type="submit" className="btn primary" disabled={busy}>
-                  保存
-                </button>
-                <button type="button" className="btn" onClick={() => setForm(null)}>
-                  取消
-                </button>
-              </div>
-            </form>
+            <EntryFormCard
+              form={form}
+              busy={busy}
+              setForm={setForm}
+              onSubmit={submit}
+              onCancel={() => setForm(null)}
+            />
           ) : null}
 
           <table className="data-tbl">
@@ -487,6 +341,15 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
       {tab === 'asr' ? (
         <div className="card">
           <p className="meta">素材入库即转写：partial 段落实时可读。保存即刻生效。</p>
+          {form && form.purposes.includes('asr') ? (
+            <EntryFormCard
+              form={form}
+              busy={busy}
+              setForm={setForm}
+              onSubmit={submit}
+              onCancel={() => setForm(null)}
+            />
+          ) : null}
           {channel ? (
             <table className="data-tbl desc">
               <tbody>
@@ -527,7 +390,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                 type="button"
                 className="btn primary"
                 onClick={() => {
-                  const asr = models.find((m) => m.purposes.includes('asr') && m.isDefault)
+                  const asr = findAsrEntry()
                   if (asr) edit(asr)
                   else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
                 }}
@@ -539,6 +402,179 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
         </div>
       ) : null}
     </section>
+  )
+}
+
+function EntryFormCard(props: {
+  form: EntryForm
+  busy: boolean
+  setForm: (next: EntryForm) => void
+  onSubmit: (event: React.FormEvent) => void
+  onCancel: () => void
+}) {
+  const { form } = props
+
+  /** 用途 toggle：至少一项；协议随所选用途交集收缩（当前协议不在交集内则重置为交集第一个）。 */
+  function togglePurpose(purpose: ModelPurpose) {
+    const next = form.purposes.includes(purpose)
+      ? form.purposes.filter((p) => p !== purpose)
+      : [...form.purposes, purpose]
+    if (next.length === 0) return
+    const allowed = allowedProtocols(next)
+    props.setForm({
+      ...form,
+      purposes: next,
+      protocol: allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai'),
+    })
+  }
+
+  /** 选厂商：预置项自动填协议（在当前用途交集内才覆盖）与 Base URL（空或另一预置值才覆盖）。 */
+  function pickProvider(provider: string) {
+    if (provider === OTHER_PROVIDER || provider === '') {
+      props.setForm({ ...form, provider: '' })
+      return
+    }
+    const preset = findProviderPreset(provider)
+    if (!preset) {
+      props.setForm({ ...form, provider })
+      return
+    }
+    const allowed = allowedProtocols(form.purposes)
+    const baseUrlUsable =
+      form.baseUrl === '' ||
+      MODEL_PROVIDERS.some((p) => p.baseUrl === form.baseUrl)
+    props.setForm({
+      ...form,
+      provider: preset.label,
+      protocol: allowed.includes(preset.protocol) ? preset.protocol : form.protocol,
+      baseUrl: baseUrlUsable ? preset.baseUrl : form.baseUrl,
+    })
+  }
+
+  return (
+    <form className="entry-form" onSubmit={props.onSubmit}>
+      <h4>{form.id ? '编辑模型条目' : '新增模型条目'}</h4>
+      <div className="grid2">
+        <label className="field">
+          <span>名称</span>
+          <input
+            className="input"
+            value={form.name}
+            onChange={(e) => props.setForm({ ...form, name: e.target.value })}
+            required
+          />
+        </label>
+        <div className="field">
+          <span>用途（可多选）</span>
+          <div className="purpose-toggles">
+            {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
+              <button
+                key={purpose}
+                type="button"
+                className={form.purposes.includes(purpose) ? 'ptg on' : 'ptg'}
+                aria-pressed={form.purposes.includes(purpose)}
+                onClick={() => togglePurpose(purpose)}
+              >
+                {PURPOSE_LABELS[purpose]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="field">
+          <span>供应商（选预置自动填端点）</span>
+          <select
+            className="input"
+            value={findProviderPreset(form.provider) ? form.provider : form.provider === '' ? '' : OTHER_PROVIDER}
+            onChange={(e) => pickProvider(e.target.value)}
+          >
+            <option value="">请选择</option>
+            {MODEL_PROVIDERS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+            <option value={OTHER_PROVIDER}>其他（手动填写）</option>
+          </select>
+        </label>
+        {form.provider === '' || findProviderPreset(form.provider) ? null : (
+          <label className="field">
+            <span>供应商名称</span>
+            <input
+              className="input"
+              value={form.provider}
+              onChange={(e) => props.setForm({ ...form, provider: e.target.value })}
+              required
+            />
+          </label>
+        )}
+        <label className="field">
+          <span>调用协议</span>
+          <select
+            className="input"
+            value={form.protocol}
+            onChange={(e) =>
+              props.setForm({ ...form, protocol: e.target.value as ModelProtocol })
+            }
+          >
+            {allowedProtocols(form.purposes).map((protocol) => (
+              <option key={protocol} value={protocol}>
+                {PROTOCOL_LABELS[protocol]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>模型名</span>
+          <input
+            className="input"
+            value={form.model}
+            list="provider-model-examples"
+            onChange={(e) => props.setForm({ ...form, model: e.target.value })}
+            required
+          />
+          <datalist id="provider-model-examples">
+            {(findProviderPreset(form.provider)?.modelExamples ?? []).map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
+        </label>
+        <label className="field">
+          <span>Base URL（可修改）</span>
+          <input
+            className="input"
+            value={form.baseUrl}
+            placeholder="https://api.example.com"
+            onChange={(e) => props.setForm({ ...form, baseUrl: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>{form.id ? '密钥（留空保留原密钥）' : '密钥'}</span>
+          <input
+            className="input"
+            type="password"
+            value={form.apiKey}
+            placeholder={form.id ? '留空即保留原密钥' : ''}
+            onChange={(e) => props.setForm({ ...form, apiKey: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>默认条目</span>
+          <input
+            type="checkbox"
+            checked={form.isDefault}
+            onChange={(e) => props.setForm({ ...form, isDefault: e.target.checked })}
+          />
+        </label>
+      </div>
+      <div className="mfoot">
+        <button type="submit" className="btn primary" disabled={props.busy}>
+          保存
+        </button>
+        <button type="button" className="btn" onClick={props.onCancel}>
+          取消
+        </button>
+      </div>
+    </form>
   )
 }
 
