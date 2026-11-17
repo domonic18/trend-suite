@@ -5,11 +5,13 @@ import { newId } from '@/server/lib/ids'
 /**
  * 加工任务队列（arch/02 §4）：DB 队列 + worker 认领。
  * 认领用 `FOR UPDATE SKIP LOCKED`，多 worker 并行不抢同一任务。
+ * 引用二选一（pipeline_jobs_ref_check）：素材任务挂 asset_id，课程级任务挂 course_id。
  */
 
 export type PipelineJobRow = {
   id: string
-  asset_id: string
+  asset_id: string | null
+  course_id: string | null
   kind: string
   status: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled'
   step: string
@@ -29,6 +31,7 @@ export type PipelineJobRow = {
 const COLUMNS = [
   'id',
   'asset_id',
+  'course_id',
   'kind',
   'status',
   'step',
@@ -59,6 +62,17 @@ export function findJobByAsset(input: {
   )
 }
 
+export function findJobByCourse(input: {
+  courseId: string
+  kind: string
+}): Promise<PipelineJobRow | null> {
+  return queryOne<PipelineJobRow>(
+    `SELECT ${COLUMNS} FROM pipeline_jobs WHERE course_id = $1 AND kind = $2
+     ORDER BY created_at DESC LIMIT 1`,
+    [input.courseId, input.kind],
+  )
+}
+
 /** 一批素材的最近一个任务：列表页一次查完，不逐条打库。 */
 export async function listLatestJobs(assetIds: string[]): Promise<Map<string, PipelineJobRow>> {
   const map = new Map<string, PipelineJobRow>()
@@ -69,31 +83,39 @@ export async function listLatestJobs(assetIds: string[]): Promise<Map<string, Pi
      ORDER BY asset_id, created_at DESC`,
     [assetIds],
   )
-  for (const row of rows) map.set(row.asset_id, row)
+  for (const row of rows) if (row.asset_id) map.set(row.asset_id, row)
   return map
 }
 
 /**
- * 入队：同一素材同一类型已有在跑任务时直接复用（arch/05 §3.7 幂等）。
- * 终态任务（succeeded/failed/canceled）不复活——重试走显式重新加工。
+ * 入队：同一引用同一类型已有在跑任务时直接复用（arch/05 §3.7 幂等）。
+ * 终态任务（succeeded/failed/canceled）不复活——重试走显式重新加工/重新起草。
  */
-export async function enqueueJob(input: { assetId: string; kind: string }): Promise<PipelineJobRow> {
+export async function enqueueJob(
+  input: { assetId?: string; courseId?: string; kind: string },
+): Promise<PipelineJobRow> {
+  const refId = input.assetId ?? input.courseId
+  if (!refId || (input.assetId && input.courseId)) {
+    throw new Error('enqueueJob：assetId 与 courseId 必须二选一')
+  }
+  const refCol = input.assetId ? 'asset_id' : 'course_id'
+  const initialStep = input.assetId ? 'uploaded' : 'queued'
   return withTransaction(async (client) => {
     const existing = await client.query<PipelineJobRow>(
       `SELECT ${COLUMNS} FROM pipeline_jobs
-       WHERE asset_id = $1 AND kind = $2 AND status IN ('queued','running')
+       WHERE ${refCol} = $1 AND kind = $2 AND status IN ('queued','running')
        ORDER BY created_at DESC LIMIT 1
        FOR UPDATE`,
-      [input.assetId, input.kind],
+      [refId, input.kind],
     )
     const row = existing.rows[0]
     if (row) return row
 
     const inserted = await client.query<PipelineJobRow>(
-      `INSERT INTO pipeline_jobs (id, asset_id, kind, status, step, available_at)
-       VALUES ($1, $2, $3, 'queued', 'uploaded', now())
+      `INSERT INTO pipeline_jobs (id, ${refCol}, kind, status, step, available_at)
+       VALUES ($1, $2, $3, 'queued', $4, now())
        RETURNING ${COLUMNS}`,
-      [newId('pipelineJob'), input.assetId, input.kind],
+      [newId('pipelineJob'), refId, input.kind, initialStep],
     )
     return inserted.rows[0]!
   })
@@ -233,12 +255,17 @@ export async function isCancelRequested(jobId: string): Promise<boolean> {
  * 回收僵尸任务（arch/02 §4）：心跳超时 120 秒的 running 任务回 queued。
  * 超过最大重试次数的落 failed，不再空转。
  *
- * 返回被回收的任务（含素材 ID 与落到的状态），调用方据此同步素材状态。
+ * 返回被回收的任务（含素材/课程 ID 与落到的状态），调用方据此同步素材状态。
+ * 课程级任务（course_id 非空）由调用方按 kind 分派处理。
  */
 export async function reclaimStaleJobs(
   maxAttempts = 5,
-): Promise<{ id: string; asset_id: string; status: PipelineJobRow['status'] }[]> {
-  return query<{ id: string; asset_id: string; status: PipelineJobRow['status'] }>(
+): Promise<
+  { id: string; asset_id: string | null; course_id: string | null; kind: string; status: PipelineJobRow['status'] }[]
+> {
+  return query<
+    { id: string; asset_id: string | null; course_id: string | null; kind: string; status: PipelineJobRow['status'] }
+  >(
     `UPDATE pipeline_jobs
      SET status = CASE WHEN attempts >= $1 THEN 'failed' ELSE 'queued' END,
          available_at = now(),
@@ -247,7 +274,7 @@ export async function reclaimStaleJobs(
          error_message = '任务心跳超时，已回收',
          updated_at = now()
      WHERE status = 'running' AND heartbeat_at < now() - make_interval(secs => 120)
-     RETURNING id, asset_id, status`,
+     RETURNING id, asset_id, course_id, kind, status`,
     [maxAttempts],
   )
 }

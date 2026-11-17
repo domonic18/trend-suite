@@ -19,6 +19,22 @@ export const mediaAssetStatuses = [
 ] as const
 export const mediaAssetStatus = z.enum(mediaAssetStatuses)
 
+/** 方案版本状态（arch/05 §5 阶段三）：reject 旧行落 rejected + 另起新 draft。 */
+export const planStatuses = ['draft', 'approved', 'superseded', 'rejected'] as const
+export const planStatus = z.enum(planStatuses)
+
+/** 方案来源：起草 / 打回重起草 / 结构化微调派生。 */
+export const planOrigins = ['initial', 'revision', 'tweak'] as const
+export const planOrigin = z.enum(planOrigins)
+
+/** 概念依赖边类型（arch/03 §2.2）：prerequisite 子图无环由应用层校验。 */
+export const conceptEdgeKinds = ['prerequisite', 'related'] as const
+export const conceptEdgeKind = z.enum(conceptEdgeKinds)
+
+/** 分节证据匹配度结论：低于阈值（0.5）判 low_match，批准前需教师裁决。 */
+export const sectionMatchStatuses = ['ok', 'low_match'] as const
+export const sectionMatchStatus = z.enum(sectionMatchStatuses)
+
 /** 生产工作台入口角色：学员不可见（教师端需求 T1）。 */
 export const workbenchRoles = ['producer', 'operator', 'admin'] as const
 export const workbenchRole = z.enum(workbenchRoles)

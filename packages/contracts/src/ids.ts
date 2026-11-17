@@ -11,6 +11,10 @@ export const idPrefix = {
   pipelineJob: 'job',
   transcriptSegment: 'seg',
   mediaFrame: 'frm',
+  plan: 'pln',
+  concept: 'cpt',
+  aiRun: 'air',
+  aiUsage: 'aue',
 } as const
 
 export const idShape = {
@@ -22,6 +26,10 @@ export const idShape = {
   pipelineJob: /^job_[0-9a-f]{16}$/,
   transcriptSegment: /^seg_[0-9a-f]{16}$/,
   mediaFrame: /^frm_[0-9a-f]{16}$/,
+  plan: /^pln_[0-9a-f]{16}$/,
+  concept: /^cpt_[0-9a-f]{16}$/,
+  aiRun: /^air_[0-9a-f]{16}$/,
+  aiUsage: /^aue_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape

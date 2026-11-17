@@ -1198,3 +1198,302 @@ dialog::backdrop {
   width: auto;
   min-width: 220px;
 }
+
+/* ============================================================
+   课程方案（迭代 3）：目录行 / 工具卡 / 打断卡 / 小表
+   —— 沿用原型 tokens，简化版（原型为 ops-* 家族）。
+   ============================================================ */
+
+/* 阶段子页签（上传与转写 / 课程大纲） */
+.stage-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.stage-tabs a {
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--p-mut);
+  border-bottom: 2px solid transparent;
+}
+
+.stage-tabs a.on {
+  color: var(--p-pri);
+  border-bottom-color: var(--p-pri);
+  font-weight: 600;
+}
+
+/* 目录行 */
+.oe {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oe-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  background: var(--p-bg);
+}
+
+.oe-row.err {
+  border-color: #f3cfcb;
+  background: var(--p-err-soft);
+}
+
+.oe-row .gh {
+  font-size: 12px;
+  color: var(--p-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.oe-row .ot {
+  min-width: 0;
+}
+
+.oe-row .ot b {
+  display: block;
+  font-size: 13.5px;
+}
+
+.oe-row .ot .meta {
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.oe-row .oa {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oe-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.oe-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oe-inline input {
+  width: 140px;
+}
+
+.oe-ops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--p-line);
+}
+
+.oe-ops input,
+.oe-ops select {
+  padding: 6px 8px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  font-size: 13px;
+}
+
+/* 状态点：通过 / 待决定 */
+.st-ok,
+.st-err {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.st-ok {
+  color: var(--p-acc);
+}
+
+.st-ok i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--p-acc);
+}
+
+.st-err {
+  color: var(--p-err);
+}
+
+.st-err i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--p-err);
+}
+
+/* 折叠工具卡（术语图谱 / 分节计划） */
+.toolcard {
+  margin-top: 14px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-panel);
+  background: var(--p-bg);
+}
+
+.toolcard > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.toolcard .tname {
+  font-weight: 600;
+}
+
+.toolcard .targs {
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.toolcard .tout {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--p-line);
+  padding-top: 12px;
+}
+
+.sec-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.sec-title .n {
+  font-weight: 400;
+  color: var(--p-mut);
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+/* 小表 */
+.mini-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.mini-tbl th,
+.mini-tbl td {
+  border-bottom: 1px solid var(--p-line);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mini-tbl th {
+  color: var(--p-mut);
+  font-weight: 500;
+  background: var(--p-soft);
+}
+
+.mini-tbl input {
+  width: 62px;
+  padding: 3px 6px;
+  border: 1px solid var(--p-line);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+
+/* 打断卡（批准 / 打回） */
+.interrupt {
+  margin-top: 16px;
+  border: 1px solid #d4e3ff;
+  border-left: 3px solid var(--p-pri);
+  border-radius: var(--r-panel);
+  background: #f7faff;
+  padding: 12px 14px;
+}
+
+.interrupt .ih {
+  font-size: 13px;
+  color: var(--p-mut);
+}
+
+.interrupt .it {
+  margin: 6px 0 10px;
+  font-size: 13.5px;
+}
+
+.interrupt .ia {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.interrupt .ia textarea {
+  flex: 1;
+  min-width: 240px;
+  padding: 7px 9px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* 拒绝记录 */
+.viol-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--p-mut);
+}
+
+.viol-list li {
+  margin-bottom: 4px;
+}
+
+.viol-list b {
+  color: var(--p-ink);
+  margin-right: 6px;
+}
+
+/* 方案表单 */
+.plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plan-form .field > span {
+  font-size: 13px;
+  color: var(--p-mut);
+}
+
+.plan-form textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  font-size: 13.5px;
+  font-family: inherit;
+  resize: vertical;
+}

@@ -22,6 +22,7 @@ import { testAsrChannel, testChatModel, testEmbeddingModel } from './test'
  */
 
 export const TASK_SLOTS: ReadonlyArray<{ task: string; label: string; purpose: ModelPurpose }> = [
+  { task: 'content.curriculum', label: '课程方案起草', purpose: 'llm' },
   { task: 'content.section_draft', label: '节教材起草', purpose: 'llm' },
   { task: 'vision.describe', label: '素材理解', purpose: 'vlm' },
   { task: 'student.qa', label: '学员问答', purpose: 'llm' },

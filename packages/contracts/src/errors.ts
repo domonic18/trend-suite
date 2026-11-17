@@ -19,6 +19,15 @@ export const errorCodes = [
   'model_not_configured',
   // 素材加工终态失败（arch/05 §3.8）。
   'processing_failed',
+  // 课程方案门禁（arch/05 §5 阶段三）。
+  // concept_conflict：同课程概念重名（验收尺子 409）。
+  'concept_conflict',
+  // outline_violation：微调新增目录外章节等目录先验违例。
+  'outline_violation',
+  // plan_not_draftable：素材未就绪 / 已有方案占用等不可触发起草。
+  'plan_not_draftable',
+  // plan_unresolved：存在未决项（低匹配分节 / 拒绝记录）时批准被挡。
+  'plan_unresolved',
   'internal_error',
 ] as const
 

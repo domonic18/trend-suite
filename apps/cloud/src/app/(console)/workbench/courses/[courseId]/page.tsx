@@ -99,6 +99,12 @@ export default function CourseMaterialPage() {
           <p className="sub">把课程录像拖进来，作为这门课的原始素材。</p>
         </div>
       </div>
+      <div className="stage-tabs">
+        <Link href={`/workbench/courses/${courseId}`} className="on">
+          上传与转写
+        </Link>
+        <Link href={`/workbench/courses/${courseId}/plan`}>课程大纲</Link>
+      </div>
       <MaterialPanel courseId={courseId} />
     </WorkbenchShell>
   )

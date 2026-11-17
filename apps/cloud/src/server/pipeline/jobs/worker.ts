@@ -9,10 +9,13 @@ import {
 } from '../processing/runner'
 import * as procRepo from '../processing/repo'
 import * as jobs from './repo'
+import { runCurriculumDraft } from '@/server/content/plans/drafter'
+import type { PipelineJobRow } from './repo'
 
 /**
- * 加工 worker（arch/02 §4）：认领任务 → 跑阶段 → 回写状态。
+ * 加工 worker（arch/02 §4）：认领任务 → 按 kind 分派 → 回写状态。
  * 与 Web 进程同一个镜像，靠 APP_ROLE=worker 区分（arch/02 §7）。
+ * asset 任务（ingest）走媒体管线；course 任务（curriculum_draft）走方案起草。
  */
 
 const POLL_INTERVAL_MS = 2_000
@@ -33,7 +36,36 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
   }, HEARTBEAT_INTERVAL_MS)
 
   try {
-    const asset = await findAssetById(job.asset_id)
+    switch (job.kind) {
+      case 'ingest':
+        await runIngestJob(job)
+        break
+      case 'curriculum_draft':
+        await runCurriculumDraft(job)
+        break
+      default:
+        await jobs.failJob({
+          jobId: job.id,
+          code: 'job_kind_unknown',
+          message: `未知任务类型：${job.kind}`,
+          retryable: false,
+        })
+    }
+  } finally {
+    clearInterval(timer)
+  }
+  return true
+}
+
+/** 素材加工（迭代 2 链路，原逻辑不变）。 */
+async function runIngestJob(job: PipelineJobRow): Promise<void> {
+  const assetId = job.asset_id
+  if (!assetId) {
+    await jobs.failJob({ jobId: job.id, code: 'asset_not_found', message: '素材不存在', retryable: false })
+    return
+  }
+  try {
+    const asset = await findAssetById(assetId)
     if (!asset) {
       await jobs.failJob({
         jobId: job.id,
@@ -41,7 +73,7 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
         message: '素材不存在',
         retryable: false,
       })
-      return true
+      return
     }
     if (!asset.source_path) {
       await jobs.failJob({
@@ -58,7 +90,7 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
         message: '加工失败',
         progress: 0,
       })
-      return true
+      return
     }
 
     const durationS = asset.duration_s === null ? 0 : Number(asset.duration_s)
@@ -100,14 +132,14 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
     if (err instanceof ProcessingCancelledError) {
       await jobs.cancelJob(job.id)
       await procRepo.setAssetStatus({
-        assetId: job.asset_id,
+        assetId,
         status: 'uploaded',
         errorCode: 'canceled',
         errorMessage: '已取消',
         message: '已取消',
         progress: 0,
       })
-      return true
+      return
     }
     const retryable = err instanceof ProcessingError ? err.retryable : true
     const code = err instanceof ProcessingError ? err.code : 'processing_failed'
@@ -122,27 +154,24 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
       // 任务已回队列等自动重试——素材不算失败，否则页面上的「重试」按钮会撞上
       // 「加工任务正在进行中」（任务确实还在队列里）。
       await procRepo.setAssetStatus({
-        assetId: job.asset_id,
+        assetId,
         status: 'uploaded',
         errorCode: code,
         errorMessage: message,
         message: '失败，将自动重试',
         progress: 0,
       })
-      return true
+      return
     }
     await procRepo.setAssetStatus({
-      assetId: job.asset_id,
+      assetId,
       status: 'failed',
       errorCode: code,
       errorMessage: message,
       message: '加工失败',
       progress: 0,
     })
-  } finally {
-    clearInterval(timer)
   }
-  return true
 }
 
 /** worker 主循环：空转时按固定间隔轮询；每 30s 回收心跳丢失的任务。 */
@@ -166,10 +195,11 @@ export async function startWorker(): Promise<void> {
   }
 }
 
-/** 回收僵尸任务并同步素材状态：回收成 failed 的素材标失败，回队列的标待重试。 */
+/** 回收僵尸任务并同步素材状态：回收成 failed 的素材标失败，回队列的标待重试。课程级任务无素材状态可同步。 */
 async function reclaimAndSync(): Promise<void> {
   const reclaimed = await jobs.reclaimStaleJobs()
   for (const row of reclaimed) {
+    if (!row.asset_id) continue
     if (row.status === 'failed') {
       await procRepo.setAssetStatus({
         assetId: row.asset_id,
