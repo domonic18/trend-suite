@@ -4,7 +4,7 @@ import { query, queryOne } from '@/server/lib/db'
 export type ModelRow = {
   id: string
   name: string
-  purpose: string
+  purposes: string[]
   provider: string
   protocol: string
   model: string
@@ -12,7 +12,6 @@ export type ModelRow = {
   api_key_enc: string | null
   status: string
   is_default: boolean
-  capabilities: string[]
   meta: Record<string, unknown>
   cooldown_until: Date | null
   last_tested_at: Date | null
@@ -31,7 +30,7 @@ export type BindingRow = {
 const COLUMNS = [
   'id',
   'name',
-  'purpose',
+  'purposes',
   'provider',
   'protocol',
   'model',
@@ -39,7 +38,6 @@ const COLUMNS = [
   'api_key_enc',
   'status',
   'is_default',
-  'capabilities',
   'meta',
   'cooldown_until',
   'last_tested_at',
@@ -50,7 +48,7 @@ const COLUMNS = [
 
 export function listModels(): Promise<ModelRow[]> {
   return query<ModelRow>(
-    `SELECT ${COLUMNS} FROM ai_models ORDER BY purpose, is_default DESC, created_at`,
+    `SELECT ${COLUMNS} FROM ai_models ORDER BY is_default DESC, created_at`,
   )
 }
 
@@ -62,7 +60,7 @@ export function findModelById(id: string): Promise<ModelRow | null> {
 export function findDefaultModel(purpose: string): Promise<ModelRow | null> {
   return queryOne<ModelRow>(
     `SELECT ${COLUMNS} FROM ai_models
-     WHERE purpose = $1 AND status = 'active'
+     WHERE $1 = ANY(purposes) AND status = 'active'
      ORDER BY is_default DESC, created_at
      LIMIT 1`,
     [purpose],
@@ -76,7 +74,7 @@ export function findDefaultModel(purpose: string): Promise<ModelRow | null> {
 export function listUsableModels(purpose: string): Promise<ModelRow[]> {
   return query<ModelRow>(
     `SELECT ${COLUMNS} FROM ai_models
-     WHERE purpose = $1 AND status IN ('active', 'cooling')
+     WHERE $1 = ANY(purposes) AND status IN ('active', 'cooling')
      ORDER BY is_default DESC, created_at`,
     [purpose],
   )
@@ -85,32 +83,30 @@ export function listUsableModels(purpose: string): Promise<ModelRow[]> {
 export async function insertModel(input: {
   id: string
   name: string
-  purpose: string
+  purposes: string[]
   provider: string
   protocol: string
   model: string
   baseUrl: string | null
   apiKeyEnc: string | null
   isDefault: boolean
-  capabilities: string[]
   meta: Record<string, unknown>
 }): Promise<ModelRow> {
   const row = await queryOne<ModelRow>(
-    `INSERT INTO ai_models (id, name, purpose, provider, protocol, model, base_url, api_key_enc,
-                            is_default, capabilities, meta)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO ai_models (id, name, purposes, provider, protocol, model, base_url, api_key_enc,
+                            is_default, meta)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING ${COLUMNS}`,
     [
       input.id,
       input.name,
-      input.purpose,
+      input.purposes,
       input.provider,
       input.protocol,
       input.model,
       input.baseUrl,
       input.apiKeyEnc,
       input.isDefault,
-      input.capabilities,
       JSON.stringify(input.meta),
     ],
   )
@@ -122,6 +118,7 @@ export async function updateModel(
   id: string,
   input: {
     name?: string
+    purposes?: string[]
     provider?: string
     protocol?: string
     model?: string
@@ -129,7 +126,6 @@ export async function updateModel(
     apiKeyEnc?: string | null
     isDefault?: boolean
     status?: string
-    capabilities?: string[]
     meta?: Record<string, unknown>
     cooldownUntil?: Date | null
     lastTestedAt?: Date | null
@@ -145,6 +141,7 @@ export async function updateModel(
   }
 
   if (input.name !== undefined) put('name', input.name)
+  if (input.purposes !== undefined) put('purposes', input.purposes)
   if (input.provider !== undefined) put('provider', input.provider)
   if (input.protocol !== undefined) put('protocol', input.protocol)
   if (input.model !== undefined) put('model', input.model)
@@ -152,7 +149,6 @@ export async function updateModel(
   if (input.apiKeyEnc !== undefined) put('api_key_enc', input.apiKeyEnc)
   if (input.isDefault !== undefined) put('is_default', input.isDefault)
   if (input.status !== undefined) put('status', input.status)
-  if (input.capabilities !== undefined) put('capabilities', input.capabilities)
   if (input.meta !== undefined) put('meta', JSON.stringify(input.meta))
   if (input.cooldownUntil !== undefined) put('cooldown_until', input.cooldownUntil)
   if (input.lastTestedAt !== undefined) put('last_tested_at', input.lastTestedAt)
@@ -178,12 +174,13 @@ export function deleteModel(id: string): Promise<void> {
   return query('DELETE FROM ai_models WHERE id = $1', [id]).then(() => undefined)
 }
 
-/** 设默认：同一用途只允许一个默认条目（部分唯一索引兜底）。 */
-export async function clearDefault(purpose: string, exceptId?: string): Promise<void> {
+/** 设默认：用途相交的其他默认条目清除（数组列无法做部分唯一索引，应用层保证）。 */
+export async function clearDefaults(purposes: string[], exceptId?: string): Promise<void> {
   await query(
     `UPDATE ai_models SET is_default = false, updated_at = now()
-     WHERE purpose = $1 AND is_default AND ($2::text IS NULL OR id <> $2)`,
-    [purpose, exceptId ?? null],
+     WHERE purposes && $1 AND is_default AND status = 'active'
+       AND ($2::text IS NULL OR id <> $2)`,
+    [purposes, exceptId ?? null],
   )
 }
 

@@ -6,7 +6,7 @@ import { idShape } from './ids.js'
  * 明文不进浏览器、不进日志、不进响应。
  */
 
-/** 用途：决定槽位可选范围与「每个用途最多一个默认条目」。 */
+/** 用途：一条条目可同时服务多个用途（如 llm+vlm 同一模型）；决定槽位可选范围与默认条目相交清除。 */
 export const modelPurposes = ['llm', 'vlm', 'asr', 'embedding', 'image'] as const
 export const modelPurpose = z.enum(modelPurposes)
 
@@ -23,7 +23,7 @@ export const modelProtocol = z.enum(modelProtocols)
 export const modelEntryView = z.object({
   id: z.string().regex(idShape.model),
   name: z.string(),
-  purpose: modelPurpose,
+  purposes: z.array(modelPurpose).min(1),
   provider: z.string(),
   protocol: modelProtocol,
   model: z.string(),
@@ -32,7 +32,6 @@ export const modelEntryView = z.object({
   apiKeyMasked: z.string().nullable(),
   status: modelStatus,
   isDefault: z.boolean(),
-  capabilities: z.array(z.string()),
   cooldownUntil: z.string().nullable(),
   lastTestedAt: z.string().nullable(),
   lastTestResult: z.string().nullable(),
@@ -42,18 +41,18 @@ export const modelEntryView = z.object({
 
 export const createModelEntryRequest = z.object({
   name: z.string().min(1, '名称必填').max(64, '名称最长 64 个字符'),
-  purpose: modelPurpose,
+  purposes: z.array(modelPurpose).min(1, '至少选择一个用途'),
   provider: z.string().min(1, '供应商必填').max(64, '供应商最长 64 个字符'),
   protocol: modelProtocol,
   model: z.string().min(1, '模型名必填').max(128, '模型名最长 128 个字符'),
   baseUrl: z.string().url('Base URL 不合法').max(255, 'Base URL 最长 255 个字符').optional(),
   apiKey: z.string().min(1, '密钥必填').max(512, '密钥最长 512 个字符').optional(),
   isDefault: z.boolean().optional(),
-  capabilities: z.array(z.string().max(32)).max(16, '能力标签最多 16 个').optional(),
 })
 
 export const updateModelEntryRequest = z.object({
   name: z.string().min(1, '名称必填').max(64, '名称最长 64 个字符').optional(),
+  purposes: z.array(modelPurpose).min(1, '至少选择一个用途').optional(),
   provider: z.string().min(1, '供应商必填').max(64, '供应商最长 64 个字符').optional(),
   protocol: modelProtocol.optional(),
   model: z.string().min(1, '模型名必填').max(128, '模型名最长 128 个字符').optional(),
@@ -62,7 +61,6 @@ export const updateModelEntryRequest = z.object({
   apiKey: z.string().max(512, '密钥最长 512 个字符').optional(),
   isDefault: z.boolean().optional(),
   status: modelStatus.optional(),
-  capabilities: z.array(z.string().max(32)).max(16, '能力标签最多 16 个').optional(),
 })
 
 export const modelEntryListResponse = z.object({ items: z.array(modelEntryView) })

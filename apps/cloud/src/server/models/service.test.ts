@@ -40,7 +40,7 @@ test('normalizeBaseUrl：剥离端点后缀与结尾斜杠', () => {
 test('createModelEntry：明文不落库，视图只回掩码', { skip }, async () => {
   const entry = await createModelEntry({
     name: '生产主力',
-    purpose: 'llm',
+    purposes: ['llm'],
     provider: 'MiniMax',
     protocol: 'openai',
     model: 'MiniMax-M3.1-Flash',
@@ -62,10 +62,10 @@ test('createModelEntry：明文不落库，视图只回掩码', { skip }, async 
   assert.equal(row.api_key_enc.startsWith('v1:'), true)
 })
 
-test('updateModelEntry：空串密钥保留原密钥', { skip }, async () => {
+test('updateModelEntry：空串密钥保留原密钥；用途可更新', { skip }, async () => {
   const entry = await createModelEntry({
     name: '视觉理解',
-    purpose: 'vlm',
+    purposes: ['vlm'],
     provider: 'MiniMax',
     protocol: 'anthropic',
     model: 'MiniMax-VLM-1',
@@ -79,26 +79,42 @@ test('updateModelEntry：空串密钥保留原密钥', { skip }, async () => {
 
   assert.equal(updated.name, '视觉理解 v2')
   assert.equal(updated.apiKeyMasked, 'vlm-*-key')
+
+  // 同一模型补选内容生成用途：一条条目多用途
+  const widened = await updateModelEntry(entry.id, { purposes: ['llm', 'vlm'] })
+  assert.deepEqual(widened.purposes, ['llm', 'vlm'])
 })
 
-test('用途与协议不匹配被 400 拒绝', { skip }, async () => {
+test('用途与协议不匹配被 400 拒绝（单用途与多用途交集）', { skip }, async () => {
   await assert.rejects(
     () =>
       createModelEntry({
         name: '错误组合',
-        purpose: 'embedding',
+        purposes: ['embedding'],
         provider: 'X',
         protocol: 'anthropic',
         model: 'e3',
       }),
     (err: { status?: number }) => err.status === 400,
   )
+  // llm+asr 组合只接受交集 openai：anthropic 与 minimax 都不在 llm∩asr 内
+  await assert.rejects(
+    () =>
+      createModelEntry({
+        name: '交集外协议',
+        purposes: ['llm', 'asr'],
+        provider: 'X',
+        protocol: 'anthropic',
+        model: 'm1',
+      }),
+    (err: { status?: number }) => err.status === 400,
+  )
 })
 
-test('同用途默认条目只留一个：新默认顶掉旧的', { skip }, async () => {
+test('同用途默认条目只留一个：新默认顶掉旧的（含多用途相交清除）', { skip }, async () => {
   const first = await createModelEntry({
     name: 'ASR 一号',
-    purpose: 'asr',
+    purposes: ['asr'],
     provider: 'MiniMax',
     protocol: 'minimax',
     model: 'asr-1.0',
@@ -107,7 +123,7 @@ test('同用途默认条目只留一个：新默认顶掉旧的', { skip }, asyn
   })
   const second = await createModelEntry({
     name: 'ASR 二号',
-    purpose: 'asr',
+    purposes: ['asr'],
     provider: 'MiniMax',
     protocol: 'minimax',
     model: 'asr-1.0',
@@ -116,16 +132,38 @@ test('同用途默认条目只留一个：新默认顶掉旧的', { skip }, asyn
   })
 
   const entries = await listModelEntries()
-  const asr = entries.filter((e) => e.purpose === 'asr')
+  const asr = entries.filter((e) => e.purposes.includes('asr'))
   assert.equal(asr.length, 2)
   assert.equal(asr.find((e) => e.id === first.id)?.isDefault, false)
   assert.equal(asr.find((e) => e.id === second.id)?.isDefault, true)
+
+  // 多用途默认：llm+vlm 默认条目在新建 llm 默认条目时被相交清除
+  const multi = await createModelEntry({
+    name: '多面手',
+    purposes: ['llm', 'vlm'],
+    provider: 'MiniMax',
+    protocol: 'openai',
+    model: 'glm-4v',
+    apiKey: 'multi-key',
+    isDefault: true,
+  })
+  await createModelEntry({
+    name: '纯文本',
+    purposes: ['llm'],
+    provider: 'MiniMax',
+    protocol: 'openai',
+    model: 'glm-4',
+    apiKey: 'llm-key',
+    isDefault: true,
+  })
+  const after = await listModelEntries()
+  assert.equal(after.find((e) => e.id === multi.id)?.isDefault, false)
 })
 
 test('ASR 渠道：未配置时禁用占位；配置默认条目后即刻生效', { skip }, async () => {
   // 清掉本文件其他用例留下的 asr 条目，占位判定只与本用例有关
   const { query } = await import('@/server/lib/db')
-  await query(`DELETE FROM ai_models WHERE purpose = 'asr'`)
+  await query(`DELETE FROM ai_models WHERE 'asr' = ANY(purposes)`)
 
   const before = await getAsrChannel()
   assert.equal(before.modelId, null)
@@ -134,7 +172,7 @@ test('ASR 渠道：未配置时禁用占位；配置默认条目后即刻生效'
 
   await createModelEntry({
     name: '转写渠道',
-    purpose: 'asr',
+    purposes: ['asr'],
     provider: 'MiniMax',
     protocol: 'minimax',
     model: 'asr-1.0',
@@ -152,18 +190,19 @@ test('ASR 渠道：未配置时禁用占位；配置默认条目后即刻生效'
   assert.equal(channel.apiKeyMasked, 'asr-*-key')
 })
 
-test('任务绑定：主备必须同用途，备用不能与主相同，未知槽位被拒', { skip }, async () => {
+test('任务绑定：主备须含槽位用途（多用途条目可入选），备用不能与主相同', { skip }, async () => {
   const llmA = await createModelEntry({
     name: 'LLM A',
-    purpose: 'llm',
+    purposes: ['llm'],
     provider: 'P',
     protocol: 'openai',
     model: 'm1',
     apiKey: 'llm-key-a',
   })
+  // 多用途条目：llm+vlm 可同时服务两个槽位
   const llmB = await createModelEntry({
     name: 'LLM B',
-    purpose: 'llm',
+    purposes: ['llm', 'vlm'],
     provider: 'P',
     protocol: 'openai',
     model: 'm2',
@@ -171,7 +210,7 @@ test('任务绑定：主备必须同用途，备用不能与主相同，未知�
   })
   const vlm = await createModelEntry({
     name: 'VLM',
-    purpose: 'vlm',
+    purposes: ['vlm'],
     provider: 'P',
     protocol: 'openai',
     model: 'v1',

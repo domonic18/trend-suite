@@ -9,6 +9,7 @@ import type {
   TaskBindingView,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { MODEL_PROVIDERS, OTHER_PROVIDER, findProviderPreset } from '../providers'
 import {
   createModel,
   deleteModel,
@@ -51,10 +52,18 @@ const PROTOCOLS_BY_PURPOSE: Record<ModelPurpose, ModelProtocol[]> = {
   image: ['openai'],
 }
 
+/** 多用途条目的协议交集：用途全允许才可选。 */
+function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
+  const sets = purposes.map((p) => PROTOCOLS_BY_PURPOSE[p])
+  return (Object.keys(PROTOCOL_LABELS) as ModelProtocol[]).filter((protocol) =>
+    sets.every((list) => list.includes(protocol)),
+  )
+}
+
 type EntryForm = {
   id: string | null
   name: string
-  purpose: ModelPurpose
+  purposes: ModelPurpose[]
   provider: string
   protocol: ModelProtocol
   model: string
@@ -66,7 +75,7 @@ type EntryForm = {
 const EMPTY_FORM: EntryForm = {
   id: null,
   name: '',
-  purpose: 'llm',
+  purposes: ['llm'],
   provider: '',
   protocol: 'openai',
   model: '',
@@ -110,13 +119,52 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
     setForm({
       id: entry.id,
       name: entry.name,
-      purpose: entry.purpose,
+      purposes: entry.purposes,
       provider: entry.provider,
       protocol: entry.protocol,
       model: entry.model,
       baseUrl: entry.baseUrl ?? '',
       apiKey: '',
       isDefault: entry.isDefault,
+    })
+  }
+
+  /** 用途 toggle：至少一项；协议随所选用途交集收缩（当前协议不在交集内则重置为交集第一个）。 */
+  function togglePurpose(purpose: ModelPurpose) {
+    if (!form) return
+    const next = form.purposes.includes(purpose)
+      ? form.purposes.filter((p) => p !== purpose)
+      : [...form.purposes, purpose]
+    if (next.length === 0) return
+    const allowed = allowedProtocols(next)
+    setForm({
+      ...form,
+      purposes: next,
+      protocol: allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai'),
+    })
+  }
+
+  /** 选厂商：预置项自动填协议（在当前用途交集内才覆盖）与 Base URL（空或另一预置值才覆盖）。 */
+  function pickProvider(provider: string) {
+    if (!form) return
+    if (provider === OTHER_PROVIDER || provider === '') {
+      setForm({ ...form, provider: '' })
+      return
+    }
+    const preset = findProviderPreset(provider)
+    if (!preset) {
+      setForm({ ...form, provider })
+      return
+    }
+    const allowed = allowedProtocols(form.purposes)
+    const baseUrlUsable =
+      form.baseUrl === '' ||
+      MODEL_PROVIDERS.some((p) => p.baseUrl === form.baseUrl)
+    setForm({
+      ...form,
+      provider: preset.label,
+      protocol: allowed.includes(preset.protocol) ? preset.protocol : form.protocol,
+      baseUrl: baseUrlUsable ? preset.baseUrl : form.baseUrl,
     })
   }
 
@@ -130,6 +178,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
       if (form.id) {
         await updateModel(form.id, {
           name: form.name,
+          purposes: form.purposes,
           provider: form.provider,
           protocol: form.protocol,
           model: form.model,
@@ -141,7 +190,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
       } else {
         await createModel({
           name: form.name,
-          purpose: form.purpose,
+          purposes: form.purposes,
           provider: form.provider,
           protocol: form.protocol,
           model: form.model,
@@ -239,37 +288,49 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                     required
                   />
                 </label>
+                <div className="field">
+                  <span>用途（可多选）</span>
+                  <div className="purpose-toggles">
+                    {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
+                      <button
+                        key={purpose}
+                        type="button"
+                        className={form.purposes.includes(purpose) ? 'ptg on' : 'ptg'}
+                        aria-pressed={form.purposes.includes(purpose)}
+                        onClick={() => togglePurpose(purpose)}
+                      >
+                        {PURPOSE_LABELS[purpose]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label className="field">
-                  <span>用途</span>
+                  <span>供应商（选预置自动填端点）</span>
                   <select
                     className="input"
-                    value={form.purpose}
-                    disabled={form.id !== null}
-                    onChange={(e) => {
-                      const purpose = e.target.value as ModelPurpose
-                      setForm({
-                        ...form,
-                        purpose,
-                        protocol: PROTOCOLS_BY_PURPOSE[purpose][0]!,
-                      })
-                    }}
+                    value={findProviderPreset(form.provider) ? form.provider : form.provider === '' ? '' : OTHER_PROVIDER}
+                    onChange={(e) => pickProvider(e.target.value)}
                   >
-                    {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
-                      <option key={purpose} value={purpose}>
-                        {PURPOSE_LABELS[purpose]}
+                    <option value="">请选择</option>
+                    {MODEL_PROVIDERS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
                       </option>
                     ))}
+                    <option value={OTHER_PROVIDER}>其他（手动填写）</option>
                   </select>
                 </label>
-                <label className="field">
-                  <span>供应商</span>
-                  <input
-                    className="input"
-                    value={form.provider}
-                    onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                    required
-                  />
-                </label>
+                {form.provider === '' || findProviderPreset(form.provider) ? null : (
+                  <label className="field">
+                    <span>供应商名称</span>
+                    <input
+                      className="input"
+                      value={form.provider}
+                      onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                      required
+                    />
+                  </label>
+                )}
                 <label className="field">
                   <span>调用协议</span>
                   <select
@@ -279,7 +340,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                       setForm({ ...form, protocol: e.target.value as ModelProtocol })
                     }
                   >
-                    {PROTOCOLS_BY_PURPOSE[form.purpose].map((protocol) => (
+                    {allowedProtocols(form.purposes).map((protocol) => (
                       <option key={protocol} value={protocol}>
                         {PROTOCOL_LABELS[protocol]}
                       </option>
@@ -291,12 +352,18 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                   <input
                     className="input"
                     value={form.model}
+                    list="provider-model-examples"
                     onChange={(e) => setForm({ ...form, model: e.target.value })}
                     required
                   />
+                  <datalist id="provider-model-examples">
+                    {(findProviderPreset(form.provider)?.modelExamples ?? []).map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
                 </label>
                 <label className="field">
-                  <span>Base URL</span>
+                  <span>Base URL（可修改）</span>
                   <input
                     className="input"
                     value={form.baseUrl}
@@ -310,6 +377,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                     className="input"
                     type="password"
                     value={form.apiKey}
+                    placeholder={form.id ? '留空即保留原密钥' : ''}
                     onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
                   />
                 </label>
@@ -353,7 +421,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                     <b>{entry.name}</b>
                     {entry.isDefault ? <span className="tag">默认</span> : null}
                   </td>
-                  <td>{PURPOSE_LABELS[entry.purpose]}</td>
+                  <td>{entry.purposes.map((p) => PURPOSE_LABELS[p]).join(' + ')}</td>
                   <td>{PROTOCOL_LABELS[entry.protocol]}</td>
                   <td>{entry.model}</td>
                   <td>{entry.apiKeyMasked ?? '未配置'}</td>
@@ -459,9 +527,9 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                 type="button"
                 className="btn primary"
                 onClick={() => {
-                  const asr = models.find((m) => m.purpose === 'asr' && m.isDefault)
+                  const asr = models.find((m) => m.purposes.includes('asr') && m.isDefault)
                   if (asr) edit(asr)
-                  else setForm({ ...EMPTY_FORM, purpose: 'asr', protocol: 'minimax' })
+                  else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
                 }}
               >
                 编辑配置
@@ -485,7 +553,7 @@ function BindingRow(props: {
   ) => Promise<void>
 }) {
   const usable = props.models.filter(
-    (m) => m.purpose === props.binding.purpose && m.status === 'active',
+    (m) => m.purposes.includes(props.binding.purpose) && m.status === 'active',
   )
   const [primary, setPrimary] = useState(props.binding.primaryModelId ?? '')
   const [backup, setBackup] = useState(props.binding.backupModelId ?? '')
