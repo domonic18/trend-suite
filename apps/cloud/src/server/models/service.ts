@@ -13,7 +13,7 @@ import { newId } from '@/server/lib/ids'
 import { badRequest, forbidden, HttpError, notFound } from '@/server/lib/http'
 import { KeySealUnavailableError, maskSecret, openSecret, sealSecret } from '@/server/lib/crypto'
 import * as repo from './repo'
-import { testAsrChannel, testChatModel, testEmbeddingModel } from './test'
+import { testAsrChannel, testChatModel, testEmbeddingModel, testImageModel } from './test'
 
 /**
  * 模型配置（arch/07 §9）：运营侧维护，密钥 AES-GCM 加密存储。
@@ -288,12 +288,15 @@ export async function testModelEntry(id: string): Promise<ModelTestResultView> {
 
   const started = Date.now()
   let outcome: { ok: boolean; message: string }
-  // 多用途条目按代表用途测试（专有协议优先）；其余用途共用同一 key/baseUrl。
+  // 多用途条目按代表用途测试（专有端点优先）；其余用途共用同一 key/baseUrl。
+  // image 排在 llm/vlm 前面：图像模型在聊天端点不认（unknown model）。
   const purposes = row.purposes as ModelPurpose[]
   if (purposes.includes('asr')) {
     outcome = await testAsrChannel({ baseUrl: row.base_url, apiKey, model: row.model })
   } else if (purposes.includes('embedding')) {
     outcome = await testEmbeddingModel({ baseUrl: row.base_url, apiKey, model: row.model })
+  } else if (purposes.includes('image')) {
+    outcome = await testImageModel({ baseUrl: row.base_url, apiKey, model: row.model })
   } else if (purposes.includes('llm') || purposes.includes('vlm')) {
     outcome = await testChatModel({
       protocol: row.protocol,
