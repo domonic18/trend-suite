@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { ApiError } from '@/features/lib/http'
+import { isOpsRole } from '@/features/shell/ops-role'
 import { login } from '../api'
 
 export function LoginForm() {
@@ -17,8 +18,8 @@ export function LoginForm() {
     setBusy(true)
     setError(null)
     try {
-      await login(username.trim(), password)
-      router.replace('/workbench')
+      const user = await login(username.trim(), password)
+      router.replace(isOpsRole(user) ? '/ops/models' : '/workbench')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '登录失败，请稍后重试')
     } finally {

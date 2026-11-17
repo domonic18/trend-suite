@@ -39,6 +39,9 @@ export function OpsShell(props: {
             <br />
             <span className="ur">{props.user.role}</span>
           </span>
+          <a className="bk" href="/workbench">
+            返回工作台
+          </a>
           <button type="button" className="out" onClick={props.onLogout}>
             退出
           </button>
