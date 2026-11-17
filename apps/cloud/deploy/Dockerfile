@@ -26,6 +26,16 @@ COPY packages packages
 # 根 tsconfig 是 apps/cloud/tsconfig.json 的 extends 目标——
 # 少拷这一份，tsc 会报 TS5083（找不到基配置），类型检查直接失败
 COPY tsconfig.base.json ./tsconfig.base.json
+# 构建信息注入（家族同款 aitech-hub）：NEXT_PUBLIC_ 前缀 = Next.js 构建期内联
+# 客户端 bundle，工作台/运营台页脚展示版本追踪行。CI 经 build-args 传显式值
+# （.dockerignore 排除 .git，容器内拿不到 git describe）；缺省页脚显示 dev。
+ARG GIT_SHA=dev
+ARG BUILD_REF=dev
+ARG BUILD_TIME=unknown
+ARG APP_VERSION=0.0.0-dev
+ENV NEXT_PUBLIC_BUILD_REF=${BUILD_REF} \
+    NEXT_PUBLIC_BUILD_TIME=${BUILD_TIME} \
+    NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
 RUN pnpm --filter @trend-suite/cloud build
 
 # 运行期依赖单独一版：只装生产依赖，镜像里不留 tsc。
