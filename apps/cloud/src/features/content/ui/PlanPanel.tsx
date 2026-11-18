@@ -5,16 +5,30 @@ import { useRouter } from 'next/navigation'
 import type { PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { approvePlan, getPlan, rejectPlan, tweakPlan } from '../api'
+import { NextActionBanner } from './NextActionBanner'
 import { OutlineCard } from './OutlineCard'
 import { PlanDraftForm } from './PlanDraftForm'
 import { InterruptCard } from './InterruptCard'
 import { ToolCards } from './ToolCards'
 
+export type MaterialsReady = { ready: number; total: number }
+
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 /**
  * 方案面板（迭代 3）：提交目标与目录 → 队列起草 → 批准/微调/打回。
  * 起草中每 3 秒轮询（复用素材面板节奏），未决项由服务端兜底（409）。
+ * 顶部常驻下一步引导横幅（原型 nextaction）：每个状态都回答「现在该干什么」。
  */
-export function PlanPanel({ courseId }: { courseId: string }) {
+export function PlanPanel({
+  courseId,
+  materials = null,
+}: {
+  courseId: string
+  materials?: MaterialsReady | null
+}) {
   const router = useRouter()
   const [data, setData] = useState<PlanResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -64,6 +78,10 @@ export function PlanPanel({ courseId }: { courseId: string }) {
   const plan = data?.plan ?? null
   const lowMatchCount = plan ? plan.skeleton.nodes.filter((n) => n.matchStatus === 'low_match').length : 0
   const violationCount = plan ? plan.violations.length : 0
+  const approved = plan?.status === 'approved'
+  const blocked = lowMatchCount > 0 || violationCount > 0
+  const jobFailed = !plan && job?.status === 'failed'
+  const matText = materials ? `基于 ${materials.ready}/${materials.total} 份就绪素材` : ''
 
   function tweak(op: TweakPlanRequest) {
     void act(() => tweakPlan(courseId, op))
@@ -75,29 +93,61 @@ export function PlanPanel({ courseId }: { courseId: string }) {
 
   return (
     <section>
-      {error ? <div className="notice err">{error}</div> : null}
       {running ? (
-        <div className="notice">
-          正在起草方案（{job?.status === 'queued' ? '排队中' : '进行中'}）…第 {job?.attempts ?? 1} 次尝试
-        </div>
+        <NextActionBanner tone="info">
+          Agent 正在起草方案{matText ? `（${matText}）` : ''}…第 {job?.attempts ?? 1} 次尝试；草案四件套产出后自动呈现，等待期间可去
+          「上传与转写」核对逐字稿与关键帧。
+        </NextActionBanner>
       ) : null}
-      {job?.status === 'failed' ? (
-        <div className="notice err">
-          起草失败：{job.errorMessage ?? job.errorCode ?? '未知原因'}
-        </div>
+      {jobFailed ? (
+        <NextActionBanner tone="warn" action={{ label: '去修改重提', onClick: () => scrollToId('plan-form') }}>
+          起草失败：{job?.errorMessage ?? job?.errorCode ?? '未知原因'}。调整课程目标或人工目录后可重新提交。
+        </NextActionBanner>
+      ) : null}
+      {plan && approved ? (
+        <NextActionBanner
+          tone="ok"
+          action={{ label: '打开九步生产', href: `/workbench/courses/${courseId}/production` }}
+        >
+          方案 v{plan.version} 已锁定为基准版，逐节生产已解锁。
+        </NextActionBanner>
+      ) : null}
+      {plan && !approved && blocked ? (
+        <NextActionBanner tone="warn" action={{ label: '去裁决', onClick: () => scrollToId('plan-outline') }}>
+          {lowMatchCount} 章证据不足、{violationCount} 条拒绝记录——在大纲中改名 / 删除 / 合并裁决后才能批准。
+        </NextActionBanner>
+      ) : null}
+      {plan && !approved && !blocked ? (
+        <NextActionBanner tone="ok" action={{ label: '去批准', onClick: () => scrollToId('plan-interrupt') }}>
+          方案四件套齐全（v{plan.version}），可批准锁定为基准版。
+        </NextActionBanner>
+      ) : null}
+      {!plan && !running && !jobFailed ? (
+        <NextActionBanner tone="info">
+          第 1 步：提交课程目标与人工目录——Agent 依据两者起草方案，目录外的内容不会创建章节。
+        </NextActionBanner>
       ) : null}
 
+      {error ? <div className="notice err">{error}</div> : null}
+
       {!plan && !running ? (
-        <PlanDraftForm courseId={courseId} initial={data?.input ?? null} onSubmitted={refresh} />
+        <div id="plan-form">
+          <PlanDraftForm
+            courseId={courseId}
+            initial={data?.input ?? null}
+            materials={materials}
+            onSubmitted={refresh}
+          />
+        </div>
       ) : null}
 
       {plan ? (
         <>
           <div className="page-head" style={{ marginTop: 8 }}>
             <div>
-              <h2>课程大纲</h2>
+              <h2>方案概览</h2>
               <p className="sub">
-                v{plan.version} · {plan.status === 'approved' ? '已批准（基准版）' : '草案'} ·{' '}
+                v{plan.version} · {approved ? '已批准（基准版）' : '草案'} ·{' '}
                 {plan.origin === 'revision'
                   ? '打回重起草'
                   : plan.origin === 'tweak'
@@ -118,7 +168,12 @@ export function PlanPanel({ courseId }: { courseId: string }) {
           </div>
 
           {editingInput ? (
-            <PlanDraftForm courseId={courseId} initial={data?.input ?? null} onSubmitted={refresh} />
+            <PlanDraftForm
+              courseId={courseId}
+              initial={data?.input ?? null}
+              materials={materials}
+              onSubmitted={refresh}
+            />
           ) : null}
 
           <OutlineCard
@@ -163,6 +218,7 @@ export function PlanPanel({ courseId }: { courseId: string }) {
             violationCount={violationCount}
             canApprove={lowMatchCount === 0 && violationCount === 0}
             busy={busy}
+            onGoOutline={() => scrollToId('plan-outline')}
             onApprove={() =>
               void act(async () => {
                 await approvePlan(courseId)

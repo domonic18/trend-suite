@@ -33,7 +33,7 @@ export function OutlineCard({
   }
 
   return (
-    <div className="card">
+    <div className="card" id="plan-outline">
       <div className="card-top">
         <b>课程大纲</b>
         <span className="meta">{nodes.length} 章</span>
@@ -52,6 +52,7 @@ export function OutlineCard({
                   {node.matchScore === null
                     ? ' · 无证据支撑'
                     : ` · 匹配度 ${Math.round(node.matchScore * 100)}%`}
+                  {low ? ' · 待裁决：改名 / 删除 / 与相近章合并' : ''}
                 </span>
               </div>
               <span className={`st ${low ? 'st-err' : 'st-ok'}`}>

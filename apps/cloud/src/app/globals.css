@@ -436,6 +436,39 @@ a.btn.link {
   color: var(--p-acc);
 }
 
+/* 下一步引导横幅（原型 nextaction）：任何状态回答「现在该干什么」 */
+.nextact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--r-ctrl);
+  border: 1px solid var(--p-line);
+  border-left: 3px solid var(--p-pri);
+  background: var(--p-pri-soft);
+  padding: 10px 12px;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+
+.nextact.warn {
+  border-left-color: var(--p-warn);
+  background: var(--p-warn-soft);
+}
+
+.nextact.ok {
+  border-left-color: var(--p-acc);
+  background: var(--p-acc-soft);
+}
+
+.nextact .na-t {
+  flex: 1;
+  line-height: 1.55;
+}
+
+.nextact .na-a {
+  white-space: nowrap;
+}
+
 .empty {
   background: var(--p-bg);
   border: 1px dashed var(--p-line);
@@ -1236,7 +1269,7 @@ dialog::backdrop {
    —— 沿用原型 tokens，简化版（原型为 ops-* 家族）。
    ============================================================ */
 
-/* 阶段子页签（上传与转写 / 课程大纲） */
+/* 阶段子页签（上传与转写 / 制作方案 / 九步生产） */
 .stage-tabs {
   display: flex;
   gap: 4px;
@@ -1468,6 +1501,16 @@ dialog::backdrop {
   font-size: 13.5px;
 }
 
+.interrupt .iblk {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--p-mut);
+}
+
 .interrupt .ia {
   display: flex;
   align-items: center;
@@ -1507,6 +1550,13 @@ dialog::backdrop {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.plan-form .form-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--p-mut);
+  line-height: 1.65;
 }
 
 .plan-form .field {

@@ -97,7 +97,7 @@ export default function CourseProductionPage() {
       </div>
       <div className="stage-tabs">
         <Link href={`/workbench/courses/${courseId}`}>上传与转写</Link>
-        <Link href={`/workbench/courses/${courseId}/plan`}>课程大纲</Link>
+        <Link href={`/workbench/courses/${courseId}/plan`}>制作方案</Link>
         <Link href={`/workbench/courses/${courseId}/production`} className="on">
           九步生产
         </Link>
