@@ -1,5 +1,5 @@
 import 'server-only'
-import { mkdir, readFile, readdir, rename, rm } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, readdir, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { getEnv } from '@/env'
 import { runFfmpeg } from './ffmpeg'
@@ -127,8 +127,7 @@ export async function extractFrames(input: {
   const frames: ExtractedFrame[] = []
   for (const candidate of kept) {
     const target = join(input.framesDir, `${candidate.stat.atMs}.jpg`)
-    await rm(target, { force: true })
-    await rename(candidate.file, target)
+    await moveFile(candidate.file, target)
     frames.push({ atMs: candidate.stat.atMs, path: target, width: null, height: null })
   }
 
@@ -140,6 +139,21 @@ export async function extractFrames(input: {
     width: size?.width ?? null,
     height: size?.height ?? null,
   }))
+}
+
+/**
+ * 工作区 → 持久帧目录的移动：生产容器里两者分属不同挂载卷
+ * （/data/pipeline 与 /media/sources），rename 跨卷抛 EXDEV，回退复制+删源。
+ */
+export async function moveFile(from: string, to: string): Promise<void> {
+  await rm(to, { force: true })
+  try {
+    await rename(from, to)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'EXDEV') throw err
+    await copyFile(from, to)
+    await rm(from, { force: true })
+  }
 }
 
 export function passesQualityGate(stat: { luma: number; contrast: number }): boolean {
