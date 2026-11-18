@@ -325,6 +325,8 @@ export async function runLlmJson<T>(input: {
   maxTokens: number
   schema: z.ZodType<T, z.ZodTypeDef, unknown>
   summarize?: (data: T) => string
+  /** 阶段标记（outline / draft…）：写进 ai_runs.summary 前缀，供工作台按阶段归类调用。 */
+  phase?: string
   fetchImpl?: FetchLike
 }): Promise<{ data: T; runId: string }> {
   const channel = await resolveTaskChannel(input.task, input.purpose)
@@ -332,6 +334,7 @@ export async function runLlmJson<T>(input: {
   await startRun({ task: input.task, refType: input.refType, refId: input.refId, channel, runId })
 
   const started = Date.now()
+  const prefix = input.phase ? `${input.phase}: ` : ''
   try {
     const fetchImpl = input.fetchImpl ?? ((url: string, init: RequestInit) => fetch(url, init))
     const raw =
@@ -359,14 +362,14 @@ export async function runLlmJson<T>(input: {
       tokensIn: raw.tokensIn,
       tokensOut: raw.tokensOut,
       latencyMs,
-      summary: input.summarize ? input.summarize(result.data) : 'ok',
+      summary: prefix + (input.summarize ? input.summarize(result.data) : 'ok'),
     })
     return { data: result.data, runId }
   } catch (err) {
     const isLlm = err instanceof LlmError
     await failRun({
       runId,
-      code: isLlm ? err.code : 'llm_internal',
+      code: prefix + (isLlm ? err.code : 'llm_internal'),
       message: (err as Error).message,
       tokensIn: isLlm ? err.tokensIn : null,
       tokensOut: isLlm ? err.tokensOut : null,

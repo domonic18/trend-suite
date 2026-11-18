@@ -1,5 +1,6 @@
 import 'server-only'
 import {
+  type AgentTraceView,
   type CourseOutlineView,
   type PlanJobView,
   type PlanView,
@@ -23,6 +24,7 @@ import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
 import { seedProduction } from '@/server/production/repo'
 import { parseOutline, parseStoredOutline } from './outline'
+import { buildAgentTrace } from './trace'
 import { applyTweak, type TweakedContent } from './tweak'
 import * as repo from './repo'
 
@@ -151,7 +153,12 @@ export async function savePlanInput(
 export async function getPlanFor(
   actor: PlanActor,
   courseId: string,
-): Promise<{ plan: PlanView | null; job: PlanJobView | null; input: { goal: string; outlineText: string } | null }> {
+): Promise<{
+  plan: PlanView | null
+  job: PlanJobView | null
+  input: { goal: string; outlineText: string } | null
+  trace: AgentTraceView | null
+}> {
   await getCourseForUser(actor, courseId)
   const [draft, approved, job, input] = await Promise.all([
     repo.findDraftPlan(courseId),
@@ -162,10 +169,28 @@ export async function getPlanFor(
   const active = draft ?? approved
   // 目标必回填（教师可能只交了目标）；目录可能是空的（待 Agent 代拟）。
   const inputMeta = input?.goal ? { goal: input.goal, outlineText: input.outline_text ?? '' } : null
+  const trace = await buildAgentTrace({
+    courseId,
+    plan: active,
+    job: job
+      ? {
+          status: job.status,
+          attempts: job.attempts,
+          step: job.step,
+          errorMessage: job.error_message,
+        }
+      : null,
+    input: {
+      goal: input?.goal ?? null,
+      outlineText: input?.outline_text ?? null,
+      submittedAt: input?.updated_at ?? null,
+    },
+  })
   return {
     plan: active ? toPlanView(active) : null,
     job: job ? toPlanJobView(job) : null,
     input: inputMeta,
+    trace,
   }
 }
 
