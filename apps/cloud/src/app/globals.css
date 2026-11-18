@@ -1301,7 +1301,7 @@ dialog::backdrop {
 
 .oe-row {
   display: grid;
-  grid-template-columns: 28px 1fr auto auto;
+  grid-template-columns: 18px 28px 1fr auto auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
@@ -1344,9 +1344,57 @@ dialog::backdrop {
 .oe-pick {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.oe-pick-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
   font-size: 12px;
   color: var(--p-mut);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.oe-pick input[type='checkbox'],
+.oe-pick-all input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--p-pri);
+}
+
+/* 行内图标按钮（改名 / 删除 / 存 / 取消） */
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-ctrl);
+  background: none;
+  color: var(--p-mut);
+  cursor: pointer;
+}
+
+.iconbtn:hover:not(:disabled) {
+  background: var(--p-soft);
+  color: var(--p-ink);
+}
+
+.iconbtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.iconbtn.danger:hover:not(:disabled) {
+  color: var(--p-err);
 }
 
 .oe-inline {
