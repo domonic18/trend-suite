@@ -35,6 +35,11 @@ export const errorCodes = [
   'production_not_retryable',
   // budget_exhausted：预算触顶，停止新增调用（arch/05 §14）。
   'budget_exhausted',
+  // 素材治理（T19/T20）。
+  // material_not_processing：素材没有进行中的加工任务，无「停止」可执行。
+  'material_not_processing',
+  // material_referenced：素材已产出理解成果（source units），不可直接删除。
+  'material_referenced',
   'internal_error',
 ] as const
 

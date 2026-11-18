@@ -7,7 +7,7 @@ import {
   type TranscriptResponse,
 } from '@trend-suite/contracts'
 import { getCourseForUser } from '@/server/content/service'
-import { conflict, notFound } from '@/server/lib/http'
+import { HttpError, conflict, notFound } from '@/server/lib/http'
 import * as jobRepo from '../jobs/repo'
 import * as repo from '../repo'
 import { signFrameUrl } from './frame-url'
@@ -23,7 +23,7 @@ import * as procRepo from './repo'
 export async function ingestAsset(
   user: SessionUser,
   assetId: string,
-  input: { force?: boolean | undefined },
+  input: { force?: boolean | undefined } = {},
 ): Promise<{ asset: MediaAssetView; jobId: string }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
@@ -87,6 +87,42 @@ export async function retryAsset(
   return {
     asset: { ...toView(updated!), jobStatus: job.status as JobStatus },
     jobId: job.id,
+  }
+}
+
+/**
+ * 停止加工（T19）：排队中直接取消；运行中置取消标记，worker 在阶段边界
+ * 安全中止并把素材拨回「已上传」。已转块与关键帧保留，重新加工按块去重续转。
+ */
+export async function cancelMaterialProcessing(
+  user: SessionUser,
+  assetId: string,
+): Promise<{ asset: MediaAssetView }> {
+  const row = await repo.findAssetById(assetId)
+  if (!row) throw notFound('素材不存在')
+  await getCourseForUser(user, row.course_id)
+
+  const job = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
+  if (!job || (job.status !== 'queued' && job.status !== 'running')) {
+    throw new HttpError(409, 'material_not_processing', '素材没有进行中的加工任务')
+  }
+  if (job.status === 'queued') {
+    await jobRepo.cancelJob(job.id)
+    await procRepo.setAssetProgress({ assetId, step: 'uploaded', progress: 0, message: '已停止' })
+    await procRepo.setAssetStatus({ assetId, status: 'uploaded' })
+  } else {
+    await jobRepo.requestCancel(job.id)
+    await procRepo.setAssetProgress({
+      assetId,
+      step: row.process_step as MediaAssetView['processStep'],
+      progress: Number(row.process_progress),
+      message: '正在停止…',
+    })
+  }
+  const updated = await repo.findAssetById(assetId)
+  const latest = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
+  return {
+    asset: { ...toView(updated!), jobStatus: (latest?.status ?? null) as JobStatus | null },
   }
 }
 
