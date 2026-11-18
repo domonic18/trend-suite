@@ -64,6 +64,30 @@ function stubFetch(): () => void {
   }
 }
 
+/** 第一次调用（代拟目录）返回结构化目录，第二次（综合起草）返回常规产物。 */
+function stubFetchWithOutlineDraft(): () => void {
+  const original = globalThis.fetch
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    const body = typeof init.body === 'string' ? init.body : ''
+    const payload = body.includes('目录设计助手')
+      ? {
+          sections: [
+            { level: 1, title: '总论' },
+            { level: 2, title: '什么是趋势' },
+            { level: 3, title: '趋势的定义' },
+          ],
+        }
+      : LLM_OUTPUT
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  }) as typeof fetch
+  return () => {
+    globalThis.fetch = original
+  }
+}
+
 test('worker 认领课程任务并回写草案四件套，目录外章节与重名概念进拒绝记录', { skip }, async () => {
   const entry = await createModelEntry({
     name: '起草模型',
@@ -165,3 +189,91 @@ async function createCourseFor(ownerId: string): Promise<{ id: string }> {
   const { createCourse } = await import('../service')
   return createCourse(ownerId, '起草课')
 }
+
+test('教师留空目录时 Agent 代拟一版目录先验并回写，随后按该先验综合起草', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-代拟',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-outline',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'b.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/b.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  await query(
+    `INSERT INTO transcript_segments (id, asset_id, seq, start_ms, end_ms, text, partial)
+     VALUES ($1, $2, 0, 0, 5000, '趋势是价格运行的方向', false)`,
+    [newId('transcriptSegment'), assetId],
+  )
+
+  // 只交目标：目录留空 → 走 Agent 代拟路径
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+  })
+  assert.equal(job.status, 'queued')
+
+  const stored = await query<{ outline: unknown; outline_text: string }>(
+    'SELECT outline, outline_text FROM courses WHERE id = $1',
+    [course.id],
+  )
+  assert.equal(stored[0]?.outline_text, '')
+
+  const restore = stubFetchWithOutlineDraft()
+  try {
+    const handled = await runWorkerOnce('test-worker')
+    assert.equal(handled, true)
+  } finally {
+    restore()
+  }
+
+  const jobs = await query<{ status: string }>('SELECT status FROM pipeline_jobs WHERE id = $1', [
+    job.id,
+  ])
+  assert.equal(jobs[0]?.status, 'succeeded')
+
+  // 代拟的目录先验已回写：文本与树同源
+  const after = await query<{ outline: unknown; outline_text: string }>(
+    'SELECT outline, outline_text FROM courses WHERE id = $1',
+    [course.id],
+  )
+  assert.equal(
+    after[0]?.outline_text,
+    ['第一篇 总论', '第一章 什么是趋势', '1. 趋势的定义'].join('\n'),
+  )
+  const outline = after[0]?.outline as { nodes: { id: string; level: number }[] }
+  assert.equal(outline.nodes.length, 3)
+  assert.equal(outline.nodes[0]?.level, 1)
+
+  const draft = await repo.findDraftPlan(course.id)
+  assert.ok(draft)
+  const content = draft!.skeleton as { nodes: { title: string; matchStatus: string }[] }
+  assert.equal(content.nodes.length, 3)
+  assert.equal(content.nodes[0]?.title, '第一篇 总论')
+  // 综合起草仍以代拟目录为下界：目录外章节进拒绝记录，目录内漏掉的判证据不足
+  const violations = draft!.violations as { kind: string; subject: string }[]
+  assert.ok(violations.some((v) => v.kind === 'outline_violation' && v.subject === 'n99'))
+
+  // 两次模型调用都记账：代拟目录 + 综合起草
+  const runs = await query<{ status: string }>(
+    'SELECT status FROM ai_runs WHERE ref_id = $1 ORDER BY created_at',
+    [course.id],
+  )
+  assert.equal(runs.length, 2)
+  assert.ok(runs.every((run) => run.status === 'succeeded'))
+})

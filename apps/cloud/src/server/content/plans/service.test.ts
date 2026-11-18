@@ -133,6 +133,33 @@ test('提交目标与目录：素材未就绪不可起草，就绪后入队并�
   assert.ok(input?.outline)
 })
 
+test('目录留空也接受：目标照常回填，目录待 Agent 代拟', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-plan-empty-outline',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourse(teacher.id, '方案课-空目录')
+  await seedReadyAsset(course.id)
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+  })
+  assert.equal(job.status, 'queued')
+
+  const stored = await repo.findCoursePlanInput(course.id)
+  assert.equal(stored?.goal, '学会看盘')
+  assert.equal(stored?.outline_text, '')
+  assert.equal(stored?.outline, null)
+
+  // 目标必须回填（起草失败时教师不该丢目标），目录此时为空
+  const view = await getPlanFor(teacher, course.id)
+  assert.equal(view.input?.goal, '学会看盘')
+  assert.equal(view.input?.outlineText, '')
+})
+
 test('批准：锁定基准版并把概念落库；无草案再批 400', { skip }, async () => {
   const teacher = await createAccount({
     username: 'laoshi-plan-2',

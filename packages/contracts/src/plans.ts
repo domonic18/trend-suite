@@ -127,7 +127,8 @@ export const planJobResponse = z.object({ job: planJobView })
 // ---------------------------------------------------------------- 请求
 export const submitPlanInputRequest = z.object({
   goal: z.string().min(1, '课程目标必填').max(2000, '课程目标最长 2000 个字符'),
-  outlineText: z.string().min(1, '人工目录必填').max(20000, '人工目录最长 20000 个字符'),
+  /** 人工目录（可留空）：留空则由 Agent 依据目标与素材代拟一版目录先验。 */
+  outlineText: z.string().max(20000, '人工目录最长 20000 个字符'),
   /** 占位（本迭代恒 false 不暴露 UI）：素材未全部就绪时是否允许带 partial 起草。 */
   allowPartial: z.boolean().optional().default(false),
 })
