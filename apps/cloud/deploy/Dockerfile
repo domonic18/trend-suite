@@ -67,7 +67,13 @@ ENV PORT=3940 \
     HOSTNAME=0.0.0.0
 # 媒体管线在 runtime 直接 spawn ffmpeg/ffprobe（arch/05 §3）；
 # 预建 /data 目录供容器直接运行（HLS 与管线工作区同卷，原子 rename）
-RUN apk add --no-cache ffmpeg \
+#
+# apk 源换国内镜像：Alpine 官方 CDN（dl-cdn.alpinelinux.org）在跨境路由上会
+# TLS 失败，拉 APKINDEX 直接断掉整段构建（2026-11-18 发布实锤）。
+# 与构建阶段 npm 走 npmmirror 同口径；地址留 ARG 便于按需换源。
+ARG APK_MIRROR=mirrors.aliyun.com
+RUN sed -i "s|https://dl-cdn.alpinelinux.org|https://${APK_MIRROR}|g" /etc/apk/repositories \
+ && apk add --no-cache ffmpeg \
  && mkdir -p /data/storage /data/hls \
  && chown -R node:node /data
 WORKDIR /app
