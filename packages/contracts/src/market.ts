@@ -70,7 +70,8 @@ export const marketDeclaration =
   '周期：日线 / 周线 · 前复权（腾讯源）· 图示为录制时点前复权，与当前前复权存在除权漂移 · 不构成投资建议'
 
 export const sectionQuotesView = z.object({
-  sectionId: z.string().regex(idShape.section),
+  // 展示号（课程内大纲编号，如 '1-1'），与 productionBoardView.sectionId 同口径。
+  sectionId: z.string().min(1),
   stocks: z.array(stockQuotesView),
   declaration: z.literal(marketDeclaration),
 })
