@@ -13,6 +13,7 @@ import * as plansRepo from '@/server/content/plans/repo'
 import { runWorkerOnce, workerId } from '@/server/pipeline/jobs/worker'
 import { findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { createModelEntry, updateTaskBinding } from '@/server/models/service'
+import { HttpError } from '@/server/lib/http'
 import { getProductionBoard, retryProductionSection } from './service'
 import { claimNextStep, listSections, listTasks } from './repo'
 import { startMockLlm, type MockLlm } from './mock-llm'
@@ -191,6 +192,24 @@ test('验收⑤ 终态无部分产物：跑完的课程无 pending 节，complet
      HAVING COUNT(*) FILTER (WHERE t.status = 'done') <> COUNT(*) OR COUNT(*) <> 9`,
   )
   assert.deepEqual(partial, [], '存在 complete 但步不齐的部分产物节')
+})
+
+test('权限：admin 兼具 producer 权限可重试他课挂起节', { skip }, async () => {
+  const { courseId, sectionIds } = await seedApprovedCourse('权限课')
+  const admin = await createAccount({
+    username: `guanliyuan-${randomBytes(4).toString('hex')}`,
+    password: 'correct-horse',
+    role: 'admin',
+  })
+  // admin 非课程归属人，但兼具 producer 权限：过了权限门，落到业务检查
+  // （该课尚未起跑、无挂起/失败步 → 409 production_not_retryable，而非 403）。
+  await assert.rejects(
+    () => retryProductionSection(admin, courseId, sectionIds[0] ?? ''),
+    (err: unknown) =>
+      err instanceof HttpError && err.status === 409 && err.code === 'production_not_retryable',
+  )
+  // 消费 seedApprovedCourse 批准时入队的 job，避免占住队列影响后续用例的 runWorkerOnce。
+  assert.equal(await runWorkerOnce(workerId()), true)
 })
 
 test('顺序强制：更小步未 done 时认领被结构性挡住', { skip }, async () => {
