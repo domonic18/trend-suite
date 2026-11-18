@@ -277,3 +277,71 @@ test('教师留空目录时 Agent 代拟一版目录先验并回写，随后按�
   assert.equal(runs.length, 2)
   assert.ok(runs.every((run) => run.status === 'succeeded'))
 })
+
+test('目录代拟被 max_tokens 截断：任务回到队列可重试，失败调用的用量照样入台账', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-截断',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-truncated',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/a.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+  })
+
+  const original = globalThis.fetch
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ message: { content: '{"sections":[{"level":1,"title":"总' }, finish_reason: 'length' }],
+        usage: { prompt_tokens: 800, completion_tokens: 12000 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )) as typeof fetch
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    globalThis.fetch = original
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null; attempts: number }>(
+    'SELECT status, error_code, attempts FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  // 截断可重试：任务退回 queued 等退避重投，而不是终态失败
+  assert.equal(jobs[0]?.status, 'queued')
+  assert.equal(jobs[0]?.error_code, 'llm_truncated')
+  assert.equal(jobs[0]?.attempts, 1)
+
+  const runs = await query<{ status: string; tokens_out: number | null }>(
+    'SELECT status, tokens_out FROM ai_runs WHERE ref_id = $1',
+    [course.id],
+  )
+  assert.equal(runs[0]?.status, 'failed')
+  assert.equal(runs[0]?.tokens_out, 12000)
+
+  const usage = await query<{ tokens_out: number }>(
+    `SELECT tokens_out FROM ai_usage_events WHERE run_id IN (SELECT id FROM ai_runs WHERE ref_id = $1)`,
+    [course.id],
+  )
+  assert.equal(usage[0]?.tokens_out, 12000)
+})

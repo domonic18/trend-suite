@@ -99,7 +99,7 @@ test('openai 协议：解析 JSON 并把 tokens/时延记进 ai_runs', { skip },
   assert.equal(events[0]?.kind, 'tokens')
 })
 
-test('anthropic 协议：拼接 content 文本块，截断判终态失败', { skip }, async () => {
+test('anthropic 协议：拼接 content 文本块，截断判可重试', { skip }, async () => {
   await seedModel('anthropic')
   const calls: string[] = []
   const ok = await runLlmJson({
@@ -141,11 +141,27 @@ test('anthropic 协议：拼接 content 文本块，截断判终态失败', { sk
           jsonResponse({
             content: [{ type: 'text', text: '{"title":"截断"' }],
             stop_reason: 'max_tokens',
+            usage: { input_tokens: 900, output_tokens: 64 },
           }),
       }),
+    // 截断可重试：推理型模型每次思考长度不同，重试往往就过了。
     (err: unknown) =>
-      err instanceof LlmError && err.code === 'llm_truncated' && err.retryable === false,
+      err instanceof LlmError &&
+      err.code === 'llm_truncated' &&
+      err.retryable === true &&
+      err.tokensOut === 64,
   )
+
+  // 失败调用的用量也要入台账（截断那次的花费不能不算）。
+  const failedRun = await query<{ status: string; tokens_out: number }>(
+    `SELECT status, tokens_out FROM ai_runs WHERE ref_id = 'crs_test3'`,
+  )
+  assert.equal(failedRun[0]?.status, 'failed')
+  assert.equal(failedRun[0]?.tokens_out, 64)
+  const usage = await query<{ tokens_out: number }>(
+    `SELECT tokens_out FROM ai_usage_events WHERE run_id IN (SELECT id FROM ai_runs WHERE ref_id = 'crs_test3')`,
+  )
+  assert.equal(usage[0]?.tokens_out, 64)
 })
 
 test('上游 5xx 与坏 JSON：可重试分类并留失败台账', { skip }, async () => {
