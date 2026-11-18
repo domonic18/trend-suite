@@ -15,6 +15,8 @@ export const idPrefix = {
   concept: 'cpt',
   aiRun: 'air',
   aiUsage: 'aue',
+  productionTask: 'ptk',
+  section: 'sec',
 } as const
 
 export const idShape = {
@@ -30,6 +32,8 @@ export const idShape = {
   concept: /^cpt_[0-9a-f]{16}$/,
   aiRun: /^air_[0-9a-f]{16}$/,
   aiUsage: /^aue_[0-9a-f]{16}$/,
+  productionTask: /^ptk_[0-9a-f]{16}$/,
+  section: /^sec_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape

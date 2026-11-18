@@ -28,6 +28,13 @@ export const errorCodes = [
   'plan_not_draftable',
   // plan_unresolved：存在未决项（低匹配分节 / 拒绝记录）时批准被挡。
   'plan_unresolved',
+  // 逐节九步生产（arch/05 §6）。
+  // step_out_of_order：跑错序被挡，附「当前应执行第 N 步」。
+  'step_out_of_order',
+  // production_not_retryable：节不在可重试状态（非 pending_manual / failed）。
+  'production_not_retryable',
+  // budget_exhausted：预算触顶，停止新增调用（arch/05 §14）。
+  'budget_exhausted',
   'internal_error',
 ] as const
 

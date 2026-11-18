@@ -20,6 +20,8 @@ import { badRequest, forbidden, HttpError } from '@/server/lib/http'
 import { getCourseForUser } from '../service'
 import { listAssetsByCourse } from '@/server/pipeline/repo'
 import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
+import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
+import { seedProduction } from '@/server/production/repo'
 import { parseOutline, parseStoredOutline } from './outline'
 import { applyTweak, type TweakedContent } from './tweak'
 import * as repo from './repo'
@@ -32,6 +34,18 @@ import * as repo from './repo'
 export const CURRICULUM_JOB_KIND = 'curriculum_draft'
 
 export type PlanActor = SessionUser
+
+/** 九步粒度 = 目录叶子节点（无子节点的节点即一节；篇/卷整卷无分节时它自己就是节）。 */
+function leafSectionNodes(nodes: { id: string; title: string; parentId: string | null }[]): {
+  id: string
+  title: string
+  parentId: string | null
+}[] {
+  const parents = new Set(
+    nodes.flatMap((node) => (node.parentId ? [node.parentId] : [])),
+  )
+  return nodes.filter((node) => !parents.has(node.id))
+}
 
 async function requireOwnedCourse(actor: PlanActor, courseId: string) {
   const course = await getCourseForUser(actor, courseId)
@@ -171,6 +185,8 @@ export async function approvePlan(actor: PlanActor, courseId: string): Promise<P
   }
 
   const conceptMap = content.conceptMap
+  // 九步生产播种：目录叶子节点 = 节（arch/05 §6 粒度），批准事务内幂等预插。
+  const leafNodes = leafSectionNodes(content.skeleton.nodes)
   await withTransaction(async (tx) => {
     // 概念落库沿用草案 id（cpt_），保证后续微调 add_alias 能同步更新。
     await repo.insertConcepts(
@@ -194,7 +210,17 @@ export async function approvePlan(actor: PlanActor, courseId: string): Promise<P
       tx,
     )
     await repo.updatePlanStatus(draft.id, 'approved', tx)
+    await seedProduction(
+      courseId,
+      leafNodes.map((node, index) => ({
+        sectionId: node.id,
+        title: node.title,
+        order: index,
+      })),
+      tx,
+    )
   })
+  await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
   const approved = await repo.findPlanById(draft.id)
   return toPlanView(approved!)
 }

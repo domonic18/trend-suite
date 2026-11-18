@@ -260,6 +260,7 @@ export async function isCancelRequested(jobId: string): Promise<boolean> {
  */
 export async function reclaimStaleJobs(
   maxAttempts = 5,
+  staleSeconds = 120,
 ): Promise<
   { id: string; asset_id: string | null; course_id: string | null; kind: string; status: PipelineJobRow['status'] }[]
 > {
@@ -273,8 +274,8 @@ export async function reclaimStaleJobs(
          error_code = 'worker_heartbeat_lost',
          error_message = '任务心跳超时，已回收',
          updated_at = now()
-     WHERE status = 'running' AND heartbeat_at < now() - make_interval(secs => 120)
+     WHERE status = 'running' AND heartbeat_at < now() - make_interval(secs => $2)
      RETURNING id, asset_id, course_id, kind, status`,
-    [maxAttempts],
+    [maxAttempts, staleSeconds],
   )
 }

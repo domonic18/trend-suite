@@ -216,7 +216,7 @@ function clipSummary(summary: string): string {
   return clipped === summary ? clipped : `${clipped}…`
 }
 
-async function startRun(input: {
+export async function startRun(input: {
   task: string
   refType: string
   refId: string
@@ -238,7 +238,7 @@ async function startRun(input: {
   )
 }
 
-async function finishRun(input: {
+export async function finishRun(input: {
   runId: string
   tokensIn: number | null
   tokensOut: number | null
@@ -261,7 +261,7 @@ async function finishRun(input: {
   }
 }
 
-async function failRun(input: { runId: string; code: string; message: string }): Promise<void> {
+export async function failRun(input: { runId: string; code: string; message: string }): Promise<void> {
   await query(
     `UPDATE ai_runs
      SET status = 'failed', summary = $2, finished_at = now()

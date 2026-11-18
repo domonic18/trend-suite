@@ -104,6 +104,7 @@ export default function CourseMaterialPage() {
           上传与转写
         </Link>
         <Link href={`/workbench/courses/${courseId}/plan`}>课程大纲</Link>
+        <Link href={`/workbench/courses/${courseId}/production`}>九步生产</Link>
       </div>
       <MaterialPanel courseId={courseId} />
     </WorkbenchShell>
