@@ -8,6 +8,7 @@ import {
   type TranscriptResponse,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { IconTrash } from '@/features/lib/icons'
 import {
   cancelMaterial,
   createAsset,
@@ -330,14 +331,16 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
                     ) : null}
                     <button
                       type="button"
-                      className="btn link"
+                      className="iconbtn danger"
+                      title="删除素材"
+                      aria-label="删除素材"
                       onClick={() => {
                         if (window.confirm(`删除素材「${asset.fileName}」？段落、关键帧与文件字节将一并清理，不可恢复。`)) {
                           void remove(asset.id)
                         }
                       }}
                     >
-                      删除
+                      <IconTrash />
                     </button>
                   </div>
                 </div>
