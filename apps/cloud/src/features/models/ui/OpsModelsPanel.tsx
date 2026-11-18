@@ -9,6 +9,7 @@ import type {
   TaskBindingView,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { IconTrash } from '@/features/lib/icons'
 import {
   MODEL_PROVIDERS,
   OTHER_PROVIDER,
@@ -329,10 +330,16 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                         </button>
                         <button
                           type="button"
-                          className="btn link err-text"
-                          onClick={() => void remove(entry.id)}
+                          className="iconbtn danger"
+                          title="删除条目"
+                          aria-label="删除条目"
+                          onClick={() => {
+                            if (window.confirm(`删除模型条目「${entry.name}」？已绑定的任务槽会失去该条目，操作不可恢复。`)) {
+                              void remove(entry.id)
+                            }
+                          }}
                         >
-                          删除
+                          <IconTrash />
                         </button>
                       </>
                     ) : (
