@@ -23,7 +23,11 @@ import { testAsrChannel, testChatModel, testEmbeddingModel, testImageModel } fro
 
 export const TASK_SLOTS: ReadonlyArray<{ task: string; label: string; purpose: ModelPurpose }> = [
   { task: 'content.curriculum', label: '课程方案起草', purpose: 'llm' },
+  { task: 'content.case_stocks', label: '案例股清单', purpose: 'llm' },
+  { task: 'content.figure_spec', label: '图示规格', purpose: 'llm' },
+  { task: 'content.widget_spec', label: '课件规格', purpose: 'llm' },
   { task: 'content.section_draft', label: '节教材起草', purpose: 'llm' },
+  { task: 'rubric_review', label: '节评审', purpose: 'llm' },
   { task: 'vision.describe', label: '素材理解', purpose: 'vlm' },
   { task: 'student.qa', label: '学员问答', purpose: 'llm' },
 ]

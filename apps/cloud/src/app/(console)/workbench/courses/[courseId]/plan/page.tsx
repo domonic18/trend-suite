@@ -100,6 +100,7 @@ export default function CoursePlanPage() {
         <Link href={`/workbench/courses/${courseId}/plan`} className="on">
           课程大纲
         </Link>
+        <Link href={`/workbench/courses/${courseId}/production`}>九步生产</Link>
       </div>
       <PlanPanel courseId={courseId} />
     </WorkbenchShell>

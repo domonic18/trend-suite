@@ -10,6 +10,7 @@ import {
 import * as procRepo from '../processing/repo'
 import * as jobs from './repo'
 import { runCurriculumDraft } from '@/server/content/plans/drafter'
+import { runProductionRun } from '@/server/production/runner'
 import type { PipelineJobRow } from './repo'
 
 /**
@@ -21,6 +22,8 @@ import type { PipelineJobRow } from './repo'
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 10_000
 const RECLAIM_INTERVAL_MS = 30_000
+// 测试钩子（验收③杀进程续跑）：注入缩小的心跳超时，避免等真实 120 秒。
+const RECLAIM_STALE_SECS = Number(process.env.WORKER_RECLAIM_STALE_SECS ?? 120)
 
 export function workerId(): string {
   return `${hostname()}-${process.pid}`
@@ -42,6 +45,9 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
         break
       case 'curriculum_draft':
         await runCurriculumDraft(job)
+        break
+      case 'production_run':
+        await runProductionRun(job)
         break
       default:
         await jobs.failJob({
@@ -197,7 +203,7 @@ export async function startWorker(): Promise<void> {
 
 /** 回收僵尸任务并同步素材状态：回收成 failed 的素材标失败，回队列的标待重试。课程级任务无素材状态可同步。 */
 async function reclaimAndSync(): Promise<void> {
-  const reclaimed = await jobs.reclaimStaleJobs()
+  const reclaimed = await jobs.reclaimStaleJobs(5, RECLAIM_STALE_SECS)
   for (const row of reclaimed) {
     if (!row.asset_id) continue
     if (row.status === 'failed') {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { approvePlan, getPlan, rejectPlan, tweakPlan } from '../api'
@@ -14,6 +15,7 @@ import { ToolCards } from './ToolCards'
  * 起草中每 3 秒轮询（复用素材面板节奏），未决项由服务端兜底（409）。
  */
 export function PlanPanel({ courseId }: { courseId: string }) {
+  const router = useRouter()
   const [data, setData] = useState<PlanResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -161,7 +163,12 @@ export function PlanPanel({ courseId }: { courseId: string }) {
             violationCount={violationCount}
             canApprove={lowMatchCount === 0 && violationCount === 0}
             busy={busy}
-            onApprove={() => void act(() => approvePlan(courseId))}
+            onApprove={() =>
+              void act(async () => {
+                await approvePlan(courseId)
+                router.push(`/workbench/courses/${courseId}/production`)
+              })
+            }
             onReject={(feedback) => void act(() => rejectPlan(courseId, feedback))}
           />
         </>

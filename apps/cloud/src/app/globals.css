@@ -1525,3 +1525,92 @@ dialog::backdrop {
   font-family: inherit;
   resize: vertical;
 }
+
+/* ---------------- 九步生产看板（仿 teacher-production 原型） ---------------- */
+.board-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.board-summary .tag {
+  margin-left: 0;
+}
+
+.srow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--p-line);
+}
+
+.srow .smeta {
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.srow .smeta span {
+  font-size: 11px;
+  color: var(--p-mut);
+  word-break: break-all;
+}
+
+.steps {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.steps .s {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: var(--p-soft);
+  color: var(--p-mut);
+  cursor: default;
+}
+
+.steps .s.d {
+  background: var(--p-acc-soft);
+  color: var(--p-acc);
+}
+
+.steps .s.r {
+  background: var(--p-pri-soft);
+  color: var(--p-pri);
+}
+
+.steps .s.w {
+  background: var(--p-warn-soft);
+  color: var(--p-warn);
+}
+
+.steps .s.e {
+  background: var(--p-err-soft);
+  color: var(--p-err);
+}
+
+.srow .sright {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.srow .sright .err-text {
+  font-size: 11px;
+  color: var(--p-err);
+  max-width: 320px;
+  text-align: right;
+  word-break: break-all;
+}
