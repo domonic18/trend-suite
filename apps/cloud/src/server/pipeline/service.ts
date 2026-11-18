@@ -8,11 +8,12 @@ import {
 } from '@trend-suite/contracts'
 import { getCourseForUser } from '@/server/content/service'
 import { badRequest, HttpError, notFound, unprocessableMedia, unsupportedMediaType } from '@/server/lib/http'
+import { queryOne } from '@/server/lib/db'
 import { newId } from '@/server/lib/ids'
 import { getEnv } from '@/env'
 import { ProbeUnavailableError } from './probe'
 import * as repo from './repo'
-import { listLatestJobs } from './jobs/repo'
+import { cancelJob, findJobByAsset, listLatestJobs } from './jobs/repo'
 import { getMediaStore } from './store'
 import {
   signUploadToken,
@@ -184,6 +185,41 @@ export async function receiveUpload(
     sourcePath: store.sourceRef(row.id),
   })
   return toAssetView(updated)
+}
+
+/**
+ * 删除素材（教师端需求 T20）：行、段落、关键帧、任务与已落盘字节一并清理。
+ * 正在加工的先停；已产出理解成果的不可删——课程内容可能引用它，避免悬空。
+ */
+export async function deleteMaterial(user: SessionUser, assetId: string): Promise<void> {
+  const row = await repo.findAssetById(assetId)
+  if (!row) throw notFound('素材不存在')
+  await getCourseForUser(user, row.course_id)
+
+  if (await hasSourceUnits(assetId)) {
+    throw new HttpError(409, 'material_referenced', '素材已产出理解成果，先处置方案引用再删除')
+  }
+
+  const job = await findJobByAsset({ assetId, kind: 'ingest' })
+  if (job && (job.status === 'queued' || job.status === 'running')) {
+    await cancelJob(job.id)
+  }
+
+  await getMediaStore().remove(assetId)
+  await repo.deleteAsset(assetId)
+}
+
+/** 理解成果表尚未落建（后续迭代）；落建后这里自然生效，不误删。 */
+async function hasSourceUnits(assetId: string): Promise<boolean> {
+  const t = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('public.source_units') AS reg`,
+  )
+  if (!t?.reg) return false
+  const r = await queryOne<{ n: string }>(
+    `SELECT COUNT(*) AS n FROM source_units WHERE asset_id = $1`,
+    [assetId],
+  )
+  return Number(r?.n ?? 0) > 0
 }
 
 function probeReason(

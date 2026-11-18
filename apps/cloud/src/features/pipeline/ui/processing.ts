@@ -19,13 +19,13 @@ export const STEP_ORDER: ProcessingStep[] = [
   'done',
 ]
 
-/** 就绪度：排队 / 处理中 / 就绪 / 失败。 */
-export type Readiness = 'queued' | 'running' | 'ready' | 'failed'
+/** 就绪度：排队 / 处理中 / 就绪 / 已停止 / 失败。 */
+export type Readiness = 'queued' | 'running' | 'ready' | 'stopped' | 'failed'
 
 export function readinessOf(asset: MediaAssetView): Readiness {
   if (asset.jobStatus === 'queued') return 'queued'
-  if (asset.jobStatus === 'failed' || asset.jobStatus === 'canceled') return 'failed'
-  if (asset.status === 'failed') return 'failed'
+  if (asset.jobStatus === 'canceled') return 'stopped'
+  if (asset.jobStatus === 'failed' || asset.status === 'failed') return 'failed'
   if (asset.jobStatus === 'succeeded' || asset.status === 'ready' || asset.processStep === 'done') {
     return 'ready'
   }
@@ -36,6 +36,7 @@ export const READINESS_TEXT: Record<Readiness, string> = {
   queued: '排队中',
   running: '加工中',
   ready: '转写完成',
+  stopped: '已停止',
   failed: '失败',
 }
 

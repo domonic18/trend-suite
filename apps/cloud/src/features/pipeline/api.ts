@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  cancelMaterialResponse,
   createMediaAssetResponse,
   ingestResponse,
   mediaAssetListResponse,
@@ -39,6 +40,23 @@ export async function retryAsset(assetId: string): Promise<IngestResponse> {
     { method: 'POST' },
   )
   return ingestResponse.parse(data)
+}
+
+/** 停止加工（T19）：排队中直接取消；运行中在阶段边界安全中止。 */
+export async function cancelMaterial(assetId: string): Promise<MediaAssetView> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/cancel`,
+    { method: 'POST' },
+  )
+  return cancelMaterialResponse.parse(data).asset
+}
+
+/** 删除素材（T20）：行、段落、关键帧与已落盘字节一并清理。 */
+export async function deleteMaterial(assetId: string): Promise<void> {
+  await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}`,
+    { method: 'DELETE' },
+  )
 }
 
 /** 逐字稿：转写进行中也返回已落库的段落。 */

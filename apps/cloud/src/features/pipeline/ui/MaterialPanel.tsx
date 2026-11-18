@@ -9,7 +9,9 @@ import {
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import {
+  cancelMaterial,
   createAsset,
+  deleteMaterial,
   getFrames,
   getTranscript,
   ingestAsset,
@@ -146,6 +148,40 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
     [refresh, loadDetail],
   )
 
+  /** 停止加工（T19）：排队中直接取消；运行中在当前阶段边界安全中止，已转产物保留。 */
+  const stop = useCallback(
+    async (assetId: string) => {
+      setActionError(null)
+      try {
+        await cancelMaterial(assetId)
+        await refresh()
+      } catch (err) {
+        setActionError(err instanceof ApiError ? err.message : '停止失败，请稍后再试')
+      }
+    },
+    [refresh],
+  )
+
+  /** 删除素材（T20）：行、段落、关键帧与字节一并清理，不可恢复。 */
+  const remove = useCallback(
+    async (assetId: string) => {
+      setActionError(null)
+      try {
+        await deleteMaterial(assetId)
+        setDetail((prev) => {
+          const next = { ...prev }
+          delete next[assetId]
+          return next
+        })
+        if (expanded === assetId) setExpanded(null)
+        await refresh()
+      } catch (err) {
+        setActionError(err instanceof ApiError ? err.message : '删除失败，请稍后再试')
+      }
+    },
+    [refresh, expanded],
+  )
+
   function onDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setDragOver(false)
@@ -269,6 +305,39 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
                   <div className="ua">
                     <button type="button" className="btn link" onClick={() => toggle(asset.id)}>
                       {isOpen ? '收起' : '展开'}
+                    </button>
+                    {readiness === 'queued' || readiness === 'running' ? (
+                      <button
+                        type="button"
+                        className="btn link"
+                        onClick={() => {
+                          if (window.confirm('停止加工？排队任务直接取消，运行中的在阶段边界安全中止，已转出的段落与关键帧会保留。')) {
+                            void stop(asset.id)
+                          }
+                        }}
+                      >
+                        停止
+                      </button>
+                    ) : null}
+                    {readiness === 'stopped' ? (
+                      <button
+                        type="button"
+                        className="btn link"
+                        onClick={() => void retry(asset.id)}
+                      >
+                        重新加工
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn link"
+                      onClick={() => {
+                        if (window.confirm(`删除素材「${asset.fileName}」？段落、关键帧与文件字节将一并清理，不可恢复。`)) {
+                          void remove(asset.id)
+                        }
+                      }}
+                    >
+                      删除
                     </button>
                   </div>
                 </div>

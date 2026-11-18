@@ -68,6 +68,16 @@ export const ingestResponse = z.object({
   jobId: z.string(),
 })
 
+/** 停止加工（T19）：任务取消、素材回「已上传」态，已转产物保留。 */
+export const cancelMaterialResponse = z.object({
+  asset: mediaAssetView,
+})
+
+/** 删除素材（T20）：行、段落、关键帧、字节一并清理。 */
+export const deleteMaterialResponse = z.object({
+  deleted: z.literal(true),
+})
+
 export type CreateMediaAssetRequest = z.infer<typeof createMediaAssetRequest>
 export type MediaAssetView = z.infer<typeof mediaAssetView>
 export type MediaUploadTarget = z.infer<typeof mediaUploadTarget>
@@ -75,3 +85,5 @@ export type CreateMediaAssetResponse = z.infer<typeof createMediaAssetResponse>
 export type MediaAssetListResponse = z.infer<typeof mediaAssetListResponse>
 export type IngestRequest = z.infer<typeof ingestRequest>
 export type IngestResponse = z.infer<typeof ingestResponse>
+export type CancelMaterialResponse = z.infer<typeof cancelMaterialResponse>
+export type DeleteMaterialResponse = z.infer<typeof deleteMaterialResponse>
