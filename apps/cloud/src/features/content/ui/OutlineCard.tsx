@@ -87,8 +87,11 @@ export function OutlineCard({
   const allRef = useRef<HTMLInputElement>(null)
 
   const childIds = new Set(nodes.map((node) => node.parentId).filter((id): id is string => !!id))
-  const allPicked = nodes.length > 0 && picked.length === nodes.length
-  const somePicked = picked.length > 0 && picked.length < nodes.length
+  // 勾选集合按当前节点过滤：删章 / 改名后 nodes 会变，残留 id 不能带进合并。
+  const liveIds = new Set(nodes.map((node) => node.id))
+  const pickedLive = picked.filter((id) => liveIds.has(id))
+  const allPicked = nodes.length > 0 && pickedLive.length === nodes.length
+  const somePicked = pickedLive.length > 0 && pickedLive.length < nodes.length
 
   // 全选框三态：全选 / 部分 / 未选。
   useEffect(() => {
@@ -118,7 +121,7 @@ export function OutlineCard({
           />
           全选
         </label>
-        {picked.length > 0 ? <span className="meta">已选 {picked.length} 章</span> : null}
+        {pickedLive.length > 0 ? <span className="meta">已选 {pickedLive.length} 章</span> : null}
       </div>
 
       <div className="oe">
@@ -225,13 +228,13 @@ export function OutlineCard({
         <button
           type="button"
           className="btn"
-          disabled={busy || picked.length < 2 || mergeTitle.trim().length === 0}
+          disabled={busy || pickedLive.length < 2 || mergeTitle.trim().length === 0}
           onClick={() => {
-            onMerge(picked, mergeTitle.trim())
+            onMerge(pickedLive, mergeTitle.trim())
             setPicked([])
           }}
         >
-          合并选中（{picked.length}）
+          合并选中（{pickedLive.length}）
         </button>
         <span>
           <select value={addParent} onChange={(e) => setAddParent(e.target.value)}>
