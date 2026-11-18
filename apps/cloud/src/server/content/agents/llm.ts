@@ -18,15 +18,23 @@ const SUMMARY_MAX_BYTES = 8 * 1024
 export type LlmPurpose = 'llm' | 'vlm'
 
 export class LlmError extends Error {
-  /** true = 可重试（网络/超时/429/5xx/坏 JSON）；false = 终态失败（配置缺失、截断、schema 不符）。 */
+  /** true = 可重试（网络/超时/429/5xx/坏 JSON/截断）；false = 终态失败（配置缺失、schema 不符）。 */
   readonly retryable: boolean
   readonly code: string
+  /** 上游已返回时的用量（失败调用也要入台账，否则重试的花费不可见）。 */
+  readonly tokensIn: number | null
+  readonly tokensOut: number | null
 
-  constructor(message: string, options: { retryable: boolean; code: string }) {
+  constructor(
+    message: string,
+    options: { retryable: boolean; code: string; tokensIn?: number | null; tokensOut?: number | null },
+  ) {
     super(message)
     this.name = 'LlmError'
     this.retryable = options.retryable
     this.code = options.code
+    this.tokensIn = options.tokensIn ?? null
+    this.tokensOut = options.tokensOut ?? null
   }
 }
 
@@ -127,8 +135,18 @@ async function callOpenai(
     })
   }
   const payload = JSON.parse(text) as {
-    choices?: { message?: { content?: string } }[]
+    choices?: { message?: { content?: string }; finish_reason?: string }[]
     usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
+  const tokensIn = payload.usage?.prompt_tokens ?? null
+  const tokensOut = payload.usage?.completion_tokens ?? null
+  if (payload.choices?.[0]?.finish_reason === 'length') {
+    throw new LlmError('模型输出因 max_tokens 截断，JSON 不完整', {
+      retryable: true,
+      code: 'llm_truncated',
+      tokensIn,
+      tokensOut,
+    })
   }
   const content = payload.choices?.[0]?.message?.content
   if (typeof content !== 'string' || content.length === 0) {
@@ -136,8 +154,8 @@ async function callOpenai(
   }
   return {
     text: content,
-    tokensIn: payload.usage?.prompt_tokens ?? null,
-    tokensOut: payload.usage?.completion_tokens ?? null,
+    tokensIn,
+    tokensOut,
   }
 }
 
@@ -192,9 +210,12 @@ async function callAnthropic(
     usage?: { input_tokens?: number; output_tokens?: number }
   }
   if (payload.stop_reason === 'max_tokens') {
+    // 推理型模型的思考与正文共用 max_tokens 预算：截断是可再试的（换次思考长度往往就过）。
     throw new LlmError('模型输出因 max_tokens 截断，JSON 不完整', {
-      retryable: false,
+      retryable: true,
       code: 'llm_truncated',
+      tokensIn: payload.usage?.input_tokens ?? null,
+      tokensOut: payload.usage?.output_tokens ?? null,
     })
   }
   const content = (payload.content ?? [])
@@ -261,13 +282,32 @@ export async function finishRun(input: {
   }
 }
 
-export async function failRun(input: { runId: string; code: string; message: string }): Promise<void> {
+export async function failRun(input: {
+  runId: string
+  code: string
+  message: string
+  tokensIn?: number | null
+  tokensOut?: number | null
+}): Promise<void> {
   await query(
     `UPDATE ai_runs
-     SET status = 'failed', summary = $2, finished_at = now()
+     SET status = 'failed', tokens_in = $3, tokens_out = $4, summary = $2, finished_at = now()
      WHERE id = $1`,
-    [input.runId, clipSummary(`${input.code}: ${input.message}`)],
+    [
+      input.runId,
+      clipSummary(`${input.code}: ${input.message}`),
+      input.tokensIn ?? null,
+      input.tokensOut ?? null,
+    ],
   )
+  // 上游已回的用量照样入台账：失败调用（尤其会重试的）花了钱不能不算。
+  if (input.tokensIn != null || input.tokensOut != null) {
+    await query(
+      `INSERT INTO ai_usage_events (id, run_id, kind, tokens_in, tokens_out)
+       VALUES ($1, $2, 'tokens', $3, $4)`,
+      [newId('aiUsage'), input.runId, input.tokensIn ?? null, input.tokensOut ?? null],
+    )
+  }
 }
 
 /**
@@ -328,6 +368,8 @@ export async function runLlmJson<T>(input: {
       runId,
       code: isLlm ? err.code : 'llm_internal',
       message: (err as Error).message,
+      tokensIn: isLlm ? err.tokensIn : null,
+      tokensOut: isLlm ? err.tokensOut : null,
     }).catch(() => undefined)
     if (isLlm) throw err
     throw new LlmError(`模型调用失败：${(err as Error).message}`, {

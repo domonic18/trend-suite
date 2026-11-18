@@ -78,11 +78,15 @@ const outlineDraftSchema = z.object({
         title: z.string().min(1),
       }),
     )
+    .max(200, '目录条目过多')
     .default([]),
 })
 
-/** 代拟目录的 token 上限：一门课的目录远小于综合方案。 */
-const OUTLINE_MAX_TOKENS = 4_000
+/**
+ * 代拟目录的 token 上限：推理型模型的思考与正文共用 max_tokens 预算，
+ * 4K 会被思考吃光导致 JSON 截断——给足余量（综合方案那步是 16K）。
+ */
+const OUTLINE_MAX_TOKENS = 12_000
 
 function msToClock(ms: number): string {
   const total = Math.floor(ms / 1000)
@@ -193,6 +197,7 @@ function buildOutlinePrompt(input: {
     '2. 层级：1=篇（课程主题块），2=章，3=课时（一个能独立讲清的知识点）。',
     '3. 课时标题写成一个可讲清的知识点，不要写「概述」「介绍」这类空话。',
     '4. 标题不要自带编号，编号由系统统一生成。',
+    '5. 规模上限：最多 3 篇、每篇最多 8 章、每章最多 8 课时，总数不超过 40 条；每个标题不超过 20 字。',
     '只输出一个 JSON 对象：{"sections":[{"level":1,"title":"..."}]}，不要输出任何其他文字。',
   ].join('\n')
   const user = [
