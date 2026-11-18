@@ -107,7 +107,7 @@ export default function CoursePlanPage() {
       <div className="page-head">
         <div>
           <h1>制作方案</h1>
-          <p className="sub">提交课程目标与人工目录，Agent 起草课程骨架、概念图谱、术语表与分节计划；审阅后批准 / 微调 / 打回。</p>
+          <p className="sub">提交课程目标（人工目录可留空，由 Agent 代拟），Agent 起草课程骨架、概念图谱、术语表与分节计划；审阅后批准 / 微调 / 打回。</p>
         </div>
       </div>
       <div className="stage-tabs">

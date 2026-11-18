@@ -1,5 +1,11 @@
 import 'server-only'
 import { z } from 'zod'
+import {
+  buildOutlineFromSections,
+  parseOutlineText,
+  type CourseOutlineView,
+  type OutlineNode,
+} from '@trend-suite/contracts'
 import { newId } from '@/server/lib/ids'
 import { findCourseById } from '../repo'
 import * as jobs from '@/server/pipeline/jobs/repo'
@@ -63,6 +69,21 @@ const draftOutputSchema = z.object({
 
 type DraftOutput = z.infer<typeof draftOutputSchema>
 
+/** Agent 代拟目录的结构（篇=1 / 章=2 / 课时=3）。 */
+const outlineDraftSchema = z.object({
+  sections: z
+    .array(
+      z.object({
+        level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+        title: z.string().min(1),
+      }),
+    )
+    .default([]),
+})
+
+/** 代拟目录的 token 上限：一门课的目录远小于综合方案。 */
+const OUTLINE_MAX_TOKENS = 4_000
+
 function msToClock(ms: number): string {
   const total = Math.floor(ms / 1000)
   const h = Math.floor(total / 3600)
@@ -90,7 +111,6 @@ function buildCorpus(lines: repo.TranscriptLineRow[]): string {
 
 function buildPrompt(input: {
   goal: string
-  outlineText: string
   outlineNodes: { id: string; title: string }[]
   corpus: string
   feedback: string | null
@@ -148,6 +168,65 @@ function normalizeLessons(
   return { lessons: out, violations }
 }
 
+/**
+ * 目录先验（人工目录）缺失时的兜底：按已存的目录树取；目录树与文本都不可用
+ * 则返回 null（由调用方决定代拟还是失败）。
+ */
+function resolveOutline(inputRow: repo.CoursePlanInputRow): CourseOutlineView | null {
+  const stored = parseStoredOutline(inputRow.outline)
+  if (stored) return stored
+  const text = (inputRow.outline_text ?? '').trim()
+  if (text.length === 0) return null
+  const { nodes, issues } = parseOutlineText(text)
+  return issues.length === 0 ? { nodes } : null
+}
+
+function buildOutlinePrompt(input: {
+  goal: string
+  corpus: string
+  feedback: string | null
+}): { system: string; user: string } {
+  const system = [
+    '你是课程目录设计助手。根据课程目标与素材转写语料，设计这门课的三级目录。',
+    '规则：',
+    '1. 只设计素材能支撑的章节，不得超出素材范围发明章节——目录是课程骨架的下界。',
+    '2. 层级：1=篇（课程主题块），2=章，3=课时（一个能独立讲清的知识点）。',
+    '3. 课时标题写成一个可讲清的知识点，不要写「概述」「介绍」这类空话。',
+    '4. 标题不要自带编号，编号由系统统一生成。',
+    '只输出一个 JSON 对象：{"sections":[{"level":1,"title":"..."}]}，不要输出任何其他文字。',
+  ].join('\n')
+  const user = [
+    `## 课程目标\n${input.goal}`,
+    input.feedback ? `## 上一版教师意见（本次须吸收）\n${input.feedback}` : null,
+    `## 素材转写语料\n${input.corpus || '（无转写语料）'}`,
+  ]
+    .filter((section) => section !== null)
+    .join('\n\n')
+  return { system, user }
+}
+
+/** Agent 代拟目录 → 规范目录文本 + 目录树（文本与树同源，见 contracts outline.ts）。 */
+async function draftOutline(input: {
+  courseId: string
+  goal: string
+  corpus: string
+  feedback: string | null
+}): Promise<{ text: string; nodes: OutlineNode[] }> {
+  const prompt = buildOutlinePrompt(input)
+  const { data } = await runLlmJson({
+    task: CURRICULUM_TASK,
+    purpose: 'llm',
+    refType: 'course',
+    refId: input.courseId,
+    system: prompt.system,
+    user: prompt.user,
+    maxTokens: OUTLINE_MAX_TOKENS,
+    schema: outlineDraftSchema,
+    summarize: (out) => `sections=${out.sections.length}`,
+  })
+  return buildOutlineFromSections(data.sections)
+}
+
 /** worker 分派入口：跑一个 curriculum_draft 任务。 */
 export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
   const courseId = job.course_id
@@ -162,12 +241,11 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       return
     }
     const inputRow = await repo.findCoursePlanInput(courseId)
-    const outline = parseStoredOutline(inputRow?.outline)
-    if (!outline || !inputRow?.goal) {
+    if (!inputRow?.goal) {
       await jobs.failJob({
         jobId: job.id,
         code: 'plan_input_missing',
-        message: '课程目标或目录缺失，无法起草',
+        message: '课程目标缺失，无法起草',
         retryable: false,
       })
       return
@@ -179,10 +257,36 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
     const draft = await repo.findDraftPlan(courseId)
     const feedback = draft?.origin === 'revision' ? draft.trigger_note : null
 
+    // 目录先验：人工目录优先；教师留空则 Agent 代拟一版并回写（原型口径：目录可选）。
+    let outline = resolveOutline(inputRow)
+    if (!outline) {
+      await jobs.updateJobProgress({ jobId: job.id, step: 'outlining', progress: 20 })
+      const drafted = await draftOutline({
+        courseId,
+        goal: inputRow.goal,
+        corpus,
+        feedback,
+      })
+      if (drafted.nodes.length === 0) {
+        await jobs.failJob({
+          jobId: job.id,
+          code: 'outline_draft_empty',
+          message: 'Agent 未能拟出课程目录，请补充课程目标或素材后重新提交',
+          retryable: false,
+        })
+        return
+      }
+      outline = { nodes: drafted.nodes }
+      await repo.updateCoursePlanInput(courseId, {
+        goal: inputRow.goal,
+        outlineText: drafted.text,
+        outline,
+      })
+    }
+
     await jobs.updateJobProgress({ jobId: job.id, step: 'drafting', progress: 30 })
     const prompt = buildPrompt({
       goal: inputRow.goal,
-      outlineText: inputRow.outline_text ?? '',
       outlineNodes: outline.nodes,
       corpus,
       feedback,

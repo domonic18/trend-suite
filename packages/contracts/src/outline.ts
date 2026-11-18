@@ -82,6 +82,15 @@ export function parseOutlineText(text: string): OutlineParseResult {
 
 const CN_DIGITS = '一二三四五六七八九十'
 
+/** 阿拉伯数字 → 中文数字（限 99，用于篇/章编号）。 */
+export function numberToCn(value: number): string {
+  if (value < 0 || value > 99) return String(value)
+  if (value < 10) return CN_DIGITS[value - 1]!
+  const tens = Math.floor(value / 10)
+  const ones = value % 10
+  return `${CN_DIGITS[tens - 1]!}十${ones > 0 ? CN_DIGITS[ones - 1]! : ''}`
+}
+
 /** 中文数字 → 阿拉伯数字（限 99，够用于目录编号）。 */
 function cnToNumber(text: string): number | null {
   if (/^\d+$/.test(text)) return Number(text)
@@ -195,4 +204,56 @@ function rewriteLoose(line: string): { text: string; level: OutlineLevel } | nul
     }
   }
   return null
+}
+
+/** 标题里可能自带的编号前缀（第X章 / 一、 / 1. / （1））。 */
+const NUMBERING_PREFIX =
+  /^(?:第\s*[一二三四五六七八九十百零\d]+\s*[篇章节讲部卷]|[一二三四五六七八九十百零]+\s*[、．.]|[（(]\s*\d{1,3}\s*[)）]|\d{1,3}(?:\.\d{1,3})*\s*[.、)）:：])\s*/
+
+/** 去掉标题自带的编号前缀，只留标题文字。 */
+export function stripOutlineNumbering(title: string): string {
+  return title.replace(NUMBERING_PREFIX, '').trim()
+}
+
+/** 目录条目（层级 + 标题）——Agent 代拟目录的最小结构。 */
+export type OutlineSection = { level: OutlineLevel; title: string }
+
+/**
+ * 由层级+标题生成规范目录文本（第一篇 / 第一章 / 1.）。
+ * 编号自篇起、章在篇内、课时在章内重新计数。
+ */
+export function renderOutlineText(sections: OutlineSection[]): string {
+  const lines: string[] = []
+  let partNo = 0
+  let chapterNo = 0
+  let lessonNo = 0
+  for (const section of sections) {
+    const title = stripOutlineNumbering(section.title)
+    if (title.length === 0) continue
+    if (section.level === 1) {
+      partNo += 1
+      chapterNo = 0
+      lines.push(`第${numberToCn(partNo)}篇 ${title}`)
+    } else if (section.level === 2) {
+      chapterNo += 1
+      lessonNo = 0
+      lines.push(`第${numberToCn(chapterNo)}章 ${title}`)
+    } else {
+      lessonNo += 1
+      lines.push(`${lessonNo}. ${title}`)
+    }
+  }
+  return lines.join('\n')
+}
+
+/**
+ * 结构化目录 → 规范文本 + 目录树。
+ * 树由文本回解析得到，保证「文本 ↔ 树」永远一致（同一套编号口径）。
+ */
+export function buildOutlineFromSections(sections: OutlineSection[]): {
+  text: string
+  nodes: OutlineNode[]
+} {
+  const text = renderOutlineText(sections)
+  return { text, nodes: parseOutlineText(text).nodes }
 }

@@ -56,7 +56,7 @@ export function PlanDraftForm({
         <span className="meta">目录可粘贴、可口述</span>
       </div>
       <p className="form-note">
-        Agent 将依据你的目录先验与已就绪素材起草方案：目录是骨架的下界，目录外的内容不会创建章节；
+        Agent 将依据课程目标与已就绪素材起草方案：目录是骨架的下界，目录外的内容不会创建章节；
         未提到的目录章节会保留并标为「证据不足」，由你裁决。
         {materials ? `当前素材就绪 ${materials.ready}/${materials.total} 份。` : ''}
       </p>
@@ -73,7 +73,7 @@ export function PlanDraftForm({
       </label>
       <label className="field">
         <span>
-          人工目录（每行一节）
+          人工目录（可选：留空则由 Agent 代拟）
           <button
             type="button"
             className="btn link"
@@ -91,6 +91,11 @@ export function PlanDraftForm({
           onChange={(e) => setOutlineText(e.target.value)}
         />
       </label>
+      {outlineText.trim().length === 0 ? (
+        <p className="form-note">
+          目录可以留空：Agent 会依据课程目标与已就绪素材代拟一版目录先验，起草后可在此改写重提。
+        </p>
+      ) : null}
       {issues.length > 0 ? (
         <div className="notice err">
           <div>目录有 {issues.length} 行认不出层级，改格式或点「一键规整」后再提交：</div>
@@ -108,9 +113,7 @@ export function PlanDraftForm({
         <button
           type="button"
           className="btn primary"
-          disabled={
-            busy || goal.trim().length === 0 || outlineText.trim().length === 0 || issues.length > 0
-          }
+          disabled={busy || goal.trim().length === 0 || issues.length > 0}
           onClick={() => void submit()}
         >
           {busy ? '正在提交…' : '提交并开始起草'}

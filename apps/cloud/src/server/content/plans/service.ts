@@ -117,7 +117,9 @@ export async function savePlanInput(
 ): Promise<PlanJobView> {
   await requireOwnedCourse(actor, courseId)
   const body = submitPlanInputRequest.parse(input)
-  const outline = parseOutline(body.outlineText)
+  // 目录先验可留空（原型口径）：留空则由 Agent 依据目标与素材代拟一版并回写。
+  const outlineText = body.outlineText.trim()
+  const outline = outlineText.length > 0 ? parseOutline(outlineText) : null
 
   // 就绪度门禁（T7）：素材未全部就绪不可触发起草（partial 本迭代不开放）。
   const assets = await listAssetsByCourse(courseId)
@@ -135,7 +137,7 @@ export async function savePlanInput(
 
   await repo.updateCoursePlanInput(courseId, {
     goal: body.goal,
-    outlineText: body.outlineText,
+    outlineText,
     outline,
   })
 
@@ -156,8 +158,8 @@ export async function getPlanFor(
     repo.findCoursePlanInput(courseId),
   ])
   const active = draft ?? approved
-  const inputMeta =
-    input?.goal && input.outline_text ? { goal: input.goal, outlineText: input.outline_text } : null
+  // 目标必回填（教师可能只交了目标）；目录可能是空的（待 Agent 代拟）。
+  const inputMeta = input?.goal ? { goal: input.goal, outlineText: input.outline_text ?? '' } : null
   return {
     plan: active ? toPlanView(active) : null,
     job: job ? toPlanJobView(job) : null,

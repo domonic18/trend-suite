@@ -124,7 +124,8 @@ export function PlanPanel({
       ) : null}
       {!plan && !running && !jobFailed ? (
         <NextActionBanner tone="info">
-          第 1 步：提交课程目标与人工目录——Agent 依据两者起草方案，目录外的内容不会创建章节。
+          第 1 步：提交课程目标（人工目录可留空，由 Agent 代拟）——Agent 依据目标与已就绪素材起草方案，
+          目录外的内容不会创建章节。
         </NextActionBanner>
       ) : null}
 

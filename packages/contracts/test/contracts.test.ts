@@ -7,6 +7,7 @@ import {
   createCourseRequest,
   errorBody,
   isWorkbenchRole,
+  submitPlanInputRequest,
 } from '../src/index.js'
 
 test('healthResponse 契约', () => {
@@ -30,6 +31,12 @@ test('createAccountRequest 拒弱口令与非法用户名', () => {
 test('createCourseRequest 拒空标题', () => {
   assert.equal(createCourseRequest.safeParse({ title: '总论卷' }).success, true)
   assert.equal(createCourseRequest.safeParse({ title: '' }).success, false)
+})
+
+test('submitPlanInputRequest：人工目录可留空（由 Agent 代拟），课程目标必填', () => {
+  assert.equal(submitPlanInputRequest.safeParse({ goal: '学会看盘', outlineText: '' }).success, true)
+  assert.equal(submitPlanInputRequest.safeParse({ goal: '学会看盘' }).success, false)
+  assert.equal(submitPlanInputRequest.safeParse({ goal: '', outlineText: '' }).success, false)
 })
 
 test('错误体只带首个问题（firstIssue），不带错误数组', () => {
