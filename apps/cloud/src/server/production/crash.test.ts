@@ -16,6 +16,7 @@ import * as plansRepo from '@/server/content/plans/repo'
 import { createModelEntry, updateTaskBinding } from '@/server/models/service'
 import { listSections, listTasks } from './repo'
 import { startMockLlm, type MockLlm } from './mock-llm'
+import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 
 /**
  * 验收③ 杀进程续跑：独立 worker 进程跑到一半 SIGKILL，重启后
@@ -32,6 +33,9 @@ process.env.CREDENTIAL_ENCRYPTION_KEY = CREDENTIAL_KEY
 process.env.MEDIA_STORAGE = 'local'
 
 const mock: MockLlm = await startMockLlm()
+const quotesMock: MockQuotes = await startMockQuotes()
+// 子 worker 继承本进程 env：行情源指向 mock，不打真实网络。
+process.env.MARKET_QUOTES_BASE_URL = quotesMock.url
 const cloudRoot = path.resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..')
 
 let child: ChildProcess | null = null
@@ -39,6 +43,7 @@ let workerOutput = ''
 after(async () => {
   if (child?.pid && child.exitCode === null) child.kill('SIGKILL')
   await mock.close()
+  await quotesMock.close()
 })
 
 before(async () => {

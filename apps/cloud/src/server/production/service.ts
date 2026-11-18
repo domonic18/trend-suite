@@ -2,10 +2,12 @@ import 'server-only'
 import {
   productionBoardView,
   type ProductionBoardView,
+  type SectionQuotesView,
   type SessionUser,
 } from '@trend-suite/contracts'
 import { forbidden, HttpError, notFound } from '@/server/lib/http'
 import { getCourseForUser } from '@/server/content/service'
+import { sectionQuotes } from '@/server/content/quotes/service'
 import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
 import * as repo from './repo'
 import { PRODUCTION_RUN_JOB_KIND, STEP_DEFS } from './steps'
@@ -93,6 +95,48 @@ export async function retryProductionSection(
   const reset = await repo.retrySection(courseId, sectionId)
   if (reset === 0) {
     throw new HttpError(409, 'production_not_retryable', '该节没有可重试的挂起/失败步')
+  }
+  await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
+  return { ok: true }
+}
+
+/** 节行情视图（看板「产物」面板）：读权限同看板（producer 本人 / operator / admin）。 */
+export async function getSectionQuotes(
+  actor: SessionUser,
+  courseId: string,
+  sectionId: string,
+): Promise<SectionQuotesView> {
+  const course = await getCourseForUser(actor, courseId)
+  if (actor.role === 'producer' && course.ownerId !== actor.id) {
+    throw forbidden('只有课程所属教师可以查看该节行情')
+  }
+  const section = await repo.findSection(courseId, sectionId)
+  if (!section) throw notFound('节不存在')
+  return sectionQuotes(courseId, sectionId)
+}
+
+/**
+ * 重新同步行情：只重置步骤 2/3 再重投 job——案例股（步骤 1，LLM 付费步）不重跑。
+ * 运行中互斥（409）；无可重置的行情步也 409。
+ */
+export async function resyncProductionQuotes(
+  actor: SessionUser,
+  courseId: string,
+  sectionId: string,
+): Promise<{ ok: true }> {
+  const course = await getCourseForUser(actor, courseId)
+  if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
+    throw forbidden('只有课程所属教师可以重新同步该节行情')
+  }
+  const section = await repo.findSection(courseId, sectionId)
+  if (!section) throw notFound('节不存在')
+  const running = await repo.countRunningTasks(courseId, sectionId)
+  if (running > 0) {
+    throw new HttpError(409, 'production_not_retryable', '该节正在运行，等本轮结束再重新同步行情')
+  }
+  const reset = await repo.resyncQuoteSteps(courseId, sectionId)
+  if (reset === 0) {
+    throw new HttpError(409, 'production_not_retryable', '行情步尚未产出，无可重新同步的内容')
   }
   await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
   return { ok: true }

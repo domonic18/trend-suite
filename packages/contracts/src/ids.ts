@@ -17,6 +17,7 @@ export const idPrefix = {
   aiUsage: 'aue',
   productionTask: 'ptk',
   section: 'sec',
+  caseStock: 'cst',
 } as const
 
 export const idShape = {
@@ -34,6 +35,7 @@ export const idShape = {
   aiUsage: /^aue_[0-9a-f]{16}$/,
   productionTask: /^ptk_[0-9a-f]{16}$/,
   section: /^sec_[0-9a-f]{16}$/,
+  caseStock: /^cst_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape

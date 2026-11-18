@@ -2,6 +2,7 @@ import 'server-only'
 import { executeStep, handleStepError } from './engine'
 import {
   claimNextStep,
+  completeSectionIfAllDone,
   findSection,
   listSections,
   resetRunningTasks,
@@ -66,6 +67,9 @@ async function runProductionSection(courseId: string, section: SectionRow): Prom
       if (outcome === 'pending_manual') return 'suspended'
     }
   }
+  // 九步全 done 即翻 complete（幂等）：覆盖重同步/重试后的复原，以及
+  // 第 9 步与节翻转之间崩溃的窗口（completeStep 的两段写非同一事务）。
+  await completeSectionIfAllDone(courseId, section.section_id)
   const final = await findSection(courseId, section.section_id)
   return final?.status === 'complete' ? 'completed' : 'suspended'
 }
