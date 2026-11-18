@@ -1169,38 +1169,62 @@ dialog::backdrop {
   color: var(--p-mut);
 }
 
-/* 任务槽位绑定 */
-.bind-row {
-  border-top: 1px solid var(--p-line);
-  padding: 12px 0;
+/* 任务槽位绑定（一槽一卡，对齐家族 aitech-hub BindingCards 形态） */
+.bind-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
 }
 
-.bind-row:first-of-type {
-  border-top: none;
+.bind-card {
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-panel);
+  padding: 14px 16px;
+  background: var(--p-bg);
 }
 
-.row-lbl {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.bind {
+.bind-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
+  font-size: 14px;
 }
 
-.bind .k {
+.bind-card > .meta {
+  margin: 4px 0 12px;
+}
+
+.bind-card .field {
+  margin-bottom: 10px;
+}
+
+.bind-card .field > span {
   font-size: 12.5px;
   color: var(--p-mut);
-  width: 62px;
-  flex: none;
 }
 
-.bind .input {
-  width: auto;
-  min-width: 220px;
+/* 卡内行内反馈：主模型连通徽章 / 保存与错误文案（不撑动页面级横幅） */
+.bind-test {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--p-mut);
+}
+
+.bind-card p.err-text,
+.bind-card p.meta {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+}
+
+.bind-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 /* ============================================================

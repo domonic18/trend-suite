@@ -203,13 +203,15 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
     }
   }
 
+  /**
+   * 连通性测试不走顶部横幅（横幅插入/消失会把整页内容往下推）：
+   * 结果随条目落库，「上次测试」徽章即反馈；仅请求本身异常（未配置密钥等）才横幅报错。
+   */
   async function runTest(id: string) {
     setError(null)
-    setNotice(null)
     setTestingIds((prev) => new Set(prev).add(id))
     try {
-      const result = await testModel(id)
-      setNotice(`${result.ok ? '连通' : '不通'}：${result.message}（${result.latencyMs}ms）`)
+      await testModel(id)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '测试失败')
     } finally {
@@ -232,20 +234,6 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
     }
   }
 
-  async function saveSlot(binding: TaskBindingView, primaryModelId: string, backupModelId: string) {
-    setError(null)
-    try {
-      await saveBinding({
-        task: binding.task,
-        primaryModelId,
-        backupModelId: backupModelId || null,
-      })
-      await refresh()
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '绑定保存失败')
-    }
-  }
-
   return (
     <section>
       <div className="ops-tabs">
@@ -254,7 +242,12 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
             key={key}
             type="button"
             className={tab === key ? 'ops-tab on' : 'ops-tab'}
-            onClick={() => setTab(key)}
+            onClick={() => {
+              setTab(key)
+              // 横幅是上一个 tab 的操作反馈，切走即清（避免挂在下一个 tab 顶部撑动布局）
+              setError(null)
+              setNotice(null)
+            }}
           >
             {TAB_LABELS[key]}
           </button>
@@ -359,17 +352,21 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
       {tab === 'bindings' ? (
         <div className="card">
           <p className="meta">
-            每槽位绑定主模型（必填）与可选备用；备用不可与主模型相同。下拉只列出与槽位用途匹配且启用的条目。
+            每槽位绑定主模型（必填）与可选备用；备用不可与主模型相同。下拉只列出与槽位用途匹配且启用的条目；「测试主模型」对当前选中的主模型发起连通性测试（真实调用一次，需计费）。
           </p>
-          {bindings.map((binding) => (
-            <BindingRow
-              key={binding.task}
-              binding={binding}
-              models={models}
-              canWrite={canWrite}
-              onSave={saveSlot}
-            />
-          ))}
+          <div className="bind-grid">
+            {bindings.map((binding) => (
+              <BindingCard
+                key={binding.task}
+                binding={binding}
+                models={models}
+                canWrite={canWrite}
+                testingIds={testingIds}
+                onTest={runTest}
+                onChanged={refresh}
+              />
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -688,40 +685,73 @@ function TestBadge(props: {
   return <>—</>
 }
 
-function BindingRow(props: {
+/**
+ * 任务槽位绑定卡（对齐家族 aitech-hub BindingCards/RoleCard 形态）：
+ * 一槽一卡，主备下拉纵向对齐；「测试主模型」复用条目测试通道，
+ * 结果随条目落库并在卡内徽章内联展示；保存/测试反馈在卡内，不动页面级横幅。
+ */
+function BindingCard(props: {
   binding: TaskBindingView
   models: ModelEntryView[]
   canWrite: boolean
-  onSave: (
-    binding: TaskBindingView,
-    primaryModelId: string,
-    backupModelId: string,
-  ) => Promise<void>
+  testingIds: ReadonlySet<string>
+  onTest: (modelId: string) => Promise<void>
+  onChanged: () => Promise<void>
 }) {
   const usable = props.models.filter(
     (m) => m.purposes.includes(props.binding.purpose) && m.status === 'active',
   )
   const [primary, setPrimary] = useState(props.binding.primaryModelId ?? '')
   const [backup, setBackup] = useState(props.binding.backupModelId ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     setPrimary(props.binding.primaryModelId ?? '')
     setBackup(props.binding.backupModelId ?? '')
   }, [props.binding.primaryModelId, props.binding.backupModelId])
 
+  async function save() {
+    if (!primary) return
+    setBusy(true)
+    setError(null)
+    setSaved(false)
+    try {
+      await saveBinding({
+        task: props.binding.task,
+        primaryModelId: primary,
+        backupModelId: backup || null,
+      })
+      setSaved(true)
+      await props.onChanged()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '绑定保存失败')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const primaryEntry = props.models.find((m) => m.id === primary) ?? null
+  const testing = primaryEntry !== null && props.testingIds.has(primaryEntry.id)
+
   return (
-    <div className="bind-row">
-      <div className="row-lbl">{props.binding.taskLabel}</div>
-      <div className="meta">
-        {props.binding.task} · 用途 {PURPOSE_LABELS[props.binding.purpose]}
+    <div className="bind-card" role="group" aria-label={`${props.binding.taskLabel}绑定`}>
+      <div className="bind-head">
+        <b>{props.binding.taskLabel}</b>
+        <span className="tag">{PURPOSE_LABELS[props.binding.purpose]}</span>
       </div>
-      <div className="bind">
-        <span className="k">主模型</span>
+      <div className="meta">{props.binding.task}</div>
+      <label className="field">
+        <span>主模型（必填）</span>
         <select
           className="input"
           value={primary}
           disabled={!props.canWrite}
-          onChange={(e) => setPrimary(e.target.value)}
+          onChange={(e) => {
+            setPrimary(e.target.value)
+            setSaved(false)
+          }}
         >
           <option value="">请选择</option>
           {usable.map((m) => (
@@ -730,16 +760,19 @@ function BindingRow(props: {
             </option>
           ))}
         </select>
-      </div>
-      <div className="bind">
-        <span className="k">备用模型</span>
+      </label>
+      <label className="field">
+        <span>备用模型（可选）</span>
         <select
           className="input"
           value={backup}
           disabled={!props.canWrite}
-          onChange={(e) => setBackup(e.target.value)}
+          onChange={(e) => {
+            setBackup(e.target.value)
+            setSaved(false)
+          }}
         >
-          <option value="">可选</option>
+          <option value="">无备用</option>
           {usable
             .filter((m) => m.id !== primary)
             .map((m) => (
@@ -748,17 +781,38 @@ function BindingRow(props: {
               </option>
             ))}
         </select>
-        {props.canWrite ? (
+      </label>
+      <div className="bind-test">
+        <span>主模型连通</span>
+        {primaryEntry ? (
+          <TestBadge
+            testing={testing}
+            result={primaryEntry.lastTestResult}
+            latencyMs={primaryEntry.lastTestLatencyMs}
+            error={primaryEntry.lastTestError}
+            testedAt={primaryEntry.lastTestedAt}
+          />
+        ) : (
+          <span className="meta">未选择主模型</span>
+        )}
+      </div>
+      {error ? <p className="err-text">{error}</p> : null}
+      {saved && !error ? <p className="meta">已保存，下一次任务即生效</p> : null}
+      {props.canWrite ? (
+        <div className="bind-foot">
           <button
             type="button"
             className="btn"
-            disabled={!primary}
-            onClick={() => void props.onSave(props.binding, primary, backup)}
+            disabled={!primary || testing}
+            onClick={() => void props.onTest(primary)}
           >
-            保存
+            {testing ? '测试中…' : '测试主模型'}
           </button>
-        ) : null}
-      </div>
+          <button type="button" className="btn primary" disabled={busy || !primary} onClick={() => void save()}>
+            {busy ? '保存中…' : '保存'}
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
