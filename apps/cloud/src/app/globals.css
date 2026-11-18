@@ -1559,6 +1559,13 @@ dialog::backdrop {
   line-height: 1.65;
 }
 
+.plan-form .outline-issues {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
 .plan-form .field {
   display: flex;
   flex-direction: column;

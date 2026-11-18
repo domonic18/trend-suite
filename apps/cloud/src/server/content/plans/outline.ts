@@ -1,7 +1,10 @@
 import 'server-only'
 import { z } from 'zod'
 import {
+  MAX_OUTLINE_NODES,
+  parseOutlineText,
   type CourseOutlineView,
+  type OutlineNode,
   type PlanSkeletonView,
   type PlanViolationView,
   sectionMatchStatuses,
@@ -11,28 +14,15 @@ import { badRequest } from '@/server/lib/http'
 /**
  * 目录先验（arch/05 §5 阶段三）：人工目录（篇→卷→课时三级）是骨架的唯一来源，
  * 方案不得发明目录之外的章节。解析失败给出行号让教师改格式。
+ *
+ * 解析规则本身在 @trend-suite/contracts（前后端共用）：教师端据此本地逐行提示、
+ * 一键规整，服务端据此把关——口径只有一份。
  */
 
 /** 证据匹配度阈值：低于它判 low_match，批准前需教师裁决（需求未定项起始值 0.5）。 */
 export const MATCH_THRESHOLD = 0.5
 
-const MAX_NODES = 200
-
-const LEVEL_PATTERNS: { level: 1 | 2 | 3; pattern: RegExp }[] = [
-  { level: 1, pattern: /^(第\s*[一二三四五六七八九十百零\d]+\s*篇|Part\s*\d+[.:：\s])/i },
-  {
-    level: 2,
-    pattern: /^(第\s*[一二三四五六七八九十百零\d]+\s*章|[一二三四五六七八九十百零]+\s*、)/,
-  },
-  { level: 3, pattern: /^(\d{1,3})\s*[.、)）:：]\s*\S/ },
-]
-
-export type OutlineNode = {
-  id: string
-  title: string
-  level: 1 | 2 | 3
-  parentId: string | null
-}
+export type { OutlineNode }
 
 /** 「第X篇 / 第一章 / 一、/ 1.」三级行文 → 目录树；无法识别的行直接 400（带行号）。 */
 export function parseOutline(text: string): CourseOutlineView {
@@ -43,31 +33,21 @@ export function parseOutline(text: string): CourseOutlineView {
   if (lines.length === 0) {
     throw badRequest('目录不能为空', { path: 'outlineText', message: '请粘贴人工目录' })
   }
-  if (lines.length > MAX_NODES) {
-    throw badRequest(`目录最多 ${MAX_NODES} 行`, {
+  if (lines.length > MAX_OUTLINE_NODES) {
+    throw badRequest(`目录最多 ${MAX_OUTLINE_NODES} 行`, {
       path: 'outlineText',
-      message: `目录最多 ${MAX_NODES} 行`,
+      message: `目录最多 ${MAX_OUTLINE_NODES} 行`,
     })
   }
 
-  const nodes: OutlineNode[] = []
-  const stack: { level: 1 | 2 | 3; id: string }[] = []
-  lines.forEach((line, index) => {
-    const hit = LEVEL_PATTERNS.find(({ pattern }) => pattern.test(line))
-    if (!hit) {
-      throw badRequest(`目录第 ${index + 1} 行无法识别层级`, {
-        path: 'outlineText',
-        message: `第 ${index + 1} 行「${line.slice(0, 40)}」请用「第X篇 / 第X章 / 1.」三级编号`,
-      })
-    }
-    const id = `n${nodes.length + 1}`
-    const parent = [...stack].reverse().find((entry) => entry.level < hit.level)
-    if (parent) {
-      while (stack.length > 0 && stack[stack.length - 1]!.level >= hit.level) stack.pop()
-    }
-    stack.push({ level: hit.level, id })
-    nodes.push({ id, title: line.slice(0, 200), level: hit.level, parentId: parent?.id ?? null })
-  })
+  const { nodes, issues } = parseOutlineText(text)
+  const first = issues[0]
+  if (first) {
+    throw badRequest(`目录第 ${first.index} 行无法识别层级`, {
+      path: 'outlineText',
+      message: first.message,
+    })
+  }
   return { nodes }
 }
 
