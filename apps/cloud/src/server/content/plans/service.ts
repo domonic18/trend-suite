@@ -28,7 +28,8 @@ import * as repo from './repo'
 
 /**
  * 方案状态机（arch/05 §5 阶段三）：起草（队列）→ 批准（锁定基准版）
- * / 打回（意见重起草）/ 微调（结构化即时生效）。写动作只给课程所属教师。
+ * / 打回（意见重起草）/ 微调（结构化即时生效）。
+ * 写动作给课程所属教师；admin 兼具 producer 做课权限（arch/01 角色口径）。
  */
 
 export const CURRICULUM_JOB_KIND = 'curriculum_draft'
@@ -47,9 +48,10 @@ function leafSectionNodes(nodes: { id: string; title: string; parentId: string |
   return nodes.filter((node) => !parents.has(node.id))
 }
 
+/** producer 限本人课程；admin 兼具 producer 权限，不限归属；operator 只读。 */
 async function requireOwnedCourse(actor: PlanActor, courseId: string) {
   const course = await getCourseForUser(actor, courseId)
-  if (actor.role !== 'producer' || course.ownerId !== actor.id) {
+  if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
     throw forbidden('只有课程所属教师可以执行该操作')
   }
   return course

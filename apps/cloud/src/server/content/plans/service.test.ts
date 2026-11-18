@@ -332,3 +332,30 @@ test('权限：非课程所属教师不能写，运营只读', { skip }, async (
   const view = await getPlanFor(ops, course.id)
   assert.ok(view.plan)
 })
+
+test('权限：admin 兼具 producer 权限，可提交与批准他人课程方案', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-plan-8',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const admin = await createAccount({
+    username: 'guanliyuan-plan-8',
+    password: 'correct-horse',
+    role: 'admin',
+  })
+  const course = await createCourse(teacher.id, '方案课八')
+  await seedReadyAsset(course.id)
+
+  // admin 非归属人，但兼具 producer 权限：提交与批准都放行
+  const job = await savePlanInput(admin, course.id, {
+    goal: '学会看盘',
+    outlineText: OUTLINE_TEXT,
+    allowPartial: false,
+  })
+  assert.equal(job.status, 'queued')
+
+  await insertDraft(course.id, teacher.id)
+  const approved = await approvePlan(admin, course.id)
+  assert.equal(approved.status, 'approved')
+})

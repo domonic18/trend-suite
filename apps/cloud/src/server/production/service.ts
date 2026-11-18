@@ -12,7 +12,7 @@ import { PRODUCTION_RUN_JOB_KIND, STEP_DEFS } from './steps'
 
 /**
  * 九步看板与挂起重试（arch/05 §6）：看板对 producer 本人可读写，
- * operator/admin 只读（与模型配置的权限口径互补）；写动作只动本节待办。
+ * admin 兼具 producer 权限（arch/01 角色口径），operator 只读；写动作只动本节待办。
  */
 
 export async function getProductionBoard(
@@ -85,7 +85,7 @@ export async function retryProductionSection(
   sectionId: string,
 ): Promise<{ ok: true }> {
   const course = await getCourseForUser(actor, courseId)
-  if (actor.role !== 'producer' || course.ownerId !== actor.id) {
+  if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
     throw forbidden('只有课程所属教师可以重试该节')
   }
   const section = await repo.findSection(courseId, sectionId)
