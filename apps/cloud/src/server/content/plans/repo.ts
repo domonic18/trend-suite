@@ -178,11 +178,12 @@ export type CoursePlanInputRow = {
   goal: string | null
   outline_text: string | null
   outline: unknown
+  updated_at: Date
 }
 
 export function findCoursePlanInput(courseId: string): Promise<CoursePlanInputRow | null> {
   return queryOne<CoursePlanInputRow>(
-    `SELECT goal, outline_text, outline FROM courses WHERE id = $1`,
+    `SELECT goal, outline_text, outline, updated_at FROM courses WHERE id = $1`,
     [courseId],
   )
 }

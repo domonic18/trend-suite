@@ -6,6 +6,7 @@ import type { PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { approvePlan, getPlan, rejectPlan, tweakPlan } from '../api'
 import { NextActionBanner } from './NextActionBanner'
+import { AgentRail } from './AgentRail'
 import { OutlineCard } from './OutlineCard'
 import { PlanDraftForm } from './PlanDraftForm'
 import { InterruptCard } from './InterruptCard'
@@ -25,9 +26,11 @@ function scrollToId(id: string) {
 export function PlanPanel({
   courseId,
   materials = null,
+  userName = '教师',
 }: {
   courseId: string
   materials?: MaterialsReady | null
+  userName?: string
 }) {
   const router = useRouter()
   const [data, setData] = useState<PlanResponse | null>(null)
@@ -92,7 +95,8 @@ export function PlanPanel({
   }
 
   return (
-    <section>
+    <div className="plan-split">
+      <section>
       {running ? (
         <NextActionBanner tone="info">
           Agent 正在起草方案{matText ? `（${matText}）` : ''}…第 {job?.attempts ?? 1} 次尝试；草案四件套产出后自动呈现，等待期间可去
@@ -230,6 +234,15 @@ export function PlanPanel({
           />
         </>
       ) : null}
-    </section>
+      </section>
+      <AgentRail
+        trace={data?.trace ?? null}
+        job={job}
+        plan={plan}
+        userName={userName}
+        busy={busy}
+        onSend={(text) => void act(() => rejectPlan(courseId, text))}
+      />
+    </div>
   )
 }

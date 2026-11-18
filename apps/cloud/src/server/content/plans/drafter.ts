@@ -23,7 +23,11 @@ import type { PlanLesson } from './tweak'
  */
 
 const CURRICULUM_TASK = 'content.curriculum'
-const MAX_TOKENS = 16_000
+/**
+ * 综合起草的 token 上限：推理型模型的思考与正文共用 max_tokens 预算，
+ * 目录较大时思考可能吃掉 10K+，16K 会把 JSON 截断（实测连续三次撞满 16000）。
+ */
+const MAX_TOKENS = 32_000
 /** 转写语料字符上限：超长课程按序截断（标记省略），避免单请求超上下文。 */
 const CORPUS_MAX_CHARS = 48_000
 
@@ -127,6 +131,7 @@ function buildPrompt(input: {
     '3. concepts 收录课程核心概念：name 唯一、definition 一句话；同义表述放 aliases。',
     '4. edges 按概念名引用（from/to 必须是 concepts 里的 name），kind 只能是 prerequisite（先修）或 related（相关）；不要制造循环先修。',
     '5. lessons 为分节计划：每条对应一个课时级章节（sectionId 引用目录 nodeId，无法对应时用 null），title 为课时标题，subLessonCount 1～20，estimatedMinutes 5～240，parallelSlot 1～8。',
+    '6. 规模上限（避免输出被截断）：matches 恰好覆盖目录全部节点；concepts ≤ 25 条且 definition ≤ 40 字；edges ≤ 30 条；lessons 只为课时级章节生成且 ≤ 40 条。',
     '只输出一个 JSON 对象，字段：matches、concepts、edges、lessons，不要输出任何其他文字。',
   ].join('\n')
 
@@ -227,6 +232,7 @@ async function draftOutline(input: {
     user: prompt.user,
     maxTokens: OUTLINE_MAX_TOKENS,
     schema: outlineDraftSchema,
+    phase: 'outline',
     summarize: (out) => `sections=${out.sections.length}`,
   })
   return buildOutlineFromSections(data.sections)
@@ -305,6 +311,7 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       user: prompt.user,
       maxTokens: MAX_TOKENS,
       schema: draftOutputSchema,
+      phase: 'draft',
       summarize: (out) =>
         `nodes=${outline.nodes.length} matches=${out.matches.length} concepts=${out.concepts.length} edges=${out.edges.length} lessons=${out.lessons.length} corpusLines=${lines.length}`,
     })

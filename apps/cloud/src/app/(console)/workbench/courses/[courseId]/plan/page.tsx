@@ -117,7 +117,11 @@ export default function CoursePlanPage() {
         </Link>
         <Link href={`/workbench/courses/${courseId}/production`}>九步生产</Link>
       </div>
-      <PlanPanel courseId={courseId} materials={state.materials} />
+      <PlanPanel
+        courseId={courseId}
+        materials={state.materials}
+        userName={state.user.displayName ?? state.user.username}
+      />
     </WorkbenchShell>
   )
 }
