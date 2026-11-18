@@ -16,19 +16,35 @@ import { TrendChatModel } from './channel'
 
 /**
  * 九步的 agent 执行面（arch/05 §6）：deepagents 子代理 + 我们的通道 + PG checkpointer。
- * 占位级产物：每步一次 agent 调用，模型把占位 JSON 交给唯一工具 write_step_output
+ * 每步一次 agent 调用，模型把产物交给唯一工具 write_step_output
  * （工具 schema 即第一层校验，zod/v4 实例，与 contracts 的 zod v3 互不干扰）。
  * thread_id = courseId/sectionId/sN：agent 侧崩溃由 checkpointer 续跑同一步（SP3）；
  * 权威状态仍在 production_tasks，checkpointer 只是运行态缓存。
  */
 
-// agent 步的占位产物形状（占位级，后续迭代替换真实工艺）。键 = steps.ts 的 def.key。
+// agent 步的产物形状。case_stocks 为真实产物（迭代 5，arch/06 §5.1）：
+// 云端复检还会做确定性二次校验与自动归一，schema 先把住格式关。键 = steps.ts 的 def.key。
+const caseStockProduct = (): z.ZodType =>
+  z.object({
+    stocks: z
+      .array(
+        z.object({
+          code: z.string().regex(/^\d{6}$/),
+          name: z.string().min(1).max(20),
+          exchange: z.enum(['SH', 'SZ']),
+          period: z.enum(['1d', '1w']),
+          windowStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          windowEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          events: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), label: z.string().min(1).max(30) })).max(5),
+        }),
+      )
+      .min(2)
+      .max(4),
+  })
 const widgetProduct = (): z.ZodType =>
   z.object({ widgets: z.array(z.object({ kind: z.string(), title: z.string() })) })
 const STEP_PRODUCT_SCHEMAS: Record<string, z.ZodType> = {
-  case_stocks: z.object({
-    stocks: z.array(z.object({ code: z.string(), name: z.string() })),
-  }),
+  case_stocks: caseStockProduct(),
   figure_spec: z.object({
     figures: z.array(z.object({ title: z.string(), kind: z.string() })),
   }),
@@ -67,6 +83,15 @@ export function getCheckpointer(): Promise<PostgresSaver> {
 // ---------------------------------------------------------------- 步 agent
 
 export function sectionPrompt(def: StepDef, section: SectionRow): string {
+  if (def.key === 'case_stocks') {
+    // 迭代 5 真实工艺（arch/06 §5.1）：依据素材与节主题选出 2–4 只案例股。
+    return [
+      `课程生产第 ${def.n} 步「${def.label}」。请依据本节的素材要点与标题，选出 2–4 只最能支撑教学的 A 股案例股。`,
+      `节上下文：course_id=${section.course_id}，section_id=${section.section_id}，标题「${section.title}」，序号 ${section.sort_order}。`,
+      `每只股票给出：6 位代码、名称、交易所（SH/SZ）、K 线周期（1d 日线或 1w 周线）、时间窗（windowStart/windowEnd，YYYY-MM-DD，起 ≤ 止；日线窗口不得早于 2024-03，更早请用 1w）、以及 ≤5 个落在窗口内的事件锚点（date + ≤30 字说明，如财报日、行业政策日）。`,
+      `完成后调用 write_step_output 工具写入结果，然后用一句话确认完成。`,
+    ].join('\n')
+  }
   return [
     `课程生产第 ${def.n} 步「${def.label}」。当前为占位级产物阶段：不要长篇创作。`,
     `节上下文：course_id=${section.course_id}，section_id=${section.section_id}，标题「${section.title}」，序号 ${section.sort_order}。`,
@@ -81,7 +106,7 @@ export function buildStepTool(task: ProductionTaskRow): DynamicStructuredTool {
   const rawSchema = z.object({ product: productSchema(task.step) })
   return new DynamicStructuredTool({
     name: 'write_step_output',
-    description: '写入本步骤的占位产物（唯一出口）',
+    description: '写入本步骤的产物（唯一出口）',
     schema: rawSchema as never,
     func: async (input: { product?: unknown }) => {
       await saveStepOutput(task.id, def.key, input.product)

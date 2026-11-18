@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import type { ProductionBoardView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { getProductionBoard, retryProductionSection } from '../api'
+import { SectionQuotesPanel } from './SectionQuotesPanel'
 
 /**
  * 九步生产看板（仿 docs/prototype/teacher-production.html）：
  * 节行 × 9 步格（d=done / r=running / w=pending_manual / e=failed），
- * 生产活跃时 3 秒轮询（复用素材面板节奏）；挂起节带「重试」。
+ * 生产活跃时 3 秒轮询（复用素材面板节奏）；挂起节带「重试」；
+ * 节行可展开「产物」面板看案例股清单与 K 线（迭代 5）。
  */
 
 const STEP_LABELS = ['案例股', '行情同步', '行情读回', '图示', '回放课件', '正文', '其余课件', '评审', '溯源']
@@ -46,11 +48,19 @@ function sectionTag(section: ProductionBoardView['sections'][number]): { classNa
   return { className: 'tag gray', text: '排队中' }
 }
 
-export function ProductionBoard({ courseId }: { courseId: string }) {
+export function ProductionBoard({
+  courseId,
+  canResync = false,
+}: {
+  courseId: string
+  /** producer/admin 可发起「重新同步行情」（operator 只读）；所有权由服务端把关。 */
+  canResync?: boolean
+}) {
   const [board, setBoard] = useState<ProductionBoardView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busySection, setBusySection] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -152,39 +162,57 @@ export function ProductionBoard({ courseId }: { courseId: string }) {
             (t) => t.status === 'pending_manual' || t.status === 'failed',
           )
           const failedTask = section.tasks.find((t) => t.lastError && t.status !== 'done')
+          const caseDone = section.tasks.some((t) => t.step === 1 && t.status === 'done')
+          const isOpen = expanded === section.sectionId
           return (
-            <div className="srow" key={section.sectionId}>
-              <div className="smeta">
-                <b>{section.title}</b>
-                <span>
-                  {section.sectionId} · {section.products}/9 步
-                </span>
-              </div>
-              <div className="steps" aria-label="九步进度">
-                {section.tasks.map((task) => (
-                  <span
-                    key={task.step}
-                    className={`s ${stepClass(task.status)}`}
-                    title={stepTitle(STEP_LABELS[task.step - 1] ?? `第 ${task.step} 步`, task.status, task.attempts, task.lastError)}
-                  >
-                    {task.step}
+            <div className="srow-wrap" key={section.sectionId}>
+              <div className="srow">
+                <div className="smeta">
+                  <b>{section.title}</b>
+                  <span>
+                    {section.sectionId} · {section.products}/9 步
                   </span>
-                ))}
+                </div>
+                <div className="steps" aria-label="九步进度">
+                  {section.tasks.map((task) => (
+                    <span
+                      key={task.step}
+                      className={`s ${stepClass(task.status)}`}
+                      title={stepTitle(STEP_LABELS[task.step - 1] ?? `第 ${task.step} 步`, task.status, task.attempts, task.lastError)}
+                    >
+                      {task.step}
+                    </span>
+                  ))}
+                </div>
+                <div className="sright">
+                  <span className={tag.className}>{tag.text}</span>
+                  {failedTask?.lastError ? <div className="err-text">{failedTask.lastError}</div> : null}
+                  {retryable ? (
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={busySection === section.sectionId}
+                      onClick={() => void retry(section.sectionId)}
+                    >
+                      {busySection === section.sectionId ? '重试中…' : '重试该节'}
+                    </button>
+                  ) : null}
+                  {caseDone ? (
+                    <button
+                      type="button"
+                      className="btn link"
+                      onClick={() => setExpanded(isOpen ? null : section.sectionId)}
+                    >
+                      {isOpen ? '收起产物' : '产物'}
+                    </button>
+                  ) : null}
+                </div>
               </div>
-              <div className="sright">
-                <span className={tag.className}>{tag.text}</span>
-                {failedTask?.lastError ? <div className="err-text">{failedTask.lastError}</div> : null}
-                {retryable ? (
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={busySection === section.sectionId}
-                    onClick={() => void retry(section.sectionId)}
-                  >
-                    {busySection === section.sectionId ? '重试中…' : '重试该节'}
-                  </button>
-                ) : null}
-              </div>
+              {isOpen ? (
+                <div className="sdetail">
+                  <SectionQuotesPanel courseId={courseId} sectionId={section.sectionId} canResync={canResync} />
+                </div>
+              ) : null}
             </div>
           )
         })}

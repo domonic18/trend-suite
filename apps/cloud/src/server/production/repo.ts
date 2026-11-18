@@ -173,6 +173,49 @@ export async function retrySection(courseId: string, sectionId: string): Promise
   return rows.length
 }
 
+/**
+ * 重新同步行情：只重置步骤 2/3（done/failed/pending_manual → pending、attempts=0），
+ * 步骤 1 产物（案例股清单）不动——LLM 付费步不重跑；节回 pending 让 runner 重认领。
+ */
+export async function resyncQuoteSteps(courseId: string, sectionId: string): Promise<number> {
+  const rows = await query<{ id: string }>(
+    `UPDATE production_tasks SET status = 'pending', attempts = 0, last_error = NULL, updated_at = now()
+     WHERE course_id = $1 AND section_id = $2 AND step IN (2, 3)
+       AND status IN ('done', 'failed', 'pending_manual')
+     RETURNING id`,
+    [courseId, sectionId],
+  )
+  await query(
+    `UPDATE sections SET status = 'pending', updated_at = now()
+     WHERE course_id = $1 AND section_id = $2`,
+    [courseId, sectionId],
+  )
+  return rows.length
+}
+
+/** 节是否还有 running 步（重新同步的互斥条件）。 */
+export async function countRunningTasks(courseId: string, sectionId: string): Promise<number> {
+  const row = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) AS count FROM production_tasks
+     WHERE course_id = $1 AND section_id = $2 AND status = 'running'`,
+    [courseId, sectionId],
+  )
+  return Number(row?.count ?? 0)
+}
+
+/** 九步全 done 则节翻 complete（幂等）：重同步/重试后无需重跑第 9 步即可复原终态。 */
+export async function completeSectionIfAllDone(courseId: string, sectionId: string): Promise<void> {
+  await query(
+    `UPDATE sections s SET status = 'complete', updated_at = now()
+     WHERE s.course_id = $1 AND s.section_id = $2
+       AND NOT EXISTS (
+         SELECT 1 FROM production_tasks t
+         WHERE t.course_id = s.course_id AND t.section_id = s.section_id AND t.status <> 'done'
+       )`,
+    [courseId, sectionId],
+  )
+}
+
 export function findSection(courseId: string, sectionId: string): Promise<SectionRow | null> {
   return queryOne<SectionRow>(
     `SELECT ${SECTION_COLUMNS} FROM sections WHERE course_id = $1 AND section_id = $2`,

@@ -102,7 +102,7 @@ export default function CourseProductionPage() {
           九步生产
         </Link>
       </div>
-      <ProductionBoard courseId={courseId} />
+      <ProductionBoard courseId={courseId} canResync={state.user.role === 'admin' || state.user.role === 'producer'} />
     </WorkbenchShell>
   )
 }

@@ -35,6 +35,8 @@ const envSchema = z.object({
   COS_ENDPOINT: z.string().min(1).optional(),
   COS_SECRET_ID: z.string().min(1).optional(),
   COS_SECRET_KEY: z.string().min(1).optional(),
+  // 行情源基址（arch/06 §5）：默认腾讯前复权端点，测试注入 mock 源时改写。
+  MARKET_QUOTES_BASE_URL: z.string().url().default('https://web.ifzq.gtimg.cn'),
 })
 
 export type AppEnv = z.infer<typeof envSchema>

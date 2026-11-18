@@ -17,6 +17,7 @@ import { HttpError } from '@/server/lib/http'
 import { getProductionBoard, retryProductionSection } from './service'
 import { claimNextStep, listSections, listTasks } from './repo'
 import { startMockLlm, type MockLlm } from './mock-llm'
+import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 
 /**
  * 九步引擎验收（docs/plan 迭代 4 清单）：
@@ -36,8 +37,11 @@ process.env.CREDENTIAL_ENCRYPTION_KEY = randomBytes(32).toString('base64url')
 process.env.MEDIA_STORAGE = 'local'
 
 const mock: MockLlm = await startMockLlm()
+const quotesMock: MockQuotes = await startMockQuotes()
+process.env.MARKET_QUOTES_BASE_URL = quotesMock.url
 after(async () => {
   await mock.close()
+  await quotesMock.close()
 })
 
 before(async () => {
