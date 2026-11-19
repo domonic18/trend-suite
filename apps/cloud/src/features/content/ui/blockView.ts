@@ -5,7 +5,6 @@ import {
   dslTimelineBody,
   type DslBignumBody,
   type DslCardsBody,
-  type DslCmpBody,
   type DslTimelineBody,
 } from '@trend-suite/contracts'
 
