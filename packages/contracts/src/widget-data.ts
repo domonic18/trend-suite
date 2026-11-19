@@ -141,7 +141,7 @@ export function olsSlope(bars: readonly WidgetBar[]): number {
   return den === 0 ? 0 : num / den
 }
 
-/** 平均真实波幅（TR = max(h−l, |h−prevClose|, |l−prevClose|)）：断言容差的尺度。 */
+/** 平均真实波幅（TR = max(h−l, |h−prevClose|, |l−prevClose|)）：全样本均值。 */
 export function meanTrueRange(bars: readonly WidgetBar[]): number {
   if (bars.length === 0) return 0
   let sum = 0
@@ -151,6 +151,23 @@ export function meanTrueRange(bars: readonly WidgetBar[]): number {
     sum += Math.max(bar.h - bar.l, Math.abs(bar.h - prevClose), Math.abs(bar.l - prevClose))
   }
   return sum / bars.length
+}
+
+/**
+ * ATR：最近 min(14, n) 根 TR 的简单均值——断言容差与斜率角的尺度。
+ * 跨端同源（服务端证明与客户端反馈用同一份），口径变了要同步渲染器。
+ */
+export function atr(bars: readonly WidgetBar[]): number {
+  const n = bars.length
+  if (n === 0) return 0
+  const window = Math.min(14, n)
+  let sum = 0
+  for (let i = n - window; i < n; i += 1) {
+    const bar = bars[i]!
+    const prevClose = i === 0 ? bar.o : bars[i - 1]!.c
+    sum += Math.max(bar.h - bar.l, Math.abs(bar.h - prevClose), Math.abs(bar.l - prevClose))
+  }
+  return sum / window
 }
 
 /** 形态归类：只依据 bars 本身（声明值不参与）——「声明形态 == 实际形态」才判得过。 */

@@ -15,6 +15,9 @@ const DEPS = {
   units: new Map(),
   stockCodes: new Set<string>(),
   terms: [] as string[],
+  caseWindows: new Map(),
+  tradingDays: new Map(),
+  replayCodes: new Map(),
 }
 
 function issuesOf(body: string) {

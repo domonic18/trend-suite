@@ -1,18 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import type { CaseStockView, DslBlock, FigureView, SectionContentView, SourceUnitView } from '@trend-suite/contracts'
+import {
+  DSL_VERSION,
+  dslAnnotationBody,
+  type CaseStockView,
+  type DslBlock,
+  type FigureView,
+  type SectionContentView,
+  type SourceUnitView,
+  type WidgetView,
+} from '@trend-suite/contracts'
 import { parseDsl } from '@/server/content/textbook/dsl-parser'
 import { bignumView, cardsView, cmpView, timelineView } from './blockView'
+import { AnnotationCard } from './AnnotationCard'
 import { ClipCard } from './ClipCard'
 import { FigureCard } from './FigureCard'
 import { StockAnchor } from './StockAnchor'
 import { UnitAnchorCard } from './UnitAnchorCard'
+import { WidgetHost } from './widgets/WidgetHost'
 
 /**
  * 正文 DSL 渲染器（arch/06 §10：渲染在客户端现场完成，绝不存渲染后 HTML）。
  * 解析与云端复检同源（同一个 parseDsl）；散文段展开 Markdown 子集
- * （标题/列表/粗体）与 [[unit:]]/[[stock:]] 内联锚；容器块按 v1 白名单分发。
+ * （标题/列表/粗体）与 [[unit:]]/[[stock:]] 内联锚；容器块按白名单分发。
+ * 版本门禁按正文的 dslVersion 走（v1 正文不渲染 v2 溯源块）。
  */
 
 const ANCHOR_SPLIT = /\[\[(unit|stock):([^\|\]\s]+)\|([^\]]+)\]\]/g
@@ -22,15 +34,19 @@ export function DslRenderer({ content }: { content: SectionContentView }) {
   if (!content.body) {
     return <div className="empty">本节还没有正文产出（正文步完成后可预览）。</div>
   }
+  const version = content.dslVersion ?? DSL_VERSION
   let ast
   try {
-    ast = parseDsl(content.body)
+    ast = parseDsl(content.body, version)
   } catch (err) {
     return <div className="notice err">正文解析失败：{(err as Error).message}</div>
   }
   const unitsById = new Map(content.units.map((unit) => [unit.id, unit]))
   const stocksByCode = new Map(content.caseStocks.map((stock) => [stock.code, stock]))
   const figuresById = new Map(content.figures.map((figure) => [figure.id, figure]))
+  const widgetsByCode = new Map(
+    content.widgets.filter((widget) => widget.code).map((widget) => [widget.code!, widget]),
+  )
 
   return (
     <article className="doc-body">
@@ -48,8 +64,10 @@ export function DslRenderer({ content }: { content: SectionContentView }) {
           <BlockView
             key={`b${segment.block.line}-${index}`}
             block={segment.block}
+            version={version}
             unitsById={unitsById}
             figuresById={figuresById}
+            widgetsByCode={widgetsByCode}
           />
         ),
       )}
@@ -209,12 +227,16 @@ function Bold({ text }: { text: string }) {
 
 function BlockView({
   block,
+  version,
   unitsById,
   figuresById,
+  widgetsByCode,
 }: {
   block: DslBlock
+  version: number
   unitsById: Map<string, SourceUnitView>
   figuresById: Map<string, FigureView>
+  widgetsByCode: Map<string, WidgetView>
 }) {
   switch (block.directive) {
     case 'think':
@@ -333,15 +355,50 @@ function BlockView({
         />
       )
     }
+    case 'annotation': {
+      if (version < 2) return <UnknownBlock block={block} />
+      const parsed = dslAnnotationBody.safeParse(parseJson(block.body))
+      if (!parsed.success) return <UnknownBlock block={block} />
+      return (
+        <AnnotationCard
+          body={parsed.data}
+          kind={block.attrs.kind ?? ''}
+          unitId={block.attrs.unitId ?? ''}
+          atMs={Number(block.attrs.atMs ?? 0)}
+          code={block.attrs.code ?? ''}
+        />
+      )
+    }
+    case 'replay': {
+      if (version < 2) return <UnknownBlock block={block} />
+      const code = block.attrs.code ?? ''
+      const widget = widgetsByCode.get(code)
+      if (!widget) {
+        return (
+          <div className="notice err">
+            本节没有 code={code} 的回放课件（正文 :::replay 只认已落库的唯一课件）。
+          </div>
+        )
+      }
+      return <WidgetHost widget={widget} figures={figuresById} />
+    }
     default:
       return <UnknownBlock block={block} />
+  }
+}
+
+function parseJson(body: string): unknown {
+  try {
+    return JSON.parse(body)
+  } catch {
+    return null
   }
 }
 
 function UnknownBlock({ block }: { block: DslBlock }) {
   return (
     <div className="notice">
-      未支持的容器块 {`:::${block.directive}`}（本渲染器为 DSL v1 白名单）——原文：
+      未支持的容器块 {`:::${block.directive}`}（不在本版 DSL 白名单）——原文：
       <pre>{block.body}</pre>
     </div>
   )

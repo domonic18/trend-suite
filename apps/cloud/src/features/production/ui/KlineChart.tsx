@@ -1,30 +1,26 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { KlineBar, StockQuotesView } from '@trend-suite/contracts'
+import type { StockQuotesView } from '@trend-suite/contracts'
+import {
+  CHART_DOWN,
+  CHART_UP,
+  MA_PERIODS,
+  chartScale,
+  drawChart,
+  sma,
+} from '@/features/lib/chartDraw'
 
 /**
  * 教学 K 线（教师预览版，移植原型 student-course.html 的 #kchart 形态）：
  * 蜡烛 + 成交量 + MA5/10/60（白名单内）+ 事件锚点竖线；行情不可用画占位框，
  * 绝不编造数值。悬停读数用于「数值可核」（验收①）。
+ *
+ * 绘制内核走 chartDraw——与课件里的合成 K 线**同一份画法**（迭代 6 的教训：
+ * 同一个常量在两处各写一遍，迟早对不上）。留白、均线色、命中换算只此一份。
  */
 
-const UP_COLOR = '#d9483f'
-const DOWN_COLOR = '#0f9d76'
-const MA_COLORS: { n: number; color: string }[] = [
-  { n: 5, color: '#c47a12' },
-  { n: 10, color: '#2563eb' },
-  { n: 60, color: '#8b94a9' },
-]
-
-function sma(bars: KlineBar[], n: number): (number | null)[] {
-  return bars.map((_, i) => {
-    if (i < n - 1) return null
-    let sum = 0
-    for (let k = i - n + 1; k <= i; k++) sum += bars[k]?.c ?? 0
-    return sum / n
-  })
-}
+const CHART_HEIGHT = 320
 
 function fmt(n: number): string {
   return n.toFixed(2)
@@ -60,123 +56,23 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
 
     const draw = () => {
       const width = wrap.clientWidth
-      const height = 320
+      if (width === 0) return
+      const height = CHART_HEIGHT
       const dpr = window.devicePixelRatio || 1
       canvas.width = width * dpr
       canvas.height = height * dpr
       canvas.style.height = `${height}px`
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-      ctx.scale(dpr, dpr)
-
-      const padL = 8
-      const padR = 60
-      const padT = 10
-      const axisH = 20
-      const volH = 56
-      const priceH = height - padT - axisH - volH - 6
-      const plotW = width - padL - padR
-      const slot = plotW / bars.length
-      const bodyW = Math.max(1.5, Math.min(11, slot * 0.62))
-
-      const highs = bars.map((b) => b.h)
-      const lows = bars.map((b) => b.l)
-      const maNums = MA_COLORS.flatMap(({ n }) => (ma[n] ?? []).filter((v): v is number => v !== null))
-      const maxPrice = Math.max(...highs, ...maNums)
-      const minPrice = Math.min(...lows, ...maNums)
-      const span = maxPrice - minPrice || 1
-      const yPrice = (p: number) => padT + ((maxPrice - p) / span) * 0.96 * priceH + priceH * 0.02
-      const maxVol = Math.max(...bars.map((b) => b.v)) || 1
-      const yVol = (v: number) => padT + priceH + axisH * 0 + (volH - (v / maxVol) * volH) + 6
-      const xMid = (i: number) => padL + slot * (i + 0.5)
-
-      ctx.clearRect(0, 0, width, height)
-      ctx.font = '11px system-ui, sans-serif'
-
-      // 网格 + 价格轴
-      ctx.strokeStyle = 'rgba(228,233,242,0.7)'
-      ctx.fillStyle = '#8b94a9'
-      ctx.textAlign = 'left'
-      for (let g = 0; g <= 4; g++) {
-        const p = minPrice + (span * g) / 4
-        const y = yPrice(p)
-        ctx.beginPath()
-        ctx.moveTo(padL, y)
-        ctx.lineTo(padL + plotW, y)
-        ctx.stroke()
-        ctx.fillText(fmt(p), padL + plotW + 6, y + 4)
-      }
-
-      // 蜡烛 + 成交量
-      bars.forEach((bar, i) => {
-        const up = bar.c >= bar.o
-        const color = up ? UP_COLOR : DOWN_COLOR
-        const x = xMid(i)
-        ctx.strokeStyle = color
-        ctx.fillStyle = color
-        ctx.beginPath()
-        ctx.moveTo(x, yPrice(bar.h))
-        ctx.lineTo(x, yPrice(bar.l))
-        ctx.stroke()
-        const yO = yPrice(bar.o)
-        const yC = yPrice(bar.c)
-        const top = Math.min(yO, yC)
-        const h = Math.max(1, Math.abs(yC - yO))
-        ctx.fillRect(x - bodyW / 2, top, bodyW, h)
-        ctx.globalAlpha = 0.55
-        ctx.fillRect(x - bodyW / 2, yVol(bar.v), bodyW, padT + priceH + volH + 6 - yVol(bar.v))
-        ctx.globalAlpha = 1
-      })
-
-      // 均线
-      for (const { n, color } of MA_COLORS) {
-        ctx.strokeStyle = color
-        ctx.lineWidth = 1.2
-        ctx.beginPath()
-        let started = false
-        ;(ma[n] ?? []).forEach((v, i) => {
-          if (v === null) return
-          const x = xMid(i)
-          const y = yPrice(v)
-          if (!started) {
-            ctx.moveTo(x, y)
-            started = true
-          } else {
-            ctx.lineTo(x, y)
-          }
-        })
-        ctx.stroke()
-        ctx.lineWidth = 1
-      }
-
-      // 事件锚点：竖线 + 顶部标签（隔行错开减少重叠）
-      anchorIndex.forEach(({ anchor, idx }, seq) => {
-        if (idx < 0) return
-        const x = xMid(idx)
-        ctx.strokeStyle = 'rgba(37,99,235,0.65)'
-        ctx.setLineDash([4, 3])
-        ctx.beginPath()
-        ctx.moveTo(x, padT)
-        ctx.lineTo(x, padT + priceH + volH + 6)
-        ctx.stroke()
-        ctx.setLineDash([])
-        const label = anchor.label.length > 8 ? `${anchor.label.slice(0, 7)}…` : anchor.label
-        const ty = padT + 2 + (seq % 2) * 14
-        const tw = ctx.measureText(label).width
-        ctx.fillStyle = 'rgba(37,99,235,0.12)'
-        ctx.fillRect(x + 2, ty - 2, tw + 8, 14)
-        ctx.fillStyle = '#2563eb'
-        ctx.textAlign = 'left'
-        ctx.fillText(label, x + 6, ty + 9)
-      })
-
-      // 日期轴（首/中/尾）
-      ctx.fillStyle = '#8b94a9'
-      ctx.textAlign = 'center'
-      const ticks = [0, Math.floor(bars.length / 2), bars.length - 1]
-      ticks.forEach((i) => {
-        const bar = bars[i]
-        if (bar) ctx.fillText(bar.d, xMid(i), height - 6)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      drawChart(ctx, {
+        width,
+        height,
+        bars,
+        ma,
+        anchors: anchorIndex
+          .filter((item) => item.idx >= 0)
+          .map((item) => ({ idx: item.idx, label: item.anchor.label })),
       })
     }
 
@@ -213,18 +109,18 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
   return (
     <div className="kline-preview">
       <div className="kline-legend">
-        {MA_COLORS.map(({ n, color }) => (
+        {MA_PERIODS.map(({ n, color }) => (
           <span key={n}>
             <i style={{ background: color }} />
             MA{n}
           </span>
         ))}
         <span>
-          <i style={{ background: UP_COLOR }} />
+          <i style={{ background: CHART_UP }} />
           涨
         </span>
         <span>
-          <i style={{ background: DOWN_COLOR }} />
+          <i style={{ background: CHART_DOWN }} />
           跌
         </span>
         <span className="kline-readout">{readout}</span>
@@ -234,9 +130,10 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
         onMouseLeave={() => setHover(null)}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect()
-          const slot = (rect.width - 8 - 60) / bars.length
-          const idx = Math.floor((e.clientX - rect.left - 8) / slot)
-          setHover(idx >= 0 && idx < bars.length ? idx : null)
+          // 命中换算走 chartScale（留白只此一份，不在事件处再写一遍 8/60）。
+          const scale = chartScale({ width: rect.width, height: CHART_HEIGHT, bars })
+          const idx = scale.indexAt(e.clientX - rect.left)
+          setHover(idx >= 0 ? idx : null)
         }}
       >
         <canvas ref={canvasRef} />

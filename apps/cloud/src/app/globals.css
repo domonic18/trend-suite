@@ -2988,3 +2988,452 @@ dialog::backdrop {
   font-size: 10px;
   color: #9aa3b8;
 }
+
+/* ---------------- 交互课件（迭代 7，arch/06 §7–§13） ---------------- */
+
+.widget-list {
+  padding: 16px 26px 26px;
+  border-top: 1px solid var(--p-line);
+  background: #fbfcfe;
+}
+
+.widget-list-title {
+  display: block;
+  font-size: 12.5px;
+  color: var(--p-mut);
+  margin-bottom: 10px;
+}
+
+.widget-box {
+  border: 1px solid var(--p-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px 14px 14px;
+  margin-bottom: 14px;
+}
+
+.widget-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 9px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed var(--p-line);
+}
+
+.widget-head b {
+  font-size: 13px;
+  color: var(--p-ink);
+}
+
+.widget-head .grow {
+  flex: 1;
+}
+
+.widget-assertions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.widget-card {
+  font-size: 12.5px;
+  color: #2b3550;
+  line-height: 1.7;
+}
+
+.widget-q {
+  margin: 0 0 10px;
+  color: var(--p-ink);
+  font-size: 13px;
+}
+
+.widget-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.widget-options.column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.widget-option {
+  border: 1px solid var(--p-line);
+  background: #fff;
+  border-radius: var(--r-ctrl);
+  padding: 7px 12px;
+  font: inherit;
+  color: var(--p-ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.widget-option:hover {
+  border-color: #9db8f0;
+  background: var(--p-pri-soft);
+}
+
+.widget-option.on {
+  border-color: var(--p-pri);
+  background: var(--p-pri-soft);
+  color: var(--p-pri-deep);
+}
+
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.widget-tile {
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  background: #fff;
+  padding: 8px;
+  font: inherit;
+  color: var(--p-mut);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.widget-tile span {
+  font-size: 12px;
+  text-align: center;
+}
+
+.widget-tile:hover,
+.widget-tile.on {
+  border-color: var(--p-pri);
+  background: var(--p-pri-soft);
+  color: var(--p-pri-deep);
+}
+
+.widget-feedback {
+  margin-top: 10px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  background: var(--p-soft);
+  color: var(--p-mut);
+}
+
+.widget-feedback.ok {
+  background: var(--p-acc-soft);
+  color: #0b7d5f;
+}
+
+.widget-feedback.bad {
+  background: var(--p-err-soft);
+  color: #b0392f;
+}
+
+.widget-progress {
+  font-size: 12px;
+  color: var(--p-mut);
+  margin-bottom: 8px;
+}
+
+.widget-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.widget-checklist li {
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--p-line);
+}
+
+.widget-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.widget-checklist em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--p-faint);
+  border: 1px solid var(--p-line);
+  border-radius: 20px;
+  padding: 0 7px;
+}
+
+.widget-calc-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.widget-calc-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--p-mut);
+}
+
+.widget-calc-inputs input {
+  width: 120px;
+  border: 1px solid var(--p-line);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+}
+
+.widget-calc-result {
+  font-size: 12.5px;
+  color: var(--p-mut);
+}
+
+.widget-calc-result b {
+  color: var(--p-ink);
+}
+
+.widget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.widget-table th,
+.widget-table td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.widget-table th {
+  color: var(--p-mut);
+  font-weight: 500;
+}
+
+.widget-table .ok {
+  color: #0b7d5f;
+}
+
+.widget-table .bad {
+  color: #b0392f;
+}
+
+.widget-flashcard {
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  background: #fbfcfe;
+}
+
+.widget-flashcard b {
+  display: block;
+  color: var(--p-ink);
+}
+
+.widget-flashcard span {
+  color: var(--p-mut);
+  font-size: 12px;
+}
+
+.widget-panel {
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.widget-panel.empty {
+  color: var(--p-faint);
+  text-align: center;
+  padding: 20px 12px;
+}
+
+.widget-prompt {
+  margin: 0 0 8px;
+  color: var(--p-ink);
+  font-size: 12.5px;
+}
+
+.widget-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.widget-notes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--p-mut);
+  font-size: 12px;
+}
+
+.widget-conclusion,
+.widget-final {
+  margin: 10px 0 0;
+  padding: 8px 11px;
+  background: var(--p-pri-soft);
+  border-radius: 8px;
+  color: var(--p-pri-deep);
+  font-size: 12.5px;
+}
+
+.widget-question {
+  margin: 10px 0 8px;
+  color: var(--p-ink);
+  font-size: 13px;
+}
+
+.widget-reveals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-reveal {
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  padding: 8px 11px;
+  background: #fbfcfe;
+}
+
+.widget-summary {
+  margin-top: 10px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: var(--p-acc-soft);
+  color: #0b7d5f;
+  font-size: 12.5px;
+}
+
+.widget-summary .ok {
+  color: #0b7d5f;
+}
+
+.widget-summary .bad {
+  color: #b0392f;
+}
+
+.widget-annotation {
+  border: 1px dashed #c7d7f5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin: 8px 0;
+  background: #f8faff;
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.widget-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.widget-checks .ok {
+  color: #0b7d5f;
+}
+
+.widget-checks .bad {
+  color: #b0392f;
+}
+
+.widget-juxtaposition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-juxtaposition-top {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  background: #fff;
+}
+
+.widget-juxtaposition-stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.widget-juxtaposition-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--p-pri);
+}
+
+.widget-juxtaposition-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.widget-captions {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--p-mut);
+}
+
+.mini-chart {
+  display: block;
+  width: 100%;
+}
+
+/* 老师标注卡（DSL v2 :::annotation） */
+
+.doc-annotation {
+  border: 1px solid #c7d7f5;
+  border-left: 3px solid var(--p-pri);
+  background: #f8faff;
+  border-radius: 0 9px 9px 0;
+  padding: 10px 13px;
+  margin: 4px 0 16px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #2b3550;
+}
+
+.doc-annotation-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.doc-annotation-head b {
+  color: var(--p-ink);
+}
+
+.doc-annotation-head .grow {
+  flex: 1;
+}
+
+.doc-annotation-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.doc-annotation-terms span {
+  font-size: 11px;
+  color: var(--p-pri-deep);
+  background: var(--p-pri-soft);
+  border-radius: 20px;
+  padding: 1px 8px;
+}

@@ -26,7 +26,7 @@ const ANCHOR_RE = /\[\[(unit|stock):([^\|\]\s]+)\|([^\]]+)\]\]/g
 const OPEN_RE = /^:::\s*([A-Za-z][\w-]*)(.*)$/
 const ATTR_RE = /([\w-]+)=("([^"]*)"|[^\s]+)/g
 
-export function parseDsl(source: string): DslAst {
+export function parseDsl(source: string, version: number = DSL_VERSION): DslAst {
   const lines = source.split('\n')
   const segments: DslSegment[] = []
   const anchors: DslInlineAnchor[] = []
@@ -79,7 +79,7 @@ export function parseDsl(source: string): DslAst {
     segments.push({ type: 'prose', text: proseLines.join('\n'), line: startLine })
   }
 
-  return { version: DSL_VERSION, segments, anchors }
+  return { version, segments, anchors }
 }
 
 function extractAnchors(text: string, line: number): DslInlineAnchor[] {
