@@ -4,12 +4,14 @@ import { z } from 'zod/v4'
 import * as figuresRepo from '@/server/content/textbook/repo'
 import { listConceptRows } from '@/server/content/plans/repo'
 import * as quotesRepo from '@/server/content/quotes/repo'
+import * as widgetsRepo from '@/server/content/widgets/repo'
 import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 
 /**
  * 生产 agent 的只读证据工具（arch/05 §8 先查再动笔）：图示与正文步动笔前
  * 检索素材单元、概念表、案例股清单与已落库图示——不提供任何写入面，
- * 产物仍只能经 write_step_output 单口出。
+ * 产物仍只能经 write_step_output 单口出。迭代 7 起课件步也用它：
+ * 真实交易日（回放课件的接地要求）与已落库课件清单。
  */
 
 export function evidenceTools(courseId: string, sectionId: string) {
@@ -91,5 +93,33 @@ export function evidenceTools(courseId: string, sectionId: string) {
     },
   })
 
-  return [searchSourceUnits, listConcepts, listCaseStocks, listFiguresTool]
+  const listWidgetsTool = new DynamicStructuredTool({
+    name: 'list_widgets',
+    description:
+      '列出本节已落库的课件（type/code）。回放课件（bar-replay-decision）按 code 定位，正文 :::replay 只能引用这里出现的 code。',
+    schema: z.object({}) as never,
+    func: async () => {
+      const rows = await widgetsRepo.listWidgets(courseId, sectionId)
+      return JSON.stringify(
+        rows.map((row) => ({ type: row.type, code: row.code, version: row.version })),
+      )
+    },
+  })
+
+  const listTradingDays = new DynamicStructuredTool({
+    name: 'list_trading_days',
+    description:
+      '列出某只股票在日期区间内的真实交易日（YYYY-MM-DD）。回放课件的标注日与判断点日必须是真实交易日，先查它。',
+    schema: z.object({
+      code: z.string().regex(/^\d{6}$/),
+      from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }) as never,
+    func: async (input: { code: string; from: string; to: string }) => {
+      const days = await quotesRepo.tradingDays(input.code, input.from, input.to)
+      return JSON.stringify(days)
+    },
+  })
+
+  return [searchSourceUnits, listConcepts, listCaseStocks, listFiguresTool, listWidgetsTool, listTradingDays]
 }

@@ -3,6 +3,7 @@ import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres'
 import { createDeepAgent } from 'deepagents'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod/v4'
+import { widgetDraftList } from '@trend-suite/contracts'
 import type { FetchLike } from '@/server/content/agents/llm'
 import { getEnv } from '@/env'
 import {
@@ -75,8 +76,10 @@ const figureSpecProduct = (): z.ZodType =>
       .max(10),
   })
 
-const widgetProduct = (): z.ZodType =>
-  z.object({ widgets: z.array(z.object({ kind: z.string(), title: z.string() })) })
+// 步骤 5/7 课件（迭代 7，arch/06 §9）：草稿 schema 直接取契约包的 v4 定义
+// （单一真相源——模型侧字段名与 v3 spec 逐字一致，服务端物化时才逐字段映射）。
+// 草稿里**没有** K 线数值：铁律「图表数值不由模型生成」，数值由生成器按 seed 复算。
+const widgetProduct = (): z.ZodType => widgetDraftList
 
 const STEP_PRODUCT_SCHEMAS: Record<string, z.ZodType> = {
   case_stocks: caseStockProduct(),
@@ -115,7 +118,12 @@ export function getCheckpointer(): Promise<PostgresSaver> {
 
 // ---------------------------------------------------------------- 步 agent
 
-export function sectionPrompt(def: StepDef, section: SectionRow, lastRejection?: string): string {
+export function sectionPrompt(
+  def: StepDef,
+  section: SectionRow,
+  lastRejection?: string,
+  replayCodes: readonly string[] = [],
+): string {
   const head = [
     `节上下文：course_id=${section.course_id}，section_id=${section.section_id}，标题「${section.title}」，序号 ${section.sort_order}。`,
   ]
@@ -150,6 +158,46 @@ export function sectionPrompt(def: StepDef, section: SectionRow, lastRejection?:
     ].join('\n')
   }
 
+  if (def.key === 'replay_widget') {
+    // 迭代 7 真实工艺（arch/06 §2.2/§8/§9）：逐根回放课件 = 真实行情上的判断点。
+    return [
+      `课程生产第 ${def.n} 步「${def.label}」。为本节制作 1~2 份**逐根回放**课件（type 固定为 bar-replay-decision）：学员在真实 K 线上逐根推进，在关键位置做判断，揭晓后市是否验证了他的判断。`,
+      ...head,
+      `动笔前先用 list_case_stocks 查本节案例股（代码/周期/窗口）、search_source_units 查可引的素材单元、list_trading_days 查该股在案例窗内的**真实交易日**、list_concepts 查术语表。`,
+      `回放课件的规矩：`,
+      `- code 只能取自 list_case_stocks 的代码；window 取该股的 windowStart~windowEnd；period 与清单一致。`,
+      `- citations：至少 1 个素材单元 id（来自 search_source_units，不可编造）。`,
+      `- annotations：≥1 条标注，每条给 unitId（真实存在的单元）、atMs（落在该单元时间窗内）、kind（structure / invalidation / rhythm）、d（YYYY-MM-DD，须落在案例窗内**且**是该股的真实交易日）、label（≤30 字说明）。`,
+      `- decisions：≥1 个判断点，每条给 atDate（真实交易日）、question、options（2~4 个 label）、correct（**必须与某个选项的 label 完全一致**）、revealText（揭晓说明，须含概念词）、unitId、atMs。`,
+      `- 判断点日期严格递增；每个判断点之后都要有可揭晓的标注日期（标注 d 不得早于判断点日期）。`,
+      `- 不要写其它类型的课件（其余 10 类在第 7 步做）。`,
+      `服务端会逐条程序证明以下必带断言，任一条不成立则**整节不入库**并回灌重写：answerUnique（correct 恰命中 1 个选项文案）、decisionPointsGrounded（单元存在、atMs 落窗、日期是真实交易日）、revealMonotonic（日期递增、遮罩单调）、annotationTermsGrounded（揭晓文案含概念词）。`,
+      `把课件草稿数组交给 write_step_output 工具写入（widgets 字段），然后用一句话确认完成。`,
+    ].join('\n')
+  }
+
+  if (def.key === 'widgets') {
+    // 迭代 7 真实工艺（arch/06 §7–§9）：11 类白名单里的其余 10 类。
+    return [
+      `课程生产第 ${def.n} 步「${def.label}」。为本节制作 2~4 份互动课件（11 类白名单中**除 bar-replay-decision 外的 10 类**，回放课件已在第 5 步做）。`,
+      ...head,
+      `动笔前先用 list_concepts 查术语表（课件里的术语必须出自它）、search_source_units 查可引的素材单元（citations 用）、list_figures 查本节已落库图示（image-juxtaposition 的 figureId 只能引用其中的 id）。`,
+      `可用的 10 类与它们的必带断言（服务端逐条程序证明，任一条不成立则**整节不入库**并回灌重写）：`,
+      `- mcq-quiz：选择题。必带 answerUnique（answerId 唯一命中选项）、termsInConcepts（conceptRefs 全部在概念表内）。options 2~4 个。`,
+      `- pattern-quiz：形态识别题。必带 answerUnique、distractorsDistinct（**各选项形态互不相同**；不确定就别声明各选项的 generator/seed，由服务端按「形态互不相同」确定性补齐）。data 声明题目形态与种子。`,
+      `- kline-annotator：趋势线标注。必带 trendlineTouches（趋势线触及足够多 K 线）、slopeRange（斜率角落在区间内）、noBreakBelow（锚点区间内收盘不跌破趋势线）。solution.trendline 给 startIdx/endIdx（落在 0~bars-1）。`,
+      `- step-reveal：分步揭示。必带 markersInRange（步骤窗口单调不重叠、标记价落在对应 K 线高低区间）、conclusionsNonEmpty。steps 2~6 步，每步给 fromIdx/toIdx/conclusion。`,
+      `- calc-trainer：计算训练器。必带 examplesRecomputable（示例答案能被公式复算出来）、paramsInBounds。formula 只能是 position-size / risk-reward / drawdown-recovery，inputs 按公式域给。`,
+      `- flashcards：记忆卡。必带 termsInConcepts（每张卡的 conceptRef 在概念表内）、cardCount（张数在区间内，默认 3~20）。`,
+      `- checklist：检查清单。必带 itemsNonEmpty（≥3 条）。`,
+      `- timeline-explorer：知识时间线。必带 edgeRefsExist（节点与边的概念都在概念表内且边端点在本组件节点列表内）、acyclicPrerequisite（prerequisite 边无环）。`,
+      `- image-juxtaposition：两图对照。必带 pairSidesValid（两侧的 figureId 在本节图示集内）、captionsGrounded（两侧 caption 都含概念词）。`,
+      `- branching-scenario：分支情景。必带 graphAcyclic（决策图无环）、allPathsTerminate（每个可达节点都能走到终点）、optimalPathReachable（optimalPath 自 entryId 连通到可结束节点）、feedbackNonEmpty（每个选项都要有反馈）。`,
+      `共同规矩：citations 至少 1 个真实素材单元 id；涉及图表的组件（pattern-quiz / kline-annotator / step-reveal / image-juxtaposition）给 generator（uptrend / downtrend / range / uptrend-platform / downtrend-platform）、seed、bars（20~120 根）；**绝不写 K 线数值**——数值由生成器按 seed 复算。`,
+      `把课件草稿数组交给 write_step_output 工具写入（widgets 字段），然后用一句话确认完成。`,
+    ].join('\n')
+  }
+
   if (def.key === 'section_draft') {
     // 迭代 6 真实工艺（arch/05 §8 / arch/06 §2）：DSL 成篇，五段结构，事实可回溯。
     return [
@@ -163,7 +211,7 @@ export function sectionPrompt(def: StepDef, section: SectionRow, lastRejection?:
       `- :::sidenote 是术语边注，title 必填且只能用 list_concepts 里的术语（原词）。`,
       `- :::figure figureId 只能引用 list_figures 返回的 id，caption 与图示步保持一致。`,
       `- :::clip 只能裁所引素材单元窗内的 60s 以内片段（assetId/from/to 秒/unitId 必填）。`,
-      `- 禁用 v2 块（:::annotation / :::replay）。`,
+      `- 禁用 v2 块（:::annotation / :::replay）。本节已落库的回放课件：${replayCodes.length > 0 ? replayCodes.join('、') : '（无）'}。`,
       `把完整 markdown（含全部容器块与锚点）交给 write_step_output 工具写入（markdown 字段），然后用一句话确认完成。`,
     ].join('\n')
   }
@@ -191,11 +239,13 @@ export function buildStepTool(task: ProductionTaskRow): DynamicStructuredTool {
   })
 }
 
-const EVIDENCE_STEP_KEYS = new Set(['figure_spec', 'section_draft'])
+const EVIDENCE_STEP_KEYS = new Set(['figure_spec', 'section_draft', 'replay_widget', 'widgets'])
 
 export async function buildStepAgent(fields: {
   task: ProductionTaskRow
   section: SectionRow
+  /** 第 6 步：本节已落库的回放课件 code（正文能否写 :::replay 由此决定）。 */
+  replayCodes?: readonly string[]
   /** 测试注入：透传给通道替换 fetch。 */
   fetchImpl?: FetchLike
 }) {
@@ -216,7 +266,7 @@ export async function buildStepAgent(fields: {
       ...(EVIDENCE_STEP_KEYS.has(def.key) ? evidenceTools(task.course_id, task.section_id) : []),
     ],
     checkpointer: await getCheckpointer(),
-    systemPrompt: sectionPrompt(def, section),
+    systemPrompt: sectionPrompt(def, section, undefined, fields.replayCodes ?? []),
   })
 }
 
@@ -224,11 +274,13 @@ export async function buildStepAgent(fields: {
 export async function runStepAgent(fields: {
   task: ProductionTaskRow
   section: SectionRow
+  /** 第 6 步：本节已落库的回放课件 code（正文能否写 :::replay 由此决定）。 */
+  replayCodes?: readonly string[]
 }): Promise<void> {
   const { task, section } = fields
   const def = stepDef(task.step)
-  const agent = await buildStepAgent({ task, section })
-  const prompt = sectionPrompt(def, section, task.last_error ?? undefined)
+  const agent = await buildStepAgent({ task, section, ...(fields.replayCodes ? { replayCodes: fields.replayCodes } : {}) })
+  const prompt = sectionPrompt(def, section, task.last_error ?? undefined, fields.replayCodes ?? [])
   await agent.invoke(
     { messages: [{ role: 'user', content: prompt }] },
     { configurable: { thread_id: `${task.course_id}/${task.section_id}/s${task.step}` } },

@@ -17,5 +17,8 @@ export * from './dsl.js'
 export * from './figures.js'
 export * from './content.js'
 export * from './outline.js'
+export * from './widget-data.js'
+export * from './widget-draft.js'
+export * from './widgets.js'
 
 export const healthResponse = z.object({ ok: z.literal(true) })

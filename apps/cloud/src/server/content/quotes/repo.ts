@@ -98,6 +98,17 @@ export function barsFor(
   )
 }
 
+/** 某只股票在日期区间内的真实交易日（升序、去重跨周期）。 */
+export async function tradingDays(code: string, from: string, to: string): Promise<string[]> {
+  const rows = await query<{ d: string }>(
+    `SELECT DISTINCT trade_date::text AS d FROM quote_bars
+     WHERE code = $1 AND trade_date BETWEEN $2::date AND $3::date
+     ORDER BY d ASC`,
+    [code, from, to],
+  )
+  return rows.map((row) => row.d)
+}
+
 /** 批量 upsert bars（数值可核：同键以源为准覆盖）。chunk 分批防参数溢出。 */
 export async function upsertBars(
   code: string,
