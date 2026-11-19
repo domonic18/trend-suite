@@ -60,6 +60,49 @@ export const dslSegment = z.union([
 ])
 export type DslSegment = z.infer<typeof dslSegment>
 
+/**
+ * JSON 容器块的 body 形状（arch/06 §2.1）：校验器与渲染器共用同一份——
+ * 两边各写一套字段名，必然出现「服务端判过、客户端渲染不出」的漂移。
+ */
+export const dslCardsBody = z.object({
+  items: z
+    .array(z.object({ num: z.string().optional(), title: z.string(), desc: z.string().optional() }))
+    .min(1)
+    .max(4),
+})
+export type DslCardsBody = z.infer<typeof dslCardsBody>
+
+export const dslBignumBody = z.object({
+  items: z
+    .array(z.object({ label: z.string(), value: z.string(), note: z.string().optional() }))
+    .min(1)
+    .max(3),
+})
+export type DslBignumBody = z.infer<typeof dslBignumBody>
+
+export const dslCmpSide = z.object({ head: z.string(), items: z.array(z.string()) })
+
+export const dslCmpBody = z.object({
+  title: z.string().optional(),
+  left: dslCmpSide,
+  right: dslCmpSide,
+})
+export type DslCmpBody = z.infer<typeof dslCmpBody>
+
+export const dslTimelineBody = z.object({
+  events: z
+    .array(
+      z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        title: z.string(),
+        desc: z.string().optional(),
+      }),
+    )
+    .min(3)
+    .max(8),
+})
+export type DslTimelineBody = z.infer<typeof dslTimelineBody>
+
 export const dslAst = z.object({
   version: z.number().int().min(1),
   segments: z.array(dslSegment),
