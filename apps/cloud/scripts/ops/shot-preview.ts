@@ -7,10 +7,12 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const BASE = 'http://127.0.0.1:3940'
+const BASE = process.env.SHOT_BASE ?? 'http://127.0.0.1:3940'
 const TOKEN = process.argv[2]!
 const TARGET_URL = process.argv[3]!
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+/** 额外 Chrome 启动参数（用 | 分隔，值里可含空格）：如 --host-resolver-rules=… */
+const EXTRA_ARGS = (process.env.SHOT_CHROME_ARGS ?? '').split('|').filter(Boolean)
 
 const userDataDir = mkdtempSync(join(tmpdir(), 'trend-chrome-'))
 const chrome = spawn(CHROME, [
@@ -21,6 +23,7 @@ const chrome = spawn(CHROME, [
   '--no-default-browser-check',
   '--hide-scrollbars',
   '--window-size=1440,2400',
+  ...EXTRA_ARGS,
   'about:blank',
 ])
 chrome.stderr.on('data', () => {})
