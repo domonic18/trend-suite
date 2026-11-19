@@ -1,5 +1,9 @@
 import {
+  dslBignumBody,
+  dslCardsBody,
+  dslCmpBody,
   dslQuotas,
+  dslTimelineBody,
   V1_DIRECTIVES,
   V2_DIRECTIVES,
   type DslAst,
@@ -227,38 +231,23 @@ function validateJsonBlock(block: DslBlock, issues: DslIssue[]): void {
     issues.push({ code: 'body_schema_failed', line: block.line, message: `:::${block.directive} body 不是合法 JSON` })
     return
   }
-  const container = parsed as { items?: unknown; events?: unknown; left?: unknown; right?: unknown }
-  if (block.directive === 'timeline') {
-    const events = container.events
-    if (!Array.isArray(events) || events.length < 3 || events.length > 8) {
-      issues.push({ code: 'body_schema_failed', line: block.line, message: ':::timeline events 必须 3~8 条' })
-      return
-    }
-    for (const event of events as { date?: unknown }[]) {
-      if (typeof event?.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(event.date)) {
-        issues.push({ code: 'body_schema_failed', line: block.line, message: ':::timeline 事件 date 必须是 YYYY-MM-DD' })
-        return
-      }
-    }
-    return
-  }
-  const items = container.items
-  if (!Array.isArray(items) || items.length === 0) {
-    issues.push({ code: 'body_schema_failed', line: block.line, message: `:::${block.directive} items 不能为空` })
-    return
-  }
-  if (block.directive === 'cards' && items.length > 4) {
-    issues.push({ code: 'body_schema_failed', line: block.line, message: ':::cards 目标卡最多 4 张' })
-  }
-  if (block.directive === 'bignum' && items.length > 3) {
-    issues.push({ code: 'body_schema_failed', line: block.line, message: ':::bignum 关键数字最多 3 个' })
-  }
-  if (block.directive === 'cmp') {
-    const left = container.left as { head?: unknown; items?: unknown } | undefined
-    const right = container.right as { head?: unknown; items?: unknown } | undefined
-    if (!left || !right || !Array.isArray(left.items) || !Array.isArray(right.items)) {
-      issues.push({ code: 'body_schema_failed', line: block.line, message: ':::cmp body 需要 left/right 两组（head+items）' })
-    }
+  // 与渲染器共用契约里的形状（packages/contracts/src/dsl.ts）——字段名只此一份。
+  const schema =
+    block.directive === 'cards'
+      ? dslCardsBody
+      : block.directive === 'bignum'
+        ? dslBignumBody
+        : block.directive === 'cmp'
+          ? dslCmpBody
+          : dslTimelineBody
+  const result = schema.safeParse(parsed)
+  if (!result.success) {
+    const first = result.error.issues[0]
+    issues.push({
+      code: 'body_schema_failed',
+      line: block.line,
+      message: `:::${block.directive} body 形状不合约定：${first?.path.join('.') ?? ''} ${first?.message ?? ''}`.trim(),
+    })
   }
 }
 

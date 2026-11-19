@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { CaseStockView, DslBlock, FigureView, SectionContentView, SourceUnitView } from '@trend-suite/contracts'
 import { parseDsl } from '@/server/content/textbook/dsl-parser'
+import { bignumView, cardsView, cmpView, timelineView } from './blockView'
 import { ClipCard } from './ClipCard'
 import { FigureCard } from './FigureCard'
 import { StockAnchor } from './StockAnchor'
@@ -16,14 +17,6 @@ import { UnitAnchorCard } from './UnitAnchorCard'
 
 const ANCHOR_SPLIT = /\[\[(unit|stock):([^\|\]\s]+)\|([^\]]+)\]\]/g
 const BOLD_SPLIT = /\*\*(.+?)\*\*/g
-
-function jsonBody<T>(block: DslBlock): T | null {
-  try {
-    return JSON.parse(block.body) as T
-  } catch {
-    return null
-  }
-}
 
 export function DslRenderer({ content }: { content: SectionContentView }) {
   if (!content.body) {
@@ -256,62 +249,62 @@ function BlockView({
         </div>
       )
     case 'cards': {
-      const data = jsonBody<{ items?: { t?: string; title?: string; d?: string; text?: string }[] }>(block)
-      if (!data?.items) return <UnknownBlock block={block} />
+      const items = cardsView(block.body)
+      if (!items) return <UnknownBlock block={block} />
       return (
         <div className="doc-cards">
-          {data.items.map((item, i) => (
+          {items.map((item, i) => (
             <div key={i}>
-              <b>{item.t ?? item.title}</b>
-              <span>{item.d ?? item.text}</span>
+              <b>{item.title}</b>
+              {item.desc ? <span>{item.desc}</span> : null}
             </div>
           ))}
         </div>
       )
     }
     case 'bignum': {
-      const data = jsonBody<{ items?: { v?: string; label?: string }[] }>(block)
-      if (!data?.items) return <UnknownBlock block={block} />
+      const items = bignumView(block.body)
+      if (!items) return <UnknownBlock block={block} />
       return (
         <div className="doc-bignum">
-          {data.items.map((item, i) => (
+          {items.map((item, i) => (
             <div key={i}>
-              <b>{item.v}</b>
-              <span>{item.label}</span>
+              <b>{item.value}</b>
+              <span>{item.caption}</span>
             </div>
           ))}
         </div>
       )
     }
     case 'cmp': {
-      const data = jsonBody<{
-        left?: { title?: string; points?: string[] }
-        right?: { title?: string; points?: string[] }
-      }>(block)
-      if (!data?.left || !data.right) return <UnknownBlock block={block} />
-      const column = (side: { title?: string; points?: string[] }, key: string) => (
+      const data = cmpView(block.body)
+      if (!data) return <UnknownBlock block={block} />
+      const column = (side: { head: string; items: string[] }, key: string) => (
         <div key={key}>
-          <b>{side.title}</b>
+          <b>{side.head}</b>
           <ul>
-            {(side.points ?? []).map((point, i) => (
+            {side.items.map((point, i) => (
               <li key={i}>{point}</li>
             ))}
           </ul>
         </div>
       )
       return (
-        <div className="doc-cmp">
-          {column(data.left, 'left')}
-          {column(data.right, 'right')}
-        </div>
+        <>
+          {data.title ? <p className="doc-para">{data.title}</p> : null}
+          <div className="doc-cmp">
+            {column(data.left, 'left')}
+            {column(data.right, 'right')}
+          </div>
+        </>
       )
     }
     case 'timeline': {
-      const data = jsonBody<{ events?: { date?: string; title?: string; desc?: string }[] }>(block)
-      if (!data?.events) return <UnknownBlock block={block} />
+      const events = timelineView(block.body)
+      if (!events) return <UnknownBlock block={block} />
       return (
         <div className="doc-timeline">
-          {data.events.map((event, i) => (
+          {events.map((event, i) => (
             <div key={i}>
               <span className="mono">{event.date}</span>
               <b>{event.title}</b>
