@@ -21,7 +21,7 @@ export async function GET(
     const { path } = await ctx.params
     const assetId = path[0]
     const file = path.slice(1).join('/')
-    if (!assetId || file === '') return notFound('HLS 路径不完整')
+    if (!assetId || file === '') throw notFound('HLS 路径不完整')
 
     const url = new URL(req.url)
     const exp = url.searchParams.get('exp')
@@ -32,10 +32,10 @@ export async function GET(
     const baseDir = resolve(store.hlsDir(assetId))
     const filePath = resolve(baseDir, file)
     if (filePath !== baseDir && !filePath.startsWith(baseDir + sep)) {
-      return notFound('HLS 文件不存在')
+      throw notFound('HLS 文件不存在')
     }
     const info = await stat(filePath).catch(() => null)
-    if (!info || !info.isFile()) return notFound('HLS 文件不存在')
+    if (!info || !info.isFile()) throw notFound('HLS 文件不存在')
 
     if (file.endsWith('.m3u8')) {
       const playlist = await readFile(filePath, 'utf8')
