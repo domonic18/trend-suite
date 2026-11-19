@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { idShape } from './ids.js'
 import { productionSectionStatus, productionTaskStatus } from './enums.js'
+import { sectionContentBodyStatus } from './content.js'
 
 /**
  * 逐节九步生产引擎（arch/05 §6，教师端需求 T10）：
@@ -26,6 +27,8 @@ export const productionSectionRow = z.object({
   status: productionSectionStatus,
   /** 产出计数 = done 步数（九步全过即 9）。 */
   products: z.number().int().min(0).max(9),
+  /** 正文校验态（none 未产出 / draft 已过复检落库可预览）。 */
+  bodyStatus: sectionContentBodyStatus,
   tasks: z.array(productionTaskView).min(1).max(9),
 })
 

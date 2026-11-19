@@ -79,6 +79,18 @@ export class CosMediaStore implements MediaStore {
     throw new CosNotReadyError()
   }
 
+  hlsDir(_assetId: string): string {
+    throw new CosNotReadyError()
+  }
+
+  figuresDir(_figureId: string): string {
+    throw new CosNotReadyError()
+  }
+
+  hlsRef(assetId: string): string {
+    return `hls/${assetId}/index.m3u8`
+  }
+
   async probe(_assetId: string): Promise<MediaProbe> {
     throw new CosNotReadyError()
   }

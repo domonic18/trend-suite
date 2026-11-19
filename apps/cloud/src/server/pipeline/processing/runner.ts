@@ -6,11 +6,14 @@ import { transcribeFile, AsrError } from '../asr/client'
 import { splitLongSegments, toGlobalSegments } from '../asr/parse'
 import { cutChunk, detectSilence, extractAudio, planAudioChunks } from './audio'
 import { extractFrames } from './frames'
+import { transcodeStage } from './transcode'
+import { understandStage } from './understand'
 import * as repo from './repo'
 import { assetWorkDir } from './paths'
 
 /**
- * 加工编排（arch/05 §3.7）：阶段序列 probe → transcribe → finalize → done。
+ * 加工编排（arch/05 §3.7）：阶段序列 probe → transcribe → transcode → frames
+ * → understand → finalize → done。
  *
  * 幂等三原则：
  * - 已转块跳过（transcript_segments.chunk_index），重跑不重复计费；
@@ -25,6 +28,8 @@ const SEQ_STRIDE = 100_000
 
 export type ProcessingContext = {
   assetId: string
+  /** 所属课程（理解阶段落 source_units 需要课程维度）。 */
+  courseId: string
   /** 素材原片的可读路径。 */
   sourcePath: string
   durationS: number
@@ -66,6 +71,8 @@ export async function runProcessing(ctx: ProcessingContext): Promise<void> {
 
   await transcribeStage(ctx, audio)
 
+  await transcodeStage(ctx)
+
   await ctx.onProgress?.({ step: 'frames', progress: 78, message: '抽取关键帧' })
   const frames = await extractFrames({
     assetId: ctx.assetId,
@@ -82,6 +89,8 @@ export async function runProcessing(ctx: ProcessingContext): Promise<void> {
       height: f.height,
     })),
   })
+
+  await understandStage(ctx)
 
   await ctx.onProgress?.({ step: 'index', progress: 94, message: '建立索引' })
   await repo.finalizeSegments(ctx.assetId)
@@ -118,7 +127,7 @@ async function transcribeStage(
   let completed = chunks.length - pending.length
   await ctx.onProgress?.({
     step: 'transcribe',
-    progress: 10 + Math.round((completed / total) * 65),
+    progress: 10 + Math.round((completed / total) * 60),
     message: `转写中（${completed}/${total} 块）`,
   })
 
@@ -159,7 +168,7 @@ async function transcribeStage(
       completed += 1
       await ctx.onProgress?.({
         step: 'transcribe',
-        progress: 10 + Math.round((completed / total) * 65),
+        progress: 10 + Math.round((completed / total) * 60),
         message: `转写中（${completed}/${total} 块）`,
       })
     }

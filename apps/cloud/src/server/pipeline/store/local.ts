@@ -116,6 +116,18 @@ export class LocalMediaStore implements MediaStore {
     return join(this.root, 'sources', assetId, 'frames')
   }
 
+  hlsDir(assetId: string): string {
+    return join(this.root, 'hls', assetId)
+  }
+
+  hlsRef(assetId: string): string {
+    return `hls/${assetId}/index.m3u8`
+  }
+
+  figuresDir(figureId: string): string {
+    return join(this.root, 'figures', figureId)
+  }
+
   async probe(assetId: string): Promise<MediaProbe> {
     return probeMedia(await this.sourcePath(assetId))
   }
@@ -127,6 +139,7 @@ export class LocalMediaStore implements MediaStore {
   async remove(assetId: string): Promise<void> {
     await this.discard(assetId)
     await rm(join(this.root, 'sources', assetId), { recursive: true, force: true })
+    await rm(join(this.root, 'hls', assetId), { recursive: true, force: true })
   }
 }
 

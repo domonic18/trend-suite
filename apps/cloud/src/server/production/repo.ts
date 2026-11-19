@@ -33,6 +33,7 @@ export type SectionRow = {
   sort_order: number
   status: 'pending' | 'complete'
   placeholder: Record<string, unknown>
+  body_status: 'none' | 'draft' | 'rejected'
   created_at: Date
   updated_at: Date
 }
@@ -40,7 +41,7 @@ export type SectionRow = {
 const TASK_COLUMNS =
   'id, course_id, section_id, step, status, attempts, last_error, checkpoint, heartbeat_at, created_at, updated_at'
 const SECTION_COLUMNS =
-  'id, course_id, section_id, title, sort_order, status, placeholder, created_at, updated_at'
+  'id, course_id, section_id, title, sort_order, status, placeholder, body_status, created_at, updated_at'
 
 /**
  * 批准方案时播种：每节 9 行 pending 任务 + sections 行。

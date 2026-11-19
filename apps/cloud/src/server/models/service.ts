@@ -29,6 +29,7 @@ export const TASK_SLOTS: ReadonlyArray<{ task: string; label: string; purpose: M
   { task: 'content.section_draft', label: '节教材起草', purpose: 'llm' },
   { task: 'rubric_review', label: '节评审', purpose: 'llm' },
   { task: 'vision.describe', label: '素材理解', purpose: 'vlm' },
+  { task: 'content.figure_generated', label: '装饰图生成', purpose: 'image' },
   { task: 'student.qa', label: '学员问答', purpose: 'llm' },
 ]
 

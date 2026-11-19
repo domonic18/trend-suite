@@ -15,7 +15,7 @@ import { runWorkerOnce, workerId } from '@/server/pipeline/jobs/worker'
 import { HttpError } from '@/server/lib/http'
 import { getSectionQuotes, resyncProductionQuotes } from './service'
 import { listSections, listTasks } from './repo'
-import { startMockLlm, type MockLlm } from './mock-llm'
+import { startMockLlm, mockUnitIdFor, type MockLlm } from './mock-llm'
 import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 import { fetchQuotes } from '@/server/content/quotes/client'
 import { recheckCaseStocks, readbackQuotes } from '@/server/content/quotes/service'
@@ -61,6 +61,29 @@ before(async () => {
 
 const OUTLINE_TEXT = ['第一篇 总论', '第一章 什么是趋势', '1. 趋势的定义', '2. 级别的概念'].join('\n')
 
+/** 本节案例股是银行股时的合规正文（锚与案例股清单一致；素材单元占位由 mock 按 course_id 替换）。 */
+const MOCK_DRAFT_FOR_BANKS = [
+  '# 1. 趋势的定义',
+  '',
+  '趋势是价格运行的方向：高点与低点依次抬升为多头，依次下移为空头。这是本节最核心的概念，讲师在原片 [[unit:__MOCK_UNIT__|原片演示]] 中逐笔画出了这条主线。',
+  '',
+  '判断依据：先定级别再看方向。周线上只看大波段，日线上才谈入场时机；两个级别打架时，听大级别的。',
+  '',
+  ':::think title=想一想',
+  '如果价格横住不创新高也不创新低，趋势还算成立吗？带着这个问题看下一节的案例。',
+  ':::',
+  '',
+  '实例：[[stock:600036|招商银行]] 与 [[stock:601318|中国平安]] 的周线重心逐级上移，是教科书式的多头样本。',
+  '',
+  ':::sidenote title=趋势',
+  '价格的运行方向，由高低点序列刻画，而不是主观感受。',
+  ':::',
+  '',
+  '检查清单：周期是否一致；高低点是否依次抬升；量能是否配合；级别之间是否互相印证。',
+  '',
+  '常见误用：把日内波动当趋势反转，或在两个级别信号冲突时强行入场——级别混看是初学者最常踩的坑。',
+].join('\n')
+
 async function seedApprovedCourse(name: string): Promise<{ teacherId: string; username: string; courseId: string; sectionIds: string[] }> {
   const username = `laoshi-${randomBytes(4).toString('hex')}`
   const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
@@ -91,6 +114,25 @@ async function seedApprovedCourse(name: string): Promise<{ teacherId: string; us
     violations: [],
   })
   await approvePlan(teacher, course.id)
+
+  // 步骤 4/6 真实产物依赖素材证据单元：种子一个 ready 素材 + 一条 source unit + 一帧。
+  const assetId = newId('mediaAsset')
+  await query(
+    `INSERT INTO media_assets (id, course_id, original_name, source_path, status, duration_s)
+     VALUES ($1, $2, 'seed.mp4', 'sources/x/source', 'ready', 120)`,
+    [assetId, course.id],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, visual_desc)
+     VALUES ($1, $2, $3, 20000, 50000, '讲师在周线图上逐笔画出趋势线，讲解高低点抬升的判断依据。', '讲师手绘趋势线')`,
+    [mockUnitIdFor(course.id), course.id, assetId],
+  )
+  await query(
+    `INSERT INTO media_frames (id, asset_id, at_ms, path)
+     VALUES ($1, $2, 30000, 'frames/seed/30000.jpg')`,
+    [newId('mediaFrame'), assetId],
+  )
+
   const sections = await listSections(course.id)
   return { teacherId: teacher.id, username, courseId: course.id, sectionIds: sections.map((s) => s.section_id) }
 }
@@ -290,6 +332,8 @@ test('验收② 源挂掉重跑：占位不编造，节照常完成；源恢复�
       { code: '601318', name: '中国平安', exchange: 'SH', period: '1w', windowStart: '2023-01-01', windowEnd: '2023-12-31', events: [] },
     ],
   }
+  // 正文锚必须跟着本节案例股换（默认 mock 正文锚的是 600519，会被 stock_not_in_list 复检拦）。
+  mock.step6Product = { markdown: MOCK_DRAFT_FOR_BANKS }
   let seeded: Awaited<ReturnType<typeof seedApprovedCourse>>
   try {
     seeded = await seedApprovedCourse('行情断源课')
@@ -298,6 +342,7 @@ test('验收② 源挂掉重跑：占位不编造，节照常完成；源恢复�
   } finally {
     quotesMock.failAll = false
     mock.step1Product = null
+    mock.step6Product = null
   }
   await assertCourseDone(seeded.courseId)
   const rows = await query<{ n: string }>(

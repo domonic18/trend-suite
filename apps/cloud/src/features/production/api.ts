@@ -1,11 +1,15 @@
 'use client'
 
 import {
+  hlsPlaybackResponse,
   productionBoardResponse,
   resyncQuotesResponse,
   retryProductionSectionResponse,
+  sectionContentResponse,
   sectionQuotesResponse,
+  type HlsPlayback,
   type ProductionBoardView,
+  type SectionContentView,
   type SectionQuotesView,
 } from '@trend-suite/contracts'
 import { apiRequest } from '@/features/lib/http'
@@ -40,4 +44,18 @@ export async function resyncQuotes(courseId: string, sectionId: string): Promise
     { method: 'POST', body: JSON.stringify({}) },
   )
   resyncQuotesResponse.parse(data)
+}
+
+/** 节教材内容预览（正文 DSL 原文 + 三路图示 + 内联 source units）。 */
+export async function getSectionContent(courseId: string, sectionId: string): Promise<SectionContentView> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/courses/${courseId}/production/sections/${sectionId}/content`,
+  )
+  return sectionContentResponse.parse(data).content
+}
+
+/** 管理台预览签发素材 HLS 播放地址（短时签名）。 */
+export async function getHlsPlayback(assetId: string): Promise<HlsPlayback> {
+  const data = await apiRequest<unknown>(`/v1/admin/content/media-assets/${assetId}/hls`)
+  return hlsPlaybackResponse.parse(data).playback
 }

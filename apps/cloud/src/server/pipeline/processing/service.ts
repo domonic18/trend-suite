@@ -8,9 +8,11 @@ import {
 } from '@trend-suite/contracts'
 import { getCourseForUser } from '@/server/content/service'
 import { HttpError, conflict, notFound } from '@/server/lib/http'
+import type { HlsPlaybackResponse } from '@trend-suite/contracts'
 import * as jobRepo from '../jobs/repo'
 import * as repo from '../repo'
 import { signFrameUrl } from './frame-url'
+import { signHlsPlaybackUrl } from './hls-url'
 import * as procRepo from './repo'
 
 /**
@@ -181,6 +183,18 @@ export async function findFrameFile(input: {
 }): Promise<{ path: string } | null> {
   const frame = await procRepo.findFrame({ assetId: input.assetId, frameId: input.frameId })
   return frame ? { path: frame.path } : null
+}
+
+/** 管理台预览签发 HLS 播放地址：素材还没转码出 playlist 即 404。 */
+export async function getHlsPlayback(
+  user: SessionUser,
+  assetId: string,
+): Promise<HlsPlaybackResponse> {
+  const row = await repo.findAssetById(assetId)
+  if (!row) throw notFound('素材不存在')
+  await getCourseForUser(user, row.course_id)
+  if (!row.hls_path) throw notFound('素材尚未产出 HLS，无法播放')
+  return { playback: signHlsPlaybackUrl({ assetId }) }
 }
 
 /** 加工状态：阶段、进度、任务状态。 */
