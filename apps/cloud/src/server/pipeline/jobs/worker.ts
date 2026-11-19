@@ -107,6 +107,7 @@ async function runIngestJob(job: PipelineJobRow): Promise<void> {
 
     await runProcessing({
       assetId: asset.id,
+      courseId: asset.course_id,
       sourcePath,
       durationS,
       framesDir,

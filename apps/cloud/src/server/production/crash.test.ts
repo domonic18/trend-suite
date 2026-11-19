@@ -15,7 +15,7 @@ import { glossaryOf, validateConceptMap } from '@/server/content/plans/concepts'
 import * as plansRepo from '@/server/content/plans/repo'
 import { createModelEntry, updateTaskBinding } from '@/server/models/service'
 import { listSections, listTasks } from './repo'
-import { startMockLlm, type MockLlm } from './mock-llm'
+import { startMockLlm, mockUnitIdFor, type MockLlm } from './mock-llm'
 import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 
 /**
@@ -129,6 +129,24 @@ test('验收③ 杀进程续跑：SIGKILL 后重启，done 步不重跑、其余
     violations: [],
   })
   await approvePlan(teacher, course.id)
+
+  // 步骤 4/6 真实产物依赖素材证据单元：种子一个 ready 素材 + 一条 source unit + 一帧。
+  const assetId = newId('mediaAsset')
+  await query(
+    `INSERT INTO media_assets (id, course_id, original_name, source_path, status, duration_s)
+     VALUES ($1, $2, 'seed.mp4', 'sources/x/source', 'ready', 120)`,
+    [assetId, course.id],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, visual_desc)
+     VALUES ($1, $2, $3, 20000, 50000, '讲师在周线图上逐笔画出趋势线，讲解高低点抬升的判断依据。', '讲师手绘趋势线')`,
+    [mockUnitIdFor(course.id), course.id, assetId],
+  )
+  await query(
+    `INSERT INTO media_frames (id, asset_id, at_ms, path)
+     VALUES ($1, $2, 30000, 'frames/seed/30000.jpg')`,
+    [newId('mediaFrame'), assetId],
+  )
 
   // 第一段：慢速 mock 拉开窗口，跑到中途 SIGKILL
   mock.delayMs = 250

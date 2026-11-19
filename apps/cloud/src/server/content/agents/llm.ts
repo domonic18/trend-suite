@@ -15,7 +15,7 @@ import { normalizeBaseUrl } from '@/server/models/service'
 const LLM_TIMEOUT_MS = 120_000
 const SUMMARY_MAX_BYTES = 8 * 1024
 
-export type LlmPurpose = 'llm' | 'vlm'
+export type LlmPurpose = 'llm' | 'vlm' | 'image'
 
 export class LlmError extends Error {
   /** true = 可重试（网络/超时/429/5xx/坏 JSON/截断）；false = 终态失败（配置缺失、schema 不符）。 */
@@ -81,6 +81,9 @@ export async function resolveTaskChannel(
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
+/** 多模态消息携带的图片（base64，adapter 按协议封装）。 */
+export type LlmImage = { mediaType: 'image/jpeg' | 'image/png'; base64: string }
+
 type RawCompletion = { text: string; tokensIn: number | null; tokensOut: number | null }
 
 function upstreamSnippet(text: string): string {
@@ -89,9 +92,19 @@ function upstreamSnippet(text: string): string {
 
 async function callOpenai(
   channel: LlmChannel,
-  input: { system: string; user: string; maxTokens: number },
+  input: { system: string; user: string; maxTokens: number; images?: LlmImage[] },
   fetchImpl: FetchLike,
 ): Promise<RawCompletion> {
+  const userContent =
+    input.images && input.images.length > 0
+      ? [
+          { type: 'text', text: input.user },
+          ...input.images.map((image) => ({
+            type: 'image_url',
+            image_url: { url: `data:${image.mediaType};base64,${image.base64}` },
+          })),
+        ]
+      : input.user
   let res: Response
   try {
     res = await fetchImpl(`${channel.baseUrl}/chat/completions`, {
@@ -107,7 +120,7 @@ async function callOpenai(
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: input.system },
-          { role: 'user', content: input.user },
+          { role: 'user', content: userContent },
         ],
       }),
       signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
@@ -161,9 +174,16 @@ async function callOpenai(
 
 async function callAnthropic(
   channel: LlmChannel,
-  input: { system: string; user: string; maxTokens: number },
+  input: { system: string; user: string; maxTokens: number; images?: LlmImage[] },
   fetchImpl: FetchLike,
 ): Promise<RawCompletion> {
+  const userContent = [
+    ...(input.images ?? []).map((image) => ({
+      type: 'image',
+      source: { type: 'base64', media_type: image.mediaType, data: image.base64 },
+    })),
+    { type: 'text', text: input.user },
+  ]
   let res: Response
   try {
     res = await fetchImpl(`${channel.baseUrl}/v1/messages`, {
@@ -178,7 +198,7 @@ async function callAnthropic(
         max_tokens: input.maxTokens,
         temperature: 0.2,
         system: input.system,
-        messages: [{ role: 'user', content: input.user }],
+        messages: [{ role: 'user', content: userContent }],
       }),
       signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
     })
@@ -323,6 +343,7 @@ export async function runLlmJson<T>(input: {
   system: string
   user: string
   maxTokens: number
+  images?: LlmImage[]
   schema: z.ZodType<T, z.ZodTypeDef, unknown>
   summarize?: (data: T) => string
   /** 阶段标记（outline / draft…）：写进 ai_runs.summary 前缀，供工作台按阶段归类调用。 */

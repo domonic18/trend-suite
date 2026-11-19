@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import type { ProductionBoardView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -205,6 +206,14 @@ export function ProductionBoard({
                     >
                       {isOpen ? '收起产物' : '产物'}
                     </button>
+                  ) : null}
+                  {section.bodyStatus === 'draft' ? (
+                    <Link
+                      className="btn link"
+                      href={`/workbench/courses/${courseId}/production/sections/${section.sectionId}/preview`}
+                    >
+                      预览
+                    </Link>
                   ) : null}
                 </div>
               </div>

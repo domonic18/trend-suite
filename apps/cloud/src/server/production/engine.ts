@@ -1,6 +1,13 @@
 import 'server-only'
 import { LlmError } from '@/server/content/agents/llm'
 import { persistCaseStocks, readbackQuotes, syncQuotesForSection } from '@/server/content/quotes/service'
+import * as quotesRepo from '@/server/content/quotes/repo'
+import { conceptTerms } from '@/server/content/textbook/section-content'
+import { parseDsl } from '@/server/content/textbook/dsl-parser'
+import { validateDsl } from '@/server/content/textbook/validator'
+import { persistFigures, type FigureSpec } from '@/server/content/textbook/figures-service'
+import * as textbookRepo from '@/server/content/textbook/repo'
+import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 import { runStepAgent } from './agent'
 import {
   completeStep,
@@ -16,6 +23,8 @@ import { stepDef, STEP_COUNT } from './steps'
 /**
  * 步执行状态机（arch/05 §6/§7）：按 STEP_DEFS 分发 agent/pure，
  * 产物过第一层校验后 completeStep 幂等落库；失败走回灌或挂起。
+ * 云端复检（第二层）：case_stocks（迭代 5）/ figure_spec 与 section_draft（迭代 6）
+ * ——复检拒绝抛错即回灌（拒绝原因落 last_error，重试提示词会带回去喂模型）。
  * 顺序强制是结构性的：claimNextStep 只认领「更小步全 done」的 pending 行。
  * 行情同步/读回是 pure 步且源不可用走占位降级（步骤照常 done）——挂起只留给 agent 步。
  */
@@ -28,13 +37,79 @@ export async function executeStep(task: ProductionTaskRow, section: SectionRow):
     output = { [def.key]: await runPureStep(def.key, task) }
   } else {
     await runStepAgent({ task, section })
+    const checkpoint = await getTaskCheckpoint(task.id)
     if (def.key === 'case_stocks') {
       // 云端复检 + 落库（arch/06 §5.1）：结构性违例抛错走回灌，与源不可用区分。
-      const checkpoint = await getTaskCheckpoint(task.id)
       await persistCaseStocks(task.course_id, task.section_id, checkpoint?.[def.key])
+    } else if (def.key === 'figure_spec') {
+      // 图示复检 + 三路落库（arch/05 §8）：配额越界/证据不接地抛错回灌（验收③）。
+      const product = checkpoint?.[def.key] as { figures?: unknown } | undefined
+      const result = await persistFigures({
+        courseId: task.course_id,
+        sectionId: task.section_id,
+        specs: (Array.isArray(product?.figures) ? product.figures : []) as FigureSpec[],
+      })
+      if (result.issues.length > 0) {
+        throw new Error(formatIssues('图示复检拒绝', result.issues))
+      }
+    } else if (def.key === 'section_draft') {
+      // 正文复检（arch/06 §2.4）：语法 → 语义全表 → 通过才写 sections.body（验收④）。
+      const product = checkpoint?.[def.key] as { markdown?: unknown } | undefined
+      if (typeof product?.markdown !== 'string' || product.markdown.trim() === '') {
+        throw new Error('正文复检拒绝：产物缺少 markdown 字段')
+      }
+      await recheckSectionDraft(task, product.markdown)
     }
   }
   await completeStep(task, output)
+}
+
+/** 正文三层校验的后两层：解析 → 语义校验 → 全过才整体落列（绝不部分落库）。 */
+async function recheckSectionDraft(task: ProductionTaskRow, markdown: string): Promise<void> {
+  let ast: ReturnType<typeof parseDsl>
+  try {
+    ast = parseDsl(markdown)
+  } catch (err) {
+    throw new Error(`正文语法错误：${(err as Error).message}`)
+  }
+  const [figureRows, unitRows, stocks, terms] = await Promise.all([
+    textbookRepo.listFigures(task.course_id, task.section_id),
+    listSourceUnitsByCourse(task.course_id),
+    quotesRepo.listCaseStocks(task.course_id, task.section_id),
+    conceptTerms(task.course_id),
+  ])
+  const issues = validateDsl(ast, {
+    figureIds: new Set(figureRows.map((row) => row.id)),
+    units: new Map(
+      unitRows.map((row) => [
+        row.id,
+        { assetId: row.asset_id, startMs: row.start_ms, endMs: row.end_ms },
+      ]),
+    ),
+    stockCodes: new Set(stocks.map((stock) => stock.code)),
+    terms,
+  })
+  if (issues.length > 0) {
+    throw new Error(formatIssues('正文复检拒绝', issues))
+  }
+  await textbookRepo.saveSectionBody({
+    courseId: task.course_id,
+    sectionId: task.section_id,
+    dslVersion: ast.version,
+    body: markdown,
+  })
+}
+
+/** 拒绝原因串成回灌文本：模型重写与 pending_manual 溯源共用这一份。 */
+function formatIssues(head: string, issues: { code: string; line: number | null; message: string; suggestion?: string | undefined }[]): string {
+  const detail = issues
+    .map((issue) => {
+      const at = issue.line ? `@L${issue.line}` : ''
+      const tip = issue.suggestion ? `；最接近的已收录术语：${issue.suggestion}` : ''
+      return `${issue.code}${at}（${issue.message}${tip}）`
+    })
+    .join('；')
+  return `${head}：${detail}`
 }
 
 /** 步失败分级（arch/05 §7）：预算触线直接挂起；其余回灌，超上限挂起。 */

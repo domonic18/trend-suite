@@ -124,24 +124,20 @@ test('删除不存在的素材 → 404', { skip }, async () => {
 })
 
 test('已产出理解成果的素材删除被拒（409 material_referenced）', { skip }, async () => {
-  const { user, assetId } = await uploadedAsset('caoshi-ref', '引用课', '引用.mp4')
-  await query(`CREATE TABLE source_units (
-                 id text PRIMARY KEY,
-                 asset_id text NOT NULL,
-                 content text NOT NULL
-               )`)
-  try {
-    await query(`INSERT INTO source_units (id, asset_id, content) VALUES ('su_1', $1, 'x')`, [assetId])
-    await assert.rejects(
-      () => deleteMaterial(user, assetId),
-      (err: { status?: number; code?: string }) => {
-        assert.equal(err.status, 409)
-        assert.equal(err.code, 'material_referenced')
-        return true
-      },
-    )
-    assert.ok(await repo.findAssetById(assetId))
-  } finally {
-    await query(`DROP TABLE source_units`)
-  }
+  const { user, course, assetId } = await uploadedAsset('caoshi-ref', '引用课', '引用.mp4')
+  // 真实 source_units 表（迁移 011）——不再是临时建的影子表。
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text)
+     VALUES ($1, $2, $3, 0, 1000, 'x')`,
+    ['su_ref_1', course.id, assetId],
+  )
+  await assert.rejects(
+    () => deleteMaterial(user, assetId),
+    (err: { status?: number; code?: string }) => {
+      assert.equal(err.status, 409)
+      assert.equal(err.code, 'material_referenced')
+      return true
+    },
+  )
+  assert.ok(await repo.findAssetById(assetId))
 })

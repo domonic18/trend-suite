@@ -16,7 +16,7 @@ import { createModelEntry, updateTaskBinding } from '@/server/models/service'
 import { HttpError } from '@/server/lib/http'
 import { getProductionBoard, retryProductionSection } from './service'
 import { claimNextStep, listSections, listTasks } from './repo'
-import { startMockLlm, type MockLlm } from './mock-llm'
+import { startMockLlm, mockUnitIdFor, type MockLlm } from './mock-llm'
 import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 
 /**
@@ -93,6 +93,26 @@ async function seedApprovedCourse(name: string): Promise<{ teacherId: string; us
     violations: [],
   })
   await approvePlan(teacher, course.id)
+
+  // 步骤 4/6 真实产物依赖素材证据单元：种子一个 ready 素材 + 一条 source unit。
+  const assetId = newId('mediaAsset')
+  await query(
+    `INSERT INTO media_assets (id, course_id, original_name, source_path, status, duration_s)
+     VALUES ($1, $2, 'seed.mp4', 'sources/x/source', 'ready', 120)`,
+    [assetId, course.id],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, visual_desc)
+     VALUES ($1, $2, $3, 20000, 50000, '讲师在周线图上逐笔画出趋势线，讲解高低点抬升的判断依据。', '讲师手绘趋势线')`,
+    [mockUnitIdFor(course.id), course.id, assetId],
+  )
+
+  // 步骤 4 keyframe 落帧：secHint 30s ±2s 容差内要有现成帧（测试环境源文件不存在，ffmpeg 补抽必失败）。
+  await query(
+    `INSERT INTO media_frames (id, asset_id, at_ms, path)
+     VALUES ($1, $2, 30000, 'frames/seed/30000.jpg')`,
+    [newId('mediaFrame'), assetId],
+  )
 
   const sections = await listSections(course.id)
   return { teacherId: teacher.id, username, courseId: course.id, sectionIds: sections.map((s) => s.section_id) }

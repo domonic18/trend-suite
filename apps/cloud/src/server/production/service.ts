@@ -63,6 +63,7 @@ export async function getProductionBoard(
         order: section.sort_order,
         status: section.status,
         products: taskViews.filter((t) => t.status === 'done').length,
+        bodyStatus: section.body_status,
         tasks: taskViews,
       }
     }),

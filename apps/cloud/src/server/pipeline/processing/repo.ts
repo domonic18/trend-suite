@@ -259,3 +259,140 @@ export async function setAssetCounts(input: {
     [input.assetId, input.segmentCount, input.frameCount],
   )
 }
+
+/** HLS 播放入口落列（transcode 阶段收尾）；置 null 表示尚未提升（重跑补齐的依据）。 */
+export async function setAssetHlsPath(input: {
+  assetId: string
+  hlsPath: string | null
+}): Promise<void> {
+  await query(
+    `UPDATE media_assets SET hls_path = $2, updated_at = now() WHERE id = $1`,
+    [input.assetId, input.hlsPath],
+  )
+}
+
+export async function findAssetHlsPath(assetId: string): Promise<string | null> {
+  const row = await queryOne<{ hls_path: string | null }>(
+    `SELECT hls_path FROM media_assets WHERE id = $1`,
+    [assetId],
+  )
+  return row?.hls_path ?? null
+}
+
+// ---------------------------------------------------------------- 理解产物（source_units）
+
+export type SourceUnitRow = {
+  id: string
+  course_id: string
+  asset_id: string
+  start_ms: number
+  end_ms: number
+  text: string
+  visual_desc: string | null
+  concept_refs: string[]
+  extra: Record<string, unknown>
+  chunk_index: number
+  model_id: string | null
+}
+
+const SOURCE_UNIT_COLUMNS = [
+  'id',
+  'course_id',
+  'asset_id',
+  'start_ms',
+  'end_ms',
+  'text',
+  'visual_desc',
+  'concept_refs',
+  'extra',
+  'chunk_index',
+  'model_id',
+].join(', ')
+
+/** 理解完成的块序号：重跑只补缺失块（arch/05 §4 幂等口径）。 */
+export async function completedUnderstandChunkIndexes(assetId: string): Promise<Set<number>> {
+  const rows = await query<{ chunk_index: number }>(
+    `SELECT DISTINCT chunk_index FROM source_units WHERE asset_id = $1`,
+    [assetId],
+  )
+  return new Set(rows.map((r) => r.chunk_index))
+}
+
+/**
+ * 落一个理解块（单事务）：单元按 (asset_id, start_ms) 幂等去重，
+ * 同事务把落在单元时间窗内的转写段落回填 unit_id。
+ */
+export async function insertSourceUnits(input: {
+  courseId: string
+  assetId: string
+  chunkIndex: number
+  modelId: string | null
+  units: {
+    startMs: number
+    endMs: number
+    text: string
+    visualDesc: string | null
+    conceptRefs: string[]
+    chartType: string | null
+    teachingPoints: string[]
+    frameIds: string[]
+  }[]
+}): Promise<number> {
+  if (input.units.length === 0) return 0
+  return withTransaction(async (client) => {
+    let written = 0
+    for (const unit of input.units) {
+      const id = newId('sourceUnit')
+      await client.query(
+        `INSERT INTO source_units
+           (id, course_id, asset_id, start_ms, end_ms, text, visual_desc, concept_refs, extra, chunk_index, model_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)
+         ON CONFLICT (asset_id, start_ms) DO NOTHING`,
+        [
+          id,
+          input.courseId,
+          input.assetId,
+          unit.startMs,
+          unit.endMs,
+          unit.text,
+          unit.visualDesc,
+          unit.conceptRefs,
+          JSON.stringify({ chartType: unit.chartType, teachingPoints: unit.teachingPoints, frameIds: unit.frameIds }),
+          input.chunkIndex,
+          input.modelId,
+        ],
+      )
+      await client.query(
+        `UPDATE transcript_segments
+         SET unit_id = $2
+         WHERE asset_id = $1 AND unit_id IS NULL
+           AND ((start_ms + end_ms) / 2) BETWEEN $3 AND $4`,
+        [input.assetId, id, unit.startMs, unit.endMs],
+      )
+      written += 1
+    }
+    return written
+  })
+}
+
+export function listSourceUnitsByAsset(assetId: string): Promise<SourceUnitRow[]> {
+  return query<SourceUnitRow>(
+    `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units WHERE asset_id = $1 ORDER BY start_ms ASC`,
+    [assetId],
+  )
+}
+
+export function listSourceUnitsByCourse(courseId: string): Promise<SourceUnitRow[]> {
+  return query<SourceUnitRow>(
+    `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units WHERE course_id = $1 ORDER BY asset_id, start_ms ASC`,
+    [courseId],
+  )
+}
+
+export function findSourceUnitsByIds(ids: string[]): Promise<SourceUnitRow[]> {
+  if (ids.length === 0) return Promise.resolve([])
+  return query<SourceUnitRow>(
+    `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units WHERE id = ANY($1::text[]) ORDER BY start_ms ASC`,
+    [ids],
+  )
+}

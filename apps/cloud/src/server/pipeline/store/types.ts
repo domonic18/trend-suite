@@ -53,6 +53,15 @@ export interface MediaStore {
   /** 关键帧落盘目录（持久位，不能落临时区——帧要长期可取）。 */
   framesDir(assetId: string): string
 
+  /** HLS 分片目录（持久位；arch/05 §3.4：与源文件同一存储域）。 */
+  hlsDir(assetId: string): string
+
+  /** HLS 播放入口的存储相对引用：hls/<assetId>/index.m3u8。 */
+  hlsRef(assetId: string): string
+
+  /** generated 图示成图落盘目录（与 hls 同卷的持久位；COS 未启用前抛 NotReady）。 */
+  figuresDir(figureId: string): string
+
   /** 媒体流与时长校验。 */
   probe(assetId: string): Promise<MediaProbe>
 

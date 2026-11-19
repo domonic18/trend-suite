@@ -1,6 +1,6 @@
 import 'server-only'
 import { copyFile, mkdir, readFile, readdir, rename, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { getEnv } from '@/env'
 import { runFfmpeg } from './ffmpeg'
 import { assetWorkDir } from './paths'
@@ -159,6 +159,28 @@ export async function moveFile(from: string, to: string): Promise<void> {
 export function passesQualityGate(stat: { luma: number; contrast: number }): boolean {
   if (stat.luma < MIN_LUMA || stat.luma > MAX_LUMA) return false
   return stat.contrast >= MIN_CONTRAST
+}
+
+/**
+ * 单帧补抽（figures keyframe 兜底，arch/05 §8）：帧轨道没有落点附近帧时，
+ * 从源片按时间点抽一帧到指定输出路径。返回 null 表示抽取失败（ffmpeg 异常/黑帧）。
+ */
+export async function extractFrameAt(input: {
+  sourcePath: string
+  atMs: number
+  output: string
+}): Promise<{ path: string } | null> {
+  await mkdir(dirname(input.output), { recursive: true })
+  const stats = await extractSingleFrame({
+    sourcePath: input.sourcePath,
+    atMs: input.atMs,
+    output: input.output,
+  })
+  if (!stats) {
+    await rm(input.output, { force: true })
+    return null
+  }
+  return { path: input.output }
 }
 
 /** 单帧抽取：按时间点取一帧，顺带算亮度与对比度。 */
