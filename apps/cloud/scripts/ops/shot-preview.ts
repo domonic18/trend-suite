@@ -102,6 +102,39 @@ async function main() {
     writeFileSync(`/tmp/${name}.png`, Buffer.from(data, 'base64'))
     console.log(`[shot] /tmp/${name}.png`)
   }
+
+  /** 截取含指定文字的课件盒（只看课件，不看整页长图）。 */
+  const shotBox = async (name: string, needle: string, selector = '.widget-box') => {
+    const rect = (await cdp.send(
+      'Runtime.evaluate',
+      {
+        expression: `(() => {
+          const box = [...document.querySelectorAll(${JSON.stringify(selector)})].find((b) => b.innerText.includes(${JSON.stringify(needle)}));
+          if (!box) return null;
+          const r = box.getBoundingClientRect();
+          return { x: r.x + window.scrollX, y: r.y + window.scrollY, width: r.width, height: r.height };
+        })()`,
+        returnByValue: true,
+      },
+      sessionId,
+    )) as { result?: { value?: { x: number; y: number; width: number; height: number } | null } }
+    const box = rect.result?.value
+    if (!box) {
+      console.log(`[shot] ${name}: 找不到「${needle}」`)
+      return
+    }
+    const { data } = (await cdp.send(
+      'Page.captureScreenshot',
+      {
+        format: 'png',
+        captureBeyondViewport: true,
+        clip: { ...box, scale: 1 },
+      },
+      sessionId,
+    )) as { data: string }
+    writeFileSync(`/tmp/${name}.png`, Buffer.from(data, 'base64'))
+    console.log(`[shot] /tmp/${name}.png`)
+  }
   await shot('preview-full')
 
   // 点事实锚点（正文里的 [[unit:…]] 按钮），看回溯卡是否弹出
@@ -139,6 +172,7 @@ async function main() {
   console.log('[stock]', JSON.stringify(stockClicked.result?.value))
   await sleep(2500)
   await shot('preview-stock')
+  await shotBox('preview-stock-kline', '', '.kline-preview')
 
   const text = (await cdp.send(
     'Runtime.evaluate',
@@ -147,6 +181,125 @@ async function main() {
   )) as { result?: { value?: string } }
   writeFileSync('/tmp/preview-text.txt', text.result?.value ?? '')
   console.log('[text] /tmp/preview-text.txt')
+
+  // 课件：点一个选项看判题反馈（迭代 7 验收①：点得动、判得出）
+  const answered = (await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = document.querySelectorAll('.widget-box');
+        const target = [...box].find((b) => b.innerText.includes('概念选择'));
+        const btn = target?.querySelector('.widget-option');
+        if (!btn) return 'no-option';
+        btn.click();
+        return btn.textContent || '';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )) as { result?: { value?: string } }
+  console.log('[mcq-answer]', JSON.stringify(answered.result?.value))
+  await sleep(1000)
+  await shotBox('preview-widget-mcq', '概念选择')
+
+  const mcqFeedback = (await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('概念选择'));
+        return box?.querySelector('.widget-feedback')?.innerText ?? 'no-feedback';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )) as { result?: { value?: string } }
+  console.log('[mcq-feedback]', JSON.stringify(mcqFeedback.result?.value))
+
+  // 形态识别：选图判题（合成 K 线与真实行情同一画法）
+  const pattern = (await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('形态识别'));
+        const tile = box?.querySelector('.widget-tile');
+        if (!tile) return 'no-tile';
+        tile.click();
+        return tile.textContent || '';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )) as { result?: { value?: string } }
+  console.log('[pattern-click]', JSON.stringify(pattern.result?.value))
+  await sleep(1000)
+  await shotBox('preview-widget-pattern', '形态识别')
+
+  // 逐根回放：连点几次「揭示下一根」，看遮罩是否单调推进（不预示后市）
+  for (let i = 0; i < 4; i += 1) {
+    await cdp.send(
+      'Runtime.evaluate',
+      {
+        expression: `(() => {
+          const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('逐根回放'));
+          const btn = [...(box?.querySelectorAll('.widget-actions button') ?? [])].find((b) => b.textContent.includes('揭示下一根'));
+          if (!btn || btn.disabled) return 'stopped';
+          btn.click();
+          return 'revealed';
+        })()`,
+        returnByValue: true,
+      },
+      sessionId,
+    )
+    await sleep(400)
+  }
+  await shotBox('preview-widget-replay', '逐根回放')
+
+  // 回放判断点：选一个选项并提交，看揭晓与锁定（不可回改）
+  await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('逐根回放'));
+        const opt = box?.querySelector('.widget-options .widget-option');
+        if (!opt) return 'no-option';
+        opt.click();
+        return opt.textContent || '';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )
+  await sleep(500)
+  const replayAnswer = (await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('逐根回放'));
+        const submit = [...(box?.querySelectorAll('.widget-actions button') ?? [])].find((b) => b.textContent.includes('提交作答'));
+        if (!submit || submit.disabled) return 'submit-not-ready';
+        submit.click();
+        return 'submitted';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )) as { result?: { value?: string } }
+  console.log('[replay-answer]', JSON.stringify(replayAnswer.result?.value))
+  await sleep(1200)
+  await shotBox('preview-widget-replay-answered', '逐根回放')
+
+  const replayText = (await cdp.send(
+    'Runtime.evaluate',
+    {
+      expression: `(() => {
+        const box = [...document.querySelectorAll('.widget-box')].find((b) => b.innerText.includes('逐根回放'));
+        return box?.innerText ?? 'no-replay';
+      })()`,
+      returnByValue: true,
+    },
+    sessionId,
+  )) as { result?: { value?: string } }
+  console.log('[replay]', JSON.stringify(replayText.result?.value))
 
   ws.close()
   chrome.kill()

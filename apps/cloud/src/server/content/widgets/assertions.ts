@@ -1,6 +1,7 @@
 import 'server-only'
 import {
   ASSERTION_TYPES,
+  atr,
   calcFormula,
   calcParamsInBounds,
   classifyShape,
@@ -54,20 +55,6 @@ type Verdict = { ok: boolean; detail: string }
 
 const pass = (detail: string): Verdict => ({ ok: true, detail })
 const fail = (detail: string): Verdict => ({ ok: false, detail })
-
-/** ATR：最近 min(14, n) 根 TR 的简单均值。 */
-export function atr(bars: readonly WidgetBar[]): number {
-  const n = bars.length
-  if (n === 0) return 0
-  const window = Math.min(14, n)
-  let sum = 0
-  for (let i = n - window; i < n; i += 1) {
-    const bar = bars[i]!
-    const prevClose = i === 0 ? bar.o : bars[i - 1]!.c
-    sum += Math.max(bar.h - bar.l, Math.abs(bar.h - prevClose), Math.abs(bar.l - prevClose))
-  }
-  return sum / window
-}
 
 /** 相对容差：max(1e-6 × |answer|, 1e-9)。 */
 export function relativeTolerance(answer: number): number {

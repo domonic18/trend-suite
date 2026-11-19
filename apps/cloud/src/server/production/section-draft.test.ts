@@ -1,6 +1,7 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
+import { DSL_VERSION } from '@trend-suite/contracts'
 import { resetTestDatabase, testDatabaseUrl } from '@/server/lib/test-db'
 import { query } from '@/server/lib/db'
 import { newId } from '@/server/lib/ids'
@@ -172,7 +173,7 @@ test('验收④ 概念表外术语被拦：拒绝原因可读、回灌追平后�
     [courseId, sectionIds[0]],
   )
   assert.equal(done[0]?.body_status, 'draft')
-  assert.equal(done[0]?.dsl_version, 1)
+  assert.equal(done[0]?.dsl_version, DSL_VERSION)
 })
 
 test('content 视图：证据单元内联、图示带签名地址、案例股可回溯（验收②服务端半边）', { skip }, async () => {
@@ -184,7 +185,7 @@ test('content 视图：证据单元内联、图示带签名地址、案例股可
 
   assert.equal(content.bodyStatus, 'draft')
   assert.ok(content.body?.includes('趋势的定义'))
-  assert.equal(content.dslVersion, 1)
+  assert.equal(content.dslVersion, DSL_VERSION)
 
   // [[unit:]] 锚解析出的单元：时间窗与转写可回溯
   assert.ok(content.units.some((u) => u.id === unitId && u.startMs === 20000 && u.endMs === 50000))

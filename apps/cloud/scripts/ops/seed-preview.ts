@@ -8,6 +8,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import pg from 'pg'
+import { widgetSpec } from '@trend-suite/contracts'
 import { renderDiagram } from '../../src/server/content/textbook/diagram-renderer'
 import { hashPassword } from '../../src/server/lib/crypto'
 
@@ -90,7 +91,272 @@ const body = `# 1. 趋势的定义与判断依据
 :::warn title="风险提示" variant="risk"
 本节图示为录制时点的前复权口径，与当前行情存在除权漂移；不构成投资建议。
 :::
+
+## 1.4 老师标注与逐根回放
+
+:::annotation unitId="su_e5e5e5e5e5e5e5e5" assetId="ast_d4d4d4d4d4d4d4d4" code="600519" kind="structure" atMs="30000"
+{"d":"2024-03-15","label":"趋势的第一根确认 K 线","quote":"这一根之后，高点才真的开始抬升——趋势从这儿才算成立。","glossary":["趋势"]}
+:::
+
+:::replay code="600519" caption="贵州茅台周线逐根回放：每根先判断，再揭晓"
+:::
 `
+
+/** 演示行情（目检用）：贵州茅台周线，13 根，缓慢上行——回放课件的真实 bars 源。 */
+const DEMO_BARS = [
+  { d: '2024-03-01', o: 1660, h: 1700, l: 1640, c: 1690, v: 210_000 },
+  { d: '2024-03-08', o: 1690, h: 1740, l: 1680, c: 1725, v: 230_000 },
+  { d: '2024-03-15', o: 1725, h: 1780, l: 1700, c: 1770, v: 260_000 },
+  { d: '2024-03-22', o: 1770, h: 1790, l: 1720, c: 1740, v: 250_000 },
+  { d: '2024-03-29', o: 1740, h: 1800, l: 1730, c: 1790, v: 240_000 },
+  { d: '2024-04-05', o: 1790, h: 1830, l: 1770, c: 1810, v: 220_000 },
+  { d: '2024-04-12', o: 1810, h: 1840, l: 1770, c: 1780, v: 235_000 },
+  { d: '2024-04-19', o: 1780, h: 1820, l: 1760, c: 1805, v: 225_000 },
+  { d: '2024-04-26', o: 1805, h: 1880, l: 1795, c: 1865, v: 275_000 },
+  { d: '2024-05-03', o: 1865, h: 1900, l: 1830, c: 1845, v: 255_000 },
+  { d: '2024-05-10', o: 1845, h: 1870, l: 1800, c: 1815, v: 245_000 },
+  { d: '2024-05-17', o: 1815, h: 1850, l: 1780, c: 1840, v: 250_000 },
+  { d: '2024-05-24', o: 1840, h: 1890, l: 1830, c: 1875, v: 265_000 },
+]
+
+const CITATIONS = [UNIT_ID]
+
+/** 11 类课件的演示 spec（目检用）：形状过契约严校验，断言证明记 pass。 */
+const DEMO_WIDGETS: { id: string; type: string; code: string | null; spec: unknown }[] = [
+  {
+    id: 'wid_a100000000000001',
+    type: 'kline-annotator',
+    code: null,
+    spec: {
+      type: 'kline-annotator',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { trendlineTouches: { min: 2 }, slopeRange: { min: 0, max: 90 }, noBreakBelow: true },
+      data: { generator: 'uptrend', seed: 7, bars: 60 },
+      task: '在这张图上点两个锚点，画出你认为的趋势线——系统会当场判你画得对不对。',
+      solution: { trendline: { startIdx: 5, endIdx: 40 } },
+      annotations: [{ idx: 12, label: '起涨确认', kind: 'structure' }],
+    },
+  },
+  {
+    id: 'wid_a100000000000002',
+    type: 'pattern-quiz',
+    code: null,
+    spec: {
+      type: 'pattern-quiz',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { answerUnique: true, distractorsDistinct: true },
+      data: { generator: 'uptrend', seed: 11, bars: 40 },
+      question: '哪一条是上升趋势？',
+      options: [
+        { id: 'up', label: 'A 上升', generator: 'uptrend', seed: 11, bars: 40 },
+        { id: 'down', label: 'B 下降', generator: 'downtrend', seed: 22, bars: 40 },
+        { id: 'flat', label: 'C 横盘', generator: 'range', seed: 33, bars: 40 },
+      ],
+      answerId: 'up',
+    },
+  },
+  {
+    id: 'wid_a100000000000003',
+    type: 'mcq-quiz',
+    code: null,
+    spec: {
+      type: 'mcq-quiz',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { answerUnique: true, termsInConcepts: true },
+      question: '判断趋势首先要看什么？',
+      options: [
+        { id: 'a', label: '价格相对关键点的位置' },
+        { id: 'b', label: '当下的成交量放大' },
+        { id: 'c', label: '均线之间的排列顺序' },
+      ],
+      answerId: 'a',
+      conceptRefs: ['趋势'],
+    },
+  },
+  {
+    id: 'wid_a100000000000004',
+    type: 'step-reveal',
+    code: null,
+    spec: {
+      type: 'step-reveal',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { markersInRange: true, conclusionsNonEmpty: true },
+      data: { generator: 'uptrend', seed: 5, bars: 60 },
+      steps: [
+        {
+          title: '第一步：定位置',
+          fromIdx: 0,
+          toIdx: 19,
+          markers: [{ idx: 8, price: 104, label: '起点' }],
+          conclusion: '先看当前价在关键点之上还是之下——位置错了，后面都不用看。',
+        },
+        {
+          title: '第二步：看速度',
+          fromIdx: 20,
+          toIdx: 39,
+          markers: [{ idx: 30, price: 118, label: '加速' }],
+          conclusion: '斜率变陡说明推进在加速，但加速不等于反转已经发生。',
+        },
+        {
+          title: '第三步：数持续',
+          fromIdx: 40,
+          toIdx: 59,
+          conclusion: '跨越的 K 线根数够多，趋势才算成立——一次冲高不算。',
+        },
+      ],
+      finalConclusion: '位置、速度、持续性三件事依次过，任何一件不成立都要先停下来。',
+    },
+  },
+  {
+    id: 'wid_a100000000000005',
+    type: 'calc-trainer',
+    code: null,
+    spec: {
+      type: 'calc-trainer',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { examplesRecomputable: true, paramsInBounds: true },
+      formula: 'risk-reward',
+      inputs: { entryPrice: 1700, stopPrice: 1650, targetPrice: 1850 },
+      examples: [
+        { inputs: { entryPrice: 1700, stopPrice: 1650, targetPrice: 1850 }, answer: 3 },
+        { inputs: { entryPrice: 1800, stopPrice: 1700, targetPrice: 2100 }, answer: 3 },
+      ],
+      tolerance: 1e-6,
+    },
+  },
+  {
+    id: 'wid_a100000000000006',
+    type: 'flashcards',
+    code: null,
+    spec: {
+      type: 'flashcards',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { termsInConcepts: true, cardCount: { min: 3, max: 20 } },
+      cards: [
+        { front: '趋势', back: '价格运行方向在时间上的延续性，由位置、速度、持续性三要素界定。', conceptRef: '趋势' },
+        { front: '位置', back: '当前价相对前一关键点的高低——先定位置，再谈方向。', conceptRef: '趋势' },
+        { front: '持续性', back: '趋势跨越的 K 线根数，一次冲高不构成趋势。', conceptRef: '趋势' },
+      ],
+    },
+  },
+  {
+    id: 'wid_a100000000000007',
+    type: 'checklist',
+    code: null,
+    spec: {
+      type: 'checklist',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { itemsNonEmpty: true },
+      title: '判断趋势前的四项检查',
+      items: [
+        { text: '周期是否一致（日线结论不要直接套周线）', conceptRef: '趋势' },
+        { text: '高低点是否依次抬升', conceptRef: '趋势' },
+        { text: '量能是否配合', conceptRef: '趋势' },
+        { text: '级别之间是否互相印证', conceptRef: '趋势' },
+      ],
+    },
+  },
+  {
+    id: 'wid_a100000000000008',
+    type: 'timeline-explorer',
+    code: null,
+    spec: {
+      type: 'timeline-explorer',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { edgeRefsExist: true, acyclicPrerequisite: true },
+      nodes: [{ conceptRef: '趋势' }, { conceptRef: '级别' }],
+      edges: [{ from: '级别', to: '趋势', kind: 'prerequisite' }],
+    },
+  },
+  {
+    id: 'wid_a100000000000009',
+    type: 'image-juxtaposition',
+    code: null,
+    spec: {
+      type: 'image-juxtaposition',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { pairSidesValid: true, captionsGrounded: true },
+      left: { figureId: 'fig_b8b8b8b8b8b8b8b8' },
+      right: { generator: 'uptrend', seed: 41, bars: 60 },
+      labels: { left: '课程图示', right: '合成 K 线' },
+      captions: { left: '密集与发散：趋势的两种形态。', right: '同样的位置关系，换成真实 K 线口径。' },
+    },
+  },
+  {
+    id: 'wid_a10000000000000a',
+    type: 'branching-scenario',
+    code: null,
+    spec: {
+      type: 'branching-scenario',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { graphAcyclic: true, allPathsTerminate: true, optimalPathReachable: true, feedbackNonEmpty: true },
+      scenario: '持仓浮亏，趋势看起来走坏了——你怎么办？',
+      nodes: [
+        {
+          id: 'n1',
+          prompt: '第一件事做什么？',
+          options: [{ label: '先确认结构是否破坏', next: 'n2', feedback: '对，先看结构，不看情绪。' }],
+        },
+        {
+          id: 'n2',
+          prompt: '结构确认破，下一步？',
+          options: [{ label: '按纪律离场', next: null, feedback: '结构破了就该走，保住本金比赚最后一根强。' }],
+        },
+      ],
+      entryId: 'n1',
+      optimalPath: ['n1', 'n2'],
+    },
+  },
+  {
+    id: 'wid_a10000000000000b',
+    type: 'bar-replay-decision',
+    code: '600519',
+    spec: {
+      type: 'bar-replay-decision',
+      specVersion: 1,
+      citations: CITATIONS,
+      assertions: { answerUnique: true, decisionPointsGrounded: true, revealMonotonic: true, annotationTermsGrounded: true },
+      code: '600519',
+      window: { from: '2024-03-01', to: '2024-05-30' },
+      period: '1w',
+      overlays: [{ atDate: '2024-03-15', label: '起涨确认' }],
+      annotations: [
+        { unitId: UNIT_ID, atMs: 30000, kind: 'structure', d: '2024-03-15', label: '趋势的第一根确认 K 线' },
+        { unitId: UNIT_ID, atMs: 30000, kind: 'invalidation', d: '2024-04-19', label: '跌破结构位，趋势失效' },
+      ],
+      decisions: [
+        {
+          atDate: '2024-03-15',
+          question: '这根放量收阳之后，你的判断是？',
+          options: [{ label: '趋势成立，继续持有' }, { label: '冲高回落，卖出' }],
+          correct: '趋势成立，继续持有',
+          revealText: '高点抬升且回踩不破前低，趋势的三要素里位置与持续性都过关了。',
+          unitId: UNIT_ID,
+          atMs: 30000,
+        },
+        {
+          atDate: '2024-04-19',
+          question: '这根跌破前低，接下来怎么办？',
+          options: [{ label: '继续持有' }, { label: '按纪律离场' }],
+          correct: '按纪律离场',
+          revealText: '结构破坏优先于任何理由，这一段的判断点在原片里有讲。',
+          unitId: UNIT_ID,
+          atMs: 30000,
+        },
+      ],
+    },
+  },
+]
 
 const client = new pg.Client({ connectionString: databaseUrl })
 await client.connect()
@@ -119,8 +385,8 @@ try {
   )
   await client.query(
     `INSERT INTO sections (id, course_id, section_id, title, sort_order, status, dsl_version, body, body_status)
-     VALUES ('sec_c3c3c3c3c3c3c3c3', $1, $2, '趋势的定义与判断依据', 1, 'complete', 1, $3, 'draft')
-     ON CONFLICT (course_id, section_id) DO UPDATE SET body = EXCLUDED.body, body_status = 'draft'`,
+     VALUES ('sec_c3c3c3c3c3c3c3c3', $1, $2, '趋势的定义与判断依据', 1, 'complete', 2, $3, 'draft')
+     ON CONFLICT (course_id, section_id) DO UPDATE SET body = EXCLUDED.body, body_status = 'draft', dsl_version = 2`,
     [COURSE_ID, SECTION_ID, body],
   )
   await client.query(
@@ -198,8 +464,39 @@ try {
     'base64',
   ))
 
+  // 回放课件要真实行情：贵州茅台周线（目检用的演示数值，口径同 quote_bars）。
+  await client.query('DELETE FROM quote_bars WHERE code = $1 AND period = $2', ['600519', '1w'])
+  for (const [i, bar] of DEMO_BARS.entries()) {
+    await client.query(
+      `INSERT INTO quote_bars (code, period, trade_date, open, high, low, close, volume)
+       VALUES ('600519', '1w', $1, $2, $3, $4, $5, $6)`,
+      [bar.d, bar.o, bar.h, bar.l, bar.c, bar.v],
+    )
+    void i
+  }
+
+  // 11 类课件（目检用）：spec 过契约严校验才落库，断言证明记 pass。
+  await client.query('DELETE FROM widget_specs WHERE course_id = $1 AND section_id = $2', [COURSE_ID, SECTION_ID])
+  for (const item of DEMO_WIDGETS) {
+    const spec = widgetSpec.parse(item.spec)
+    await client.query(
+      `INSERT INTO widget_specs (id, course_id, section_id, type, code, spec_version, version, spec)
+       VALUES ($1, $2, $3, $4, $5, 1, 1, $6)
+       ON CONFLICT (id) DO UPDATE SET spec = EXCLUDED.spec, version = widget_specs.version + 1`,
+      [item.id, COURSE_ID, SECTION_ID, item.type, item.code, JSON.stringify(spec)],
+    )
+    for (const assertion of Object.keys(spec.assertions)) {
+      await client.query(
+        `INSERT INTO widget_validations (widget_id, assertion, status, params, detail)
+         VALUES ($1, $2, 'pass', $3, '演示数据：断言已由程序证明')
+         ON CONFLICT (widget_id, assertion) DO UPDATE SET status = 'pass', proven_at = now()`,
+        [item.id, assertion, JSON.stringify(spec.assertions[assertion] ?? true)],
+      )
+    }
+  }
+
   await client.query('COMMIT')
-  console.log('[seed-preview] 就绪：课程', COURSE_ID, '节', SECTION_ID)
+  console.log('[seed-preview] 就绪：课程', COURSE_ID, '节', SECTION_ID, '· 课件', DEMO_WIDGETS.length, '份')
 } catch (err) {
   await client.query('ROLLBACK')
   console.error('[seed-preview] 失败', err)

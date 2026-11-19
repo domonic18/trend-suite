@@ -110,6 +110,19 @@ async function recheckSectionDraft(task: ProductionTaskRow, markdown: string): P
     quotesRepo.listCaseStocks(task.course_id, task.section_id),
     conceptTerms(task.course_id),
   ])
+  // v2 溯源块依赖（arch/06 §2.4）：案例窗口、真实交易日、本节回放课件。
+  const caseWindows = new Map(stocks.map((stock) => [stock.code, { from: stock.window_start, to: stock.window_end }]))
+  const tradingDays = new Map<string, Set<string>>()
+  for (const stock of stocks) {
+    const days = await quotesRepo.tradingDays(stock.code, stock.window_start, stock.window_end)
+    tradingDays.set(stock.code, new Set(days))
+  }
+  const replayRows = await widgetsRepo.listWidgets(task.course_id, task.section_id)
+  const replayCodes = new Map<string, number>()
+  for (const row of replayRows) {
+    if (row.type !== 'bar-replay-decision' || !row.code) continue
+    replayCodes.set(row.code, (replayCodes.get(row.code) ?? 0) + 1)
+  }
   const issues = validateDsl(ast, {
     figureIds: new Set(figureRows.map((row) => row.id)),
     units: new Map(
@@ -120,6 +133,9 @@ async function recheckSectionDraft(task: ProductionTaskRow, markdown: string): P
     ),
     stockCodes: new Set(stocks.map((stock) => stock.code)),
     terms,
+    caseWindows,
+    tradingDays,
+    replayCodes,
   })
   if (issues.length > 0) {
     throw new Error(formatIssues('正文复检拒绝', issues))

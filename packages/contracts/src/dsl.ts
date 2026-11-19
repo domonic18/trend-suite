@@ -5,7 +5,7 @@ import { z } from 'zod'
  * dslVersion 只增不减；解析器/校验器/渲染器三端共用本文件的形状与常量。
  */
 
-export const DSL_VERSION = 1
+export const DSL_VERSION = 2
 
 /** v1 基础块（arch/06 §2.1）。 */
 export const V1_DIRECTIVES = [
@@ -21,11 +21,23 @@ export const V1_DIRECTIVES = [
   'clip',
 ] as const
 
-/** v2 溯源块（依赖回放课件，迭代 7 启用）：低版本门禁直接拒。 */
+/** v2 溯源块（依赖回放课件，迭代 7 启用）：v1 版本正文见到即拒。 */
 export const V2_DIRECTIVES = ['annotation', 'replay'] as const
 
 export type V1Directive = (typeof V1_DIRECTIVES)[number]
 export type V2Directive = (typeof V2_DIRECTIVES)[number]
+
+/** 指令的最低 DSL 版本（版本只增不减，v1 指令全版本可用）。 */
+export const DIRECTIVE_MIN_VERSION: Record<string, number> = {
+  ...Object.fromEntries(V1_DIRECTIVES.map((name) => [name, 1])),
+  ...Object.fromEntries(V2_DIRECTIVES.map((name) => [name, 2])),
+}
+
+/** 某指令在某版本是否可用（渲染器与校验器共用同一份版本门禁）。 */
+export function directiveAllowedInVersion(directive: string, version: number): boolean {
+  const min = DIRECTIVE_MIN_VERSION[directive]
+  return min !== undefined && version >= min
+}
 
 /** DSL 层每节配额（arch/06 §2.1），超出 `409 *_quota_exceeded`。 */
 export const dslQuotas = { think: 3, sidenote: 8, cards: 2, figure: 8, clip: 3 } as const
@@ -103,6 +115,19 @@ export const dslTimelineBody = z.object({
 })
 export type DslTimelineBody = z.infer<typeof dslTimelineBody>
 
+/**
+ * v2 溯源块 :::annotation 的 body（arch/06 §2.2）：
+ * d = 标注所在的**交易日期**（不是 bar 索引——索引会随回填/裁剪漂移，日期是稳定锚点）、
+ * label = 标注说明、quote = 老师原话、glossary = 本条涉及的术语（须 ∈ 概念表）。
+ */
+export const dslAnnotationBody = z.object({
+  d: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  label: z.string().min(1).max(200),
+  quote: z.string().min(1).max(2000),
+  glossary: z.array(z.string().min(1).max(200)).min(1).max(10),
+})
+export type DslAnnotationBody = z.infer<typeof dslAnnotationBody>
+
 export const dslAst = z.object({
   version: z.number().int().min(1),
   segments: z.array(dslSegment),
@@ -121,6 +146,12 @@ export const dslErrorCode = z.enum([
   'clip_not_grounded',
   'stock_not_in_list',
   'term_not_in_concepts',
+  'annotation_not_grounded',
+  'annotation_date_out_of_window',
+  'annotation_date_not_trading_day',
+  'annotation_term_unknown',
+  'replay_widget_unknown',
+  'replay_widget_ambiguous',
   'sec_not_grounded',
   'figure_not_grounded',
   'template_not_allowed',

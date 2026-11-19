@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { idShape } from './ids.js'
+import { klineBar } from './market.js'
 import { CALC_FORMULAS, GENERATORS, GENERATOR_BARS_MAX, GENERATOR_BARS_MIN, GENERATOR_SEED_MAX } from './widget-data.js'
 
 /**
@@ -444,6 +445,11 @@ export const widgetView = z.object({
   /** 断言证明记录（arch/06 §11：只记程序证明，不记学员作答）。 */
   assertions: z.array(widgetAssertionView),
   citations: z.array(z.string()),
+  /**
+   * 回放课件的真实行情（arch/06 §9：bars 不入 spec，由宿主按 §5 取——
+   * 随行情回填漂移的是行情，不是课件）。仅 bar-replay-decision 有。
+   */
+  bars: z.array(klineBar).optional(),
 })
 export type WidgetView = z.infer<typeof widgetView>
 

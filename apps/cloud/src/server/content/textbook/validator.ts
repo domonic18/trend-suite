@@ -1,10 +1,11 @@
 import {
+  dslAnnotationBody,
   dslBignumBody,
   dslCardsBody,
   dslCmpBody,
   dslQuotas,
   dslTimelineBody,
-  V1_DIRECTIVES,
+  directiveAllowedInVersion,
   V2_DIRECTIVES,
   type DslAst,
   type DslIssue,
@@ -13,9 +14,10 @@ import type { DslBlock } from '@trend-suite/contracts'
 
 /**
  * 教材 DSL 第 2 层语义校验（arch/06 §2.4，随正文写入复检）：
- * 纯函数 + 依赖注入（图示集 / source units / 案例股清单 / 概念词表），
- * 产物 DslIssue[]（带行号；术语违例带词与最近似建议）——空数组即通过。
- * JSON 块形状、配额、clip 窗口接地、术语表全词匹配都在这一层收口。
+ * 纯函数 + 依赖注入（图示集 / source units / 案例股清单 / 概念词表 /
+ * 案例窗口与交易日 / 本节回放课件），产物 DslIssue[]（带行号；术语违例带词与
+ * 最近似建议）——空数组即通过。JSON 块形状、配额、clip 窗口接地、术语表全词匹配
+ * 都在这一层收口。
  */
 
 export type ValidatorUnit = { assetId: string; startMs: number; endMs: number }
@@ -29,10 +31,17 @@ export type ValidatorDeps = {
   stockCodes: ReadonlySet<string>
   /** 概念词表（name + aliases 原样，全词匹配）。 */
   terms: readonly string[]
+  /** 案例股 code → 案例窗口（ISO 日期，arch/06 §5.1）。 */
+  caseWindows: ReadonlyMap<string, { from: string; to: string }>
+  /** 案例股 code → 真实交易日集合（quote_bars 读回，非交易日即拒）。 */
+  tradingDays: ReadonlyMap<string, ReadonlySet<string>>
+  /** 本节已落库的回放课件 code → 份数（0 = 无，>1 = 定位不唯一）。 */
+  replayCodes: ReadonlyMap<string, number>
 }
 
 const TEXT_LIMITS: Record<string, number> = { think: 800, sidenote: 500, warn: 500, board: 500 }
 const WARN_VARIANTS = new Set(['def', 'rule', 'misuse', 'risk'])
+const ANNOTATION_KINDS = new Set(['structure', 'invalidation', 'rhythm'])
 const CLIP_MAX_WINDOW_MS = 60_000
 
 export function validateDsl(ast: DslAst, deps: ValidatorDeps): DslIssue[] {
@@ -43,14 +52,14 @@ export function validateDsl(ast: DslAst, deps: ValidatorDeps): DslIssue[] {
     if (segment.type !== 'block') continue
     const block = segment.block
 
-    if (!V1_DIRECTIVES.includes(block.directive as (typeof V1_DIRECTIVES)[number])) {
+    if (!directiveAllowedInVersion(block.directive, ast.version)) {
       const isV2 = V2_DIRECTIVES.includes(block.directive as (typeof V2_DIRECTIVES)[number])
       issues.push({
         code: 'directive_not_in_version',
         line: block.line,
         message: isV2
-          ? `:::${block.directive} 是 v2 溯源块，当前 dslVersion=1 不启用`
-          : `未知容器块 :::${block.directive}（v1 白名单外）`,
+          ? `:::${block.directive} 是 v2 溯源块，当前 dslVersion=${ast.version} 不启用`
+          : `未知容器块 :::${block.directive}（白名单外）`,
       })
       continue
     }
@@ -218,9 +227,179 @@ function validateBlockBody(block: DslBlock, deps: ValidatorDeps, issues: DslIssu
       }
       return
     }
+    case 'annotation':
+      validateAnnotation(block, deps, issues)
+      return
+    case 'replay':
+      validateReplay(block, deps, issues)
+      return
     default:
       return
   }
+}
+
+/**
+ * :::annotation（arch/06 §2.2/§2.4）：老师标注详情卡。
+ * 接地口径——atMs 落素材单元窗内、d 落案例窗内**且**是该股真实交易日、
+ * glossary 术语 ∈ 概念表；映射不到行情时按「行情暂不可用」降级，不伪造。
+ */
+function validateAnnotation(block: DslBlock, deps: ValidatorDeps, issues: DslIssue[]): void {
+  const unit = requireUnit(block, deps, issues)
+  const assetId = block.attrs.assetId ?? ''
+  const code = block.attrs.code ?? ''
+  const kind = block.attrs.kind ?? ''
+  const atMs = Number(block.attrs.atMs)
+
+  if (!ANNOTATION_KINDS.has(kind)) {
+    issues.push({
+      code: 'body_schema_failed',
+      line: block.line,
+      message: `:::annotation kind 只能是 structure/invalidation/rhythm（得到 ${kind}）`,
+    })
+  }
+  if (!Number.isInteger(atMs) || atMs < 0) {
+    issues.push({
+      code: 'annotation_not_grounded',
+      line: block.line,
+      message: `:::annotation atMs 必须是毫秒整数（得到 ${block.attrs.atMs}）`,
+    })
+  }
+  if (assetId === '') {
+    issues.push({ code: 'body_schema_failed', line: block.line, message: ':::annotation 缺 assetId 属性' })
+  } else if (unit && assetId !== unit.assetId) {
+    issues.push({
+      code: 'annotation_not_grounded',
+      line: block.line,
+      message: `:::annotation assetId=${assetId} 与所引素材单元的素材（${unit.assetId}）不一致`,
+    })
+  }
+  if (unit && Number.isInteger(atMs) && (atMs < unit.startMs || atMs > unit.endMs)) {
+    issues.push({
+      code: 'annotation_not_grounded',
+      line: block.line,
+      message: `:::annotation atMs=${atMs} 未落在素材单元窗内（${unit.startMs}~${unit.endMs}ms）`,
+    })
+  }
+  if (!/^\d{6}$/.test(code)) {
+    issues.push({
+      code: 'body_schema_failed',
+      line: block.line,
+      message: `:::annotation code 必填且为 6 位案例股代码（得到 ${code}）`,
+    })
+    return
+  }
+
+  const body = parseAnnotationBody(block, issues)
+  if (!body) return
+
+  if (!deps.stockCodes.has(code)) {
+    issues.push({
+      code: 'stock_not_in_list',
+      line: block.line,
+      message: `:::annotation code=${code} 不在本节案例股清单内`,
+    })
+    return
+  }
+  const window = deps.caseWindows.get(code)
+  if (!window) {
+    issues.push({
+      code: 'annotation_date_out_of_window',
+      line: block.line,
+      message: `:::annotation code=${code} 没有案例窗口`,
+    })
+    return
+  }
+  if (body.d < window.from || body.d > window.to) {
+    issues.push({
+      code: 'annotation_date_out_of_window',
+      line: block.line,
+      message: `:::annotation d=${body.d} 不在案例股 ${code} 的案例窗内（${window.from} ~ ${window.to}）`,
+    })
+  }
+  const days = deps.tradingDays.get(code)
+  if (days && !days.has(body.d)) {
+    issues.push({
+      code: 'annotation_date_not_trading_day',
+      line: block.line,
+      message: `:::annotation d=${body.d} 不是案例股 ${code} 的真实交易日`,
+    })
+  }
+  for (const term of body.glossary) {
+    if (findTerm(deps.terms, term)) continue
+    issues.push({
+      code: 'annotation_term_unknown',
+      line: block.line,
+      term,
+      suggestion: nearestTerm(deps.terms, term),
+      message: `:::annotation 术语「${term}」不在课程概念表（name 与别名全词匹配）`,
+    })
+  }
+}
+
+/**
+ * :::replay（arch/06 §2.2）：正文内嵌逐根回放入口，按 code 解析本节唯一的
+ * bar-replay-decision 课件。**DSL 不携带 widgetId**——正文↔课件写入顺序不耦合。
+ */
+function validateReplay(block: DslBlock, deps: ValidatorDeps, issues: DslIssue[]): void {
+  const code = block.attrs.code ?? ''
+  const caption = block.attrs.caption ?? ''
+  if (!/^\d{6}$/.test(code)) {
+    issues.push({
+      code: 'body_schema_failed',
+      line: block.line,
+      message: `:::replay code 必填且为 6 位案例股代码（得到 ${code}）`,
+    })
+    return
+  }
+  if (caption.length < 1 || caption.length > 200) {
+    issues.push({ code: 'body_schema_failed', line: block.line, message: ':::replay caption 必填且 1~200 字' })
+  }
+  if (!deps.stockCodes.has(code)) {
+    issues.push({
+      code: 'stock_not_in_list',
+      line: block.line,
+      message: `:::replay code=${code} 不在本节案例股清单内`,
+    })
+    return
+  }
+  const count = deps.replayCodes.get(code) ?? 0
+  if (count === 0) {
+    issues.push({
+      code: 'replay_widget_unknown',
+      line: block.line,
+      message: `:::replay code=${code} 在本节没有已落库的回放课件`,
+    })
+  } else if (count > 1) {
+    issues.push({
+      code: 'replay_widget_ambiguous',
+      line: block.line,
+      message: `:::replay code=${code} 匹配到 ${count} 份回放课件，定位不唯一`,
+    })
+  }
+}
+
+function parseAnnotationBody(
+  block: DslBlock,
+  issues: DslIssue[],
+): { d: string; label: string; quote: string; glossary: string[] } | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(block.body)
+  } catch {
+    issues.push({ code: 'body_schema_failed', line: block.line, message: ':::annotation body 不是合法 JSON' })
+    return null
+  }
+  const result = dslAnnotationBody.safeParse(parsed)
+  if (!result.success) {
+    const first = result.error.issues[0]
+    issues.push({
+      code: 'body_schema_failed',
+      line: block.line,
+      message: `:::annotation body 形状不合约定：${first?.path.join('.') ?? ''} ${first?.message ?? ''}`.trim(),
+    })
+    return null
+  }
+  return result.data
 }
 
 function validateJsonBlock(block: DslBlock, issues: DslIssue[]): void {

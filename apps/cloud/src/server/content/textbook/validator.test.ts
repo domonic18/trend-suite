@@ -15,12 +15,15 @@ const DEPS: ValidatorDeps = {
   units: new Map([['su_ok1', { assetId: 'med_a1', startMs: 10_000, endMs: 60_000 }]]),
   stockCodes: new Set(['600519']),
   terms: ['趋势', '级别', '筹码分布'],
+  caseWindows: new Map([['600519', { from: '2024-03-01', to: '2024-06-30' }]]),
+  tradingDays: new Map([['600519', new Set(['2024-03-01', '2024-03-04', '2024-03-05'])]]),
+  replayCodes: new Map([['600519', 1]]),
 }
 
 const OK_DEPS = DEPS
 
-function issuesOf(source: string, deps: ValidatorDeps = OK_DEPS): DslIssue[] {
-  return validateDsl(parseDsl(source), deps)
+function issuesOf(source: string, deps: ValidatorDeps = OK_DEPS, version = 2): DslIssue[] {
+  return validateDsl(parseDsl(source, version), deps)
 }
 
 function codeOf(issues: DslIssue[]): string[] {
@@ -106,7 +109,7 @@ test('clip_not_grounded：非整数窗 / 超 60s / 素材不一致 / 落窗外',
 })
 
 test('directive_not_in_version：v2 块在 dslVersion=1 被版本门禁拒', () => {
-  const issues = issuesOf([':::annotation unitId=su_ok1', '批注内容', ':::'].join('\n'))
+  const issues = issuesOf([':::annotation unitId=su_ok1', '批注内容', ':::'].join('\n'), OK_DEPS, 1)
   assert.ok(codeOf(issues).includes('directive_not_in_version'))
   assert.ok(issues[0]?.message.includes('v2'))
 })
@@ -153,4 +156,74 @@ test('配额：think≤3 / sidenote≤8 / cards≤2 / clip≤3 / figure≤8（�
 
   const figures = Array.from({ length: 9 }, (_, i) => [`:::figure figureId=fig_ok1 caption="图${i}"`, ':::', ''].flat()).flat()
   assert.ok(codeOf(issuesOf(figures.join('\n'))).includes('figure_quota_exceeded'))
+})
+
+// ---------------------------------------------------------------- DSL v2 溯源块
+
+const ANNOTATION_BODY = JSON.stringify({
+  d: '2024-03-01',
+  label: '起点',
+  quote: '这里就是起涨点',
+  glossary: ['趋势'],
+})
+
+function annotationBlock(attrs: string, body = ANNOTATION_BODY): string {
+  return [`:::annotation ${attrs}`, body, ':::'].join('\n')
+}
+
+test('annotation 合规：素材窗内 + 案例窗内真实交易日 + 术语在概念表', () => {
+  const issues = issuesOf(annotationBlock('unitId=su_ok1 assetId=med_a1 code=600519 kind=structure atMs=30000'))
+  assert.deepEqual(issues, [])
+})
+
+test('annotation_not_grounded：atMs 落素材窗外 / 素材不一致', () => {
+  const outOfUnit = issuesOf(annotationBlock('unitId=su_ok1 assetId=med_a1 code=600519 kind=structure atMs=5000'))
+  assert.ok(codeOf(outOfUnit).includes('annotation_not_grounded'))
+
+  const wrongAsset = issuesOf(annotationBlock('unitId=su_ok1 assetId=med_other code=600519 kind=structure atMs=30000'))
+  assert.ok(codeOf(wrongAsset).includes('annotation_not_grounded'))
+})
+
+test('annotation_date_out_of_window / annotation_date_not_trading_day：日期两头都要守住', () => {
+  const outOfWindow = issuesOf(
+    annotationBlock('unitId=su_ok1 assetId=med_a1 code=600519 kind=structure atMs=30000', JSON.stringify({
+      d: '2024-07-01', label: '越界', quote: '窗外', glossary: ['趋势'],
+    })),
+  )
+  assert.ok(codeOf(outOfWindow).includes('annotation_date_out_of_window'))
+
+  const notTrading = issuesOf(
+    annotationBlock('unitId=su_ok1 assetId=med_a1 code=600519 kind=structure atMs=30000', JSON.stringify({
+      d: '2024-03-02', label: '周六', quote: '休市日', glossary: ['趋势'],
+    })),
+  )
+  assert.ok(codeOf(notTrading).includes('annotation_date_not_trading_day'))
+})
+
+test('annotation_term_unknown：glossary 术语不在概念表（带最近似建议）', () => {
+  const issues = issuesOf(
+    annotationBlock('unitId=su_ok1 assetId=med_a1 code=600519 kind=structure atMs=30000', JSON.stringify({
+      d: '2024-03-01', label: '起点', quote: '原话', glossary: ['均线'],
+    })),
+  )
+  const issue = issues.find((i) => i.code === 'annotation_term_unknown')
+  assert.ok(issue)
+  assert.equal(issue?.term, '均线')
+})
+
+test('replay_widget_unknown / replay_widget_ambiguous：code 定位不到或定位不唯一', () => {
+  const unknown = issuesOf(
+    [':::replay code=600519 caption="逐根回放"', ':::'].join('\n'),
+    { ...OK_DEPS, replayCodes: new Map() },
+  )
+  assert.ok(codeOf(unknown).includes('replay_widget_unknown'))
+
+  const ambiguous = issuesOf(
+    [':::replay code=600519 caption="逐根回放"', ':::'].join('\n'),
+    { ...OK_DEPS, replayCodes: new Map([['600519', 2]]) },
+  )
+  assert.ok(codeOf(ambiguous).includes('replay_widget_ambiguous'))
+
+  const ok = issuesOf([':::replay code=600519 caption="逐根回放"', ':::'].join('\n'))
+  assert.deepEqual(ok, [])
 })

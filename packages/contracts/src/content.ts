@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { idShape } from './ids.js'
 import { caseStockView } from './market.js'
 import { figureView } from './figures.js'
+import { widgetView } from './widgets.js'
 
 /**
  * 节教材内容视图（迭代 6）：正文 DSL 原文 + 三路图示 + 被引用的 source units
@@ -39,6 +40,8 @@ export const sectionContentView = z.object({
   /** 本节正文引用到的 source units（去重，按出现顺序）。 */
   units: z.array(sourceUnitView),
   caseStocks: z.array(caseStockView),
+  /** 本节已落库的课件（11 类白名单）+ 断言证明状态（迭代 7）。 */
+  widgets: z.array(widgetView),
 })
 export type SectionContentView = z.infer<typeof sectionContentView>
 
