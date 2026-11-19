@@ -20,6 +20,7 @@ export const idPrefix = {
   caseStock: 'cst',
   sourceUnit: 'su',
   figure: 'fig',
+  widget: 'wid',
 } as const
 
 export const idShape = {
@@ -40,6 +41,7 @@ export const idShape = {
   caseStock: /^cst_[0-9a-f]{16}$/,
   sourceUnit: /^su_[0-9a-f]{16}$/,
   figure: /^fig_[0-9a-f]{16}$/,
+  widget: /^wid_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape

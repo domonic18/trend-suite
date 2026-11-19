@@ -7,8 +7,11 @@ import { parseDsl } from '@/server/content/textbook/dsl-parser'
 import { validateDsl } from '@/server/content/textbook/validator'
 import { persistFigures, type FigureSpec } from '@/server/content/textbook/figures-service'
 import * as textbookRepo from '@/server/content/textbook/repo'
+import * as widgetsRepo from '@/server/content/widgets/repo'
+import { persistWidgets, replayMarketAvailable } from '@/server/content/widgets/service'
 import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 import { runStepAgent } from './agent'
+import { formatIssues, formatWidgetIssues } from './issues'
 import {
   completeStep,
   countSectionRuns,
@@ -27,6 +30,8 @@ import { stepDef, STEP_COUNT } from './steps'
  * ——复检拒绝抛错即回灌（拒绝原因落 last_error，重试提示词会带回去喂模型）。
  * 顺序强制是结构性的：claimNextStep 只认领「更小步全 done」的 pending 行。
  * 行情同步/读回是 pure 步且源不可用走占位降级（步骤照常 done）——挂起只留给 agent 步。
+ * 迭代 7 接入步骤 5（回放课件）与步骤 7（其余课件）：课件复检 = 物化 → 契约严校验
+ * → 断言逐条程序证明 → **全过才落库**（任一断言不成立即一行不落，回灌重写）。
  */
 
 export async function executeStep(task: ProductionTaskRow, section: SectionRow): Promise<void> {
@@ -35,8 +40,14 @@ export async function executeStep(task: ProductionTaskRow, section: SectionRow):
   if (def.kind === 'pure') {
     // pure 步产物按步骤键入 checkpoint（读回步按键取前置产物）。
     output = { [def.key]: await runPureStep(def.key, task) }
+  } else if (def.key === 'replay_widget' && !(await replayMarketAvailable(task.course_id, task.section_id))) {
+    // 降级（arch/06 §5.4）：行情源不可用 → 不产回放课件，步照常 done。
+    // 正文步据此不写 :::replay（步骤 6 的提示里没有可用 code）。
+    output = { replay_widget: { skipped: '行情源不可用，本节无回放课件' } }
   } else {
-    await runStepAgent({ task, section })
+    // 第 6 步要知道本节有没有已落库的回放课件（决定正文能否写 :::replay）。
+    const replayCodes = def.key === 'section_draft' ? await replayCodesOf(task) : []
+    await runStepAgent({ task, section, replayCodes })
     const checkpoint = await getTaskCheckpoint(task.id)
     if (def.key === 'case_stocks') {
       // 云端复检 + 落库（arch/06 §5.1）：结构性违例抛错走回灌，与源不可用区分。
@@ -52,6 +63,21 @@ export async function executeStep(task: ProductionTaskRow, section: SectionRow):
       if (result.issues.length > 0) {
         throw new Error(formatIssues('图示复检拒绝', result.issues))
       }
+    } else if (def.key === 'replay_widget' || def.key === 'widgets') {
+      // 课件复检 + 落库（arch/06 §9/§11）：断言不成立 → 一行不落，回灌重写。
+      const product = checkpoint?.[def.key] as { widgets?: unknown } | undefined
+      const result = await persistWidgets({
+        courseId: task.course_id,
+        sectionId: task.section_id,
+        drafts: Array.isArray(product?.widgets) ? product.widgets : [],
+        mode: def.key === 'replay_widget' ? 'replay' : 'batch',
+      })
+      if (result.issues.length > 0) {
+        throw new Error(
+          formatWidgetIssues(def.key === 'replay_widget' ? '回放课件复检拒绝' : '课件复检拒绝', result.issues),
+        )
+      }
+      output = { [def.key]: { persisted: result.persisted, notes: result.notes } }
     } else if (def.key === 'section_draft') {
       // 正文复检（arch/06 §2.4）：语法 → 语义全表 → 通过才写 sections.body（验收④）。
       const product = checkpoint?.[def.key] as { markdown?: unknown } | undefined
@@ -62,6 +88,12 @@ export async function executeStep(task: ProductionTaskRow, section: SectionRow):
     }
   }
   await completeStep(task, output)
+}
+
+/** 本节已落库的回放课件 code（正文 :::replay 按 code 定位，arch/06 §2.2）。 */
+async function replayCodesOf(task: ProductionTaskRow): Promise<string[]> {
+  const rows = await widgetsRepo.listWidgets(task.course_id, task.section_id)
+  return rows.filter((row) => row.type === 'bar-replay-decision' && row.code).map((row) => row.code!)
 }
 
 /** 正文三层校验的后两层：解析 → 语义校验 → 全过才整体落列（绝不部分落库）。 */
@@ -98,18 +130,6 @@ async function recheckSectionDraft(task: ProductionTaskRow, markdown: string): P
     dslVersion: ast.version,
     body: markdown,
   })
-}
-
-/** 拒绝原因串成回灌文本：模型重写与 pending_manual 溯源共用这一份。 */
-function formatIssues(head: string, issues: { code: string; line: number | null; message: string; suggestion?: string | undefined }[]): string {
-  const detail = issues
-    .map((issue) => {
-      const at = issue.line ? `@L${issue.line}` : ''
-      const tip = issue.suggestion ? `；最接近的已收录术语：${issue.suggestion}` : ''
-      return `${issue.code}${at}（${issue.message}${tip}）`
-    })
-    .join('；')
-  return `${head}：${detail}`
 }
 
 /** 步失败分级（arch/05 §7）：预算触线直接挂起；其余回灌，超上限挂起。 */

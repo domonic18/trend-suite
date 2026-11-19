@@ -26,6 +26,10 @@ export type MockLlm = {
   step1Product: unknown | null
   /** 覆盖第 6 步产物（正文复检拒绝与回灌追平用例注入）。 */
   step6Product: unknown | null
+  /** 覆盖第 5 步产物（回放课件复检拒绝用例注入）。 */
+  step5Product: unknown | null
+  /** 覆盖第 7 步产物（课件复检拒绝用例注入）。 */
+  step7Product: unknown | null
   close(): Promise<void>
 }
 
@@ -55,6 +59,78 @@ const MOCK_DRAFT_MARKDOWN = [
   `常见误用：把日内波动当趋势反转，或在两个级别信号冲突时强行入场——级别混看是初学者最常踩的坑。`,
 ].join('\n')
 
+/**
+ * 步骤 5 mock 产物：逐根回放课件（迭代 7，arch/06 §2.2）。
+ * 案例股与行情 fixture 同源（600519 周线 2023-01-01~2023-12-31，交易日见 mock-quotes），
+ * 标注日与判断点日都取真实交易日，揭晓文案含概念词「趋势」——四条必带断言逐条成立。
+ */
+const MOCK_REPLAY_WIDGET = {
+  type: 'bar-replay-decision',
+  code: '600519',
+  window: { from: '2023-01-01', to: '2023-12-31' },
+  period: '1w',
+  citations: [MOCK_UNIT_TOKEN],
+  assertions: {},
+  annotations: [
+    {
+      unitId: MOCK_UNIT_TOKEN,
+      atMs: 30000,
+      kind: 'structure',
+      d: '2023-06-02',
+      label: '周线级别抬升的高点',
+    },
+  ],
+  decisions: [
+    {
+      atDate: '2023-05-05',
+      question: '这一根周线之后，趋势是延续还是反转？',
+      options: [{ label: '延续' }, { label: '反转' }],
+      correct: '延续',
+      revealText: '后市重心继续上移，趋势方向被验证。',
+      unitId: MOCK_UNIT_TOKEN,
+      atMs: 30000,
+    },
+  ],
+}
+
+/** 步骤 7 mock 产物：其余三类课件（术语全部落在概念表「趋势/级别」内）。 */
+const MOCK_OTHER_WIDGETS = {
+  widgets: [
+    {
+      type: 'mcq-quiz',
+      citations: [MOCK_UNIT_TOKEN],
+      assertions: {},
+      question: '判断趋势延续的首要依据是什么？',
+      options: [
+        { id: 'a', label: '高点与低点依次抬升' },
+        { id: 'b', label: '单根 K 线的涨跌' },
+        { id: 'c', label: '分时成交的活跃度' },
+      ],
+      answerId: 'a',
+      conceptRefs: ['趋势'],
+    },
+    {
+      type: 'checklist',
+      citations: [MOCK_UNIT_TOKEN],
+      assertions: {},
+      title: '趋势判断自检清单',
+      items: [
+        { text: '周期是否统一，同一级别内比较', conceptRef: '级别' },
+        { text: '高点与低点是否依次抬升', conceptRef: '趋势' },
+        { text: '两个级别的信号是否互相印证' },
+      ],
+    },
+    {
+      type: 'calc-trainer',
+      citations: [MOCK_UNIT_TOKEN],
+      assertions: {},
+      formula: 'risk-reward',
+      inputs: { entryPrice: 100, stopPrice: 90, targetPrice: 130 },
+      examples: [{ inputs: { entryPrice: 100, stopPrice: 90, targetPrice: 130 }, answer: 3 }],
+    },
+  ],
+}
+
 const STEP_PRODUCTS: Record<number, unknown> = {
   1: { stocks: FIXTURE_STOCKS },
   4: {
@@ -75,9 +151,9 @@ const STEP_PRODUCTS: Record<number, unknown> = {
       { kind: 'generated', caption: '章节扉页装饰', prompt: '抽象蓝色几何装饰图，金融课程扉页氛围' },
     ],
   },
-  5: { widgets: [{ kind: 'replay', title: '占位回放' }] },
+  5: { widgets: [MOCK_REPLAY_WIDGET] },
   6: { markdown: MOCK_DRAFT_MARKDOWN },
-  7: { widgets: [{ kind: 'quiz', title: '占位课件' }] },
+  7: MOCK_OTHER_WIDGETS,
   8: { verdict: 'pass', notes: '占位评审通过' },
 }
 
@@ -92,11 +168,13 @@ function textOf(content: unknown): string {
 }
 
 export async function startMockLlm(): Promise<MockLlm> {
-  const state: { failSection: string | null; delayMs: number; step1Product: unknown | null; step6Product: unknown | null } = {
+  const state: { failSection: string | null; delayMs: number; step1Product: unknown | null; step6Product: unknown | null; step5Product: unknown | null; step7Product: unknown | null } = {
     failSection: null,
     delayMs: 0,
     step1Product: null,
     step6Product: null,
+    step5Product: null,
+    step7Product: null,
   }
   const calls: { path: string; body: Record<string, unknown> }[] = []
 
@@ -115,7 +193,16 @@ export async function startMockLlm(): Promise<MockLlm> {
 
   /** 取步骤产物：__MOCK_UNIT__ 占位按提示词里的 course_id 派生确定性 unit id。 */
   function productFor(step: number, prompt: string): unknown {
-    const override = step === 1 ? state.step1Product : step === 6 ? state.step6Product : null
+    const override =
+      step === 1
+        ? state.step1Product
+        : step === 5
+          ? state.step5Product
+          : step === 6
+            ? state.step6Product
+            : step === 7
+              ? state.step7Product
+              : null
     const base = override !== null ? override : (STEP_PRODUCTS[step] ?? {})
     const courseId = prompt.match(/course_id=([\w-]+)/)?.[1] ?? ''
     return JSON.parse(JSON.stringify(base).replaceAll(MOCK_UNIT_TOKEN, mockUnitIdFor(courseId)))
@@ -203,6 +290,18 @@ export async function startMockLlm(): Promise<MockLlm> {
     },
     set step6Product(value: unknown | null) {
       state.step6Product = value
+    },
+    get step5Product() {
+      return state.step5Product
+    },
+    set step5Product(value: unknown | null) {
+      state.step5Product = value
+    },
+    get step7Product() {
+      return state.step7Product
+    },
+    set step7Product(value: unknown | null) {
+      state.step7Product = value
     },
     close: () =>
       new Promise<void>((resolve, reject) => {
