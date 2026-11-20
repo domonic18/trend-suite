@@ -6,6 +6,8 @@ import {
   GENERATOR_BARS_MIN,
   GENERATOR_SEED_MAX,
 } from './widget-data.js'
+import { assertionsForType } from './widget-assertions.js'
+import type { WidgetType } from './widget-types.js'
 
 /**
  * 课件**草稿**契约（arch/06 §9，zod/v4 子路径）：生产 agent 交给 write_step_output 的形状。
@@ -17,8 +19,12 @@ import {
  * （编译期就能发现改名漂移），并有一份 fixture 同时过 v4 草稿与 v3 spec 的交叉测试。
  *
  * 用 zod/v4 而非 v3：agent 工具 schema 要喂给 langchain（SP1 结论，v3 实例不被接受）。
- * 参数形状不在这里重复定义——断言参数的唯一真相源是 v3 的 `assertionParams`，
- * 由物化阶段（服务端）按契约校验，草稿只做「键名已知」的粗筛。
+ *
+ * **断言参数形状也在 schema 里**（`assertionsForType`，形状定义在
+ * `widget-assertions.ts`）：模型看得见 `cardCount` 要 `{min,max}`、`answerUnique`
+ * 是 `true`，不会把 cardCount 写成字符串 `"3-5"`（端到端实测踩过：形状只写在
+ * 提示词散文里，模型看不见就乱填，服务端复检必然拒绝）。断言参数形状的
+ * 唯一真相源是 `widget-assertions.ts`，本文件不重复定义。
  */
 
 const text = z.string().min(1).max(2000)
@@ -36,20 +42,25 @@ const generatorData = z.strictObject({
   bars: z.number().int().min(GENERATOR_BARS_MIN).max(GENERATOR_BARS_MAX),
 })
 
-/** 断言参数表：键名粗筛（白名单内的名字），值的形状由 v3 契约校验。 */
-const assertionMap = z.record(z.string(), z.unknown())
+/**
+ * 断言表：按组件类型给形状——模型看得见这一类课件能声明哪些断言、各要什么形状。
+ * （形状定义在 widget-assertions.ts，唯一真相源。）
+ */
+function assertionsOf(type: WidgetType): z.ZodType {
+  return assertionsForType(type)
+}
 
 /** 包络：11 类共用（arch/06 §9）。 */
 const draftEnvelope = {
   specVersion: z.number().int().min(1).optional(),
   citations: z.array(z.string().regex(/^su_[0-9a-f]{16}$/)).min(1),
-  assertions: assertionMap,
 }
 
 export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('kline-annotator'),
     ...draftEnvelope,
+    assertions: assertionsOf('kline-annotator'),
     data: generatorData,
     task: text,
     solution: z.strictObject({
@@ -65,6 +76,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('pattern-quiz'),
     ...draftEnvelope,
+    assertions: assertionsOf('pattern-quiz'),
     data: generatorData,
     question: text,
     options: z
@@ -84,6 +96,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('mcq-quiz'),
     ...draftEnvelope,
+    assertions: assertionsOf('mcq-quiz'),
     question: text,
     options: z.array(z.strictObject({ id: z.string().min(1).max(40), label })).min(2).max(4),
     answerId: z.string().min(1).max(40),
@@ -92,6 +105,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('step-reveal'),
     ...draftEnvelope,
+    assertions: assertionsOf('step-reveal'),
     data: generatorData,
     steps: z
       .array(
@@ -118,6 +132,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('calc-trainer'),
     ...draftEnvelope,
+    assertions: assertionsOf('calc-trainer'),
     formula: z.enum(CALC_FORMULAS),
     inputs: z.record(z.string(), z.number()),
     examples: z
@@ -129,17 +144,20 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('flashcards'),
     ...draftEnvelope,
+    assertions: assertionsOf('flashcards'),
     cards: z.array(z.strictObject({ front: text, back: text, conceptRef: text })).min(3).max(20),
   }),
   z.strictObject({
     type: z.literal('checklist'),
     ...draftEnvelope,
+    assertions: assertionsOf('checklist'),
     title: text,
     items: z.array(z.strictObject({ text: itemText, conceptRef: text.optional() })).min(3).max(10),
   }),
   z.strictObject({
     type: z.literal('timeline-explorer'),
     ...draftEnvelope,
+    assertions: assertionsOf('timeline-explorer'),
     nodes: z.array(z.strictObject({ conceptRef: text })).min(1),
     edges: z
       .array(
@@ -154,6 +172,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('image-juxtaposition'),
     ...draftEnvelope,
+    assertions: assertionsOf('image-juxtaposition'),
     left: z.union([z.strictObject({ figureId: z.string().regex(/^fig_[0-9a-f]{16}$/) }), generatorData]),
     right: z.union([z.strictObject({ figureId: z.string().regex(/^fig_[0-9a-f]{16}$/) }), generatorData]),
     labels: z.strictObject({ left: label, right: label }),
@@ -162,6 +181,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('branching-scenario'),
     ...draftEnvelope,
+    assertions: assertionsOf('branching-scenario'),
     scenario: text,
     nodes: z
       .array(
@@ -187,6 +207,7 @@ export const widgetDraft = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('bar-replay-decision'),
     ...draftEnvelope,
+    assertions: assertionsOf('bar-replay-decision'),
     code: z.string().regex(/^\d{6}$/),
     window: z.strictObject({ from: isoDate, to: isoDate }),
     period: z.enum(['1d', '1w']).optional(),

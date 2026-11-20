@@ -22,5 +22,7 @@ export * from './outline.js'
 export * from './widget-data.js'
 export * from './widget-draft.js'
 export * from './widgets.js'
+export * from './widget-types.js'
+export * from './widget-assertions.js'
 
 export const healthResponse = z.object({ ok: z.literal(true) })

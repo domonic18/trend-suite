@@ -1,10 +1,11 @@
 import 'server-only'
 import {
   ASSERTION_NAMES,
-  ASSERTION_TYPES,
   REQUIRED_ASSERTIONS,
   WIDGET_SPEC_VERSION,
-  assertionParams,
+  WIDGET_TYPES,
+  applicableAssertions,
+  assertionParamShape,
   classifyShape,
   generateBars,
   GENERATORS,
@@ -15,6 +16,7 @@ import {
   type Generator,
   type WidgetIssue,
   type WidgetSpec,
+  type WidgetType,
 } from '@trend-suite/contracts'
 
 /**
@@ -108,17 +110,6 @@ function fillQuizOptions(
   })
 }
 
-/** 组件类型 → 适用断言名（由契约的「断言 → 适用组件」表反推）。 */
-const APPLICABLE_BY_TYPE: Record<string, string[]> = (() => {
-  const table: Record<string, string[]> = {}
-  for (const [name, types] of Object.entries(ASSERTION_TYPES)) {
-    for (const type of types) {
-      table[type] = [...(table[type] ?? []), name]
-    }
-  }
-  return table
-})()
-
 /** 对比侧：图示 id 或生成器参数（数值仍不入 spec）。 */
 function materializeSide(
   side: { figureId: string } | { generator: Generator; seed: number; bars: number },
@@ -127,7 +118,12 @@ function materializeSide(
   return { generator: side.generator, seed: side.seed, bars: side.bars }
 }
 
-/** 断言表整理：未知名 / 不适用 / 参数形状不合 → 问题清单；缺必带断言 → 补缺省参数。 */
+/**
+ * 断言表整理：未知名 / 不适用 / 参数形状不合 → 问题清单；缺必带断言 → 补缺省参数。
+ *
+ * 参数形状取自契约（widget-assertions.ts，v4）——模型看得见的形状与这里
+ * 复检用的形状是同一份，模型填错这里必判不过（不会各判各的）。
+ */
 function normalizeAssertions(
   type: string,
   declared: Record<string, unknown>,
@@ -150,7 +146,11 @@ function normalizeAssertions(
       })
       continue
     }
-    const shape = assertionParams.shape[name as AssertionName]
+    const shape = assertionParamShape(name)
+    if (!shape) {
+      issues.push({ code: 'widget_spec_invalid', message: `未知断言名 ${name}`, assertion: name })
+      continue
+    }
     const parsed = shape.safeParse(params)
     if (!parsed.success) {
       issues.push({
@@ -171,8 +171,30 @@ function normalizeAssertions(
   return { assertions, issues }
 }
 
-/** 物化一份草稿 → spec（问题清单非空即 spec 为 null，绝不半成品）。 */
+/**
+ * 物化一份草稿 → spec（问题清单非空即 spec 为 null，绝不半成品）。
+ *
+ * 断言表**先**复检：逐条给精确问题（哪个断言、形状怎么不合），
+ * 比整份草稿一次报「形状不合」好定位得多；断言过了再走整份草稿的形状关。
+ */
 export function materializeWidget(draft: unknown): MaterializeResult {
+  const raw = draft && typeof draft === 'object' ? (draft as Record<string, unknown>) : {}
+  const rawType = typeof raw.type === 'string' ? raw.type : ''
+  let assertions: Record<string, unknown> = {}
+  if ((WIDGET_TYPES as readonly string[]).includes(rawType)) {
+    const declared =
+      raw.assertions && typeof raw.assertions === 'object' && !Array.isArray(raw.assertions)
+        ? (raw.assertions as Record<string, unknown>)
+        : {}
+    const normalized = normalizeAssertions(
+      rawType,
+      declared,
+      applicableAssertions(rawType as WidgetType),
+    )
+    if (normalized.issues.length > 0) return { spec: null, issues: normalized.issues }
+    assertions = normalized.assertions
+  }
+
   const parsed = widgetDraft.safeParse(draft)
   if (!parsed.success) {
     const first = parsed.error.issues[0]
@@ -187,9 +209,6 @@ export function materializeWidget(draft: unknown): MaterializeResult {
     }
   }
   const value = parsed.data
-  const applicable = APPLICABLE_BY_TYPE[value.type] ?? []
-  const { assertions, issues } = normalizeAssertions(value.type, value.assertions, applicable)
-  if (issues.length > 0) return { spec: null, issues }
 
   const base = {
     specVersion: WIDGET_SPEC_VERSION,

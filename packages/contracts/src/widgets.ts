@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { idShape } from './ids.js'
 import { klineBar } from './market.js'
 import { CALC_FORMULAS, GENERATORS, GENERATOR_BARS_MAX, GENERATOR_BARS_MIN, GENERATOR_SEED_MAX } from './widget-data.js'
+import { REQUIRED_ASSERTIONS } from './widget-assertions.js'
+import { WIDGET_TYPES, type WidgetType } from './widget-types.js'
 
 /**
  * 交互课件契约（arch/06 §7–§9）：11 类组件白名单 + 25 条断言词表 +
@@ -11,72 +13,15 @@ import { CALC_FORMULAS, GENERATORS, GENERATOR_BARS_MAX, GENERATOR_BARS_MIN, GENE
  * 铁律三条在此落成结构：课件是 spec（数据）不是代码；图表数值不由模型生成
  * （bars 由服务端按 generator+seed 合成，见 widget-data.ts）；断言必带且必被
  * 程序证明（证明器在 apps/cloud/src/server/content/widgets/assertions.ts）。
+ *
+ * 断言**词表与参数形状**在 `widget-assertions.ts`（v4）——那是模型看得见的
+ * 形状，也是服务端复检用的形状；本文件只把断言表当自由键值对存。
  */
 
 export const WIDGET_SPEC_VERSION = 1
 
-/** 组件白名单（arch/06 §7）：唯一合法值，扩展需冻结新契约版本。 */
-export const WIDGET_TYPES = [
-  'kline-annotator',
-  'pattern-quiz',
-  'mcq-quiz',
-  'step-reveal',
-  'calc-trainer',
-  'flashcards',
-  'checklist',
-  'timeline-explorer',
-  'image-juxtaposition',
-  'branching-scenario',
-  'bar-replay-decision',
-] as const
-export type WidgetType = (typeof WIDGET_TYPES)[number]
+/** 组件白名单的 v3 包装（名单本身在 widget-types.ts，版本中立）。 */
 export const widgetType = z.enum(WIDGET_TYPES)
-
-/** 断言词表（arch/06 §8）：键 = 断言名，值 = 适用组件。 */
-export const ASSERTION_TYPES = {
-  trendlineTouches: ['kline-annotator'],
-  slopeRange: ['kline-annotator'],
-  noBreakBelow: ['kline-annotator'],
-  answerUnique: ['pattern-quiz', 'mcq-quiz', 'bar-replay-decision'],
-  distractorsDistinct: ['pattern-quiz'],
-  patternMatchesAnswer: ['pattern-quiz'],
-  markersInRange: ['step-reveal'],
-  conclusionsNonEmpty: ['step-reveal'],
-  examplesRecomputable: ['calc-trainer'],
-  paramsInBounds: ['calc-trainer'],
-  termsInConcepts: ['mcq-quiz', 'flashcards', 'checklist'],
-  cardCount: ['flashcards'],
-  itemsNonEmpty: ['checklist'],
-  edgeRefsExist: ['timeline-explorer'],
-  acyclicPrerequisite: ['timeline-explorer'],
-  pairSidesValid: ['image-juxtaposition'],
-  captionsGrounded: ['image-juxtaposition'],
-  graphAcyclic: ['branching-scenario'],
-  allPathsTerminate: ['branching-scenario'],
-  optimalPathReachable: ['branching-scenario'],
-  feedbackNonEmpty: ['branching-scenario'],
-  decisionPointsGrounded: ['bar-replay-decision'],
-  revealMonotonic: ['bar-replay-decision'],
-  annotationTermsGrounded: ['bar-replay-decision'],
-} as const satisfies Record<string, readonly WidgetType[]>
-
-export const ASSERTION_NAMES = Object.keys(ASSERTION_TYPES) as readonly (keyof typeof ASSERTION_TYPES)[]
-export type AssertionName = (typeof ASSERTION_NAMES)[number]
-
-/** 每类组件的必带断言（arch/06 §9 表）；缺失即判不过。 */
-export const REQUIRED_ASSERTIONS = {
-  'kline-annotator': ['trendlineTouches', 'slopeRange', 'noBreakBelow'],
-  'pattern-quiz': ['answerUnique', 'distractorsDistinct'],
-  'mcq-quiz': ['answerUnique', 'termsInConcepts'],
-  'step-reveal': ['markersInRange', 'conclusionsNonEmpty'],
-  'calc-trainer': ['examplesRecomputable', 'paramsInBounds'],
-  flashcards: ['termsInConcepts', 'cardCount'],
-  checklist: ['itemsNonEmpty'],
-  'timeline-explorer': ['edgeRefsExist', 'acyclicPrerequisite'],
-  'image-juxtaposition': ['pairSidesValid', 'captionsGrounded'],
-  'branching-scenario': ['graphAcyclic', 'allPathsTerminate', 'optimalPathReachable', 'feedbackNonEmpty'],
-  'bar-replay-decision': ['answerUnique', 'decisionPointsGrounded', 'revealMonotonic', 'annotationTermsGrounded'],
-} as const satisfies Record<WidgetType, readonly AssertionName[]>
 
 // ---------------------------------------------------------------- 通用片段
 
@@ -110,42 +55,6 @@ const specEnvelope = {
   citations: z.array(z.string().regex(idShape.sourceUnit)).min(1),
   assertions: z.object({}).passthrough(),
 }
-
-// ---------------------------------------------------------------- 断言参数
-
-/**
- * 断言参数表：键 = 断言名，值 = 参数形状（arch/06 §8 参数列）。
- * 布尔型断言写 true；带参断言写对象。未知断言名在此被拒（.strict()）。
- */
-export const assertionParams = z
-  .object({
-    trendlineTouches: z.object({ min: z.number().int().min(0) }).strict().optional(),
-    slopeRange: z.object({ min: z.number(), max: z.number() }).strict().optional(),
-    noBreakBelow: z.literal(true).optional(),
-    answerUnique: z.literal(true).optional(),
-    distractorsDistinct: z.literal(true).optional(),
-    patternMatchesAnswer: z.enum(GENERATORS).optional(),
-    markersInRange: z.literal(true).optional(),
-    conclusionsNonEmpty: z.literal(true).optional(),
-    examplesRecomputable: z.literal(true).optional(),
-    paramsInBounds: z.literal(true).optional(),
-    termsInConcepts: z.literal(true).optional(),
-    cardCount: z.object({ min: z.number().int().min(0), max: z.number().int().min(0) }).strict().optional(),
-    itemsNonEmpty: z.literal(true).optional(),
-    edgeRefsExist: z.literal(true).optional(),
-    acyclicPrerequisite: z.literal(true).optional(),
-    pairSidesValid: z.literal(true).optional(),
-    captionsGrounded: z.literal(true).optional(),
-    graphAcyclic: z.literal(true).optional(),
-    allPathsTerminate: z.literal(true).optional(),
-    optimalPathReachable: z.literal(true).optional(),
-    feedbackNonEmpty: z.literal(true).optional(),
-    decisionPointsGrounded: z.literal(true).optional(),
-    revealMonotonic: z.literal(true).optional(),
-    annotationTermsGrounded: z.literal(true).optional(),
-  })
-  .strict()
-export type AssertionParams = z.infer<typeof assertionParams>
 
 // ---------------------------------------------------------------- 11 类 spec
 

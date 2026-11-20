@@ -19,9 +19,11 @@ test('每个 agent 步都有高于通道默认的输出预算', () => {
 })
 
 test('产物越大的步预算越高：正文与课件 > 案例股', () => {
-  assert.ok(stepMaxTokens('section_draft') >= 16_000)
-  assert.ok(stepMaxTokens('widgets') >= 16_000)
-  assert.ok(stepMaxTokens('replay_widget') >= 16_000)
+  // 32K 是按预发实测峰值定的：content.widget_spec 单次输出峰值 15727（16K 天花板，
+  // 第 5 步回放课件因此被截断成 llm_truncated），content.section_draft 峰值 12791。
+  assert.ok(stepMaxTokens('section_draft') >= 32_000)
+  assert.ok(stepMaxTokens('widgets') >= 32_000)
+  assert.ok(stepMaxTokens('replay_widget') >= 32_000)
   assert.ok(stepMaxTokens('case_stocks') >= 12_000)
 })
 
