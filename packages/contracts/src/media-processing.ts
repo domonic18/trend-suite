@@ -6,8 +6,22 @@ import { idShape } from './ids.js'
  * 加工产物对教师可见、可读、可重试；未完成的内容显式标 partial。
  */
 
-/** 加工阶段（运营台原型 teacher-material 的流水线步进条）。 */
-export const processingSteps = ['uploaded', 'audio', 'transcribe', 'frames', 'index', 'done'] as const
+/**
+ * 加工阶段（运营台原型 teacher-material 的流水线步进条）。
+ * 序列取自 arch/05 §3.7 的阶段序列：`uploaded → audio → transcribe → transcode
+ * → frames → understand → index → done`——漏一个阶段，管线写进去的 process_step
+ * 就会让素材列表的响应契约校验失败（教师端看到的是「参数不合法」）。
+ */
+export const processingSteps = [
+  'uploaded',
+  'audio',
+  'transcribe',
+  'transcode',
+  'frames',
+  'understand',
+  'index',
+  'done',
+] as const
 export const processingStep = z.enum(processingSteps)
 
 /** 加工任务状态（arch/02 §4 的队列状态机）。 */

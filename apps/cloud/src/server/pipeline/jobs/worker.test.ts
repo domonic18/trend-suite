@@ -146,6 +146,15 @@ test('重跑理解：入队 understand_rerun，worker 跑完理解阶段产出�
   )
   assert.equal(units.length, 1)
   assert.deepEqual(units[0]?.extra.teachingPoints, ['先定级别', '再看方向'])
+
+  // 素材本来就绪：跑完理解要回到 done，不能把步进条永远停在「理解」。
+  const asset = await query<{ process_step: string; process_progress: string; status: string }>(
+    'SELECT process_step, process_progress, status FROM media_assets WHERE id = $1',
+    [assetId],
+  )
+  assert.equal(asset[0]?.process_step, 'done')
+  assert.equal(Number(asset[0]?.process_progress), 100)
+  assert.equal(asset[0]?.status, 'ready')
 })
 
 test('重跑理解：素材未就绪时拒绝入队', { skip }, async () => {

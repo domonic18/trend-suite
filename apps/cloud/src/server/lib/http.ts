@@ -65,6 +65,9 @@ export function errorResponse(err: unknown): Response {
     return json({ error }, err.status)
   }
   if (err instanceof z.ZodError) {
+    // 走到这里的 ZodError 基本都是「响应体不符合契约」——请求入参的校验失败
+    // 各路由都显式 throw badRequest 了。契约漂移要能查得到，所以落日志。
+    console.error('[http] 契约校验失败', err.issues)
     return json(
       { error: { code: 'invalid_request', message: '参数不合法', firstIssue: firstIssueOf(err) } },
       400,

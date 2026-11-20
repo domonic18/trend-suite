@@ -212,6 +212,9 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
       return
     }
     const store = getMediaStore()
+    // 理解阶段的进度消息（如「理解完成」/「理解未完成（2 块失败）」）留在素材上，
+    // 但阶段要回到 done——素材本来就绪，停在 understand 会让步进条永远停在半路。
+    let lastMessage: string | null = null
     await understandStage({
       assetId: asset.id,
       courseId: asset.course_id,
@@ -220,6 +223,7 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
       framesDir: store.framesDir(asset.id),
       shouldCancel: async () => jobs.isCancelRequested(job.id),
       onProgress: async (input) => {
+        lastMessage = input.message ?? null
         await jobs.updateJobProgress({
           jobId: job.id,
           step: input.step,
@@ -233,8 +237,20 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
         })
       },
     })
+    await procRepo.setAssetProgress({
+      assetId: asset.id,
+      step: 'done',
+      progress: 100,
+      message: lastMessage ?? '就绪',
+    })
     await jobs.completeJob(job.id)
   } catch (err) {
+    await procRepo.setAssetProgress({
+      assetId,
+      step: 'done',
+      progress: 100,
+      message: `理解失败：${(err as Error).message.slice(0, 80)}，重跑可补齐`,
+    })
     await jobs.failJob({
       jobId: job.id,
       code: 'understand_failed',
