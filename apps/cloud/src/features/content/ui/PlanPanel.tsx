@@ -79,6 +79,7 @@ export function PlanPanel({
   )
 
   const plan = data?.plan ?? null
+  const review = data?.review ?? null
   const lowMatchCount = plan ? plan.skeleton.nodes.filter((n) => n.matchStatus === 'low_match').length : 0
   const violationCount = plan ? plan.violations.length : 0
   const approved = plan?.status === 'approved'
@@ -107,6 +108,27 @@ export function PlanPanel({
         <NextActionBanner tone="warn" action={{ label: '去修改重提', onClick: () => scrollToId('plan-form') }}>
           起草失败：{job?.errorMessage ?? job?.errorCode ?? '未知原因'}。调整课程目标或人工目录后可重新提交。
         </NextActionBanner>
+      ) : null}
+      {review && review.status === 'manual' ? (
+        <NextActionBanner tone="warn" action={{ label: '去修改重提', onClick: () => scrollToId('plan-form') }}>
+          规划自检连续 {review.attempts} 次未通过，方案没有呈现给你——修掉下面的问题后可重新提交。
+        </NextActionBanner>
+      ) : null}
+      {review && review.status === 'manual' ? (
+        <div className="card">
+          <div className="card-top">
+            <b>自检未通过</b>
+            <span className="meta">{review.issues.length} 项</span>
+          </div>
+          <ul className="viol-list">
+            {review.issues.map((issue, index) => (
+              <li key={`${issue.code}-${index}`}>
+                <b>{issue.subject}</b>
+                <span>{issue.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
       {plan && approved ? (
         <NextActionBanner
@@ -159,6 +181,9 @@ export function PlanPanel({
                   : plan.origin === 'tweak'
                     ? '微调生成'
                     : '首次起草'}
+                {review && review.status === 'pass'
+                  ? ` · 自检通过（第 ${review.attempts} 次尝试）`
+                  : ''}
               </p>
             </div>
             <div>
@@ -191,6 +216,9 @@ export function PlanPanel({
             onRemove={(nodeId) => tweak({ op: 'remove_chapter', nodeId })}
             onMerge={(nodeIds, title) => tweak({ op: 'merge_chapters', nodeIds, title })}
             onAdd={(parentId, title) => tweak({ op: 'add_chapter', parentId, title })}
+            onMove={(nodeId, newParentId, position) =>
+              tweak({ op: 'move_node', nodeId, newParentId, position })
+            }
           />
 
           {plan.violations.length > 0 ? (
@@ -219,6 +247,7 @@ export function PlanPanel({
               tweak({ op: 'set_granularity', lessonId, subLessonCount })
             }
             onAddAlias={(conceptId, alias) => tweak({ op: 'add_alias', conceptId, alias })}
+            onReorderLessons={(lessonIds) => tweak({ op: 'reorder_lessons', lessonIds })}
           />
 
           <InterruptCard

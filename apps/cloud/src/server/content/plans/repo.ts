@@ -1,6 +1,8 @@
 import 'server-only'
 import type { PoolClient } from 'pg'
+import type { PlanCheckIssueView } from '@trend-suite/contracts'
 import { query, queryOne, withTransaction } from '@/server/lib/db'
+import { newId } from '@/server/lib/ids'
 
 /**
  * 课程方案数据访问（arch/05 §5 阶段三 + arch/03 §2.2）。
@@ -305,6 +307,52 @@ export function listTranscriptLines(courseId: string): Promise<TranscriptLineRow
      JOIN transcript_segments s ON s.asset_id = m.id
      WHERE m.course_id = $1 AND m.status = 'ready'
      ORDER BY m.created_at ASC, s.seq ASC`,
+    [courseId],
+  )
+}
+
+// ---------------------------------------------------------------- 规划自检记录
+
+export type PlanReviewRow = {
+  id: string
+  course_id: string
+  plan_id: string | null
+  status: 'pass' | 'fail' | 'manual'
+  attempts: number
+  issues: PlanCheckIssueView[]
+  created_at: Date
+}
+
+/**
+ * 落一条自检结论：pass 放行、fail 重规划中、manual 转人工。
+ * 自检记录独立于草案行——失败的方案没有草案行，但失败原因要留痕给教师看。
+ */
+export async function insertReview(input: {
+  courseId: string
+  planId: string | null
+  status: 'pass' | 'fail' | 'manual'
+  attempts: number
+  issues: PlanCheckIssueView[]
+}): Promise<void> {
+  await query(
+    `INSERT INTO plan_reviews (id, course_id, plan_id, status, attempts, issues)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+    [
+      newId('planReview'),
+      input.courseId,
+      input.planId,
+      input.status,
+      input.attempts,
+      JSON.stringify(input.issues),
+    ],
+  )
+}
+
+/** 最近一次自检结论（教师端看「自检通过 / 已转人工」）。 */
+export function findLatestReview(courseId: string): Promise<PlanReviewRow | null> {
+  return queryOne<PlanReviewRow>(
+    `SELECT id, course_id, plan_id, status, attempts, issues, created_at
+     FROM plan_reviews WHERE course_id = $1 ORDER BY created_at DESC LIMIT 1`,
     [courseId],
   )
 }

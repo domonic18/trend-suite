@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PlanSectionNodeView } from '@trend-suite/contracts'
 import { IconCheck, IconClose, IconPencil, IconTrash } from '@/features/lib/icons'
-import { buildOutlineTree, countOutlineLevels } from './outlineTree'
+import { buildOutlineTree, countOutlineLevels, siblingInfoOf } from './outlineTree'
 
 /** 骨架章节列表：匹配度 + 裁决动作（改名 / 删除 / 合并选）。教师主动加章不算未决项。 */
 export function OutlineCard({
@@ -13,6 +13,7 @@ export function OutlineCard({
   onRemove,
   onMerge,
   onAdd,
+  onMove,
   busy,
 }: {
   nodes: PlanSectionNodeView[]
@@ -22,6 +23,8 @@ export function OutlineCard({
   onRemove: (nodeId: string) => void
   onMerge: (nodeIds: string[], title: string) => void
   onAdd: (parentId: string | null, title: string) => void
+  /** 移动节点：换父节点（newParentId）或在同级里调位置（position）。 */
+  onMove: (nodeId: string, newParentId: string | null, position: number) => void
   busy: boolean
 }) {
   const [picked, setPicked] = useState<string[]>([])
@@ -54,9 +57,17 @@ export function OutlineCard({
 
   const counts = countOutlineLevels(nodes)
   const groups = buildOutlineTree(nodes)
+  const parts = nodes.filter((node) => node.level === 1)
+  const chapters = nodes.filter((node) => node.level === 2)
 
   const row = (node: PlanSectionNodeView, level: 1 | 2 | 3) => {
     const low = node.matchStatus === 'low_match'
+    const sibling = siblingInfoOf(nodes, node.id)
+    // 可挂载的父节点：章挂篇、课时挂章——层级不乱。
+    const candidates = level === 3 ? chapters : level === 2 ? parts : []
+    const currentParent = node.parentId
+      ? nodes.find((item) => item.id === node.parentId)
+      : undefined
     return (
       <div className={`oe-row lv${level}${low ? ' err' : ''}`} key={node.id}>
         <label className="oe-pick" title={node.title}>
@@ -83,6 +94,57 @@ export function OutlineCard({
           {low ? '待决定' : '通过'}
         </span>
         <div className="oa">
+          {candidates.length > 0 ? (
+            <select
+              className="oe-move"
+              value={node.parentId ?? ''}
+              disabled={busy}
+              aria-label={`移动 ${node.title}`}
+              title="换到别的父章节下"
+              onChange={(e) => {
+                const value = e.target.value
+                if (value === (node.parentId ?? '')) return
+                onMove(node.id, value || null, 999)
+              }}
+            >
+              {currentParent ? (
+                <option value={currentParent.id}>当前：{currentParent.title.slice(0, 20)}</option>
+              ) : (
+                <option value="">（未归属）</option>
+              )}
+              {candidates
+                .filter((item) => item.id !== node.parentId)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.title.slice(0, 20)}
+                  </option>
+                ))}
+            </select>
+          ) : null}
+          {sibling && sibling.count > 1 ? (
+            <>
+              <button
+                type="button"
+                className="iconbtn"
+                title="上移"
+                aria-label="上移"
+                disabled={busy || sibling.index <= 0}
+                onClick={() => onMove(node.id, sibling.parentId, sibling.index - 1)}
+              >
+                上
+              </button>
+              <button
+                type="button"
+                className="iconbtn"
+                title="下移"
+                aria-label="下移"
+                disabled={busy || sibling.index >= sibling.count - 1}
+                onClick={() => onMove(node.id, sibling.parentId, sibling.index + 1)}
+              >
+                下
+              </button>
+            </>
+          ) : null}
           {renaming === node.id ? (
             <span className="oe-inline">
               <input

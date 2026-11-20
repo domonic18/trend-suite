@@ -10,6 +10,7 @@ export function ToolCards({
   sectionPlan,
   onSetGranularity,
   onAddAlias,
+  onReorderLessons,
   busy,
 }: {
   conceptMap: PlanConceptMapView
@@ -17,6 +18,8 @@ export function ToolCards({
   sectionPlan: PlanSectionPlanView
   onSetGranularity: (lessonId: string, subLessonCount: number) => void
   onAddAlias: (conceptId: string, alias: string) => void
+  /** 重排课时：给出目标顺序的课时 id 数组。 */
+  onReorderLessons: (lessonIds: string[]) => void
   busy: boolean
 }) {
   const [aliasFor, setAliasFor] = useState<string | null>(null)
@@ -140,10 +143,11 @@ export function ToolCards({
                 <th>子节数</th>
                 <th>预估时长</th>
                 <th>并行</th>
+                <th>顺序</th>
               </tr>
             </thead>
             <tbody>
-              {sectionPlan.lessons.map((lesson) => (
+              {sectionPlan.lessons.map((lesson, index) => (
                 <tr key={lesson.id}>
                   <td>{lesson.title}</td>
                   <td>
@@ -162,6 +166,42 @@ export function ToolCards({
                   </td>
                   <td>{lesson.estimatedMinutes} 分钟</td>
                   <td>slot {lesson.parallelSlot}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="iconbtn"
+                      title="上移"
+                      aria-label="上移"
+                      disabled={busy || index === 0}
+                      onClick={() => {
+                        const ids = sectionPlan.lessons.map((item) => item.id)
+                        const target = index - 1
+                        const swapped = [...ids]
+                        swapped[target] = ids[index]!
+                        swapped[index] = ids[target]!
+                        onReorderLessons(swapped)
+                      }}
+                    >
+                      上
+                    </button>
+                    <button
+                      type="button"
+                      className="iconbtn"
+                      title="下移"
+                      aria-label="下移"
+                      disabled={busy || index === sectionPlan.lessons.length - 1}
+                      onClick={() => {
+                        const ids = sectionPlan.lessons.map((item) => item.id)
+                        const target = index + 1
+                        const swapped = [...ids]
+                        swapped[target] = ids[index]!
+                        swapped[index] = ids[target]!
+                        onReorderLessons(swapped)
+                      }}
+                    >
+                      下
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

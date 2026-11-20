@@ -92,6 +92,45 @@ export const planCoverageView = z.object({
   ratio: z.number().min(0).max(1),
 })
 
+/**
+ * 规划自检的失败项（确定性规则）。
+ * 自检不通过的方案不呈现给教师——失败项既给教师看，也回喂给模型重规划。
+ */
+export const planCheckCodes = [
+  'outline_empty',
+  'lesson_without_source',
+  'unknown_source_unit',
+  'duplicate_lesson_title',
+  'lesson_count_out_of_range',
+  'empty_chapter',
+  'empty_part',
+  'orphan_node',
+  'vague_lesson_title',
+  'too_many_nodes',
+] as const
+export const planCheckCode = z.enum(planCheckCodes)
+
+export const planCheckIssueView = z.object({
+  code: planCheckCode,
+  subject: z.string(),
+  message: z.string(),
+})
+
+/**
+ * 规划自检结论：
+ * - `pass`：通过，草案可呈现；
+ * - `fail`：未通过，正在自动重规划；
+ * - `manual`：连续未通过，转人工（教师看到待办，不是坏草案）。
+ */
+export const planReviewView = z.object({
+  id: z.string().regex(idShape.planReview),
+  courseId: z.string().regex(idShape.course),
+  status: z.enum(['pass', 'fail', 'manual']),
+  attempts: z.number().int().min(1),
+  issues: z.array(planCheckIssueView),
+  createdAt: z.string(),
+})
+
 // ---------------------------------------------------------------- 方案视图
 export const planView = z.object({
   id: z.string().regex(idShape.plan),
@@ -196,6 +235,8 @@ export const planResponse = z.object({
   trace: agentTraceView.nullable(),
   /** 课程素材（勾选哪些参与规划）。 */
   materials: z.array(planMaterialView).default([]),
+  /** 最近一次规划自检结论（未自检过则 null）。 */
+  review: planReviewView.nullable().default(null),
 })
 
 // ---------------------------------------------------------------- 请求
@@ -231,6 +272,8 @@ export const tweakOps = [
   'merge_chapters',
   'remove_chapter',
   'add_chapter',
+  'move_node',
+  'reorder_lessons',
   'set_granularity',
   'add_alias',
 ] as const
@@ -252,6 +295,19 @@ export const tweakPlanRequest = z.discriminatedUnion('op', [
     op: z.literal('add_chapter'),
     parentId: z.string().nullable(),
     title: z.string().min(1, '章节标题必填').max(200, '标题最长 200 个字符'),
+  }),
+  z.object({
+    op: z.literal('move_node'),
+    nodeId: z.string().min(1),
+    /** 新的父节点；null = 移到顶级（篇）。章只能挂篇，课时只能挂章。 */
+    newParentId: z.string().nullable(),
+    /** 在新父节点下的位置（0 起）；超出则追加到末尾。 */
+    position: z.number().int().min(0).default(0),
+  }),
+  z.object({
+    op: z.literal('reorder_lessons'),
+    /** 课时的目标顺序（必须是现有课时的全排列）。 */
+    lessonIds: z.array(z.string().min(1)).min(1, '至少要有一个课时'),
   }),
   z.object({
     op: z.literal('set_granularity'),
@@ -297,6 +353,9 @@ export type PlanConceptMapView = z.infer<typeof planConceptMapView>
 export type PlanGlossaryView = z.infer<typeof planGlossaryView>
 export type PlanSectionPlanView = z.infer<typeof planSectionPlanView>
 export type PlanViolationView = z.infer<typeof planViolationView>
+export type PlanCheckCode = z.infer<typeof planCheckCode>
+export type PlanCheckIssueView = z.infer<typeof planCheckIssueView>
+export type PlanReviewView = z.infer<typeof planReviewView>
 export type PlanView = z.infer<typeof planView>
 export type PlanCoverageView = z.infer<typeof planCoverageView>
 export type PlanMode = z.infer<typeof planMode>

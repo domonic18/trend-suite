@@ -6,6 +6,10 @@ import {
   stripOutlineNumbering,
   type CourseOutlineView,
   type OutlineNode,
+  type PlanCheckIssueView,
+  type PlanConceptMapView,
+  type PlanGlossaryView,
+  type PlanSkeletonView,
   type PlanViolationView,
 } from '@trend-suite/contracts'
 import { newId } from '@/server/lib/ids'
@@ -22,7 +26,7 @@ import {
   trimOutlineToBudget,
   type OutlineMatch,
 } from './outline'
-import { validateConceptMap, glossaryOf, type RawConceptInput, type RawConceptEdgeInput } from './concepts'
+import { validateConceptMap, glossaryOf } from './concepts'
 import {
   buildPlanningUnits,
   deriveLessonBudget,
@@ -34,6 +38,7 @@ import {
   MIN_POINTS_PER_LESSON,
   type PlanningUnit,
 } from './planning'
+import { checkPlanDraft, formatCheckIssues } from './selfcheck'
 import * as repo from './repo'
 import type { PlanLesson } from './tweak'
 
@@ -353,6 +358,25 @@ async function draftOutline(input: {
   return { text, nodes, unitIdsByNodeId }
 }
 
+/** 规划自检的最大尝试次数：不通过的方案不呈现给教师，自动重规划 ≤3 次后转人工。 */
+const MAX_PLAN_ATTEMPTS = 3
+
+/** 一次规划尝试的产物：自检通过后才落库。 */
+type DraftAttempt = {
+  outline: CourseOutlineView
+  unitIdsByNodeId: Map<string, string[]>
+  skeleton: PlanSkeletonView
+  conceptMap: PlanConceptMapView
+  glossary: PlanGlossaryView
+  lessons: PlanLesson[]
+  violations: PlanViolationView[]
+  runId: string
+  /** Agent 代拟出的目录文本（沿用人工目录骨架时才回写）。 */
+  draftedText: string
+  /** 本次是否真的代拟了目录（教师已有目录则不动教师那份）。 */
+  draftedOutline: boolean
+}
+
 /** worker 分派入口：跑一个 curriculum_draft 任务。 */
 export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
   const courseId = job.course_id
@@ -376,12 +400,13 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       })
       return
     }
+    const goal = inputRow.goal
 
     await jobs.updateJobProgress({ jobId: job.id, step: 'corpus', progress: 10 })
     const lines = await repo.listTranscriptLines(courseId)
     const corpus = buildCorpus(lines)
     const draft = await repo.findDraftPlan(courseId)
-    const feedback = draft?.origin === 'revision' ? draft.trigger_note : null
+    const teacherFeedback = draft?.origin === 'revision' ? draft.trigger_note : null
 
     // 参与规划的素材：教师勾选的子集（不勾 = 课程全部素材）。
     const assets = await listAssetsByCourse(courseId)
@@ -417,129 +442,202 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       return
     }
 
-    // 目录先验：人工目录优先；智能规划重排目录；都没有则 Agent 代拟一版。
-    let outline = mode === 'smart' ? null : resolveOutline(inputRow)
-    let unitIdsByNodeId = new Map<string, string[]>()
-    const scaleViolations: PlanViolationView[] = []
-    if (!outline) {
-      await jobs.updateJobProgress({ jobId: job.id, step: 'outlining', progress: 20 })
-      const drafted = await draftOutline({
-        courseId,
-        goal: inputRow.goal,
+    const knownUnitIds = new Set(units.map((unit) => unit.id))
+
+    /** 跑一轮规划（目录 + 方案），产出自检用的完整产物；不落库。 */
+    const draftOnce = async (feedback: string | null): Promise<DraftAttempt | null> => {
+      // 目录先验：人工目录优先；智能规划重排目录；都没有则 Agent 代拟一版。
+      let outline = mode === 'smart' ? null : resolveOutline(inputRow)
+      let unitIdsByNodeId = new Map<string, string[]>()
+      const scaleViolations: PlanViolationView[] = []
+      let draftedText = ''
+      let draftedOutline = false
+
+      if (!outline) {
+        await jobs.updateJobProgress({ jobId: job.id, step: 'outlining', progress: 20 })
+        const drafted = await draftOutline({
+          courseId,
+          goal,
+          corpus,
+          feedback,
+          units,
+          budget,
+        })
+        if (drafted.nodes.length === 0) return null
+        outline = { nodes: drafted.nodes }
+        unitIdsByNodeId = drafted.unitIdsByNodeId
+        draftedText = drafted.text
+        draftedOutline = true
+        // 规模裁剪：模型给的课时数超出素材推导的上限时裁掉多出来的，并留痕。
+        if (mode === 'smart' && budget) {
+          const trimmed = trimOutlineToBudget(outline, budget.max)
+          if (trimmed.trimmed > 0) {
+            outline = trimmed.outline
+            scaleViolations.push({
+              kind: 'outline_violation',
+              subject: '规划规模',
+              reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${trimmed.trimmed} 个`,
+            })
+          }
+        }
+      }
+
+      await jobs.updateJobProgress({ jobId: job.id, step: 'drafting', progress: 30 })
+      const prompt = buildPrompt({
+        goal,
+        outlineNodes: outline.nodes,
         corpus,
         feedback,
         units,
         budget,
       })
-      if (drafted.nodes.length === 0) {
+      const { data, runId } = await runLlmJson({
+        task: CURRICULUM_TASK,
+        purpose: 'llm',
+        refType: 'course',
+        refId: courseId,
+        system: prompt.system,
+        user: prompt.user,
+        maxTokens: MAX_TOKENS,
+        schema: draftOutputSchema,
+        phase: 'draft',
+        summarize: (out) =>
+          `nodes=${outline.nodes.length} matches=${out.matches.length} concepts=${out.concepts.length} edges=${out.edges.length} lessons=${out.lessons.length} units=${units.length}`,
+      })
+
+      await jobs.updateJobProgress({ jobId: job.id, step: 'validating', progress: 70 })
+      // 智能规划的出处已在目录草案里定下，匹配度由出处推导，不让模型再拍一遍。
+      const matches: OutlineMatch[] =
+        mode === 'smart'
+          ? deriveMatchesFromUnits(outline, unitIdsByNodeId)
+          : data.matches.map((match) => ({
+              nodeId: match.nodeId,
+              matchScore: match.matchScore,
+            }))
+      const lessonUnitIds = new Map<string, string[]>()
+      for (const lesson of data.lessons) {
+        if (!lesson.sectionId) continue
+        const merged = new Set([
+          ...(lessonUnitIds.get(lesson.sectionId) ?? []),
+          ...lesson.sourceUnitIds,
+        ])
+        lessonUnitIds.set(lesson.sectionId, [...merged])
+      }
+      for (const [nodeId, ids] of lessonUnitIds) {
+        if (!unitIdsByNodeId.has(nodeId)) unitIdsByNodeId.set(nodeId, ids)
+      }
+      const skeleton = buildSkeleton(outline, matches, unitIdsByNodeId)
+      const normalized = validateConceptMap({
+        concepts: data.concepts,
+        edges: data.edges,
+      })
+      const lessons = normalizeLessons(
+        data.lessons,
+        new Set(outline.nodes.map((node) => node.id)),
+        knownUnitIds,
+        units,
+      )
+      // 分节计划同样受规模上限约束：模型多给的课时裁掉并留痕。
+      if (mode === 'smart' && budget && lessons.lessons.length > budget.max) {
+        const dropped = lessons.lessons.length - budget.max
+        lessons.lessons = lessons.lessons.slice(0, budget.max)
+        scaleViolations.push({
+          kind: 'outline_violation',
+          subject: '分节计划规模',
+          reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${dropped} 个`,
+        })
+      }
+      const glossary = glossaryOf(normalized.conceptMap)
+      const violations = [
+        ...skeleton.violations,
+        ...normalized.violations,
+        ...lessons.violations,
+        ...scaleViolations,
+      ]
+      return {
+        outline,
+        unitIdsByNodeId,
+        skeleton: skeleton.skeleton,
+        conceptMap: normalized.conceptMap,
+        glossary,
+        lessons: lessons.lessons,
+        violations,
+        runId,
+        draftedText,
+        draftedOutline,
+      }
+    }
+
+    // 智能规划：自检不通过不呈现给教师——带失败原因自动重规划，≤3 次后转人工。
+    const maxAttempts = mode === 'smart' ? MAX_PLAN_ATTEMPTS : 1
+    let feedback: string | null = teacherFeedback
+    let attempt: DraftAttempt | null = null
+    let round = 0
+
+    for (round = 1; round <= maxAttempts; round += 1) {
+      const result = await draftOnce(feedback)
+      if (mode !== 'smart') {
+        attempt = result
+        break
+      }
+      const issues: PlanCheckIssueView[] =
+        result === null
+          ? [
+              {
+                code: 'outline_empty',
+                subject: '课程目录',
+                message: 'Agent 没有产出任何目录条目',
+              },
+            ]
+          : checkPlanDraft({
+              nodes: result.outline.nodes,
+              unitIdsByNodeId: result.unitIdsByNodeId,
+              lessons: result.lessons,
+              knownUnitIds,
+              budget,
+            })
+      if (issues.length === 0) {
+        attempt = result
+        break
+      }
+      await repo.insertReview({
+        courseId,
+        planId: draft?.id ?? null,
+        status: 'fail',
+        attempts: round,
+        issues,
+      })
+      if (round === maxAttempts) {
+        await repo.insertReview({
+          courseId,
+          planId: draft?.id ?? null,
+          status: 'manual',
+          attempts: round,
+          issues,
+        })
         await jobs.failJob({
           jobId: job.id,
-          code: 'outline_draft_empty',
-          message: 'Agent 未能拟出课程目录，请补充课程目标或素材后重新提交',
+          code: 'plan_self_check_failed',
+          message: `规划自检连续 ${round} 次未通过，已转人工处理：${issues
+            .slice(0, 3)
+            .map((issue) => issue.message)
+            .join('；')}`,
           retryable: false,
         })
         return
       }
-      outline = { nodes: drafted.nodes }
-      unitIdsByNodeId = drafted.unitIdsByNodeId
-      // 规模裁剪：模型给的课时数超出素材推导的上限时裁掉多出来的，并留痕。
-      if (mode === 'smart' && budget) {
-        const trimmed = trimOutlineToBudget(outline, budget.max)
-        if (trimmed.trimmed > 0) {
-          outline = trimmed.outline
-          scaleViolations.push({
-            kind: 'outline_violation',
-            subject: '规划规模',
-            reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${trimmed.trimmed} 个`,
-          })
-        }
-      }
-      if (mode === 'smart') {
-        // 智能规划只换工作目录树，教师原文（outline_text）留得住。
-        await repo.updateCourseOutline(courseId, outline)
-      } else {
-        await repo.updateCoursePlanInput(courseId, {
-          goal: inputRow.goal,
-          outlineText: drafted.text,
-          outline,
-        })
-      }
+      feedback = `上一版规划自检未通过，请逐条修正后重新规划：\n${formatCheckIssues(issues)}`
     }
 
-    await jobs.updateJobProgress({ jobId: job.id, step: 'drafting', progress: 30 })
-    const prompt = buildPrompt({
-      goal: inputRow.goal,
-      outlineNodes: outline.nodes,
-      corpus,
-      feedback,
-      units,
-      budget,
-    })
-    const { data, runId } = await runLlmJson({
-      task: CURRICULUM_TASK,
-      purpose: 'llm',
-      refType: 'course',
-      refId: courseId,
-      system: prompt.system,
-      user: prompt.user,
-      maxTokens: MAX_TOKENS,
-      schema: draftOutputSchema,
-      phase: 'draft',
-      summarize: (out) =>
-        `nodes=${outline.nodes.length} matches=${out.matches.length} concepts=${out.concepts.length} edges=${out.edges.length} lessons=${out.lessons.length} units=${units.length}`,
-    })
-
-    await jobs.updateJobProgress({ jobId: job.id, step: 'validating', progress: 70 })
-    // 智能规划的出处已在目录草案里定下，匹配度由出处推导，不让模型再拍一遍。
-    const matches: OutlineMatch[] =
-      mode === 'smart'
-        ? deriveMatchesFromUnits(outline, unitIdsByNodeId)
-        : data.matches.map((match) => ({
-            nodeId: match.nodeId,
-            matchScore: match.matchScore,
-          }))
-    const lessonUnitIds = new Map<string, string[]>()
-    for (const lesson of data.lessons) {
-      if (!lesson.sectionId) continue
-      const merged = new Set([
-        ...(lessonUnitIds.get(lesson.sectionId) ?? []),
-        ...lesson.sourceUnitIds,
-      ])
-      lessonUnitIds.set(lesson.sectionId, [...merged])
-    }
-    for (const [nodeId, ids] of lessonUnitIds) {
-      if (!unitIdsByNodeId.has(nodeId)) unitIdsByNodeId.set(nodeId, ids)
-    }
-    const skeleton = buildSkeleton(outline, matches, unitIdsByNodeId)
-    const conceptInput: { concepts: RawConceptInput[]; edges: RawConceptEdgeInput[] } = {
-      concepts: data.concepts,
-      edges: data.edges,
-    }
-    const normalized = validateConceptMap(conceptInput)
-    const knownUnitIds = new Set(units.map((unit) => unit.id))
-    const lessons = normalizeLessons(
-      data.lessons,
-      new Set(outline.nodes.map((node) => node.id)),
-      knownUnitIds,
-      units,
-    )
-    // 分节计划同样受规模上限约束：模型多给的课时裁掉并留痕。
-    if (mode === 'smart' && budget && lessons.lessons.length > budget.max) {
-      const dropped = lessons.lessons.length - budget.max
-      lessons.lessons = lessons.lessons.slice(0, budget.max)
-      scaleViolations.push({
-        kind: 'outline_violation',
-        subject: '分节计划规模',
-        reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${dropped} 个`,
+    if (!attempt) {
+      await jobs.failJob({
+        jobId: job.id,
+        code: 'outline_draft_empty',
+        message: 'Agent 未能拟出课程目录，请补充课程目标或素材后重新提交',
+        retryable: false,
       })
+      return
     }
-    const glossary = glossaryOf(normalized.conceptMap)
-    const violations = [
-      ...skeleton.violations,
-      ...normalized.violations,
-      ...lessons.violations,
-      ...scaleViolations,
-    ]
 
     // 草案行：reject 占位行已存在则覆盖内容；首次起草由 worker 补建占位行。
     const target =
@@ -559,13 +657,35 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
         aiRunId: null,
       }))
     await repo.updatePlanContent(target.id, {
-      skeleton: skeleton.skeleton,
-      conceptMap: normalized.conceptMap,
-      glossary,
-      sectionPlan: { lessons: lessons.lessons },
-      violations,
-      aiRunId: runId,
+      skeleton: attempt.skeleton,
+      conceptMap: attempt.conceptMap,
+      glossary: attempt.glossary,
+      sectionPlan: { lessons: attempt.lessons },
+      violations: attempt.violations,
+      aiRunId: attempt.runId,
     })
+    // 目录落库放在自检通过之后：坏目录不留痕。
+    if (attempt.draftedOutline) {
+      if (mode === 'smart') {
+        // 智能规划只换工作目录树，教师原文（outline_text）留得住。
+        await repo.updateCourseOutline(courseId, attempt.outline)
+      } else {
+        await repo.updateCoursePlanInput(courseId, {
+          goal,
+          outlineText: attempt.draftedText,
+          outline: attempt.outline,
+        })
+      }
+    }
+    if (mode === 'smart') {
+      await repo.insertReview({
+        courseId,
+        planId: target.id,
+        status: 'pass',
+        attempts: round,
+        issues: [],
+      })
+    }
 
     await jobs.completeJob(job.id, 'drafted')
   } catch (err) {

@@ -5,6 +5,7 @@ import {
   type PlanCoverageView,
   type PlanJobView,
   type PlanMaterialView,
+  type PlanReviewView,
   type PlanView,
   type SessionUser,
   type SubmitPlanInputRequest,
@@ -189,15 +190,17 @@ export async function getPlanFor(
   input: { goal: string; outlineText: string } | null
   trace: AgentTraceView | null
   materials: PlanMaterialView[]
+  review: PlanReviewView | null
 }> {
   await getCourseForUser(actor, courseId)
-  const [draft, approved, job, input, assets, unitCounts] = await Promise.all([
+  const [draft, approved, job, input, assets, unitCounts, review] = await Promise.all([
     repo.findDraftPlan(courseId),
     repo.findApprovedPlan(courseId),
     findJobByCourse({ courseId, kind: CURRICULUM_JOB_KIND }),
     repo.findCoursePlanInput(courseId),
     listAssetsByCourse(courseId),
     listUnitCountsByCourse(courseId),
+    repo.findLatestReview(courseId),
   ])
   const active = draft ?? approved
   // 目标必回填（教师可能只交了目标）；目录可能是空的（待 Agent 代拟）。
@@ -236,6 +239,16 @@ export async function getPlanFor(
     input: inputMeta,
     trace,
     materials,
+    review: review
+      ? {
+          id: review.id,
+          courseId: review.course_id,
+          status: review.status,
+          attempts: review.attempts,
+          issues: review.issues,
+          createdAt: review.created_at.toISOString(),
+        }
+      : null,
   }
 }
 
