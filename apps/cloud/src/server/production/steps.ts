@@ -36,13 +36,17 @@ export const STEP_COUNT = STEP_DEFS.length
  * 思考吃光，正文直接截断成 llm_truncated——九步第一次真跑就卡在第 1 步「案例股」。
  * 与目录代拟（12K）、课程方案起草（32K）、素材理解（12K）同一量级口径：
  * 步内产物越大、证据工具往返越多，预算给得越多。
+ *
+ * 预算按**实测峰值**定，不按感觉：预发实跑记录到 content.widget_spec 单次输出
+ * 峰值 15727 token（16K 预算的天花板，第 5 步回放课件因此被截断）、
+ * content.section_draft 峰值 12791——两大产物步都贴着天花板，故给到 32K。
  */
 const STEP_MAX_TOKENS: Record<string, number> = {
   case_stocks: 12_000,
   figure_spec: 12_000,
-  replay_widget: 16_000,
-  widgets: 16_000,
-  section_draft: 16_000,
+  replay_widget: 32_000,
+  widgets: 32_000,
+  section_draft: 32_000,
   review: 8_000,
 }
 

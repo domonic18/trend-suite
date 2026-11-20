@@ -1,5 +1,6 @@
 import 'server-only'
 import { minimaxImageUrl } from '@/server/models/endpoints'
+import { extractImagePayload } from '@/server/models/image-payload'
 import { query } from '@/server/lib/db'
 import { newId } from '@/server/lib/ids'
 import {
@@ -19,6 +20,9 @@ import {
  */
 
 const IMAGE_TIMEOUT_MS = 120_000
+/** 上游给的是图片地址时，下载图片本体也得上限（防大图/防挂死）。 */
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000
+const IMAGE_MAX_BYTES = 20 * 1024 * 1024
 
 export const FIGURE_GENERATED_TASK = 'content.figure_generated'
 
@@ -84,7 +88,7 @@ export async function runImageGeneration(input: {
   }
 }
 
-async function callImageEndpoint(input: {
+export async function callImageEndpoint(input: {
   channel: { baseUrl: string; model: string }
   headers: Record<string, string>
   body: string
@@ -128,7 +132,7 @@ async function callImageEndpoint(input: {
       })
     }
     const payload = JSON.parse(text) as {
-      data?: { b64_json?: string; image_base64?: string } | { image_base64?: string }
+      data?: unknown
       base_resp?: { status_code?: number; status_msg?: string }
     }
     // MiniMax 鉴权失败是 HTTP 200 + base_resp.status_code != 0，只看 HTTP 状态会把失败当成功。
@@ -139,14 +143,61 @@ async function callImageEndpoint(input: {
         code: 'image_upstream',
       })
     }
-    const base64 =
-      (Array.isArray(payload.data) ? payload.data[0]?.b64_json : payload.data?.image_base64) ?? null
-    if (typeof base64 !== 'string' || base64.length === 0) {
-      throw new LlmError('图像上游没有返回图片数据', { retryable: true, code: 'image_empty' })
+    // 形状解析只有一份（server/models/image-payload.ts），连通性测试与正式调用共用。
+    const image = extractImagePayload(payload)
+    if (image.kind === 'base64') {
+      return { base64: image.value, endpoint: variant }
     }
-    return { base64, endpoint: variant }
+    // H3-Image 新端点回的是**图片地址**不是 base64（实测：data[0].url）——
+    // 只认 b64_json 会把每次文生图都判成 image_empty，装饰图全被剔除。
+    if (image.kind === 'url') {
+      return { base64: await downloadImageBase64(image.value, input.fetchImpl), endpoint: variant }
+    }
+    throw new LlmError(`图像上游没有返回图片数据：${image.reason}`, {
+      retryable: true,
+      code: 'image_empty',
+    })
   }
   throw lastError ?? new LlmError('上游没有图像生成端点', { retryable: false, code: 'image_upstream' })
+}
+
+/**
+ * 下载上游给的图片地址并转 base64（上游回地址而非 base64 时走这条）。
+ * 只认 https、限时限量——地址来自上游响应，不接受非 https。
+ */
+async function downloadImageBase64(url: string, fetchImpl: FetchLike): Promise<string> {
+  let target: URL
+  try {
+    target = new URL(url)
+  } catch {
+    throw new LlmError('图像上游返回的地址不合法', { retryable: false, code: 'image_upstream' })
+  }
+  if (target.protocol !== 'https:') {
+    throw new LlmError('图像上游返回的地址不是 https', { retryable: false, code: 'image_upstream' })
+  }
+  let res: Response
+  try {
+    res = await fetchImpl(target.toString(), {
+      method: 'GET',
+      signal: AbortSignal.timeout(IMAGE_DOWNLOAD_TIMEOUT_MS),
+    })
+  } catch (err) {
+    throw new LlmError(`图像下载失败：${(err as Error).message}`, {
+      retryable: true,
+      code: 'image_network',
+    })
+  }
+  if (!res.ok) {
+    throw new LlmError(`图像下载失败：${res.status}`, { retryable: true, code: 'image_network' })
+  }
+  const bytes = Buffer.from(await res.arrayBuffer())
+  if (bytes.length === 0) {
+    throw new LlmError('图像下载为空', { retryable: true, code: 'image_empty' })
+  }
+  if (bytes.length > IMAGE_MAX_BYTES) {
+    throw new LlmError('图像超过体积上限', { retryable: false, code: 'image_upstream' })
+  }
+  return bytes.toString('base64')
 }
 
 /** 图像调用收尾：ai_runs 记时延摘要，ai_usage_events kind='images' 按张入账。 */

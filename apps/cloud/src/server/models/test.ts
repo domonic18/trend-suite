@@ -1,5 +1,6 @@
 import 'server-only'
 import { minimaxAsrUrl, minimaxImageUrl } from './endpoints'
+import { extractImagePayload } from './image-payload'
 
 /**
  * 连通性测试（arch/07 §9.1）：与正式调用走同一协议分支，
@@ -123,13 +124,33 @@ export async function testImageModel(input: {
       if (status === 404 || status === 405) continue
       const baseError = baseRespError(text)
       if (baseError) return { ok: false, message: `上游拒绝：${baseError.slice(0, 160)}` }
-      if (status >= 200 && status < 300) return { ok: true, message: '图像通道连通' }
+      if (status >= 200 && status < 300) {
+        // HTTP 2xx 不等于真出图了：上游回的是图片地址还是 base64 都要有货，
+        // 否则「测试通、实际不通」（预发实测：8 次文生图全被 image_empty 判死）。
+        const empty = imagePayloadEmpty(text)
+        if (empty) {
+          return { ok: false, message: `上游未返回图片数据：${empty.slice(0, 120)}` }
+        }
+        return { ok: true, message: '图像通道连通' }
+      }
       return { ok: false, message: `上游返回 ${status}：${text.slice(0, 160)}` }
     } catch (err) {
       return { ok: false, message: `连接失败：${(err as Error).message}` }
     }
   }
   return { ok: false, message: '上游没有图像生成端点（/images/generations 与 /image_generation 均 404）' }
+}
+
+/** 图像响应里没有图片数据时给一句人话（空串 = 有货）。 */
+function imagePayloadEmpty(text: string): string {
+  let payload: unknown
+  try {
+    payload = JSON.parse(text)
+  } catch {
+    return '响应不是 JSON'
+  }
+  const result = extractImagePayload(payload)
+  return result.kind === 'none' ? result.reason : ''
 }
 
 export async function testChatModel(input: {
