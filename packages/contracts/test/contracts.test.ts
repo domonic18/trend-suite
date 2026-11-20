@@ -8,6 +8,8 @@ import {
   errorBody,
   isWorkbenchRole,
   submitPlanInputRequest,
+  processingStep,
+  processingSteps,
 } from '../src/index.js'
 
 test('healthResponse 契约', () => {
@@ -52,4 +54,16 @@ test('学员角色不可进入生产工作台', () => {
   assert.equal(isWorkbenchRole('producer'), true)
   assert.equal(isWorkbenchRole('operator'), true)
   assert.equal(isWorkbenchRole('admin'), true)
+})
+
+test('加工阶段序列与 arch/05 §3.7 一致（管线会写入的阶段都得在契约里）', () => {
+  // 漏掉 transcode / understand 时，管线写进 process_step 的值会让素材列表的
+  // 响应契约校验失败——教师端只看到一句「参数不合法」。
+  assert.deepEqual(
+    [...processingSteps],
+    ['uploaded', 'audio', 'transcribe', 'transcode', 'frames', 'understand', 'index', 'done'],
+  )
+  for (const step of processingSteps) {
+    assert.equal(processingStep.parse(step), step)
+  }
 })

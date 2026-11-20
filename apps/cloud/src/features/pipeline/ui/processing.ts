@@ -5,7 +5,9 @@ export const STEP_LABELS: Record<ProcessingStep, string> = {
   uploaded: '上传',
   audio: '抽音频',
   transcribe: 'ASR 转写',
+  transcode: '转码',
   frames: '关键帧',
+  understand: '理解',
   index: '索引',
   done: '就绪',
 }
@@ -14,7 +16,9 @@ export const STEP_ORDER: ProcessingStep[] = [
   'uploaded',
   'audio',
   'transcribe',
+  'transcode',
   'frames',
+  'understand',
   'index',
   'done',
 ]
