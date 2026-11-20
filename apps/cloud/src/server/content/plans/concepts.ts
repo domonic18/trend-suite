@@ -36,6 +36,7 @@ export function validateConceptMap(input: {
         kind: 'concept_conflict',
         subject: name,
         reason: '概念重名，仅保留首个定义，其余已拒绝',
+        resolved: true,
       })
       continue
     }
@@ -59,6 +60,7 @@ export function validateConceptMap(input: {
           kind: 'concept_conflict',
           subject: alias,
           reason: `别名「${alias}」与概念「${owner.name}」冲突，已移除`,
+          resolved: true,
         })
         return false
       }
@@ -80,6 +82,7 @@ export function validateConceptMap(input: {
         kind: 'concept_conflict',
         subject: `${raw.from} → ${raw.to}`,
         reason: '依赖边引用了未收录的概念，已移除',
+        resolved: true,
       })
       continue
     }
@@ -142,6 +145,7 @@ function breakPrerequisiteCycles(
     kind: 'concept_conflict',
     subject: cyclic.map((edge) => edge.fromId).join('、'),
     reason: '概念依赖存在循环，已移除相关依赖边',
+    resolved: true,
   })
   return edges.filter((edge) => edge.kind !== 'prerequisite' || !cyclic.includes(edge))
 }

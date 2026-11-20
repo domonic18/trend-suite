@@ -8,7 +8,7 @@ import { createAccount } from '@/server/accounts/service'
 import { createModelEntry, updateTaskBinding } from '@/server/models/service'
 import { insertAsset } from '@/server/pipeline/repo'
 import { runWorkerOnce } from '@/server/pipeline/jobs/worker'
-import { savePlanInput } from './service'
+import { approvePlan, savePlanInput } from './service'
 import * as repo from './repo'
 
 /**
@@ -172,7 +172,8 @@ test('worker 认领课程任务并回写草案四件套，目录外章节与重�
   assert.equal(sectionPlan.lessons[0]?.sectionId, 'n3')
   // 越界参数被钳到契约区间
   assert.equal(sectionPlan.lessons[0]?.subLessonCount, 20)
-  assert.equal(sectionPlan.lessons[0]?.estimatedMinutes, 5)
+  // 没有出处可依时取模型的估值（不再有 5 分钟地板）
+  assert.equal(sectionPlan.lessons[0]?.estimatedMinutes, 1)
   assert.equal(sectionPlan.lessons[0]?.parallelSlot, 8)
 
   const runs = await query<{ status: string; tokens_in: number | null }>(
@@ -182,6 +183,149 @@ test('worker 认领课程任务并回写草案四件套，目录外章节与重�
   assert.equal(runs.length, 1)
   assert.equal(runs[0]?.status, 'succeeded')
   assert.ok(draft!.ai_run_id)
+})
+
+/**
+ * 迭代 9 回归：沿用人工目录 + 素材有理解结果。
+ *
+ * 旧口径把「素材有理解结果」当成「智能规划」，提示词与代码走岔：
+ * 模型被判不用给匹配度 → 匹配度全是 null → 每一行「无证据支撑 · 待裁决」→ 方案永远批不了。
+ * 现在匹配度一律由出处推导，课时标题取教师原文，方案能批。
+ */
+const MANUAL_OUTLINE = [
+  '第一篇 交易认知的反思与选择',
+  '第一章 趋势的本质',
+  '1. 趋势包含方向与能量',
+  '2. 股票是周期加趋势',
+].join('\n')
+
+test('沿用人工目录：匹配度由出处推导、课时标题取教师原文，方案可批准', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-人工目录',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-manual',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: '讲义.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/x.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  // 两个理解单元，各带一条讲解要点
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 0, 600000, '讲解内容', $4::jsonb, 0)`,
+    [
+      'su_m1',
+      course.id,
+      assetId,
+      JSON.stringify({ teachingPoints: ['趋势包含明确方向与蕴藏能量'] }),
+    ],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 600000, 1200000, '讲解内容', $4::jsonb, 1)`,
+    ['su_m2', course.id, assetId, JSON.stringify({ teachingPoints: ['股票是周期加趋势'] })],
+  )
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: MANUAL_OUTLINE,
+    allowPartial: false,
+  })
+
+  // 模型给了匹配度、也改了小节标题——都不能盖过教师原文与出处
+  const payload = {
+    matches: [
+      { nodeId: 'n1', matchScore: 0.9 },
+      { nodeId: 'n2', matchScore: 0.9 },
+      { nodeId: 'n3', matchScore: 0.9 },
+      { nodeId: 'n4', matchScore: 0.9 },
+    ],
+    concepts: [{ name: '趋势', aliases: [], definition: '价格运行方向' }],
+    edges: [],
+    lessons: [
+      {
+        sectionId: 'n3',
+        title: '趋势的方向与能量（模型自己改的名）',
+        subLessonCount: 2,
+        estimatedMinutes: 30,
+        parallelSlot: 1,
+        sourceUnitIds: ['su_m1'],
+      },
+      {
+        sectionId: 'n4',
+        title: '股票是周期加趋势',
+        subLessonCount: 1,
+        estimatedMinutes: 30,
+        parallelSlot: 1,
+        sourceUnitIds: ['su_m2'],
+      },
+    ],
+  }
+  const original = globalThis.fetch
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })) as typeof fetch
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+
+    const jobs = await query<{ status: string; error_code: string | null }>(
+      'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+      [job.id],
+    )
+    assert.equal(jobs[0]?.status, 'succeeded')
+
+    const draft = await repo.findDraftPlan(course.id)
+    assert.ok(draft)
+
+    const content = draft!.skeleton as {
+      nodes: { id: string; title: string; matchScore: number | null; matchStatus: string }[]
+    }
+    assert.equal(content.nodes.length, 4)
+    // 每一行都有出处支撑，不再整页飘红
+    for (const node of content.nodes) {
+      assert.equal(node.matchStatus, 'ok', node.id)
+      assert.equal(node.matchScore, 1, node.id)
+    }
+
+    const sectionPlan = draft!.section_plan as {
+      lessons: { title: string; sourceUnitIds: string[]; estimatedMinutes: number }[]
+    }
+    assert.equal(sectionPlan.lessons.length, 2)
+    // 课时标题是教师原文，模型改名不算数
+    assert.deepEqual(
+      sectionPlan.lessons.map((lesson) => lesson.title),
+      ['趋势包含方向与能量', '股票是周期加趋势'],
+    )
+    // 估时按绑定单元的真实跨度，不是模型拍的值
+    assert.equal(sectionPlan.lessons[0]?.estimatedMinutes, 10)
+    assert.equal(sectionPlan.lessons[1]?.estimatedMinutes, 10)
+
+    // 没有待裁决项 → 方案可批准
+    const violations = (draft!.violations ?? []) as { resolved: boolean }[]
+    assert.equal(violations.filter((violation) => !violation.resolved).length, 0)
+    const approved = await approvePlan(teacher, course.id)
+    assert.equal(approved.status, 'approved')
+    // 批准会排生产任务：跑掉它，别把队列留给后面的用例
+    await runWorkerOnce('test-worker')
+  } finally {
+    globalThis.fetch = original
+  }
 })
 
 test('模型漏写 matchScore：不算结构错误，草案照常落库（缺省即「无证据支撑」）', { skip }, async () => {
@@ -600,11 +744,14 @@ test('智能规划：目录按要点重排、教师原文保留，出处绑进�
 
   // 分节计划的出处进课时，估时以绑定单元时长为准
   const sectionPlan = draft!.section_plan as {
-    lessons: { sourceUnitIds: string[]; estimatedMinutes: number }[]
+    lessons: { title: string; sourceUnitIds: string[]; estimatedMinutes: number }[]
   }
-  assert.equal(sectionPlan.lessons.length, 1)
+  // 课时以目录为准：目录里两个课时节点就有两条课时
+  assert.equal(sectionPlan.lessons.length, 2)
   assert.deepEqual(sectionPlan.lessons[0]?.sourceUnitIds, ['su_a1'])
   assert.equal(sectionPlan.lessons[0]?.estimatedMinutes, 10)
+  assert.deepEqual(sectionPlan.lessons[1]?.sourceUnitIds, ['su_a2'])
+  assert.equal(sectionPlan.lessons[1]?.estimatedMinutes, 10)
 })
 
 test('智能规划：课时数超出素材推导的上限时裁掉并留痕', { skip }, async () => {

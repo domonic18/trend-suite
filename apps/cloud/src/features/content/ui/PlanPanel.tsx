@@ -7,6 +7,7 @@ import { ApiError } from '@/features/lib/http'
 import { approvePlan, getPlan, rejectPlan, tweakPlan } from '../api'
 import { NextActionBanner } from './NextActionBanner'
 import { AgentRail } from './AgentRail'
+import { classifyDraftFailure } from './draftFailure'
 import { OutlineCard } from './OutlineCard'
 import { PlanDraftForm } from './PlanDraftForm'
 import { InterruptCard } from './InterruptCard'
@@ -81,10 +82,12 @@ export function PlanPanel({
   const plan = data?.plan ?? null
   const review = data?.review ?? null
   const lowMatchCount = plan ? plan.skeleton.nodes.filter((n) => n.matchStatus === 'low_match').length : 0
-  const violationCount = plan ? plan.violations.length : 0
+  // 已自动处理的拒绝记录（剔除 / 还原 / 裁剪）只留痕，不阻塞批准。
+  const violationCount = plan ? plan.violations.filter((v) => !v.resolved).length : 0
   const approved = plan?.status === 'approved'
   const blocked = lowMatchCount > 0 || violationCount > 0
   const jobFailed = !plan && job?.status === 'failed'
+  const failure = jobFailed ? classifyDraftFailure(job) : null
   const matText = materials ? `基于 ${materials.ready}/${materials.total} 份就绪素材` : ''
 
   function tweak(op: TweakPlanRequest) {
@@ -104,9 +107,14 @@ export function PlanPanel({
           「上传与转写」核对逐字稿与关键帧。
         </NextActionBanner>
       ) : null}
-      {jobFailed ? (
-        <NextActionBanner tone="warn" action={{ label: '去修改重提', onClick: () => scrollToId('plan-form') }}>
-          起草失败：{job?.errorMessage ?? job?.errorCode ?? '未知原因'}。调整课程目标或人工目录后可重新提交。
+      {failure ? (
+        <NextActionBanner
+          tone="warn"
+          {...(failure.action
+            ? { action: { label: failure.action.label, onClick: () => scrollToId('plan-form') } }
+            : {})}
+        >
+          {failure.text}
         </NextActionBanner>
       ) : null}
       {review && review.status === 'manual' ? (
@@ -232,6 +240,7 @@ export function PlanPanel({
                   <li key={`${violation.kind}-${violation.subject}-${index}`}>
                     <b>{violation.subject}</b>
                     <span>{violation.reason}</span>
+                    {violation.resolved ? <span className="tag ok">已自动处理</span> : null}
                   </li>
                 ))}
               </ul>

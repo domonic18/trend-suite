@@ -9,6 +9,8 @@ import {
   deriveTotalMinutes,
   estimateMinutesOf,
   formatPlanningUnits,
+  spanMinutesOf,
+  subLessonCountOf,
   teachingPointsOf,
   totalPoints,
 } from './planning'
@@ -126,7 +128,7 @@ test('deriveTotalMinutes：时长取证据跨度与素材标称时长的较大�
   assert.equal(deriveTotalMinutes(units, new Map()), 16)
 })
 
-test('estimateMinutesOf：估时以绑定单元的时长为准，且落在 5～240 分钟区间', () => {
+test('estimateMinutesOf：估时以绑定单元的时长为准，且落在 1～240 分钟区间', () => {
   const units = buildPlanningUnits(
     [
       unitRow({ id: 'su_1', assetId: 'ast_1', startMs: 0, endMs: 600_000, points: ['甲'] }),
@@ -136,8 +138,28 @@ test('estimateMinutesOf：估时以绑定单元的时长为准，且落在 5～2
   )
   assert.equal(estimateMinutesOf(units, ['su_1', 'su_2']), 15)
   assert.equal(estimateMinutesOf(units, ['su_1']), 10)
-  // 没有绑定单元时给下限，模型拍的分钟数不采信
-  assert.equal(estimateMinutesOf(units, []), 5)
+  // 没有绑定单元时给下限 1 分钟（不再有 5 分钟的地板——短课时也是真的）
+  assert.equal(estimateMinutesOf(units, []), 1)
+})
+
+test('spanMinutesOf：跨度取绑定单元的最晚结束减最早开始', () => {
+  const units = buildPlanningUnits(
+    [
+      unitRow({ id: 'su_1', assetId: 'ast_1', startMs: 0, endMs: 600_000, points: ['甲'] }),
+      unitRow({ id: 'su_2', assetId: 'ast_1', startMs: 600_000, endMs: 900_000, points: ['乙'] }),
+    ],
+    new Map([['ast_1', '第一讲.mp4']]),
+  )
+  assert.equal(spanMinutesOf(units, ['su_1', 'su_2']), 15)
+  assert.equal(spanMinutesOf(units, ['su_2']), 5)
+  assert.equal(spanMinutesOf(units, []), 0)
+})
+
+test('subLessonCountOf：粒度由要点数推导，一要点一子节', () => {
+  assert.equal(subLessonCountOf([]), 1)
+  assert.equal(subLessonCountOf(['甲']), 1)
+  assert.equal(subLessonCountOf(['甲', '乙', '丙']), 3)
+  assert.equal(subLessonCountOf(new Array(30).fill('甲')), 20)
 })
 
 test('formatPlanningUnits：按素材分组，每条要点带证据单元 id 与时间码', () => {

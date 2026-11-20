@@ -31,13 +31,13 @@ import {
   buildPlanningUnits,
   deriveLessonBudget,
   deriveTotalMinutes,
-  estimateMinutesOf,
   formatPlanningUnits,
   totalPoints,
   MAX_POINTS_PER_LESSON,
   MIN_POINTS_PER_LESSON,
   type PlanningUnit,
 } from './planning'
+import { buildLessonsFromOutline } from './lessons'
 import { checkPlanDraft, formatCheckIssues } from './selfcheck'
 import * as repo from './repo'
 import type { PlanLesson } from './tweak'
@@ -100,8 +100,6 @@ const draftOutputSchema = z.object({
     .default([]),
 })
 
-type DraftOutput = z.infer<typeof draftOutputSchema>
-
 /** Agent 代拟目录的结构（篇=1 / 章=2 / 课时=3）。 */
 const outlineDraftSchema = z.object({
   sections: z
@@ -149,6 +147,7 @@ function buildCorpus(lines: repo.TranscriptLineRow[]): string {
 }
 
 function buildPrompt(input: {
+  mode: 'smart' | 'follow_manual'
   goal: string
   outlineNodes: { id: string; title: string }[]
   corpus: string
@@ -156,20 +155,21 @@ function buildPrompt(input: {
   units: PlanningUnit[]
   budget: { min: number; max: number; target: number } | null
 }): { system: string; user: string } {
-  const smart = input.units.length > 0
+  const smart = input.mode === 'smart'
+  const hasUnits = input.units.length > 0
   const system = [
     '你是课程方案起草助手。根据课程目标、目录与素材证据，产出课程方案草案。',
     '规则：',
     smart
       ? '1. 目录已经定稿（智能规划产出），matches 不需要你判断——证据出处已随目录给出，你只输出 concepts、edges、lessons。'
-      : '1. 严格目录先验：matches 只允许引用目录给出的 nodeId，不得发明目录外章节；目录中每个节点都要有匹配条目，无证据的节点 matchScore 用 null。matchScore 为 0～1 的证据匹配度，表示该章节有多少素材内容支撑。',
+      : '1. 严格目录先验：目录是骨架的唯一来源，不得发明目录外章节；lessons 只为目录里的课时级节点生成，标题沿用目录原文。matches 只允许引用目录给出的 nodeId，目录中每个节点都要有匹配条目，无证据的节点 matchScore 用 null。matchScore 为 0～1 的证据匹配度，表示该章节有多少素材内容支撑。',
     '2. concepts 收录课程核心概念：name 唯一、definition 一句话；同义表述放 aliases。',
     '3. edges 按概念名引用（from/to 必须是 concepts 里的 name），kind 只能是 prerequisite（先修）或 related（相关）；不要制造循环先修。',
-    '4. lessons 为分节计划：每条对应一个课时级章节（sectionId 引用目录 nodeId，无法对应时用 null），title 为课时标题，subLessonCount 1～20，estimatedMinutes 5～240，parallelSlot 1～8。',
-    smart
+    '4. lessons 为分节计划：每条对应一个课时级章节（sectionId 引用目录 nodeId，无法对应时用 null），title 为课时标题，subLessonCount 1～20，estimatedMinutes 1～240，parallelSlot 1～8。',
+    hasUnits
       ? '5. 每个课时必须给出 sourceUnitIds：只引用「素材讲解要点」里出现过的证据单元 id，至少 1 个；一个课时只讲一个可独立讲清的知识点，因此通常 1～3 个单元。'
       : '5. lessons 只为课时级章节生成。',
-    `6. 规模上限（避免输出被截断）：${smart ? '' : 'matches 恰好覆盖目录全部节点；'}concepts ≤ 25 条且 definition ≤ 40 字；edges ≤ 30 条；lessons 只为课时级章节生成且 ≤ 40 条。`,
+    '6. 规模上限（避免输出被截断）：concepts ≤ 25 条且 definition ≤ 40 字；edges ≤ 30 条；lessons ≤ 40 条。',
     '只输出一个 JSON 对象，字段：matches、concepts、edges、lessons，不要输出任何其他文字。',
   ].join('\n')
 
@@ -178,65 +178,16 @@ function buildPrompt(input: {
     `## 课程目标\n${input.goal}`,
     `## 目录（id: 标题）\n${outlineList}`,
     input.feedback ? `## 上一版教师意见（本次起草须吸收）\n${input.feedback}` : null,
-    smart
+    hasUnits
       ? `## 素材讲解要点（每条带证据单元 id 与时间码）\n${formatPlanningUnits(input.units)}`
       : `## 素材转写语料\n${input.corpus || '（无转写语料）'}`,
-    input.budget
+    smart && input.budget
       ? `## 规模边界\n本课素材共 ${totalPoints(input.units)} 条讲解要点，课时数必须在 ${input.budget.min}～${input.budget.max} 之间（目标 ${input.budget.target}）。`
       : null,
   ]
     .filter((section) => section !== null)
     .join('\n\n')
   return { system, user }
-}
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-
-function normalizeLessons(
-  lessons: DraftOutput['lessons'],
-  knownSectionIds: Set<string>,
-  knownUnitIds: Set<string>,
-  units: PlanningUnit[],
-): {
-  lessons: PlanLesson[]
-  violations: { kind: 'outline_violation'; subject: string; reason: string }[]
-} {
-  const out: PlanLesson[] = []
-  const violations: { kind: 'outline_violation'; subject: string; reason: string }[] = []
-  lessons.forEach((lesson, index) => {
-    let sectionId = lesson.sectionId
-    if (sectionId && !knownSectionIds.has(sectionId)) {
-      violations.push({
-        kind: 'outline_violation',
-        subject: sectionId,
-        reason: `分节计划「${lesson.title.slice(0, 40)}」引用了目录外章节，已改为未挂载`,
-      })
-      sectionId = null
-    }
-    const sourceUnitIds = lesson.sourceUnitIds.filter((id) => knownUnitIds.has(id))
-    const dropped = lesson.sourceUnitIds.length - sourceUnitIds.length
-    if (dropped > 0) {
-      violations.push({
-        kind: 'outline_violation',
-        subject: lesson.title.slice(0, 40),
-        reason: `分节计划引用了 ${dropped} 个不存在的证据单元，已剔除`,
-      })
-    }
-    out.push({
-      id: `l${index + 1}`,
-      sectionId,
-      title: lesson.title.slice(0, 200),
-      subLessonCount: clamp(lesson.subLessonCount, 1, 20),
-      // 估时以绑定的证据单元时长为准：模型估的分钟数是拍的，单元时长是实的。
-      estimatedMinutes:
-        sourceUnitIds.length > 0
-          ? estimateMinutesOf(units, sourceUnitIds)
-          : clamp(lesson.estimatedMinutes, 5, 240),
-      parallelSlot: clamp(lesson.parallelSlot, 1, 8),
-      sourceUnitIds,
-    })
-  })
-  return { lessons: out, violations }
 }
 
 /**
@@ -470,7 +421,8 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
         draftedText = drafted.text
         draftedOutline = true
         // 规模裁剪：模型给的课时数超出素材推导的上限时裁掉多出来的，并留痕。
-        if (mode === 'smart' && budget) {
+        // 只裁「Agent 代拟的」目录——教师粘贴的目录是目录先验，一个字都不动。
+        if (budget) {
           const trimmed = trimOutlineToBudget(outline, budget.max)
           if (trimmed.trimmed > 0) {
             outline = trimmed.outline
@@ -478,6 +430,7 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
               kind: 'outline_violation',
               subject: '规划规模',
               reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${trimmed.trimmed} 个`,
+              resolved: true,
             })
           }
         }
@@ -485,6 +438,7 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
 
       await jobs.updateJobProgress({ jobId: job.id, step: 'drafting', progress: 30 })
       const prompt = buildPrompt({
+        mode,
         goal,
         outlineNodes: outline.nodes,
         corpus,
@@ -507,52 +461,54 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       })
 
       await jobs.updateJobProgress({ jobId: job.id, step: 'validating', progress: 70 })
-      // 智能规划的出处已在目录草案里定下，匹配度由出处推导，不让模型再拍一遍。
-      const matches: OutlineMatch[] =
-        mode === 'smart'
-          ? deriveMatchesFromUnits(outline, unitIdsByNodeId)
-          : data.matches.map((match) => ({
-              nodeId: match.nodeId,
-              matchScore: match.matchScore,
-            }))
-      const lessonUnitIds = new Map<string, string[]>()
-      for (const lesson of data.lessons) {
-        if (!lesson.sectionId) continue
-        const merged = new Set([
-          ...(lessonUnitIds.get(lesson.sectionId) ?? []),
-          ...lesson.sourceUnitIds,
-        ])
-        lessonUnitIds.set(lesson.sectionId, [...merged])
+      // 顺序要紧：先按目录把课时与出处归位，再由出处推导匹配度——
+      // 出处晚于匹配度推导时，人工目录模式下每一行都会变成「无证据支撑」。
+      const built = buildLessonsFromOutline({
+        outline,
+        modelLessons: data.lessons,
+        units,
+        knownUnitIds,
+        unitIdsByNodeId,
+      })
+      unitIdsByNodeId = built.unitIdsByNodeId
+      const derived = deriveMatchesFromUnits(outline, unitIdsByNodeId)
+      const derivedById = new Map(derived.map((match) => [match.nodeId, match.matchScore]))
+      const modelScoreById = new Map(data.matches.map((match) => [match.nodeId, match.matchScore]))
+      // 有出处以出处为准（两种模式同口径）；人工目录模式下没有出处的节点
+      // 用模型的语料判断兜底，别让整页都飘红。
+      const resolvedById = new Map<string, number | null>()
+      for (const node of outline.nodes) {
+        const derivedScore = derivedById.get(node.id) ?? null
+        if (mode === 'smart') {
+          resolvedById.set(node.id, derivedScore)
+        } else {
+          resolvedById.set(node.id, derivedScore !== null ? derivedScore : (modelScoreById.get(node.id) ?? null))
+        }
       }
-      for (const [nodeId, ids] of lessonUnitIds) {
-        if (!unitIdsByNodeId.has(nodeId)) unitIdsByNodeId.set(nodeId, ids)
-      }
+      const scoreOf = (nodeId: string, fallback: number | null): number | null =>
+        resolvedById.has(nodeId) ? (resolvedById.get(nodeId) ?? null) : fallback
+      const matches: OutlineMatch[] = [
+        // 模型提到的节点（目录外的由 buildSkeleton 记进拒绝记录）。
+        ...data.matches.map((match) => ({
+          nodeId: match.nodeId,
+          matchScore: scoreOf(match.nodeId, match.matchScore),
+        })),
+        // 模型没提到的目录节点：只有出处能给它打分。
+        ...outline.nodes
+          .filter((node) => !modelScoreById.has(node.id))
+          .map((node) => ({ nodeId: node.id, matchScore: scoreOf(node.id, null) })),
+      ]
       const skeleton = buildSkeleton(outline, matches, unitIdsByNodeId)
       const normalized = validateConceptMap({
         concepts: data.concepts,
         edges: data.edges,
       })
-      const lessons = normalizeLessons(
-        data.lessons,
-        new Set(outline.nodes.map((node) => node.id)),
-        knownUnitIds,
-        units,
-      )
-      // 分节计划同样受规模上限约束：模型多给的课时裁掉并留痕。
-      if (mode === 'smart' && budget && lessons.lessons.length > budget.max) {
-        const dropped = lessons.lessons.length - budget.max
-        lessons.lessons = lessons.lessons.slice(0, budget.max)
-        scaleViolations.push({
-          kind: 'outline_violation',
-          subject: '分节计划规模',
-          reason: `课时数超出素材推导的上限（${budget.max} 课时），已裁掉 ${dropped} 个`,
-        })
-      }
+      const lessons = built.lessons
       const glossary = glossaryOf(normalized.conceptMap)
       const violations = [
         ...skeleton.violations,
         ...normalized.violations,
-        ...lessons.violations,
+        ...built.violations,
         ...scaleViolations,
       ]
       return {
@@ -561,7 +517,7 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
         skeleton: skeleton.skeleton,
         conceptMap: normalized.conceptMap,
         glossary,
-        lessons: lessons.lessons,
+        lessons,
         violations,
         runId,
         draftedText,

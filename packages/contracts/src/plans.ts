@@ -24,6 +24,19 @@ export const outlineNodeView = z.object({
 export const courseOutlineView = z.object({ nodes: z.array(outlineNodeView) })
 
 // ---------------------------------------------------------------- 方案草案四件套
+/**
+ * 一条证据：课时（章节点）覆盖的素材片段，带时间码与讲解要点。
+ * 视图层拼装（不落库）——教师据此核对「这一课真的出自我的视频哪几分钟」。
+ */
+export const planLessonEvidenceView = z.object({
+  unitId: z.string().min(1),
+  assetId: z.string().min(1),
+  assetName: z.string(),
+  startMs: z.number().int().min(0),
+  endMs: z.number().int().min(0),
+  points: z.array(z.string()).default([]),
+})
+
 export const planSectionNodeView = z.object({
   id: z.string(),
   title: z.string(),
@@ -34,6 +47,8 @@ export const planSectionNodeView = z.object({
   matchStatus: sectionMatchStatus,
   /** 该节点绑定的证据单元（source_units.id）：智能规划时按教学要点绑定。 */
   sourceUnitIds: z.array(z.string()).default([]),
+  /** 证据明细（视图层拼装）：按 unitId 排序，与 sourceUnitIds 对应。 */
+  evidence: z.array(planLessonEvidenceView).default([]),
 })
 
 export const planSkeletonView = z.object({ nodes: z.array(planSectionNodeView) })
@@ -70,10 +85,13 @@ export const planLessonView = z.object({
   sectionId: z.string().nullable(),
   title: z.string().min(1).max(200),
   subLessonCount: z.number().int().min(1).max(20),
-  estimatedMinutes: z.number().int().min(5).max(240),
+  /** 估时以绑定证据单元的真实跨度为准，没有出处时取模型给的估值（下限 1 分钟）。 */
+  estimatedMinutes: z.number().int().min(1).max(240),
   parallelSlot: z.number().int().min(1).max(8),
   /** 该课时覆盖的证据单元（source_units.id）：一课时 = 一个可独立讲清的知识点。 */
   sourceUnitIds: z.array(z.string()).default([]),
+  /** 证据明细（视图层拼装）：按 unitId 排序，与 sourceUnitIds 对应。 */
+  evidence: z.array(planLessonEvidenceView).default([]),
 })
 
 export const planSectionPlanView = z.object({ lessons: z.array(planLessonView) })
@@ -83,6 +101,11 @@ export const planViolationView = z.object({
   kind: z.enum(['outline_violation', 'concept_conflict']),
   subject: z.string(),
   reason: z.string(),
+  /**
+   * true = 已自动处理（剔除 / 还原 / 裁剪），不需要教师裁决，不阻塞批准；
+   * false = 待教师裁决，批准前必须先处理掉。
+   */
+  resolved: z.boolean().default(false),
 })
 
 /** 素材覆盖率：规划出的课时覆盖了素材里多少条教学要点（0～1）。 */
@@ -107,6 +130,8 @@ export const planCheckCodes = [
   'orphan_node',
   'vague_lesson_title',
   'too_many_nodes',
+  'lesson_unattached',
+  'lesson_count_mismatch',
 ] as const
 export const planCheckCode = z.enum(planCheckCodes)
 
@@ -346,6 +371,7 @@ export const conceptsResponse = z.object({
 export type OutlineNodeView = z.infer<typeof outlineNodeView>
 export type CourseOutlineView = z.infer<typeof courseOutlineView>
 export type PlanSectionNodeView = z.infer<typeof planSectionNodeView>
+export type PlanLessonEvidenceView = z.infer<typeof planLessonEvidenceView>
 export type PlanSkeletonView = z.infer<typeof planSkeletonView>
 export type PlanConceptView = z.infer<typeof planConceptView>
 export type PlanConceptEdgeView = z.infer<typeof planConceptEdgeView>

@@ -71,7 +71,13 @@ export function applyTweak(
             nodes: [
               ...content.skeleton.nodes,
               // 教师主动加章：无证据属教师决策，不算未决项。
-              { ...node, matchScore: null, matchStatus: 'ok' as const, sourceUnitIds: [] },
+              {
+                ...node,
+                matchScore: null,
+                matchStatus: 'ok' as const,
+                sourceUnitIds: [],
+                evidence: [],
+              },
             ],
           },
         },

@@ -125,7 +125,27 @@ export function estimateMinutesOf(units: PlanningUnit[], unitIds: string[]): num
   const ms = units
     .filter((unit) => wanted.has(unit.id))
     .reduce((sum, unit) => sum + Math.max(0, unit.endMs - unit.startMs), 0)
-  return Math.max(5, Math.min(240, Math.round(ms / 60_000)))
+  return Math.max(1, Math.min(240, Math.round(ms / 60_000)))
+}
+
+/**
+ * 课时跨度（分钟）：绑定单元的最晚结束 − 最早开始。
+ *
+ * 一课时讲的是一段连续的素材，求和会把中间没讲到的空档也算进去；
+ * 跨度是「这节课在视频里占多长」，与播放器的进度条一致。
+ */
+export function spanMinutesOf(units: PlanningUnit[], unitIds: string[]): number {
+  const wanted = new Set(unitIds)
+  const bound = units.filter((unit) => wanted.has(unit.id))
+  if (bound.length === 0) return 0
+  const start = Math.min(...bound.map((unit) => unit.startMs))
+  const end = Math.max(...bound.map((unit) => unit.endMs))
+  return Math.max(0, Math.round((end - start) / 60_000))
+}
+
+/** 子节数（粒度）由要点数推导：一要点一子节，上限 20。 */
+export function subLessonCountOf(points: string[]): number {
+  return Math.max(1, Math.min(20, points.length))
 }
 
 function clock(ms: number): string {
