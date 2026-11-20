@@ -1,4 +1,5 @@
 import 'server-only'
+import { DEFAULT_MAX_TOKENS } from './channel'
 
 /**
  * 九步定义（arch/05 §6）：固定顺序、跑错序被挡。
@@ -27,6 +28,28 @@ export const STEP_DEFS: readonly StepDef[] = [
 ] as const
 
 export const STEP_COUNT = STEP_DEFS.length
+
+/**
+ * 各 agent 步的输出预算（token）。
+ *
+ * 推理型模型（M3.1-Flash）的思考与正文共用 max_tokens 预算：通道的 4K 默认会被
+ * 思考吃光，正文直接截断成 llm_truncated——九步第一次真跑就卡在第 1 步「案例股」。
+ * 与目录代拟（12K）、课程方案起草（32K）、素材理解（12K）同一量级口径：
+ * 步内产物越大、证据工具往返越多，预算给得越多。
+ */
+const STEP_MAX_TOKENS: Record<string, number> = {
+  case_stocks: 12_000,
+  figure_spec: 12_000,
+  replay_widget: 16_000,
+  widgets: 16_000,
+  section_draft: 16_000,
+  review: 8_000,
+}
+
+/** 该步的输出预算；未登记的步用通道默认（纯函数步本就不调模型）。 */
+export function stepMaxTokens(key: string): number {
+  return STEP_MAX_TOKENS[key] ?? DEFAULT_MAX_TOKENS
+}
 
 /** 批准方案后自动起跑的 job 类型（pipeline_jobs.kind）。 */
 export const PRODUCTION_RUN_JOB_KIND = 'production_run'

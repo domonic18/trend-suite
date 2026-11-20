@@ -39,7 +39,8 @@ import {
 
 const CALL_TIMEOUT_MS = 120_000
 const CALL_TEMPERATURE = 0.2
-const DEFAULT_MAX_TOKENS = 4096
+/** 通道的默认输出预算；各步的真实预算由 steps.ts 的 stepMaxTokens 给。 */
+export const DEFAULT_MAX_TOKENS = 4096
 /** 可重试失败后的条目冷却：主模型连续失败时备模型顶上（arch/07 §9）。 */
 const COOLDOWN_MS = 60_000
 /** 预算硬停（arch/05 §14）：生产端当日 token 总量上限，0/未配置 = 不限。 */

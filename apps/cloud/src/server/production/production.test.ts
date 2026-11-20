@@ -153,6 +153,23 @@ test('验收① 批准即起跑：9×N 预插、job 入队、runWorkerOnce 后�
   assert.ok(Number(runCounts[0]?.count ?? 0) >= 12, '九步 agent 调用有账本')
 })
 
+test('输出预算按步下发：出站请求的 max_tokens 是该步预算，不是通道默认', { skip }, async () => {
+  const { courseId } = await seedApprovedCourse('预算一课')
+  const before = mock.calls.length
+  assert.equal(await runWorkerOnce(workerId()), true)
+  await assertCourseDone(courseId)
+
+  const bodies = mock.calls
+    .slice(before)
+    .map((call) => call.body as { max_tokens?: unknown })
+    .filter((body) => typeof body.max_tokens === 'number')
+  assert.ok(bodies.length > 0, '九步 agent 步有出站调用')
+  assert.ok(
+    bodies.every((body) => (body.max_tokens as number) >= 8_000),
+    '出站 max_tokens 不得落回 4K 默认（思考吃光即截断）',
+  )
+})
+
 test('验收② 一节挂起：进度保留、原因可见、他节不受影响；重试后追平', { skip }, async () => {
   const { teacherId, username, courseId, sectionIds } = await seedApprovedCourse('验收二课')
   mock.failSection = sectionIds[0] ?? null

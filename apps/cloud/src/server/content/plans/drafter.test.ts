@@ -184,12 +184,75 @@ test('worker 认领课程任务并回写草案四件套，目录外章节与重�
   assert.ok(draft!.ai_run_id)
 })
 
+test('模型漏写 matchScore：不算结构错误，草案照常落库（缺省即「无证据支撑」）', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-漏匹配度',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-no-score',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/a.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  await query(
+    `INSERT INTO transcript_segments (id, asset_id, seq, start_ms, end_ms, text, partial)
+     VALUES ($1, $2, 0, 0, 5000, '趋势是价格运行的方向', false)`,
+    [newId('transcriptSegment'), assetId],
+  )
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: OUTLINE_TEXT,
+    allowPartial: false,
+  })
+
+  // matches 里只有 nodeId，matchScore 整个键漏掉。
+  const payload = {
+    ...LLM_OUTPUT,
+    matches: [{ nodeId: 'n1' }, { nodeId: 'n2' }],
+  }
+  const original = globalThis.fetch
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })) as typeof fetch
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    globalThis.fetch = original
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null }>(
+    'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  assert.equal(jobs[0]?.status, 'succeeded', '漏写匹配度不该把起草打失败')
+  assert.equal(jobs[0]?.error_code, null)
+
+  const draft = await repo.findDraftPlan(course.id)
+  assert.ok(draft, '草案已落库')
+})
+
 /** 建课（避免直接依赖 content/service 的额外语义）。 */
 async function createCourseFor(ownerId: string): Promise<{ id: string }> {
   const { createCourse } = await import('../service')
   return createCourse(ownerId, '起草课')
 }
-
 /**
  * 规划自检（迭代 8 PR#47）：自检不通过的方案不呈现给教师——
  * 带失败原因自动重规划，连续 3 次不过转人工，坏草案一行都不落。
