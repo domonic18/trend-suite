@@ -212,6 +212,66 @@ test('自检：分节计划没有出处判 lesson_without_source', () => {
   assert.ok(codesOf(input).includes('lesson_without_source'))
 })
 
+test('自检：课时没有挂到目录节点上判 lesson_unattached', () => {
+  const input = baseInput({
+    lessons: [
+      {
+        id: 'l1',
+        sectionId: 'n_gone',
+        title: '趋势的方向性',
+        subLessonCount: 2,
+        estimatedMinutes: 9,
+        parallelSlot: 1,
+        sourceUnitIds: ['su_1'],
+      },
+    ],
+  })
+  const issue = checkPlanDraft(input).find((item) => item.code === 'lesson_unattached')
+  assert.ok(issue)
+  assert.equal(issue?.subject, '趋势的方向性')
+})
+
+test('自检：课时没有 sectionId 也判 lesson_unattached', () => {
+  const input = baseInput({
+    lessons: [
+      {
+        id: 'l1',
+        sectionId: null,
+        title: '趋势的方向性',
+        subLessonCount: 2,
+        estimatedMinutes: 9,
+        parallelSlot: 1,
+        sourceUnitIds: ['su_1'],
+      },
+    ],
+  })
+  assert.ok(codesOf(input).includes('lesson_unattached'))
+})
+
+test('自检：分节计划课时数与目录课时数不一致判 lesson_count_mismatch', () => {
+  const input = baseInput({
+    lessons: [
+      {
+        id: 'l1',
+        sectionId: 'n3',
+        title: '趋势的方向性',
+        subLessonCount: 2,
+        estimatedMinutes: 9,
+        parallelSlot: 1,
+        sourceUnitIds: ['su_1'],
+      },
+    ],
+  })
+  const issue = checkPlanDraft(input).find((item) => item.code === 'lesson_count_mismatch')
+  assert.ok(issue)
+  assert.ok(issue?.message.includes('1'))
+  assert.ok(issue?.message.includes('2'))
+})
+
+test('自检：课时数与目录一致时不报数量不符', () => {
+  assert.ok(!codesOf(baseInput()).includes('lesson_count_mismatch'))
+})
+
 test('normalizeLessonTitle：去编号前缀、去标点、大小写归一', () => {
   assert.equal(normalizeLessonTitle('1. 趋势的方向性'), '趋势的方向性')
   assert.equal(normalizeLessonTitle('第 1 章 趋势'), '趋势')

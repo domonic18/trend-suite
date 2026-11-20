@@ -1,11 +1,14 @@
 import 'server-only'
 import {
   MAX_OUTLINE_NODES,
-  stripOutlineNumbering,
   type CourseOutlineView,
   type PlanCheckIssueView,
 } from '@trend-suite/contracts'
+import { lessonNodesOf } from './lessons'
+import { normalizeLessonTitle } from './titles'
 import type { PlanLesson } from './tweak'
+
+export { normalizeLessonTitle }
 
 /**
  * 规划自检（迭代 8，纯函数）：智能规划产出后逐条核对，**不通过就不呈现给教师**。
@@ -56,11 +59,6 @@ const VAGUE_TITLES = new Set([
 ])
 
 /** 标题归一：去编号前缀、去空白与标点——「1. 趋势是什么」与「趋势是什么」算同一个。 */
-export function normalizeLessonTitle(title: string): string {
-  return stripOutlineNumbering(title)
-    .replace(/[\s、，,。.：:；;！!？?（）()「」《》"'“”‘’·\-—_/\\]/g, '')
-    .toLowerCase()
-}
 
 function isVagueTitle(title: string): boolean {
   const normalized = normalizeLessonTitle(title)
@@ -145,6 +143,27 @@ export function checkPlanDraft(input: PlanCheckInput): PlanCheckIssueView[] {
         message: `章「${node.title}」下面没有课时`,
       })
     }
+  }
+
+  // 挂靠：分节计划的每条课时都要挂到目录节点上（课时以目录为准）。
+  const nodeIds = new Set(input.nodes.map((node) => node.id))
+  for (const lesson of input.lessons) {
+    if (lesson.sectionId && nodeIds.has(lesson.sectionId)) continue
+    issues.push({
+      code: 'lesson_unattached',
+      subject: lesson.title,
+      message: `分节计划「${lesson.title}」没有挂到目录节点上`,
+    })
+  }
+
+  // 数量：分节计划的课时数要与目录里的课时数一致。
+  const expectedLessons = lessonNodesOf({ nodes: input.nodes }).length
+  if (input.lessons.length !== expectedLessons) {
+    issues.push({
+      code: 'lesson_count_mismatch',
+      subject: '分节计划',
+      message: `分节计划有 ${input.lessons.length} 条课时，目录里有 ${expectedLessons} 个课时节点`,
+    })
   }
 
   // 出处：每个课时必须绑定证据单元，且单元在本次输入清单里。

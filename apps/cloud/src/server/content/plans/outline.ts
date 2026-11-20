@@ -74,6 +74,7 @@ export function buildSkeleton(
         kind: 'outline_violation',
         subject: match.nodeId,
         reason: '不在人工目录中，已拒绝（目录先验：方案不得发明章节）',
+        resolved: true,
       })
       continue
     }
@@ -88,6 +89,7 @@ export function buildSkeleton(
         matchScore: score,
         matchStatus: score !== null && score >= MATCH_THRESHOLD ? 'ok' : 'low_match',
         sourceUnitIds: unitIdsByNodeId?.get(node.id) ?? [],
+        evidence: [],
       }
     }),
   }

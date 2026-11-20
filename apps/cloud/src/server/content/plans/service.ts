@@ -4,6 +4,7 @@ import {
   type CourseOutlineView,
   type PlanCoverageView,
   type PlanJobView,
+  type PlanLessonEvidenceView,
   type PlanMaterialView,
   type PlanReviewView,
   type PlanView,
@@ -24,10 +25,15 @@ import { withTransaction } from '@/server/lib/db'
 import { badRequest, forbidden, HttpError } from '@/server/lib/http'
 import { getCourseForUser } from '../service'
 import { listAssetsByCourse } from '@/server/pipeline/repo'
-import { listSourceUnitPointsByCourse, listUnitCountsByCourse } from '@/server/pipeline/processing/repo'
+import {
+  findSourceUnitsByIds,
+  listSourceUnitPointsByCourse,
+  listUnitCountsByCourse,
+} from '@/server/pipeline/processing/repo'
 import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
 import { seedProduction } from '@/server/production/repo'
+import { buildEvidenceMap, evidenceOf } from './evidence'
 import { parseOutline, parseStoredOutline } from './outline'
 import { buildAgentTrace } from './trace'
 import { applyTweak, type PlanLesson, type TweakedContent } from './tweak'
@@ -102,19 +108,86 @@ async function planCoverageOf(
   return { coveredPoints, totalPoints, ratio: coveredPoints / totalPoints }
 }
 
+/**
+ * 出处明细（视图层拼装，不落库）：骨架节点与课时都挂上「出自哪个素材的哪几分钟」。
+ * 章/篇看得到下面课时的证据——教师一眼能核对整章的出处。
+ */
+type LessonWithEvidence = PlanLesson & { evidence: PlanLessonEvidenceView[] }
+
+async function withEvidence(
+  courseId: string,
+  skeleton: TweakedContent['skeleton'],
+  lessons: PlanLesson[],
+): Promise<{ skeleton: TweakedContent['skeleton']; lessons: LessonWithEvidence[] }> {
+  const unitIds = [
+    ...new Set([
+      ...skeleton.nodes.flatMap((node) => node.sourceUnitIds),
+      ...lessons.flatMap((lesson) => lesson.sourceUnitIds),
+    ]),
+  ]
+  if (unitIds.length === 0) {
+    return {
+      skeleton: { nodes: skeleton.nodes.map((node) => ({ ...node, evidence: [] })) },
+      lessons: lessons.map((lesson) => ({ ...lesson, evidence: [] })),
+    }
+  }
+  const [units, assets] = await Promise.all([
+    findSourceUnitsByIds(unitIds),
+    listAssetsByCourse(courseId),
+  ])
+  const assetNames = new Map(assets.map((asset) => [asset.id, asset.original_name ?? '素材']))
+  const map = buildEvidenceMap(units, assetNames)
+
+  const children = new Map<string, string[]>()
+  for (const node of skeleton.nodes) {
+    if (!node.parentId) continue
+    const list = children.get(node.parentId) ?? []
+    list.push(node.id)
+    children.set(node.parentId, list)
+  }
+  const descendantUnitIds = (nodeId: string): string[] => {
+    const out: string[] = []
+    const walk = (id: string) => {
+      for (const childId of children.get(id) ?? []) {
+        const child = skeleton.nodes.find((node) => node.id === childId)
+        if (!child) continue
+        out.push(...child.sourceUnitIds)
+        walk(childId)
+      }
+    }
+    walk(nodeId)
+    return out
+  }
+
+  return {
+    skeleton: {
+      nodes: skeleton.nodes.map((node) => ({
+        ...node,
+        evidence: evidenceOf([...node.sourceUnitIds, ...descendantUnitIds(node.id)], map),
+      })),
+    },
+    lessons: lessons.map((lesson) => ({
+      ...lesson,
+      evidence: evidenceOf(lesson.sourceUnitIds, map),
+    })),
+  }
+}
+
 async function toPlanView(row: repo.CoursePlanRow): Promise<PlanView> {
   const lessons = (row.section_plan as TweakedContent['sectionPlan']).lessons ?? []
   const coverage = await planCoverageOf(row.course_id, lessons)
+  const skeleton = (row.skeleton as TweakedContent['skeleton']) ?? { nodes: [] }
+  const withEv = await withEvidence(row.course_id, skeleton, lessons)
   return planView.parse({
     id: row.id,
     courseId: row.course_id,
     version: row.version,
     status: row.status,
     origin: row.origin,
-    skeleton: row.skeleton,
+    skeleton: withEv.skeleton,
     conceptMap: row.concept_map,
     glossary: row.glossary,
-    sectionPlan: row.section_plan,
+    sectionPlan: { lessons: withEv.lessons },
     violations: row.violations,
     coverage,
     createdAt: row.created_at.toISOString(),
@@ -261,13 +334,15 @@ export async function approvePlan(actor: PlanActor, courseId: string): Promise<P
 
   const content = contentOf(draft)
   const lowMatch = content.skeleton.nodes.filter((node) => node.matchStatus === 'low_match')
-  if (lowMatch.length > 0 || content.violations.length > 0) {
+  // 只有「待教师裁决」的拒绝记录才阻塞批准——已自动处理（剔除 / 还原 / 裁剪）的只留痕。
+  const pending = content.violations.filter((violation) => !violation.resolved)
+  if (lowMatch.length > 0 || pending.length > 0) {
     throw new HttpError(
       409,
       'plan_unresolved',
       lowMatch.length > 0
         ? `存在 ${lowMatch.length} 个证据不足的分节，请先裁决（修订提纲或补充素材）`
-        : '存在未处理的拒绝记录，请修订提纲后重新起草',
+        : `存在 ${pending.length} 条待裁决的拒绝记录，请修订提纲后重新起草`,
     )
   }
 
