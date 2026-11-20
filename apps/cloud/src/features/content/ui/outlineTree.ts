@@ -14,8 +14,6 @@ export type OutlinePartGroup = {
   loose: PlanSectionNodeView[]
 }
 
-export type OutlineCounts = { parts: number; chapters: number; lessons: number }
-
 /** 节点在同级里的位置（微调移动用：上移 / 下移）。 */
 export type OutlineSiblingInfo = {
   parentId: string | null
@@ -38,17 +36,6 @@ export function siblingInfoOf(
     index: siblings.findIndex((item) => item.id === nodeId),
     count: siblings.length,
   }
-}
-
-/** 各层级计数——卡片头部按篇/章/课时分列，不再把所有节点统称「章」。 */
-export function countOutlineLevels(nodes: PlanSectionNodeView[]): OutlineCounts {
-  const counts: OutlineCounts = { parts: 0, chapters: 0, lessons: 0 }
-  for (const node of nodes) {
-    if (node.level === 1) counts.parts += 1
-    else if (node.level === 2) counts.chapters += 1
-    else counts.lessons += 1
-  }
-  return counts
 }
 
 /**

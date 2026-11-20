@@ -1,10 +1,26 @@
 import 'server-only'
-import type { CourseView, CourseStatus, SessionUser } from '@trend-suite/contracts'
+import {
+  countOutlineLevels,
+  type CourseSummaryView,
+  type CourseStatus,
+  type CourseView,
+  type SessionUser,
+} from '@trend-suite/contracts'
 import { forbidden, notFound } from '@/server/lib/http'
 import { newId } from '@/server/lib/ids'
 import * as repo from './repo'
 
-function toCourseView(row: repo.CourseRow): CourseView {
+/** 课程行里视图要用的那几列（整表行与摘要行都满足）。 */
+type CourseViewRow = {
+  id: string
+  owner_id: string
+  title: string
+  status: string
+  created_at: Date
+  updated_at: Date
+}
+
+function toCourseView(row: CourseViewRow): CourseView {
   return {
     id: row.id,
     title: row.title,
@@ -12,6 +28,35 @@ function toCourseView(row: repo.CourseRow): CourseView {
     ownerId: row.owner_id,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
+  }
+}
+
+/** 骨架里层级合法的节点——jsonb 是历史数据，只认得出层级的才算数。 */
+function levelNodesOf(skeleton: unknown): { level: 1 | 2 | 3 }[] {
+  if (!skeleton || typeof skeleton !== 'object') return []
+  const nodes = (skeleton as { nodes?: unknown }).nodes
+  if (!Array.isArray(nodes)) return []
+  const out: { level: 1 | 2 | 3 }[] = []
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object') continue
+    const level = (node as { level?: unknown }).level
+    if (level === 1 || level === 2 || level === 3) out.push({ level })
+  }
+  return out
+}
+
+function toCourseSummaryView(row: repo.CourseSummaryRow): CourseSummaryView {
+  const counts = countOutlineLevels(levelNodesOf(row.plan_skeleton))
+  return {
+    ...toCourseView(row),
+    assetCount: row.asset_count,
+    readyAssetCount: row.ready_asset_count,
+    planStatus: row.plan_status === 'approved' ? 'approved' : row.plan_status === 'draft' ? 'draft' : 'none',
+    planVersion: row.plan_version,
+    chapterCount: counts.chapters,
+    lessonCount: counts.lessons,
+    sectionCount: row.section_count,
+    doneSectionCount: row.done_section_count,
   }
 }
 
@@ -28,6 +73,17 @@ export function listCoursesFor(user: SessionUser): Promise<CourseView[]> {
       ? repo.listCoursesByOwner(user.id)
       : repo.listAllCourses()
   return rows.then((list) => list.map(toCourseView))
+}
+
+/**
+ * 课程列表（带进度摘要）：教师看自己的课；运营与管理员看全部。
+ *
+ * 工作台的课程卡与侧栏要显示「这门课到哪一步了」——素材数、方案状态、
+ * 生产节数都从这里出，前端不再自己拼。
+ */
+export async function listCourseSummariesFor(user: SessionUser): Promise<CourseSummaryView[]> {
+  const rows = await repo.listCourseSummaries(user.role === 'producer' ? user.id : null)
+  return rows.map(toCourseSummaryView)
 }
 
 /**

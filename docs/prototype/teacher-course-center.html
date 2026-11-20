@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程中心 · 总论卷 · 生产工作台</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+/* 课程中心：左侧课程栏 + 竖排阶段轨 + 内容区 */
+.ops-i.course{flex-direction:column;align-items:flex-start;gap:2px}
+.ops-i .cn{font-size:13.5px}
+.ops-i .cm{font-size:11px;color:var(--p-faint)}
+.ops-i.on .cm{color:var(--p-pri);opacity:.75}
+.wb-center{display:grid;grid-template-columns:208px minmax(0,1fr);gap:20px;align-items:start}
+.wb-rail{position:sticky;top:16px;display:flex;flex-direction:column;gap:2px;padding:6px;background:#fff;border:1px solid var(--p-line);border-radius:14px}
+.wb-phase{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:10px;color:var(--p-mut)}
+a.wb-phase:hover{background:var(--p-soft)}
+.wb-phase.on{background:var(--p-pri-soft)}
+.wb-phase b{display:block;font-size:13.5px;font-weight:600;color:var(--p-ink)}
+.wb-phase.on b{color:var(--p-pri)}
+.wb-phase small{display:block;font-size:11.5px;line-height:1.55;color:var(--p-faint);margin-top:2px}
+.wb-phase.soon{opacity:.6}
+.wb-dot{flex:none;width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--p-line);box-shadow:0 0 0 3px var(--p-soft)}
+.wb-dot.done{background:var(--p-acc);box-shadow:0 0 0 3px var(--p-acc-soft)}
+.wb-dot.active{background:var(--p-pri);box-shadow:0 0 0 3px var(--p-pri-soft)}
+.wb-next{display:flex;align-items:center;gap:16px;padding:12px 14px;margin-bottom:16px;background:#fff;border:1px solid var(--p-line);border-left:3px solid var(--p-pri);border-radius:10px}
+.wb-next .k{display:inline-block;font-size:11px;font-weight:700;color:var(--p-pri);background:var(--p-pri-soft);border-radius:20px;padding:1px 9px;margin-right:8px}
+.wb-next b{font-size:14px}
+.wb-next small{display:block;font-size:12px;color:var(--p-mut);margin-top:3px}
+.wb-next .go{margin-left:auto;white-space:nowrap}
+.wb-h{font-size:20px;font-weight:700}
+.wb-hs{font-size:13px;color:var(--p-mut);margin-top:4px;max-width:72ch}
+</style></head><body>
+<div class="ops-app">
+
+<aside class="ops-sb">
+ <div class="ops-brand"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></div>
+ <nav class="ops-menu">
+  <div class="ops-g">课程</div>
+  <a class="ops-i" href="teacher-workbench.html">所有课程</a>
+  <a class="ops-i course on" href="teacher-course-center.html"><span class="cn">总论卷</span><span class="cm">方案待审阅</span></a>
+  <a class="ops-i course" href="teacher-course-center.html"><span class="cn">筹码分布卷</span><span class="cm">待上传素材</span></a>
+  <a class="ops-i course" href="teacher-course-center.html"><span class="cn">趋势交易基础</span><span class="cm">生产完成</span></a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<div>
+<header class="ops-top">
+ <span>生产工作台</span><span class="sep">/</span><b>总论卷</b><span class="sep">/</span><span>制作方案</span>
+ <span class="right"><a href="index.html" class="note">原型索引</a></span>
+</header>
+
+<main class="ops-main">
+ <div class="wb-center">
+
+  <nav class="wb-rail" aria-label="课程阶段">
+   <a class="wb-phase" href="teacher-course-center.html">
+    <span class="wb-dot done"></span>
+    <span><b>素材与转写</b><small>1 个素材已转写并理解完毕</small></span>
+   </a>
+   <a class="wb-phase on" href="teacher-course-center.html" aria-current="page">
+    <span class="wb-dot active"></span>
+    <span><b>制作方案</b><small>方案 v1 已起草，待你审阅批准</small></span>
+   </a>
+   <a class="wb-phase" href="teacher-course-center.html">
+    <span class="wb-dot"></span>
+    <span><b>九步生产</b><small>方案批准后开始九步生产</small></span>
+   </a>
+   <span class="wb-phase soon" aria-disabled="true">
+    <span class="wb-dot"></span>
+    <span><b>发布就绪度</b><small>后续迭代开放</small></span>
+   </span>
+  </nav>
+
+  <div>
+   <div class="wb-h">制作方案</div>
+   <div class="wb-hs">Agent 依据素材起草课程骨架、概念图谱与分节计划；审阅后批准或微调。</div>
+
+   <div class="wb-next">
+    <div>
+     <span class="k">下一步</span><b>审阅并批准方案</b>
+     <small>方案 v1 已起草，待你审阅批准</small>
+    </div>
+    <a class="btn pri go" href="teacher-course-center.html">就在这一步</a>
+   </div>
+
+   <div class="ops-card">
+    <div class="m-head"><b>课程目录</b></div>
+    <div class="m-body">
+     <p>第一篇 交易认知的反思与选择 ……（教师原文目录为准）</p>
+     <p>每行给出「出处」：这一课出自哪个视频的哪几分钟、命中了哪几条讲解要点。</p>
+    </div>
+    <div class="m-foot"><a href="teacher-course-center.html">批准方案</a></div>
+   </div>
+  </div>
+
+ </div>
+</main>
+</div>
+</div>
+</body></html>
