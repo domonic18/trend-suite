@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { idShape } from './ids.js'
+import { DIAGRAM_TEMPLATE_NAMES } from './figure-params.js'
 
 /**
  * 图示三路（arch/05 §8 / arch/06 §3）：keyframe 讲师原始画面（按 source unit
@@ -11,7 +12,7 @@ export const figureKind = z.enum(['keyframe', 'diagram', 'generated'])
 export type FigureKind = z.infer<typeof figureKind>
 
 /** diagram 模板白名单 v1（arch/06 §3）：扩模板需冻结版本并同步渲染器。 */
-export const diagramTemplate = z.enum(['chip-contrast', 'chip-horizontal', 'timeline', 'stat-inline'])
+export const diagramTemplate = z.enum(DIAGRAM_TEMPLATE_NAMES)
 export type DiagramTemplate = z.infer<typeof diagramTemplate>
 
 export const figureView = z.object({

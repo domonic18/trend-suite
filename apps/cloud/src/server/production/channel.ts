@@ -37,7 +37,8 @@ import {
  * convertToOpenAITool 归一（zod v3/v4 皆收），双协议 wire 各自序列化。
  */
 
-const CALL_TIMEOUT_MS = 120_000
+/** 通道的默认调用超时；各步的真实超时由 steps.ts 的 stepTimeoutMs 给。 */
+export const DEFAULT_CALL_TIMEOUT_MS = 120_000
 const CALL_TEMPERATURE = 0.2
 /** 通道的默认输出预算；各步的真实预算由 steps.ts 的 stepMaxTokens 给。 */
 export const DEFAULT_MAX_TOKENS = 4096
@@ -54,6 +55,8 @@ export type TrendChatModelFields = {
   refType: string
   refId: string
   maxTokens?: number
+  /** 单次调用超时（ms）：产物越大的步越久——正文一步 1200~3000 字，120s 不够。 */
+  timeoutMs?: number
   /** 测试注入：替换 fetch（协议往返单测不打真实网络）。 */
   fetchImpl?: FetchLike
 }
@@ -278,6 +281,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
   private readonly refType: string
   private readonly refId: string
   private readonly maxTokens: number
+  private readonly timeoutMs: number
   private readonly fetchImpl: FetchLike
 
   constructor(fields: TrendChatModelFields & BaseChatModelParams) {
@@ -287,6 +291,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
     this.refType = fields.refType
     this.refId = fields.refId
     this.maxTokens = fields.maxTokens ?? DEFAULT_MAX_TOKENS
+    this.timeoutMs = fields.timeoutMs ?? DEFAULT_CALL_TIMEOUT_MS
     this.fetchImpl = fields.fetchImpl ?? ((url, init) => fetch(url, init))
   }
 
@@ -414,7 +419,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
           'content-type': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        signal: AbortSignal.timeout(this.timeoutMs),
       })
     } catch (err) {
       throw toFetchError(err)
@@ -491,7 +496,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
           'content-type': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        signal: AbortSignal.timeout(this.timeoutMs),
       })
     } catch (err) {
       throw toFetchError(err)

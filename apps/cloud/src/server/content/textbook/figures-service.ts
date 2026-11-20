@@ -6,7 +6,6 @@ import {
   generatedChapterMax,
   generatedCourseMax,
   type DslIssue,
-  type DiagramTemplate,
   type FigureKind,
 } from '@trend-suite/contracts'
 import type { FetchLike } from '@/server/content/agents/llm'
@@ -17,7 +16,7 @@ import { getMediaStore } from '@/server/pipeline/store'
 import { extractFrameAt } from '@/server/pipeline/processing/frames'
 import * as procRepo from '@/server/pipeline/processing/repo'
 import { renderDiagram } from './diagram-renderer'
-import { diagramParamsByTemplate } from './diagram-renderer'
+import { diagramParamsByTemplate } from '@trend-suite/contracts'
 import * as repo from './repo'
 
 /**
@@ -157,7 +156,9 @@ export async function persistFigures(input: {
         })
         continue
       }
-      const parsed = diagramParamsByTemplate[template as DiagramTemplate].safeParse(spec.params)
+      const parsed = diagramParamsByTemplate[template as keyof typeof diagramParamsByTemplate].safeParse(
+        spec.params,
+      )
       if (!parsed.success) {
         issues.push({
           code: 'params_schema_failed',
@@ -166,7 +167,7 @@ export async function persistFigures(input: {
         })
         continue
       }
-      const { svg } = renderDiagram(template as DiagramTemplate, parsed.data)
+      const { svg } = renderDiagram(template as keyof typeof diagramParamsByTemplate, parsed.data)
       await repo.upsertFigure({
         id: figureId,
         courseId: input.courseId,
