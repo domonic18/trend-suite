@@ -42,6 +42,15 @@ export async function retryAsset(assetId: string): Promise<IngestResponse> {
   return ingestResponse.parse(data)
 }
 
+/** 重跑理解（迭代 8）：只补理解阶段，转写与关键帧保留，按块去重续跑。 */
+export async function rerunUnderstand(assetId: string): Promise<IngestResponse> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/understand`,
+    { method: 'POST' },
+  )
+  return ingestResponse.parse(data)
+}
+
 /** 停止加工（T19）：排队中直接取消；运行中在阶段边界安全中止。 */
 export async function cancelMaterial(assetId: string): Promise<MediaAssetView> {
   const data = await apiRequest<unknown>(

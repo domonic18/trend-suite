@@ -8,8 +8,9 @@
  *
  * 行为：按 system 提示词里的角色分流——
  *  - 「课程目录设计助手」（方案起草的目录代拟阶段）：回一份固定三级目录；
+ *    智能规划时按「素材讲解要点」清单给课时逐条绑定出处，并按规模边界裁课时数；
  *  - 「课程方案起草助手」（方案起草的草案阶段）：解析 user 提示词里
- *    「人工目录（id: 标题）」段，为每个目录节点产出匹配、概念与课时计划；
+ *    「目录（id: 标题）」段，为每个目录节点产出匹配、概念与课时计划；
  *  - 其他任务：回 `{}`（zod 默认值兜底，够链路跑通，内容为空）。
  *
  * 只供本机开发演示，绝不部署：生产/预发环境的模型条目是真实上游。
@@ -20,7 +21,7 @@ const PORT = Number(process.env.MOCK_LLM_PORT ?? 8941)
 
 /** 从提示词里解析「id: 标题」目录行（草案阶段的 user 提示词携带）。 */
 function parseOutlineNodes(user) {
-  const block = user.split('## 人工目录（id: 标题）')[1] ?? ''
+  const block = user.split(/## (?:人工)?目录（id: 标题）/)[1] ?? ''
   const lines = block.split('\n').slice(1)
   const nodes = []
   for (const line of lines) {
@@ -31,8 +32,23 @@ function parseOutlineNodes(user) {
   return nodes
 }
 
+/** 智能规划的输入清单：证据单元 id（`- su_xxx [mm:ss–mm:ss] 要点`）。 */
+function parseUnitIds(user) {
+  const block = user.split('## 素材讲解要点')[1]?.split('\n## ')[0] ?? ''
+  return [...block.matchAll(/^-\s+(su_\S+)/gm)].map((match) => match[1])
+}
+
+/** 规模边界里的课时数上限（提示词写成「必须在 min～max 之间」）。 */
+function parseLessonCap(user) {
+  const block = user.split('## 规模边界')[1] ?? ''
+  const match = block.match(/(\d+)\s*～\s*(\d+)/)
+  return match ? Number(match[2]) : 40
+}
+
 function curriculumDraft(user) {
   const nodes = parseOutlineNodes(user)
+  const units = parseUnitIds(user)
+  let used = 0
   return {
     matches: nodes.map((node) => ({ nodeId: node.id, matchScore: 0.85 })),
     concepts: nodes.slice(0, 25).map((node) => ({
@@ -47,20 +63,39 @@ function curriculumDraft(user) {
       subLessonCount: 3,
       estimatedMinutes: 20,
       parallelSlot: 1,
+      sourceUnitIds: units.length > 0 ? [units[used++ % units.length]] : [],
     })),
   }
 }
 
-function curriculumOutline() {
+function curriculumOutline(user) {
+  const units = parseUnitIds(user)
+  const cap = parseLessonCap(user)
+  const sections = [
+    { level: 1, title: '基础篇' },
+    { level: 2, title: '核心概念' },
+    { level: 3, title: '趋势的定义' },
+    { level: 3, title: '趋势的三要素' },
+    { level: 2, title: '实战应用' },
+    { level: 3, title: '案例解析' },
+  ]
+  // 课时数按规模边界裁（智能规划时规模由素材推导）
+  let lessons = 0
+  const kept = []
+  for (const section of sections) {
+    if (section.level === 3) {
+      if (lessons >= cap) continue
+      lessons += 1
+    }
+    kept.push(section)
+  }
+  let used = 0
   return {
-    sections: [
-      { level: 1, title: '基础篇' },
-      { level: 2, title: '核心概念' },
-      { level: 3, title: '趋势的定义' },
-      { level: 3, title: '趋势的三要素' },
-      { level: 2, title: '实战应用' },
-      { level: 3, title: '案例解析' },
-    ],
+    sections: kept.map((section) => ({
+      ...section,
+      sourceUnitIds:
+        section.level === 3 && units.length > 0 ? [units[used++ % units.length]] : [],
+    })),
   }
 }
 
@@ -78,7 +113,7 @@ const server = http.createServer((req, res) => {
       const parsed = JSON.parse(body)
       const system = String(parsed.messages?.[0]?.content ?? '')
       const user = String(parsed.messages?.[1]?.content ?? '')
-      if (system.includes('目录设计助手')) payload = curriculumOutline()
+      if (system.includes('目录设计助手')) payload = curriculumOutline(user)
       else if (system.includes('方案起草助手')) payload = curriculumDraft(user)
       else payload = {}
     } catch {

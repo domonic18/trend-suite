@@ -2,7 +2,9 @@ import 'server-only'
 import {
   type AgentTraceView,
   type CourseOutlineView,
+  type PlanCoverageView,
   type PlanJobView,
+  type PlanMaterialView,
   type PlanView,
   type SessionUser,
   type SubmitPlanInputRequest,
@@ -12,6 +14,7 @@ import {
   planJobView,
   planView,
   rejectPlanRequest,
+  renderOutlineText,
   submitPlanInputRequest,
   tweakPlanRequest,
 } from '@trend-suite/contracts'
@@ -20,12 +23,13 @@ import { withTransaction } from '@/server/lib/db'
 import { badRequest, forbidden, HttpError } from '@/server/lib/http'
 import { getCourseForUser } from '../service'
 import { listAssetsByCourse } from '@/server/pipeline/repo'
+import { listSourceUnitPointsByCourse, listUnitCountsByCourse } from '@/server/pipeline/processing/repo'
 import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
 import { seedProduction } from '@/server/production/repo'
 import { parseOutline, parseStoredOutline } from './outline'
 import { buildAgentTrace } from './trace'
-import { applyTweak, type TweakedContent } from './tweak'
+import { applyTweak, type PlanLesson, type TweakedContent } from './tweak'
 import * as repo from './repo'
 
 /**
@@ -79,7 +83,27 @@ function toPlanJobView(row: {
   })
 }
 
-function toPlanView(row: repo.CoursePlanRow): PlanView {
+/**
+ * 素材覆盖率：目录覆盖了素材里多少条教学要点。
+ * 没有理解结果的素材没有要点可比——返回 null，不编 0%。
+ */
+async function planCoverageOf(
+  courseId: string,
+  lessons: PlanLesson[],
+): Promise<PlanCoverageView | null> {
+  const units = await listSourceUnitPointsByCourse(courseId)
+  if (units.length === 0) return null
+  const pointsById = new Map(units.map((unit) => [unit.id, unit.points.length]))
+  const totalPoints = units.reduce((sum, unit) => sum + unit.points.length, 0)
+  const bound = new Set(lessons.flatMap((lesson) => lesson.sourceUnitIds))
+  const coveredPoints = [...bound].reduce((sum, id) => sum + (pointsById.get(id) ?? 0), 0)
+  if (totalPoints === 0) return null
+  return { coveredPoints, totalPoints, ratio: coveredPoints / totalPoints }
+}
+
+async function toPlanView(row: repo.CoursePlanRow): Promise<PlanView> {
+  const lessons = (row.section_plan as TweakedContent['sectionPlan']).lessons ?? []
+  const coverage = await planCoverageOf(row.course_id, lessons)
   return planView.parse({
     id: row.id,
     courseId: row.course_id,
@@ -91,6 +115,7 @@ function toPlanView(row: repo.CoursePlanRow): PlanView {
     glossary: row.glossary,
     sectionPlan: row.section_plan,
     violations: row.violations,
+    coverage,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   })
@@ -144,6 +169,11 @@ export async function savePlanInput(
     outlineText,
     outline,
   })
+  // 规划模式与参与素材单独存：智能规划要重排目录，但不必改教师原文。
+  await repo.updatePlanSelection(courseId, {
+    planMode: body.mode ?? 'follow_manual',
+    planAssetIds: body.assetIds && body.assetIds.length > 0 ? body.assetIds : null,
+  })
 
   return toPlanJobView(await enqueueJob({ courseId, kind: CURRICULUM_JOB_KIND }))
 }
@@ -158,13 +188,16 @@ export async function getPlanFor(
   job: PlanJobView | null
   input: { goal: string; outlineText: string } | null
   trace: AgentTraceView | null
+  materials: PlanMaterialView[]
 }> {
   await getCourseForUser(actor, courseId)
-  const [draft, approved, job, input] = await Promise.all([
+  const [draft, approved, job, input, assets, unitCounts] = await Promise.all([
     repo.findDraftPlan(courseId),
     repo.findApprovedPlan(courseId),
     findJobByCourse({ courseId, kind: CURRICULUM_JOB_KIND }),
     repo.findCoursePlanInput(courseId),
+    listAssetsByCourse(courseId),
+    listUnitCountsByCourse(courseId),
   ])
   const active = draft ?? approved
   // 目标必回填（教师可能只交了目标）；目录可能是空的（待 Agent 代拟）。
@@ -186,11 +219,23 @@ export async function getPlanFor(
       submittedAt: input?.updated_at ?? null,
     },
   })
+  const countsByAsset = new Map(unitCounts.map((row) => [row.asset_id, row]))
+  const materials: PlanMaterialView[] = assets.map((asset) => {
+    const counts = countsByAsset.get(asset.id)
+    return {
+      id: asset.id,
+      fileName: asset.original_name ?? '素材',
+      durationS: asset.duration_s === null ? null : Number(asset.duration_s),
+      unitCount: counts?.unit_count ?? 0,
+      pointCount: counts?.point_count ?? 0,
+    }
+  })
   return {
-    plan: active ? toPlanView(active) : null,
+    plan: active ? await toPlanView(active) : null,
     job: job ? toPlanJobView(job) : null,
     input: inputMeta,
     trace,
+    materials,
   }
 }
 
@@ -251,7 +296,7 @@ export async function approvePlan(actor: PlanActor, courseId: string): Promise<P
   })
   await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
   const approved = await repo.findPlanById(draft.id)
-  return toPlanView(approved!)
+  return await toPlanView(approved!)
 }
 
 // ---------------------------------------------------------------- 打回（意见重起草）
@@ -286,7 +331,7 @@ export async function rejectPlan(
     )
   })
   await enqueueJob({ courseId, kind: CURRICULUM_JOB_KIND })
-  return toPlanView(created)
+  return await toPlanView(created)
 }
 
 // ---------------------------------------------------------------- 微调（结构化，即时生效）
@@ -334,7 +379,14 @@ export async function tweakPlan(
     return row
   })
   await repo.updateCourseOutline(courseId, tweaked.outline)
-  return toPlanView(created)
+  // 目录文本与树同源：微调后同步回写文本，否则重起草会读到微调前的旧文本。
+  await repo.updateCourseOutlineText(
+    courseId,
+    renderOutlineText(
+      tweaked.outline.nodes.map((node) => ({ level: node.level as 1 | 2 | 3, title: node.title })),
+    ),
+  )
+  return await toPlanView(created)
 }
 
 // ---------------------------------------------------------------- 概念（批准后只读）

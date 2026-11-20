@@ -190,6 +190,290 @@ async function createCourseFor(ownerId: string): Promise<{ id: string }> {
   return createCourse(ownerId, '起草课')
 }
 
+/**
+ * 智能规划（迭代 8）：规划输入换成「讲解要点」清单，目录由 Agent 重排，
+ * 教师粘贴的原文留着不动；骨架的出处与覆盖率都从要点绑定推导。
+ */
+function stubSmartFetch(): () => void {
+  const original = globalThis.fetch
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    const body = typeof init.body === 'string' ? init.body : ''
+    const payload = body.includes('目录设计助手')
+      ? {
+          sections: [
+            { level: 1, title: '趋势入门', sourceUnitIds: [] },
+            { level: 2, title: '什么是趋势', sourceUnitIds: [] },
+            { level: 3, title: '趋势的方向性', sourceUnitIds: ['su_a1'] },
+            { level: 3, title: '趋势的级别', sourceUnitIds: ['su_a2'] },
+          ],
+        }
+      : {
+          matches: [],
+          concepts: [{ name: '趋势', aliases: [], definition: '价格运行方向' }],
+          edges: [],
+          lessons: [
+            {
+              sectionId: null,
+              title: '趋势的方向性',
+              subLessonCount: 2,
+              estimatedMinutes: 9,
+              parallelSlot: 1,
+              sourceUnitIds: ['su_a1'],
+            },
+          ],
+        }
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  }) as typeof fetch
+  return () => {
+    globalThis.fetch = original
+  }
+}
+
+test('智能规划：目录按要点重排、教师原文保留，出处绑进骨架', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-智能规划',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-smart',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'c.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/c.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 0, 600000, '讲解内容', $4::jsonb, 0)`,
+    [
+      'su_a1',
+      course.id,
+      assetId,
+      JSON.stringify({ teachingPoints: ['趋势有方向性', '趋势有持续性'] }),
+    ],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 600000, 1200000, '讲解内容', $4::jsonb, 1)`,
+    [
+      'su_a2',
+      course.id,
+      assetId,
+      JSON.stringify({ teachingPoints: ['级别由时间尺度定义'] }),
+    ],
+  )
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '第一篇 总论\n第一章 什么是趋势',
+    allowPartial: false,
+    mode: 'smart',
+  })
+  assert.equal(job.status, 'queued')
+
+  const restore = stubSmartFetch()
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    restore()
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null }>(
+    'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  assert.equal(jobs[0]?.status, 'succeeded')
+  assert.equal(jobs[0]?.error_code, null)
+
+  // 智能规划重排了工作目录树，但教师粘贴的原文留着
+  const stored = await query<{ outline: unknown; outline_text: string }>(
+    'SELECT outline, outline_text FROM courses WHERE id = $1',
+    [course.id],
+  )
+  assert.equal(stored[0]?.outline_text, '第一篇 总论\n第一章 什么是趋势')
+  const outline = stored[0]?.outline as { nodes: { id: string; title: string }[] }
+  assert.equal(outline.nodes.length, 4)
+  assert.equal(outline.nodes[0]?.title, '第一篇 趋势入门')
+
+  const draft = await repo.findDraftPlan(course.id)
+  assert.ok(draft)
+  const content = draft!.skeleton as {
+    nodes: { title: string; matchStatus: string; sourceUnitIds: string[] }[]
+  }
+  assert.equal(content.nodes.length, 4)
+  // 出处逐条绑定：有出处的课时判匹配
+  assert.deepEqual(content.nodes[2]?.sourceUnitIds, ['su_a1'])
+  assert.equal(content.nodes[2]?.matchStatus, 'ok')
+  assert.deepEqual(content.nodes[3]?.sourceUnitIds, ['su_a2'])
+  assert.equal(content.nodes[3]?.matchStatus, 'ok')
+  // 无出处的篇与章按子节点覆盖比例判定：两个课时都有出处 → 满匹配
+  assert.equal(content.nodes[0]?.matchStatus, 'ok')
+  assert.equal(content.nodes[1]?.matchStatus, 'ok')
+
+  // 分节计划的出处进课时，估时以绑定单元时长为准
+  const sectionPlan = draft!.section_plan as {
+    lessons: { sourceUnitIds: string[]; estimatedMinutes: number }[]
+  }
+  assert.equal(sectionPlan.lessons.length, 1)
+  assert.deepEqual(sectionPlan.lessons[0]?.sourceUnitIds, ['su_a1'])
+  assert.equal(sectionPlan.lessons[0]?.estimatedMinutes, 10)
+})
+
+test('智能规划：课时数超出素材推导的上限时裁掉并留痕', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-超规模',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-oversize',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'e.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/e.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  // 一个单元、2 条要点、跨度 10 分钟 → 规模上限 min(2 条要点, 1 课时) = 1
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 0, 600000, '讲解内容', $4::jsonb, 0)`,
+    ['su_b1', course.id, assetId, JSON.stringify({ teachingPoints: ['要点甲', '要点乙'] })],
+  )
+
+  const original = globalThis.fetch
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    const body = typeof init.body === 'string' ? init.body : ''
+    const payload = body.includes('目录设计助手')
+      ? {
+          sections: [
+            { level: 1, title: '总论', sourceUnitIds: [] },
+            { level: 2, title: '什么是趋势', sourceUnitIds: [] },
+            { level: 3, title: '趋势的方向性', sourceUnitIds: ['su_b1'] },
+            { level: 3, title: '趋势的级别', sourceUnitIds: ['su_b1'] },
+            { level: 3, title: '趋势的延续', sourceUnitIds: ['su_b1'] },
+          ],
+        }
+      : {
+          matches: [],
+          concepts: [],
+          edges: [],
+          lessons: [
+            {
+              sectionId: null,
+              title: '趋势的方向性',
+              subLessonCount: 1,
+              estimatedMinutes: 10,
+              parallelSlot: 1,
+              sourceUnitIds: ['su_b1'],
+            },
+          ],
+        }
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  }) as typeof fetch
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+    mode: 'smart',
+  })
+
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    globalThis.fetch = original
+  }
+
+  const jobs = await query<{ status: string }>('SELECT status FROM pipeline_jobs WHERE id = $1', [
+    job.id,
+  ])
+  assert.equal(jobs[0]?.status, 'succeeded')
+
+  const draft = await repo.findDraftPlan(course.id)
+  assert.ok(draft)
+  const content = draft!.skeleton as { nodes: { level: number }[] }
+  const lessonNodes = content.nodes.filter((node) => node.level === 3)
+  assert.equal(lessonNodes.length, 1, '超规模的课时被裁掉')
+
+  const violations = draft!.violations as { kind: string; subject: string; reason: string }[]
+  const scale = violations.find((violation) => violation.subject === '规划规模')
+  assert.ok(scale, '裁剪要留痕')
+  assert.equal(scale?.kind, 'outline_violation')
+})
+
+test('智能规划：所选素材没有理解结果时任务明确失败，让教师去重跑理解', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-未理解',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const teacher = await createAccount({
+    username: 'laoshi-draft-not-understood',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourseFor(teacher.id)
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'd.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/d.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+
+  const job = await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+    mode: 'smart',
+  })
+
+  const restore = stubSmartFetch()
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    restore()
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null }>(
+    'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  assert.equal(jobs[0]?.status, 'failed')
+  assert.equal(jobs[0]?.error_code, 'material_not_understood')
+})
+
 test('教师留空目录时 Agent 代拟一版目录先验并回写，随后按该先验综合起草', { skip }, async () => {
   const entry = await createModelEntry({
     name: '起草模型-代拟',

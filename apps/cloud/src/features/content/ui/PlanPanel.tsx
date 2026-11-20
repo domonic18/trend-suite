@@ -141,6 +141,7 @@ export function PlanPanel({
             courseId={courseId}
             initial={data?.input ?? null}
             materials={materials}
+            courseMaterials={data?.materials ?? []}
             onSubmitted={refresh}
           />
         </div>
@@ -177,12 +178,14 @@ export function PlanPanel({
               courseId={courseId}
               initial={data?.input ?? null}
               materials={materials}
+              courseMaterials={data?.materials ?? []}
               onSubmitted={refresh}
             />
           ) : null}
 
           <OutlineCard
             nodes={plan.skeleton.nodes}
+            coverage={plan.coverage}
             busy={busy}
             onRename={(nodeId, title) => tweak({ op: 'rename_chapter', nodeId, title })}
             onRemove={(nodeId) => tweak({ op: 'remove_chapter', nodeId })}

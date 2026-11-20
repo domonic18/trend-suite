@@ -178,12 +178,16 @@ export type CoursePlanInputRow = {
   goal: string | null
   outline_text: string | null
   outline: unknown
+  /** 规划模式：smart（智能规划）/ follow_manual（沿用人工目录骨架）。 */
+  plan_mode: string | null
+  /** 本次参与规划的素材 id；null = 课程全部素材。 */
+  plan_asset_ids: string[] | null
   updated_at: Date
 }
 
 export function findCoursePlanInput(courseId: string): Promise<CoursePlanInputRow | null> {
   return queryOne<CoursePlanInputRow>(
-    `SELECT goal, outline_text, outline, updated_at FROM courses WHERE id = $1`,
+    `SELECT goal, outline_text, outline, plan_mode, plan_asset_ids, updated_at FROM courses WHERE id = $1`,
     [courseId],
   )
 }
@@ -198,10 +202,35 @@ export async function updateCoursePlanInput(
   )
 }
 
+/**
+ * 规划模式与参与素材：与目标/目录分开存。
+ * 智能规划要重排目录，但不一定要改人工目录——两件事分开，教师原文才留得住。
+ */
+export async function updatePlanSelection(
+  courseId: string,
+  input: { planMode: string; planAssetIds: string[] | null },
+): Promise<void> {
+  await query(
+    `UPDATE courses SET plan_mode = $2, plan_asset_ids = $3, updated_at = now() WHERE id = $1`,
+    [courseId, input.planMode, input.planAssetIds],
+  )
+}
+
 export async function updateCourseOutline(courseId: string, outline: unknown): Promise<void> {
   await query(`UPDATE courses SET outline = $2, updated_at = now() WHERE id = $1`, [
     courseId,
     JSON.stringify(outline),
+  ])
+}
+
+/**
+ * 目录文本与目录树同源：微调后同步回写文本，
+ * 否则「教师原文优先」的解析会读到微调前的旧文本，把微调丢掉。
+ */
+export async function updateCourseOutlineText(courseId: string, text: string): Promise<void> {
+  await query(`UPDATE courses SET outline_text = $2, updated_at = now() WHERE id = $1`, [
+    courseId,
+    text,
   ])
 }
 

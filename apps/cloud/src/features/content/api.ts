@@ -37,10 +37,15 @@ export async function getPlan(courseId: string): Promise<PlanResponse> {
   return planResponse.parse(data)
 }
 
-/** 提交课程目标与人工目录，触发起草入队。 */
+/** 提交课程目标与人工目录，触发起草入队（可指定规划模式与参与素材）。 */
 export async function submitPlanInput(
   courseId: string,
-  input: { goal: string; outlineText: string },
+  input: {
+    goal: string
+    outlineText: string
+    mode?: 'smart' | 'follow_manual'
+    assetIds?: string[] | undefined
+  },
 ): Promise<PlanJobView> {
   const data = await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/plan-input`, {
     method: 'PUT',

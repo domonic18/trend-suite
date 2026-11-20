@@ -7,6 +7,7 @@ import {
   ProcessingError,
   runProcessing,
 } from '../processing/runner'
+import { understandStage } from '../processing/understand'
 import * as procRepo from '../processing/repo'
 import * as jobs from './repo'
 import { runCurriculumDraft } from '@/server/content/plans/drafter'
@@ -42,6 +43,9 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
     switch (job.kind) {
       case 'ingest':
         await runIngestJob(job)
+        break
+      case 'understand_rerun':
+        await runUnderstandJob(job)
         break
       case 'curriculum_draft':
         await runCurriculumDraft(job)
@@ -177,6 +181,65 @@ async function runIngestJob(job: PipelineJobRow): Promise<void> {
       errorMessage: message,
       message: '加工失败',
       progress: 0,
+    })
+  }
+}
+
+/**
+ * 重跑理解（迭代 8）：只跑理解阶段，转写与关键帧保留。
+ * 幂等按 transcript_segments.chunk_index 去重——已理解的块跳过，只补缺口。
+ * 智能规划要用素材的教学要点，存量素材没有理解结果时从这里补。
+ */
+async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
+  const assetId = job.asset_id
+  if (!assetId) {
+    await jobs.failJob({ jobId: job.id, code: 'asset_not_found', message: '素材不存在', retryable: false })
+    return
+  }
+  try {
+    const asset = await findAssetById(assetId)
+    if (!asset) {
+      await jobs.failJob({ jobId: job.id, code: 'asset_not_found', message: '素材不存在', retryable: false })
+      return
+    }
+    if (asset.status !== 'ready') {
+      await jobs.failJob({
+        jobId: job.id,
+        code: 'asset_not_ready',
+        message: '素材尚未就绪，先完成加工再重跑理解',
+        retryable: false,
+      })
+      return
+    }
+    const store = getMediaStore()
+    await understandStage({
+      assetId: asset.id,
+      courseId: asset.course_id,
+      sourcePath: await store.sourcePath(asset.id),
+      durationS: Number(asset.duration_s ?? 0),
+      framesDir: store.framesDir(asset.id),
+      shouldCancel: async () => jobs.isCancelRequested(job.id),
+      onProgress: async (input) => {
+        await jobs.updateJobProgress({
+          jobId: job.id,
+          step: input.step,
+          progress: input.progress,
+        })
+        await procRepo.setAssetProgress({
+          assetId: asset.id,
+          step: input.step,
+          progress: input.progress,
+          message: input.message ?? null,
+        })
+      },
+    })
+    await jobs.completeJob(job.id)
+  } catch (err) {
+    await jobs.failJob({
+      jobId: job.id,
+      code: 'understand_failed',
+      message: (err as Error).message,
+      retryable: false,
     })
   }
 }

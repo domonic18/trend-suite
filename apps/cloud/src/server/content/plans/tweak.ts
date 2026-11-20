@@ -23,6 +23,8 @@ export type PlanLesson = {
   subLessonCount: number
   estimatedMinutes: number
   parallelSlot: number
+  /** 该课时覆盖的证据单元（source_units.id）——一课时 = 一个可独立讲清的知识点。 */
+  sourceUnitIds: string[]
 }
 
 export type TweakedContent = {
@@ -66,7 +68,7 @@ export function applyTweak(
             nodes: [
               ...content.skeleton.nodes,
               // 教师主动加章：无证据属教师决策，不算未决项。
-              { ...node, matchScore: null, matchStatus: 'ok' as const },
+              { ...node, matchScore: null, matchStatus: 'ok' as const, sourceUnitIds: [] },
             ],
           },
         },

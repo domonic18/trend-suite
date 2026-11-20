@@ -57,10 +57,13 @@ export type OutlineMatch = { nodeId: string; matchScore: number | null }
 /**
  * 骨架 = 目录全量节点 + 每章匹配度。LLM 引用的未知节点进 violations（目录外发明）；
  * LLM 漏掉的目录节点保留且视为无证据（low_match）——目录是下界，不是交集。
+ *
+ * unitIdsByNodeId：智能规划时每个节点绑定的证据单元（出处），一并进骨架。
  */
 export function buildSkeleton(
   outline: CourseOutlineView,
   matches: OutlineMatch[],
+  unitIdsByNodeId?: Map<string, string[]>,
 ): { skeleton: PlanSkeletonView; violations: PlanViolationView[] } {
   const violations: PlanViolationView[] = []
   const scoreById = new Map<string, number | null>()
@@ -84,10 +87,80 @@ export function buildSkeleton(
         ...node,
         matchScore: score,
         matchStatus: score !== null && score >= MATCH_THRESHOLD ? 'ok' : 'low_match',
+        sourceUnitIds: unitIdsByNodeId?.get(node.id) ?? [],
       }
     }),
   }
   return { skeleton, violations }
+}
+
+/**
+ * 由证据绑定推导匹配度（智能规划用）：课时有出处即 1，无出处即无证据；
+ * 章与篇取子节点的覆盖比例——孩子里有一半没出处，父章节就不该显示满匹配。
+ * 全部子节点都没出处时父章节同样无证据（null）。
+ */
+export function deriveMatchesFromUnits(
+  outline: CourseOutlineView,
+  unitIdsByNodeId: Map<string, string[]>,
+): OutlineMatch[] {
+  const children = new Map<string, string[]>()
+  for (const node of outline.nodes) {
+    if (!node.parentId) continue
+    const list = children.get(node.parentId) ?? []
+    list.push(node.id)
+    children.set(node.parentId, list)
+  }
+  const scoreById = new Map<string, number | null>()
+  const resolve = (nodeId: string): number | null => {
+    if (scoreById.has(nodeId)) return scoreById.get(nodeId) ?? null
+    const node = outline.nodes.find((item) => item.id === nodeId)
+    if (!node) return null
+    let score: number | null
+    if (node.level === 3) {
+      score = (unitIdsByNodeId.get(nodeId)?.length ?? 0) > 0 ? 1 : null
+    } else {
+      const childIds = children.get(nodeId) ?? []
+      const childScores = childIds.map((childId) => resolve(childId))
+      const covered = childScores.filter((value): value is number => value !== null)
+      score =
+        covered.length > 0
+          ? covered.reduce((a, b) => a + b, 0) / childIds.length
+          : null
+    }
+    scoreById.set(nodeId, score)
+    return score
+  }
+  return outline.nodes.map((node) => ({ nodeId: node.id, matchScore: resolve(node.id) }))
+}
+
+/**
+ * 规模裁剪（智能规划）：模型给的课时数超出素材推导的上限时裁掉多出来的，
+ * 并把裁掉的数量带出去记拒绝记录——不能静默接受，也不能让模型自由铺开。
+ *
+ * 裁剪后清掉空章与空篇：没有课时的章、章都空的篇留着只是噪声。
+ */
+export function trimOutlineToBudget(
+  outline: CourseOutlineView,
+  maxLessons: number,
+): { outline: CourseOutlineView; trimmed: number } {
+  const lessons = outline.nodes.filter((node) => node.level === 3)
+  if (lessons.length <= maxLessons) return { outline, trimmed: 0 }
+  const kept = new Set(lessons.slice(0, maxLessons).map((node) => node.id))
+  const hasChild = new Set(
+    outline.nodes.filter((node) => node.parentId && kept.has(node.id)).map((node) => node.parentId!),
+  )
+  const keptChapter = new Set(
+    outline.nodes.filter((node) => node.level === 2 && hasChild.has(node.id)).map((node) => node.id),
+  )
+  const hasChapter = new Set(
+    outline.nodes.filter((node) => node.level === 2 && keptChapter.has(node.id)).map((node) => node.parentId!),
+  )
+  const nodes = outline.nodes.filter((node) => {
+    if (node.level === 3) return kept.has(node.id)
+    if (node.level === 2) return keptChapter.has(node.id)
+    return hasChapter.has(node.id)
+  })
+  return { outline: { nodes }, trimmed: lessons.length - maxLessons }
 }
 
 /**

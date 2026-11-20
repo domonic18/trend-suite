@@ -17,6 +17,7 @@ import {
   getTranscript,
   ingestAsset,
   listAssets,
+  rerunUnderstand,
   retryAsset,
   uploadToTarget,
 } from '../api'
@@ -158,6 +159,20 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
         await refresh()
       } catch (err) {
         setActionError(err instanceof ApiError ? err.message : '停止失败，请稍后再试')
+      }
+    },
+    [refresh],
+  )
+
+  /** 重跑理解（迭代 8）：只补理解阶段，规划要用素材的教学要点。 */
+  const understand = useCallback(
+    async (assetId: string) => {
+      setActionError(null)
+      try {
+        await rerunUnderstand(assetId)
+        await refresh()
+      } catch (err) {
+        setActionError(err instanceof ApiError ? err.message : '重跑理解失败，请稍后再试')
       }
     },
     [refresh],
@@ -327,6 +342,15 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
                         onClick={() => void retry(asset.id)}
                       >
                         重新加工
+                      </button>
+                    ) : null}
+                    {readiness === 'ready' ? (
+                      <button
+                        type="button"
+                        className="btn link"
+                        onClick={() => void understand(asset.id)}
+                      >
+                        重跑理解
                       </button>
                     ) : null}
                     <button

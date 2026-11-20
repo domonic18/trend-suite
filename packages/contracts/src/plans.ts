@@ -32,6 +32,8 @@ export const planSectionNodeView = z.object({
   /** 证据匹配度 0–1；null 表示该章没有任何证据支撑。 */
   matchScore: z.number().min(0).max(1).nullable(),
   matchStatus: sectionMatchStatus,
+  /** 该节点绑定的证据单元（source_units.id）：智能规划时按教学要点绑定。 */
+  sourceUnitIds: z.array(z.string()).default([]),
 })
 
 export const planSkeletonView = z.object({ nodes: z.array(planSectionNodeView) })
@@ -70,6 +72,8 @@ export const planLessonView = z.object({
   subLessonCount: z.number().int().min(1).max(20),
   estimatedMinutes: z.number().int().min(5).max(240),
   parallelSlot: z.number().int().min(1).max(8),
+  /** 该课时覆盖的证据单元（source_units.id）：一课时 = 一个可独立讲清的知识点。 */
+  sourceUnitIds: z.array(z.string()).default([]),
 })
 
 export const planSectionPlanView = z.object({ lessons: z.array(planLessonView) })
@@ -79,6 +83,13 @@ export const planViolationView = z.object({
   kind: z.enum(['outline_violation', 'concept_conflict']),
   subject: z.string(),
   reason: z.string(),
+})
+
+/** 素材覆盖率：规划出的课时覆盖了素材里多少条教学要点（0～1）。 */
+export const planCoverageView = z.object({
+  coveredPoints: z.number().int().min(0),
+  totalPoints: z.number().int().min(0),
+  ratio: z.number().min(0).max(1),
 })
 
 // ---------------------------------------------------------------- 方案视图
@@ -93,6 +104,8 @@ export const planView = z.object({
   glossary: planGlossaryView,
   sectionPlan: planSectionPlanView,
   violations: z.array(planViolationView),
+  /** 素材覆盖率：null 表示没有可比的素材要点（如未跑理解的素材）。 */
+  coverage: planCoverageView.nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -161,21 +174,49 @@ export const agentTraceView = z.object({
   artifacts: z.array(agentArtifactView),
 })
 
+/**
+ * 规划可选素材：教师勾选参与本次规划的素材。
+ * pointCount 是素材理解产出的教学要点条数——目录规模由它推导（迭代 8）。
+ */
+export const planMaterialView = z.object({
+  id: z.string(),
+  fileName: z.string(),
+  durationS: z.number().nullable(),
+  /** 理解产出的证据单元数（0 = 还没跑理解，智能规划用不了）。 */
+  unitCount: z.number().int().min(0),
+  /** 证据单元里的教学要点条数。 */
+  pointCount: z.number().int().min(0),
+})
+
 export const planResponse = z.object({
   plan: planView.nullable(),
   job: planJobView.nullable(),
   input: planInputView.nullable(),
   /** Agent 执行轨迹（工作台 Agent 面板的对话 / 执行 / 产物三个页签）。 */
   trace: agentTraceView.nullable(),
+  /** 课程素材（勾选哪些参与规划）。 */
+  materials: z.array(planMaterialView).default([]),
 })
 
 // ---------------------------------------------------------------- 请求
+
+/**
+ * 规划模式：
+ * - `smart`：智能规划——Agent 依据所选素材的教学要点重新规划目录（覆盖人工目录）；
+ * - `follow_manual`：沿用人工目录骨架——目录是下界，Agent 只在其上做匹配与分节。
+ */
+export const planMode = z.enum(['smart', 'follow_manual'])
+
 export const submitPlanInputRequest = z.object({
   goal: z.string().min(1, '课程目标必填').max(2000, '课程目标最长 2000 个字符'),
   /** 人工目录（可留空）：留空则由 Agent 依据目标与素材代拟一版目录先验。 */
   outlineText: z.string().max(20000, '人工目录最长 20000 个字符'),
   /** 占位（本迭代恒 false 不暴露 UI）：素材未全部就绪时是否允许带 partial 起草。 */
   allowPartial: z.boolean().optional().default(false),
+  /** 参与本次规划的素材 id；不传 = 课程全部素材。 */
+  assetIds: z.array(z.string().min(1)).max(50, '单次最多选 50 份素材').optional(),
+  /** 规划模式；不传按「沿用人工目录骨架」处理（目录留空时代拟等价于智能规划）。 */
+  mode: planMode.optional(),
 })
 
 export const approvePlanRequest = z.object({})
@@ -257,9 +298,12 @@ export type PlanGlossaryView = z.infer<typeof planGlossaryView>
 export type PlanSectionPlanView = z.infer<typeof planSectionPlanView>
 export type PlanViolationView = z.infer<typeof planViolationView>
 export type PlanView = z.infer<typeof planView>
+export type PlanCoverageView = z.infer<typeof planCoverageView>
+export type PlanMode = z.infer<typeof planMode>
 export type PlanInputView = z.infer<typeof planInputView>
 export type PlanJobView = z.infer<typeof planJobView>
 export type PlanResponse = z.infer<typeof planResponse>
+export type PlanMaterialView = z.infer<typeof planMaterialView>
 export type AgentStepStatus = z.infer<typeof agentStepStatus>
 export type AgentStepView = z.infer<typeof agentStepView>
 export type AgentCallView = z.infer<typeof agentCallView>

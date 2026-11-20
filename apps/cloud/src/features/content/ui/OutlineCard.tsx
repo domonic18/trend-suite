@@ -8,6 +8,7 @@ import { buildOutlineTree, countOutlineLevels } from './outlineTree'
 /** 骨架章节列表：匹配度 + 裁决动作（改名 / 删除 / 合并选）。教师主动加章不算未决项。 */
 export function OutlineCard({
   nodes,
+  coverage = null,
   onRename,
   onRemove,
   onMerge,
@@ -15,6 +16,8 @@ export function OutlineCard({
   busy,
 }: {
   nodes: PlanSectionNodeView[]
+  /** 素材覆盖率：目录覆盖了素材里多少条教学要点。 */
+  coverage?: { coveredPoints: number; totalPoints: number; ratio: number } | null
   onRename: (nodeId: string, title: string) => void
   onRemove: (nodeId: string) => void
   onMerge: (nodeIds: string[], title: string) => void
@@ -71,6 +74,7 @@ export function OutlineCard({
             {node.matchScore === null
               ? ' · 无证据支撑'
               : ` · 匹配度 ${Math.round(node.matchScore * 100)}%`}
+            {node.sourceUnitIds.length > 0 ? ` · 出处 ${node.sourceUnitIds.length} 段` : ''}
             {low ? ' · 待裁决：改名 / 删除 / 与相近章合并' : ''}
           </span>
         </div>
@@ -147,6 +151,9 @@ export function OutlineCard({
         <b>课程大纲</b>
         <span className="meta">
           {counts.parts} 篇 · {counts.chapters} 章 · {counts.lessons} 课时
+          {coverage
+            ? ` · 素材覆盖 ${Math.round(coverage.ratio * 100)}%（${coverage.coveredPoints}/${coverage.totalPoints} 要点）`
+            : ''}
         </span>
         <label className="oe-pick-all" title="全选 / 取消全选">
           <input
