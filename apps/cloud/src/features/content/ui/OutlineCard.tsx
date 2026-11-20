@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { PlanSectionNodeView } from '@trend-suite/contracts'
+import { countOutlineLevels } from '@trend-suite/contracts'
 import { IconCheck, IconClose, IconPencil, IconTrash } from '@/features/lib/icons'
-import { buildOutlineTree, countOutlineLevels, siblingInfoOf } from './outlineTree'
+import { buildOutlineTree, siblingInfoOf } from './outlineTree'
 
 /** 骨架章节列表：匹配度 + 裁决动作（改名 / 删除 / 合并选）。教师主动加章不算未决项。 */
 export function OutlineCard({

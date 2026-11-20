@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import type { PlanSectionNodeView } from '@trend-suite/contracts'
-import { buildOutlineTree, countOutlineLevels, siblingInfoOf } from './outlineTree'
+import { countOutlineLevels, type PlanSectionNodeView } from '@trend-suite/contracts'
+import { buildOutlineTree, siblingInfoOf } from './outlineTree'
 
 /**
  * 目录分组与计数（呈现层）：骨架是扁平数组，靠 level 归拢成篇/章/课时，

@@ -249,6 +249,27 @@ export function stripOutlineNumbering(title: string): string {
 /** 目录条目（层级 + 标题）——Agent 代拟目录的最小结构。 */
 export type OutlineSection = { level: OutlineLevel; title: string }
 
+/** 各层级计数（篇 / 章 / 课时）。 */
+export type OutlineLevelCounts = { parts: number; chapters: number; lessons: number }
+
+/**
+ * 目录各层级计数——**前后端共用一份口径**。
+ *
+ * 服务端用它把骨架的章·课时数写进课程摘要（教师端课程卡显示「6 章 · 22 节」），
+ * 教师端用它在大纲卡头部显示同一组数；两边各数一次就会对不上。
+ */
+export function countOutlineLevels(
+  nodes: readonly { level: number }[],
+): OutlineLevelCounts {
+  const counts: OutlineLevelCounts = { parts: 0, chapters: 0, lessons: 0 }
+  for (const node of nodes) {
+    if (node.level === 1) counts.parts += 1
+    else if (node.level === 2) counts.chapters += 1
+    else counts.lessons += 1
+  }
+  return counts
+}
+
 /**
  * 由层级+标题生成规范目录文本（第一篇 / 第一章 / 1.）。
  * **章号全书连续**（第一篇下是第一章…，第二篇下接着往下排），

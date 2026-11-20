@@ -1,5 +1,5 @@
 import { createCourseRequest, courseListResponse, createCourseResponse, workbenchRoles } from '@trend-suite/contracts'
-import { createCourse, listCoursesFor } from '@/server/content/service'
+import { createCourse, listCourseSummariesFor } from '@/server/content/service'
 import { requireUser } from '@/server/lib/auth'
 import { badRequest, errorResponse, firstIssueOf, json } from '@/server/lib/http'
 
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     const user = await requireUser(req, workbenchRoles)
-    const items = await listCoursesFor(user)
+    const items = await listCourseSummariesFor(user)
     return json(courseListResponse.parse({ items }))
   } catch (err) {
     return errorResponse(err)

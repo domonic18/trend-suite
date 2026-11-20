@@ -3520,3 +3520,235 @@ dialog::backdrop {
   border-radius: 20px;
   padding: 1px 8px;
 }
+
+/* ---------------- 生产工作台：课程中心（侧栏 + 阶段轨 + 内容） ---------------- */
+.wb-col {
+  min-width: 0;
+}
+
+.wb-center {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* 侧栏里的课程条目：标题一行 + 状态一行 */
+.ops-i.course {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.ops-i .wb-course-name {
+  font-size: 13.5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ops-i .wb-course-meta {
+  font-size: 11px;
+  color: var(--p-faint);
+  font-weight: 400;
+}
+
+.ops-i.on .wb-course-meta {
+  color: var(--p-pri);
+  opacity: 0.75;
+}
+
+/* 竖排阶段轨 */
+.wb-rail {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-panel);
+}
+
+.wb-phase {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  color: var(--p-mut);
+}
+
+a.wb-phase:hover {
+  background: var(--p-soft);
+}
+
+.wb-phase.on {
+  background: var(--p-pri-soft);
+}
+
+.wb-phase-text {
+  min-width: 0;
+}
+
+.wb-phase-text b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--p-ink);
+}
+
+.wb-phase.on .wb-phase-text b {
+  color: var(--p-pri);
+}
+
+.wb-phase-text small {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--p-faint);
+  margin-top: 2px;
+}
+
+.wb-phase.soon {
+  cursor: default;
+}
+
+.wb-phase.soon .wb-phase-text b {
+  color: var(--p-faint);
+}
+
+/* 阶段状态点 */
+.wb-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--p-line);
+  box-shadow: 0 0 0 3px var(--p-soft);
+}
+
+.wb-dot.done {
+  background: var(--p-acc);
+  box-shadow: 0 0 0 3px var(--p-acc-soft);
+}
+
+.wb-dot.active {
+  background: var(--p-pri);
+  box-shadow: 0 0 0 3px var(--p-pri-soft);
+}
+
+.wb-dot.soon {
+  background: var(--p-line);
+  box-shadow: 0 0 0 3px var(--p-soft);
+}
+
+.wb-content {
+  min-width: 0;
+}
+
+/* 常驻的「下一步该干什么」 */
+.wb-next {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  border-left: 3px solid var(--p-pri);
+  border-radius: 10px;
+}
+
+.wb-next-t {
+  min-width: 0;
+  flex: 1;
+}
+
+.wb-next-k {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--p-pri);
+  background: var(--p-pri-soft);
+  border-radius: 20px;
+  padding: 1px 9px;
+  margin-right: 8px;
+}
+
+.wb-next-t b {
+  font-size: 14px;
+}
+
+.wb-next-t small {
+  display: block;
+  font-size: 12px;
+  color: var(--p-mut);
+  margin-top: 3px;
+}
+
+.wb-next-here {
+  font-size: 12.5px;
+  color: var(--p-faint);
+  white-space: nowrap;
+}
+
+/* 载入骨架 */
+.skeleton-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #eef1f7 25%, #f7f9fc 37%, #eef1f7 63%);
+  background-size: 400% 100%;
+  animation: sk-shine 1.4s ease infinite;
+}
+
+.sk-title {
+  height: 22px;
+  width: 32%;
+}
+
+.sk-sub {
+  height: 14px;
+  width: 56%;
+}
+
+.sk-card {
+  height: 78px;
+}
+
+@keyframes sk-shine {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* 课程卡状态标 */
+.tag.run {
+  color: var(--p-pri-deep);
+  background: var(--p-pri-soft);
+  border-color: #c7d7f5;
+}
+
+.tag.warn {
+  color: var(--p-warn);
+  background: var(--p-warn-soft);
+  border-color: #f0dcb4;
+}
+
+.tag.ok {
+  color: var(--p-acc);
+  background: var(--p-acc-soft);
+  border-color: #bfe6d8;
+}

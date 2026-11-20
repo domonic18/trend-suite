@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
-import type { CourseView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { createCourse, listCourses } from '../api'
+import { createCourse } from '../api'
+import { useCourses } from './CoursesProvider'
 
 function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -14,29 +14,11 @@ function formatTime(iso: string): string {
 }
 
 export function CourseList() {
-  const [courses, setCourses] = useState<CourseView[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { courses, loading, error, refresh } = useCourses()
   const [title, setTitle] = useState('')
   const [busy, setBusy] = useState(false)
   const [dialogError, setDialogError] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
-
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    try {
-      setCourses(await listCourses())
-      setError(null)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '课程列表加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
 
   function openDialog() {
     setTitle('')

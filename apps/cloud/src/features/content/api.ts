@@ -8,6 +8,7 @@ import {
   planView,
   conceptsResponse,
   type ConceptsResponse,
+  type CourseSummaryView,
   type CourseView,
   type PlanJobView,
   type PlanResponse,
@@ -16,7 +17,7 @@ import {
 } from '@trend-suite/contracts'
 import { apiRequest } from '@/features/lib/http'
 
-export async function listCourses(): Promise<CourseView[]> {
+export async function listCourses(): Promise<CourseSummaryView[]> {
   const data = await apiRequest<unknown>('/v1/admin/content/courses')
   return courseListResponse.parse(data).items
 }
