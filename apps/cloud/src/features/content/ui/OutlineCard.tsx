@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PlanSectionNodeView } from '@trend-suite/contracts'
 import { IconCheck, IconClose, IconPencil, IconTrash } from '@/features/lib/icons'
+import { buildOutlineTree, countOutlineLevels } from './outlineTree'
 
 /** 骨架章节列表：匹配度 + 裁决动作（改名 / 删除 / 合并选）。教师主动加章不算未决项。 */
 export function OutlineCard({
@@ -35,7 +36,7 @@ export function OutlineCard({
   const allPicked = nodes.length > 0 && pickedLive.length === nodes.length
   const somePicked = pickedLive.length > 0 && pickedLive.length < nodes.length
 
-  // 全选框三态：全选 / 部分 / 未选。
+  // 全选框三态：全选 / 部分 / 清空。
   useEffect(() => {
     if (allRef.current) allRef.current.indeterminate = somePicked
   }, [somePicked])
@@ -48,17 +49,111 @@ export function OutlineCard({
     setPicked(allPicked ? [] : nodes.map((node) => node.id))
   }
 
+  const counts = countOutlineLevels(nodes)
+  const groups = buildOutlineTree(nodes)
+
+  const row = (node: PlanSectionNodeView, level: 1 | 2 | 3) => {
+    const low = node.matchStatus === 'low_match'
+    return (
+      <div className={`oe-row lv${level}${low ? ' err' : ''}`} key={node.id}>
+        <label className="oe-pick" title={node.title}>
+          <input
+            type="checkbox"
+            checked={picked.includes(node.id)}
+            onChange={() => togglePick(node.id)}
+            aria-label={`选择 ${node.title}`}
+          />
+        </label>
+        <div className="ot">
+          <b>{node.title}</b>
+          <span className="meta">
+            {level === 1 ? '篇' : level === 2 ? '章' : '课时'}
+            {node.matchScore === null
+              ? ' · 无证据支撑'
+              : ` · 匹配度 ${Math.round(node.matchScore * 100)}%`}
+            {low ? ' · 待裁决：改名 / 删除 / 与相近章合并' : ''}
+          </span>
+        </div>
+        <span className={`st ${low ? 'st-err' : 'st-ok'}`}>
+          <i />
+          {low ? '待决定' : '通过'}
+        </span>
+        <div className="oa">
+          {renaming === node.id ? (
+            <span className="oe-inline">
+              <input
+                value={renameTitle}
+                maxLength={200}
+                onChange={(e) => setRenameTitle(e.target.value)}
+                aria-label="新章节标题"
+              />
+              <button
+                type="button"
+                className="iconbtn"
+                title="保存"
+                aria-label="保存"
+                disabled={busy || renameTitle.trim().length === 0}
+                onClick={() => {
+                  onRename(node.id, renameTitle.trim())
+                  setRenaming(null)
+                }}
+              >
+                <IconCheck />
+              </button>
+              <button
+                type="button"
+                className="iconbtn"
+                title="取消"
+                aria-label="取消"
+                onClick={() => setRenaming(null)}
+              >
+                <IconClose />
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="iconbtn"
+              title="改名"
+              aria-label="改名"
+              onClick={() => {
+                setRenaming(node.id)
+                setRenameTitle(node.title)
+              }}
+            >
+              <IconPencil />
+            </button>
+          )}
+          {!childIds.has(node.id) ? (
+            <button
+              type="button"
+              className="iconbtn danger"
+              title="删除"
+              aria-label="删除"
+              disabled={busy}
+              onClick={() => onRemove(node.id)}
+            >
+              <IconTrash />
+            </button>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="card" id="plan-outline">
       <div className="card-top">
         <b>课程大纲</b>
-        <span className="meta">{nodes.length} 章</span>
+        <span className="meta">
+          {counts.parts} 篇 · {counts.chapters} 章 · {counts.lessons} 课时
+        </span>
         <label className="oe-pick-all" title="全选 / 取消全选">
           <input
             ref={allRef}
             type="checkbox"
             checked={allPicked}
-            onChange={toggleAll}
+            onChange={() => toggleAll()}
             aria-label="全选章节"
           />
           全选
@@ -67,95 +162,18 @@ export function OutlineCard({
       </div>
 
       <div className="oe">
-        {nodes.map((node, index) => {
-          const low = node.matchStatus === 'low_match'
-          return (
-            <div className={`oe-row${low ? ' err' : ''}`} key={node.id}>
-              <label className="oe-pick" title={node.title}>
-                <input
-                  type="checkbox"
-                  checked={picked.includes(node.id)}
-                  onChange={() => togglePick(node.id)}
-                  aria-label={`选择 ${node.title}`}
-                />
-              </label>
-              <span className="gh">{String(index + 1).padStart(2, '0')}</span>
-              <div className="ot">
-                <b>{node.title}</b>
-                <span className="meta">
-                  {node.level} 级
-                  {node.matchScore === null
-                    ? ' · 无证据支撑'
-                    : ` · 匹配度 ${Math.round(node.matchScore * 100)}%`}
-                  {low ? ' · 待裁决：改名 / 删除 / 与相近章合并' : ''}
-                </span>
+        {groups.map((group, groupIndex) => (
+          <div className="oe-group" key={group.part?.id ?? `group-${groupIndex}`}>
+            {group.part ? row(group.part, 1) : null}
+            {group.chapters.map((chapter) => (
+              <div className="oe-chapter" key={chapter.chapter.id}>
+                {row(chapter.chapter, 2)}
+                {chapter.lessons.map((lesson) => row(lesson, 3))}
               </div>
-              <span className={`st ${low ? 'st-err' : 'st-ok'}`}>
-                <i />
-                {low ? '待决定' : '通过'}
-              </span>
-              <div className="oa">
-                {renaming === node.id ? (
-                  <span className="oe-inline">
-                    <input
-                      value={renameTitle}
-                      maxLength={200}
-                      onChange={(e) => setRenameTitle(e.target.value)}
-                      aria-label="新章节标题"
-                    />
-                    <button
-                      type="button"
-                      className="iconbtn"
-                      title="保存"
-                      aria-label="保存"
-                      disabled={busy || renameTitle.trim().length === 0}
-                      onClick={() => {
-                        onRename(node.id, renameTitle.trim())
-                        setRenaming(null)
-                      }}
-                    >
-                      <IconCheck />
-                    </button>
-                    <button
-                      type="button"
-                      className="iconbtn"
-                      title="取消"
-                      aria-label="取消"
-                      onClick={() => setRenaming(null)}
-                    >
-                      <IconClose />
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="iconbtn"
-                    title="改名"
-                    aria-label="改名"
-                    onClick={() => {
-                      setRenaming(node.id)
-                      setRenameTitle(node.title)
-                    }}
-                  >
-                    <IconPencil />
-                  </button>
-                )}
-                {!childIds.has(node.id) ? (
-                  <button
-                    type="button"
-                    className="iconbtn danger"
-                    title="删除"
-                    aria-label="删除"
-                    disabled={busy}
-                    onClick={() => onRemove(node.id)}
-                  >
-                    <IconTrash />
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          )
-        })}
+            ))}
+            {group.loose.map((lesson) => row(lesson, 3))}
+          </div>
+        ))}
       </div>
 
       <div className="oe-ops">
