@@ -1,7 +1,7 @@
 import 'server-only'
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
-import { runLlmJson } from '@/server/content/agents/llm'
+import { LlmError, runLlmJson } from '@/server/content/agents/llm'
 import * as repo from './repo'
 import type { ProcessingContext } from './runner'
 
@@ -18,7 +18,12 @@ import type { ProcessingContext } from './runner'
 const MAX_CHUNKS_PER_RUN = 12
 /** 每块采样帧上限（额度护栏）。 */
 const FRAMES_PER_CHUNK = 6
-const UNDERSTAND_MAX_TOKENS = 4096
+/**
+ * 输出预算：推理型模型（M3.1-Flash 等）的思考与正文共用 max_tokens——
+ * 4K 上限会被思考吃光，JSON 直接截断（与 PR #33 的目录代拟同一个坑）。
+ * 与目录代拟对齐取 12K。
+ */
+const UNDERSTAND_MAX_TOKENS = 12_000
 
 const understandOutput = z.object({
   units: z
@@ -77,15 +82,12 @@ export async function understandStage(ctx: ProcessingContext): Promise<void> {
         progress: base,
         message: `素材理解（${i + 1}/${pending.length} 块）`,
       })
-      try {
-        await understandChunk(ctx, group, frames)
-      } catch (err) {
-        if (err instanceof Error && err.message.includes('model_not_configured')) {
-          modelNotConfigured = true
-          break
-        }
-        failed += 1
+      const outcome = await understandChunkWithRetry(ctx, group, frames)
+      if (outcome === 'model_not_configured') {
+        modelNotConfigured = true
+        break
       }
+      if (outcome === 'failed') failed += 1
     }
 
     const skipped = groups.length - pending.length
@@ -106,6 +108,30 @@ export async function understandStage(ctx: ProcessingContext): Promise<void> {
       message: `理解失败：${(err as Error).message.slice(0, 80)}，重跑可补齐`,
     })
   }
+}
+
+/**
+ * 单块理解：可重试的失败（最常见是推理模型的思考吃光 max_tokens 导致的截断）
+ * 再试一次——推理长度每次不同，重试常常就过了。没配 VLM 是配置问题，整批放弃。
+ */
+async function understandChunkWithRetry(
+  ctx: ProcessingContext,
+  group: SegmentGroup,
+  frames: repo.MediaFrameRow[],
+): Promise<'ok' | 'failed' | 'model_not_configured'> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await understandChunk(ctx, group, frames)
+      return 'ok'
+    } catch (err) {
+      if (err instanceof LlmError && err.code === 'model_not_configured') {
+        return 'model_not_configured'
+      }
+      if (attempt === 0 && err instanceof LlmError && err.retryable) continue
+      return 'failed'
+    }
+  }
+  return 'failed'
 }
 
 type SegmentGroup = {

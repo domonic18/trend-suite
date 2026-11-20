@@ -29,11 +29,12 @@ process.env.CREDENTIAL_ENCRYPTION_KEY = randomBytes(32).toString('base64url')
 process.env.MEDIA_STORAGE = 'local'
 
 /** mock VLM：从提示词里解析「本段时间窗」返回窗内单元；calls 记账。 */
-const mock: { calls: number; server: Server; url: string; fail: boolean } = {
+const mock: { calls: number; server: Server; url: string; fail: boolean; truncateNext: boolean } = {
   calls: 0,
   server: undefined as unknown as Server,
   url: '',
   fail: false,
+  truncateNext: false,
 }
 
 before(beforeAll)
@@ -55,6 +56,18 @@ async function beforeAll(): Promise<void> {
       if (mock.fail) {
         res.writeHead(500, { 'content-type': 'application/json' })
         res.end(JSON.stringify({ error: { message: 'vlm down' } }))
+        return
+      }
+      // 截断：推理型模型的思考吃光 max_tokens 时就是这个形状
+      if (mock.truncateNext) {
+        mock.truncateNext = false
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(
+          JSON.stringify({
+            choices: [{ message: { content: '{"units":[{"startMs":0' }, finish_reason: 'length' }],
+            usage: { prompt_tokens: 200, completion_tokens: 4096 },
+          }),
+        )
         return
       }
       const messages = body.messages ?? []
@@ -213,6 +226,58 @@ test('理解失败不抛错：素材照常 ready，进度消息说明可重跑�
   } finally {
     mock.fail = false
   }
+})
+
+test('理解截断（推理模型的思考吃光 max_tokens）时重试一次即可补齐', { skip }, async () => {
+  await resetTestDatabase()
+  const entry = await createModelEntry({
+    name: '理解截断模型',
+    purposes: ['vlm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-vlm',
+    baseUrl: mock.url,
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'vision.describe', primaryModelId: entry.id, backupModelId: null })
+
+  const { courseId, assetId } = await seedAsset('理解截断课')
+  const messages: string[] = []
+  const callsBefore = mock.calls
+  mock.truncateNext = true
+  try {
+    await understandStage({
+      ...ctxOf(assetId, courseId),
+      onProgress: async (input) => {
+        if (input.message) messages.push(input.message)
+      },
+    })
+  } finally {
+    mock.truncateNext = false
+  }
+  assert.equal(await unitCount(assetId), 2, '截断重试后两块都产出单元')
+  assert.equal(mock.calls - callsBefore, 3, '第一次调用截断，重试一次，两块共三次调用')
+  assert.ok(
+    messages.some((m) => m.includes('理解完成')),
+    `收尾消息应说明理解完成：${messages.join(' | ')}`,
+  )
+})
+
+test('没配 VLM 时提示「未配置 VLM 渠道」，不是「N 块失败」', { skip }, async () => {
+  await resetTestDatabase()
+  const { courseId, assetId } = await seedAsset('理解无模型课')
+  const messages: string[] = []
+  await understandStage({
+    ...ctxOf(assetId, courseId),
+    onProgress: async (input) => {
+      if (input.message) messages.push(input.message)
+    },
+  })
+  assert.equal(await unitCount(assetId), 0)
+  assert.ok(
+    messages.some((m) => m.includes('未配置 VLM 渠道')),
+    `实际消息：${messages.join(' | ')}`,
+  )
 })
 
 test('sampleFrames：窗内优先（±15s 边距）、超限均匀采样、窗外全程兜底', () => {
