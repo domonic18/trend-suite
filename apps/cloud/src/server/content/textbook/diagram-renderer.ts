@@ -1,72 +1,29 @@
-import { z } from 'zod'
-import type { DiagramTemplate } from '@trend-suite/contracts'
+import { z } from 'zod/v4'
+import {
+  chipContrastParams,
+  chipHorizontalParams,
+  diagramParamsByTemplate,
+  statInlineParams,
+  timelineParams,
+  type DiagramTemplateName,
+} from '@trend-suite/contracts'
 
 /**
  * 参数化 SVG 模板渲染器（arch/06 §3）：diagram 图示由服务端确定性出 SVG，
  * 标注文字直出自 params——正确性 100% 由代码保证，Mermaid 不进教材图示通道。
  * 模板白名单 v1：chip-contrast / chip-horizontal / timeline / stat-inline。
- * 纯函数：params 过 schema → 渲 SVG 字符串；不合格抛 zod 错（调用方映射 params_schema_failed）。
+ * 参数形状来自契约包（figure-params.ts，与 agent 草稿同一份定义）——纯函数：
+ * params 过 schema → 渲 SVG 字符串；不合格抛错（调用方映射 params_schema_failed）。
  */
 
-export const chipContrastParams = z.object({
-  title: z.string().min(1).max(60),
-  leftLabel: z.string().min(1).max(20),
-  rightLabel: z.string().min(1).max(20),
-  leftCount: z.number().int().min(4).max(24),
-  rightCount: z.number().int().min(4).max(24),
-})
+export { diagramParamsByTemplate }
 
-export const chipHorizontalParams = z.object({
-  title: z.string().min(1).max(60),
-  priceLabel: z.string().max(20).optional().default('价位'),
-  rows: z
-    .array(
-      z.object({
-        /** 行位（0=底部，100=顶部）。 */
-        y: z.number().int().min(0).max(100),
-        /** 行宽占绘图区百分比。 */
-        width: z.number().int().min(10).max(100),
-        label: z.string().max(20).optional(),
-      }),
-    )
-    .min(2)
-    .max(12),
-})
+type ChipContrastParams = z.infer<typeof chipContrastParams>
+type ChipHorizontalParams = z.infer<typeof chipHorizontalParams>
+type TimelineParams = z.infer<typeof timelineParams>
+type StatInlineParams = z.infer<typeof statInlineParams>
 
-export const timelineParams = z.object({
-  title: z.string().min(1).max(60),
-  events: z
-    .array(
-      z.object({
-        label: z.string().min(1).max(30),
-        desc: z.string().max(80).optional(),
-      }),
-    )
-    .min(2)
-    .max(8),
-})
-
-export const statInlineParams = z.object({
-  items: z
-    .array(
-      z.object({
-        label: z.string().min(1).max(20),
-        value: z.string().min(1).max(12),
-        note: z.string().max(40).optional(),
-      }),
-    )
-    .min(1)
-    .max(4),
-})
-
-export const diagramParamsByTemplate: Record<DiagramTemplate, z.ZodTypeAny> = {
-  'chip-contrast': chipContrastParams,
-  'chip-horizontal': chipHorizontalParams,
-  timeline: timelineParams,
-  'stat-inline': statInlineParams,
-}
-
-export function renderDiagram(template: DiagramTemplate, params: unknown): { svg: string } {
+export function renderDiagram(template: DiagramTemplateName, params: unknown): { svg: string } {
   const parsed = diagramParamsByTemplate[template].parse(params)
   const svg =
     template === 'chip-contrast'
@@ -78,11 +35,6 @@ export function renderDiagram(template: DiagramTemplate, params: unknown): { svg
           : renderStatInline(parsed as StatInlineParams)
   return { svg: svg.join('') }
 }
-
-type ChipContrastParams = z.infer<typeof chipContrastParams>
-type ChipHorizontalParams = z.infer<typeof chipHorizontalParams>
-type TimelineParams = z.infer<typeof timelineParams>
-type StatInlineParams = z.infer<typeof statInlineParams>
 
 const INK = '#1f2937'
 const MUTED = '#6b7280'

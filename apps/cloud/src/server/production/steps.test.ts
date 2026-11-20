@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_MAX_TOKENS } from './channel'
-import { STEP_DEFS, stepMaxTokens } from './steps'
+import { DEFAULT_CALL_TIMEOUT_MS, DEFAULT_MAX_TOKENS } from './channel'
+import { STEP_DEFS, stepMaxTokens, stepTimeoutMs } from './steps'
 
 /**
  * 九步的输出预算（arch/05 §6）：推理型模型的思考与正文共用 max_tokens，
@@ -27,4 +27,13 @@ test('产物越大的步预算越高：正文与课件 > 案例股', () => {
 
 test('未登记的步用通道默认预算', () => {
   assert.equal(stepMaxTokens('market_sync'), DEFAULT_MAX_TOKENS)
+})
+
+test('产物越大的步超时越宽：正文一步远跑不完通道默认的 120s', () => {
+  assert.ok(
+    stepTimeoutMs('section_draft') > DEFAULT_CALL_TIMEOUT_MS,
+    '正文步（1200~3000 字 + 多次证据往返）不得落在通道默认超时内',
+  )
+  assert.ok(stepTimeoutMs('widgets') >= 240_000)
+  assert.equal(stepTimeoutMs('market_sync'), DEFAULT_CALL_TIMEOUT_MS)
 })

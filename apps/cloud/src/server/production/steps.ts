@@ -1,5 +1,5 @@
 import 'server-only'
-import { DEFAULT_MAX_TOKENS } from './channel'
+import { DEFAULT_CALL_TIMEOUT_MS, DEFAULT_MAX_TOKENS } from './channel'
 
 /**
  * 九步定义（arch/05 §6）：固定顺序、跑错序被挡。
@@ -49,6 +49,27 @@ const STEP_MAX_TOKENS: Record<string, number> = {
 /** 该步的输出预算；未登记的步用通道默认（纯函数步本就不调模型）。 */
 export function stepMaxTokens(key: string): number {
   return STEP_MAX_TOKENS[key] ?? DEFAULT_MAX_TOKENS
+}
+
+/**
+ * 各 agent 步的单次调用超时（ms）。
+ *
+ * 通道默认 120s 是给「一问一答」定的；正文步要写 1200~3000 字并来回查证据工具，
+ * 一次请求远跑不完 120s → llm_timeout，三次回灌后转人工（端到端实测）。
+ * 与输出预算同口径：**产物越大的步越慢**。
+ */
+const STEP_TIMEOUT_MS: Record<string, number> = {
+  section_draft: 600_000,
+  replay_widget: 300_000,
+  widgets: 300_000,
+  figure_spec: 300_000,
+  case_stocks: 240_000,
+  review: 180_000,
+}
+
+/** 该步的单次调用超时；未登记的步用通道默认。 */
+export function stepTimeoutMs(key: string): number {
+  return STEP_TIMEOUT_MS[key] ?? DEFAULT_CALL_TIMEOUT_MS
 }
 
 /** 批准方案后自动起跑的 job 类型（pipeline_jobs.kind）。 */

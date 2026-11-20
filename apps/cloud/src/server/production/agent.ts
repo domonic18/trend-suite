@@ -3,7 +3,7 @@ import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres'
 import { createDeepAgent } from 'deepagents'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod/v4'
-import { widgetDraftList } from '@trend-suite/contracts'
+import { figureDraftProduct, widgetDraftList } from '@trend-suite/contracts'
 import type { FetchLike } from '@/server/content/agents/llm'
 import { getEnv } from '@/env'
 import {
@@ -12,7 +12,7 @@ import {
   type ProductionTaskRow,
   type SectionRow,
 } from './repo'
-import { stepDef, stepMaxTokens, type StepDef } from './steps'
+import { stepDef, stepMaxTokens, stepTimeoutMs, type StepDef } from './steps'
 import { evidenceTools } from './evidence'
 import { TrendChatModel } from './channel'
 
@@ -47,34 +47,11 @@ const caseStockProduct = (): z.ZodType =>
 // 步骤 4 图示三路（arch/05 §8）：keyframe 必带 unitId（证据锚）、diagram 走模板白名单、
 // generated 只给提示词（装饰图，禁止承载教学信息）。云端复检（persistFigures）还有
 // 第二层确定性校验与配额把关，schema 先把住形状关。
-const figureSpecProduct = (): z.ZodType =>
-  z.object({
-    figures: z
-      .array(
-        z.discriminatedUnion('kind', [
-          z.object({
-            kind: z.literal('keyframe'),
-            caption: z.string().min(1).max(80),
-            unitId: z.string().regex(/^su_[0-9a-f]{16}$/),
-            secHint: z.number().int().min(0).optional(),
-          }),
-          z.object({
-            kind: z.literal('diagram'),
-            caption: z.string().min(1).max(80),
-            unitId: z.string().regex(/^su_[0-9a-f]{16}$/).optional(),
-            template: z.enum(['chip-contrast', 'chip-horizontal', 'timeline', 'stat-inline']),
-            params: z.record(z.string(), z.unknown()),
-          }),
-          z.object({
-            kind: z.literal('generated'),
-            caption: z.string().min(1).max(80),
-            prompt: z.string().min(1).max(500),
-          }),
-        ]),
-      )
-      .min(1)
-      .max(10),
-  })
+//
+// 图示草稿形状取契约包（figure-draft.ts）：diagram 的 params **就是模板参数形状**
+// （不是自由键值对）——模型在工具 schema 里看得见字段与取值域，才不会把 items 写成
+// 对象、把 leftCount 写成字符串（端到端实测踩过：形状只写在提示词散文里，模型看不见）。
+const figureSpecProduct = (): z.ZodType => figureDraftProduct
 
 // 步骤 5/7 课件（迭代 7，arch/06 §9）：草稿 schema 直接取契约包的 v4 定义
 // （单一真相源——模型侧字段名与 v3 spec 逐字一致，服务端物化时才逐字段映射）。
@@ -152,7 +129,7 @@ export function sectionPrompt(
       `动笔前先用 search_source_units 检索与节主题相关的素材证据单元；术语可查 list_concepts，案例股可查 list_case_stocks。`,
       `三路的规矩：`,
       `- keyframe：讲师原始画面帧。必须带 unitId（来自 search_source_units 的 id，不可编造）与 caption；secHint 可选（该单元窗内的秒数，缺省取单元中点）。每节最多 6 张，宁缺毋滥，只选教学价值最高的画面。`,
-      `- diagram：参数化 SVG 示意图。template 只能是 chip-contrast / chip-horizontal / timeline / stat-inline，params 必须符合对应模板约定（chip-contrast: title/leftLabel/rightLabel/leftCount 4-24/rightCount 4-24；chip-horizontal: title/priceLabel?/rows[{y 0-100, width 10-100, label?}] 2-12 行；timeline: title/events[{label,desc?}] 2-8 个；stat-inline: items[{label,value,note?}] 1-4 个）。每节最多 2 张。`,
+      `- diagram：参数化 SVG 示意图。template 只能是 chip-contrast / chip-horizontal / timeline / stat-inline；params 的字段与取值域由 write_step_output 的工具 schema 按模板逐个给出——照 schema 填，不要自造字段名、不要把数组写成对象、数字不要写成字符串。每节最多 2 张。`,
       `- generated：纯装饰图（章节扉页/氛围图），只给 caption 与 prompt（画面描述）。禁止承载任何教学信息或具体数字。`,
       `把图示规格数组交给 write_step_output 工具写入（figures 字段），然后用一句话确认完成。`,
     ].join('\n')
@@ -208,9 +185,17 @@ export function sectionPrompt(
       `DSL 规矩（v2）：`,
       `- 事实段必须带证据锚 [[unit:素材单元id|标签]]（id 来自 search_source_units，不可编造）——每一条可验证的陈述都要能回溯到录像位置。`,
       `- v1 容器块白名单 :::cards :::think :::sidenote :::warn :::board :::bignum :::cmp :::timeline :::figure :::clip；配额 think≤3、sidenote≤8、cards≤2、figure≤8、clip≤3。`,
-      `- :::sidenote 是术语边注，title 必填且只能用 list_concepts 里的术语（原词）。`,
-      `- :::figure figureId 只能引用 list_figures 返回的 id，caption 与图示步保持一致。`,
-      `- :::clip 只能裁所引素材单元窗内的 60s 以内片段（assetId/from/to 秒/unitId 必填）。`,
+      `- 容器块写法：首行 \`:::指令 属性="值"\`，末行 \`:::\`；正文写在两行之间。`,
+      `- :::think 与 :::warn 必带 title（1~50 字）；:::warn 还要带 variant（def/rule/misuse/risk 之一），正文 1~500 字。`,
+      `- :::sidenote 是术语边注，title 必填且只能用 list_concepts 里的术语（原词），正文 1~500 字。`,
+      `- :::board 必带 unitId（引用的素材单元 id），正文 1~500 字。`,
+      `- JSON 块（:::cards / :::bignum / :::cmp / :::timeline）的 body 是**一行 JSON**，形状固定：`,
+      `  · :::cards → {"items":[{"num":"1","title":"…","desc":"…"}]}（1~4 条）`,
+      `  · :::bignum → {"items":[{"label":"…","value":"…","note":"…"}]}（1~3 条）`,
+      `  · :::cmp → {"title":"…","left":{"head":"…","items":["…"]},"right":{"head":"…","items":["…"]}}`,
+      `  · :::timeline → {"events":[{"date":"YYYY-MM-DD","title":"…","desc":"…"}]}（3~8 条）`,
+      `- :::figure figureId 只能引用 list_figures 返回的 id，caption 必填（1~200 字）。`,
+      `- :::clip 只能裁所引素材单元窗内的 60s 以内片段（assetId/from/to 秒/unitId/caption 必填）。`,
       `- v2 溯源块已启用：`,
       `  · :::annotation 老师标注卡：unitId/assetId/code/kind/atMs 必填（kind ∈ structure/invalidation/rhythm，atMs 为毫秒整数且落在该素材单元时间窗内），body 是 JSON {"d":"YYYY-MM-DD","label":"…","quote":"老师原话","glossary":["术语"]}。d 必须是该股案例窗内的**真实交易日**，glossary 里的术语必须出自 list_concepts。`,
       `  · :::replay 正文内嵌逐根回放入口：code 与 caption 必填，code 只能取下面列出的已落库回放课件的 code。`,
@@ -261,6 +246,7 @@ export async function buildStepAgent(fields: {
     refType: 'production_task',
     refId: task.id,
     maxTokens: stepMaxTokens(def.key),
+    timeoutMs: stepTimeoutMs(def.key),
     ...(fields.fetchImpl ? { fetchImpl: fields.fetchImpl } : {}),
   })
   return createDeepAgent({
