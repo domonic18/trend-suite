@@ -10,6 +10,7 @@ import {
 import { understandStage } from '../processing/understand'
 import * as procRepo from '../processing/repo'
 import * as jobs from './repo'
+import { DEFAULT_STALL_TIMEOUT_MS, isStalled } from './stall'
 import { runCurriculumDraft } from '@/server/content/plans/drafter'
 import { runProductionRun } from '@/server/production/runner'
 import type { PipelineJobRow } from './repo'
@@ -25,6 +26,19 @@ const HEARTBEAT_INTERVAL_MS = 10_000
 const RECLAIM_INTERVAL_MS = 30_000
 // 测试钩子（验收③杀进程续跑）：注入缩小的心跳超时，避免等真实 120 秒。
 const RECLAIM_STALE_SECS = Number(process.env.WORKER_RECLAIM_STALE_SECS ?? 120)
+// 停滞自愈阈值：这么久没有一次成功的数据库往返就判定 worker 卡死，进程退出，
+// 由容器 restart 策略拉起来重新认领（2026-11-20 预发实锤的卡死形态就是认领查询挂住）。
+const STALL_TIMEOUT_MS = Number(process.env.WORKER_STALL_TIMEOUT_MS ?? DEFAULT_STALL_TIMEOUT_MS)
+const STALL_CHECK_INTERVAL_MS = 15_000
+
+/** 最近一次成功数据库往返的时刻：认领查询成功或心跳写成功都会刷新。 */
+let lastAliveAt = Date.now()
+/** 当前在处理的任务（停滞日志里报出来，便于定位卡在哪一单）。 */
+let currentJobId: string | null = null
+
+export function markAlive(): void {
+  lastAliveAt = Date.now()
+}
 
 export function workerId(): string {
   return `${hostname()}-${process.pid}`
@@ -33,10 +47,15 @@ export function workerId(): string {
 /** 认领并跑一个任务。返回 true 表示确实处理了一个任务。 */
 export async function runWorkerOnce(id = workerId()): Promise<boolean> {
   const job = await jobs.claimJob(id)
+  markAlive()
   if (!job) return false
 
+  currentJobId = job.id
   const timer = setInterval(() => {
-    void jobs.heartbeat(job.id).catch(() => undefined)
+    void jobs
+      .heartbeat(job.id)
+      .then(() => markAlive())
+      .catch(() => undefined)
   }, HEARTBEAT_INTERVAL_MS)
 
   try {
@@ -63,6 +82,7 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
     }
   } finally {
     clearInterval(timer)
+    currentJobId = null
   }
   return true
 }
@@ -263,9 +283,18 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
 /** worker 主循环：空转时按固定间隔轮询；每 30s 回收心跳丢失的任务。 */
 export async function startWorker(): Promise<void> {
   const id = workerId()
-  console.log(`[worker] 启动 ${id}`)
+  console.log(`[worker] 启动 ${id}（停滞阈值 ${STALL_TIMEOUT_MS}ms）`)
   await reclaimAndSync().catch(() => 0)
   let lastReclaim = Date.now()
+  const watchdog = setInterval(() => {
+    if (!isStalled({ lastAliveAt, now: Date.now(), timeoutMs: STALL_TIMEOUT_MS })) return
+    console.error(
+      `[worker] ${STALL_TIMEOUT_MS}ms 内没有成功的数据库往返（当前任务 ${currentJobId ?? '无'}），` +
+        '判定卡死，退出进程交由容器重启策略恢复',
+    )
+    process.exit(1)
+  }, STALL_CHECK_INTERVAL_MS)
+  watchdog.unref()
   for (;;) {
     let handled = false
     try {
@@ -284,6 +313,7 @@ export async function startWorker(): Promise<void> {
 /** 回收僵尸任务并同步素材状态：回收成 failed 的素材标失败，回队列的标待重试。课程级任务无素材状态可同步。 */
 async function reclaimAndSync(): Promise<void> {
   const reclaimed = await jobs.reclaimStaleJobs(5, RECLAIM_STALE_SECS)
+  markAlive()
   for (const row of reclaimed) {
     if (!row.asset_id) continue
     if (row.status === 'failed') {
