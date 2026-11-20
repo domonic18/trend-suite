@@ -12,7 +12,7 @@ import {
   type ProductionTaskRow,
   type SectionRow,
 } from './repo'
-import { stepDef, type StepDef } from './steps'
+import { stepDef, stepMaxTokens, type StepDef } from './steps'
 import { evidenceTools } from './evidence'
 import { TrendChatModel } from './channel'
 
@@ -260,6 +260,7 @@ export async function buildStepAgent(fields: {
     purpose: 'llm',
     refType: 'production_task',
     refId: task.id,
+    maxTokens: stepMaxTokens(def.key),
     ...(fields.fetchImpl ? { fetchImpl: fields.fetchImpl } : {}),
   })
   return createDeepAgent({

@@ -62,7 +62,8 @@ const draftOutputSchema = z.object({
     .array(
       z.object({
         nodeId: z.string(),
-        matchScore: z.number().min(0).max(1).nullable(),
+        /** 缺省即「无证据支撑」：模型漏写该键不该让整轮起草报废（null 本就是合法取值）。 */
+        matchScore: z.number().min(0).max(1).nullable().default(null),
       }),
     )
     .default([]),
