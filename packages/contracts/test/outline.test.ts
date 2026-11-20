@@ -58,8 +58,28 @@ test('normalizeOutlineText：已合规的行原样保留', () => {
 test('normalizeOutlineText：无编号的行按上文顺推补编号', () => {
   const normalized = normalizeOutlineText(['第一篇 总论', '什么是趋势', '趋势的定义'].join('\n'))
 
-  assert.equal(normalized, ['第一篇 总论', '第1章 什么是趋势', '1. 趋势的定义'].join('\n'))
+  assert.equal(normalized, ['第一篇 总论', '第一章 什么是趋势', '1. 趋势的定义'].join('\n'))
   assert.equal(parseOutlineText(normalized).issues.length, 0)
+})
+
+test('normalizeOutlineText：补号时章号全书连续、课时号按章内重排', () => {
+  const normalized = normalizeOutlineText(
+    ['第一篇 总论', '什么是趋势', '第二篇 实操', '什么是看盘'].join('\n'),
+  )
+
+  assert.equal(
+    normalized,
+    ['第一篇 总论', '第一章 什么是趋势', '第二篇 实操', '第二章 什么是看盘'].join('\n'),
+  )
+  assert.equal(parseOutlineText(normalized).issues.length, 0)
+})
+
+test('normalizeOutlineText：沿用教师原文已有的号，不换成另一套', () => {
+  const normalized = normalizeOutlineText(
+    ['第一篇 总论', '第三章 什么是趋势', '趋势的定义'].join('\n'),
+  )
+
+  assert.equal(normalized, ['第一篇 总论', '第三章 什么是趋势', '1. 趋势的定义'].join('\n'))
 })
 
 test('stripOutlineNumbering：剥掉标题自带的编号前缀', () => {
@@ -70,7 +90,7 @@ test('stripOutlineNumbering：剥掉标题自带的编号前缀', () => {
   assert.equal(stripOutlineNumbering('趋势的定义'), '趋势的定义')
 })
 
-test('renderOutlineText：篇/章/课时按层级重新编号', () => {
+test('renderOutlineText：篇/章/课时按层级重新编号，章号全书连续', () => {
   const text = renderOutlineText([
     { level: 1, title: '总论' },
     { level: 2, title: '什么是趋势' },
@@ -90,7 +110,7 @@ test('renderOutlineText：篇/章/课时按层级重新编号', () => {
       '2. 级别的概念',
       '第二章 趋势的度量',
       '第二篇 实操',
-      '第一章 看盘演练',
+      '第三章 看盘演练',
     ].join('\n'),
   )
   assert.equal(parseOutlineText(text).issues.length, 0)

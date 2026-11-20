@@ -1,5 +1,6 @@
 /**
- * 目录先验格式：三级编号（篇 / 章 / 课时）——前后端唯一真相源。
+ * 目录先验格式：三级编号（篇 / 章 / 课时），章号全书连续、课时章内重排
+ * ——前后端唯一真相源。
  *
  * 服务端用它把教师提交的原文解析成骨架下界（目录外不建章，arch/05 §5）；
  * 教师端用它本地逐行提示与一键规整，避免「前端一套正则、后端另一套」的漂移。
@@ -115,6 +116,10 @@ function cnToNumber(text: string): number | null {
  * 一键规整：把常见写法（第一部分 / 一. / 1 xxx / （1）xxx / 无编号行）
  * 改写成解析器认得的编号形式；**尽量保留原文的编号文字与标题**。
  * 认不出层级的行按上文层级顺推一级补编号——教师提交前会在文本框里复核。
+ *
+ * 编号口径与 `renderOutlineText` 一致：篇/章用中文数字，**章号全书连续**，
+ * 课时号在章内重排。教师原文里已有的号被沿用（补号时接着往下排），
+ * 不换成另一套号。
  */
 export function normalizeOutlineText(text: string): string {
   const out: string[] = []
@@ -134,9 +139,15 @@ export function normalizeOutlineText(text: string): string {
     if (level !== null) {
       out.push(line)
       prevLevel = level
-      if (level === 1) partNo += 1
-      else if (level === 2) chapterNo += 1
-      else lessonNo += 1
+      if (level === 1) {
+        partNo = leadingUnitNumber(line, '篇') ?? partNo + 1
+        lessonNo = 0
+      } else if (level === 2) {
+        chapterNo = leadingUnitNumber(line, '章') ?? chapterNo + 1
+        lessonNo = 0
+      } else {
+        lessonNo = leadingLessonNumber(line) ?? lessonNo + 1
+      }
       continue
     }
 
@@ -144,9 +155,15 @@ export function normalizeOutlineText(text: string): string {
     if (rewritten) {
       out.push(rewritten.text)
       prevLevel = rewritten.level
-      if (rewritten.level === 1) partNo += 1
-      else if (rewritten.level === 2) chapterNo += 1
-      else lessonNo += 1
+      if (rewritten.level === 1) {
+        partNo = leadingUnitNumber(rewritten.text, '篇') ?? partNo + 1
+        lessonNo = 0
+      } else if (rewritten.level === 2) {
+        chapterNo = leadingUnitNumber(rewritten.text, '章') ?? chapterNo + 1
+        lessonNo = 0
+      } else {
+        lessonNo = leadingLessonNumber(rewritten.text) ?? lessonNo + 1
+      }
       continue
     }
 
@@ -154,10 +171,12 @@ export function normalizeOutlineText(text: string): string {
     const inferred: OutlineLevel = prevLevel === null ? 1 : prevLevel >= 3 ? 3 : ((prevLevel + 1) as OutlineLevel)
     if (inferred === 1) {
       partNo += 1
-      out.push(`第${partNo}篇 ${line}`)
+      lessonNo = 0
+      out.push(`第${numberToCn(partNo)}篇 ${line}`)
     } else if (inferred === 2) {
       chapterNo += 1
-      out.push(`第${chapterNo}章 ${line}`)
+      lessonNo = 0
+      out.push(`第${numberToCn(chapterNo)}章 ${line}`)
     } else {
       lessonNo += 1
       out.push(`${lessonNo}. ${line}`)
@@ -166,6 +185,18 @@ export function normalizeOutlineText(text: string): string {
   }
 
   return out.join('\n')
+}
+
+/** 行首「第X篇 / 第X章」的号；取不到返回 null。 */
+function leadingUnitNumber(line: string, unit: string): number | null {
+  const match = new RegExp(`^第\\s*([一二三四五六七八九十百零\\d]+)\\s*${unit}`).exec(line)
+  return match ? cnToNumber(match[1]!) : null
+}
+
+/** 行首「1.」的号；取不到返回 null。 */
+function leadingLessonNumber(line: string): number | null {
+  const match = /^(\d{1,3})\s*[.、)）:：]/.exec(line)
+  return match ? Number(match[1]) : null
 }
 
 /** 宽松模式识别：返回改写后的文本与层级；认不出返回 null。 */
@@ -220,7 +251,8 @@ export type OutlineSection = { level: OutlineLevel; title: string }
 
 /**
  * 由层级+标题生成规范目录文本（第一篇 / 第一章 / 1.）。
- * 编号自篇起、章在篇内、课时在章内重新计数。
+ * **章号全书连续**（第一篇下是第一章…，第二篇下接着往下排），
+ * 课时号在章内重新计数。
  */
 export function renderOutlineText(sections: OutlineSection[]): string {
   const lines: string[] = []
@@ -232,7 +264,7 @@ export function renderOutlineText(sections: OutlineSection[]): string {
     if (title.length === 0) continue
     if (section.level === 1) {
       partNo += 1
-      chapterNo = 0
+      lessonNo = 0
       lines.push(`第${numberToCn(partNo)}篇 ${title}`)
     } else if (section.level === 2) {
       chapterNo += 1

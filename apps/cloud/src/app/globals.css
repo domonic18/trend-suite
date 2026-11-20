@@ -1299,15 +1299,44 @@ dialog::backdrop {
   gap: 6px;
 }
 
+.oe-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oe-group + .oe-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--p-line);
+}
+
+.oe-chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 16px;
+}
+
 .oe-row {
   display: grid;
-  grid-template-columns: 18px 28px 1fr auto auto;
+  grid-template-columns: 18px 1fr auto auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
   border: 1px solid var(--p-line);
   border-radius: var(--r-ctrl);
   background: var(--p-bg);
+}
+
+/* 层级：篇顶格、章缩进一档、课时再缩进一档 */
+.oe-row.lv1 {
+  background: var(--p-pri-soft);
+  border-color: #cfe0ff;
+}
+
+.oe-row.lv3 {
+  margin-left: 16px;
 }
 
 .oe-row.err {

@@ -1,0 +1,78 @@
+import type { PlanSectionNodeView } from '@trend-suite/contracts'
+
+/** 目录分组：一篇 → 若干章 → 若干课时。 */
+export type OutlineChapterGroup = {
+  chapter: PlanSectionNodeView
+  lessons: PlanSectionNodeView[]
+}
+
+export type OutlinePartGroup = {
+  /** 篇节点；骨架里出现没有篇的章时为 null。 */
+  part: PlanSectionNodeView | null
+  chapters: OutlineChapterGroup[]
+  /** 找不到归属章的课时（骨架异常时的兜底）。 */
+  loose: PlanSectionNodeView[]
+}
+
+export type OutlineCounts = { parts: number; chapters: number; lessons: number }
+
+/** 各层级计数——卡片头部按篇/章/课时分列，不再把所有节点统称「章」。 */
+export function countOutlineLevels(nodes: PlanSectionNodeView[]): OutlineCounts {
+  const counts: OutlineCounts = { parts: 0, chapters: 0, lessons: 0 }
+  for (const node of nodes) {
+    if (node.level === 1) counts.parts += 1
+    else if (node.level === 2) counts.chapters += 1
+    else counts.lessons += 1
+  }
+  return counts
+}
+
+/**
+ * 骨架节点 → 篇/章/课时分组。骨架是扁平数组（靠 level + parentId 表层级），
+ * 渲染前先归拢成组，页面才看得出层级而不是一列平铺。
+ *
+ * 归拢以 `parentId` 为准：找不到父节点（骨架异常）时落到「无归属」，
+ * 不硬塞给相邻的章。
+ */
+export function buildOutlineTree(nodes: PlanSectionNodeView[]): OutlinePartGroup[] {
+  const byId = new Map(nodes.map((node) => [node.id, node]))
+  const groups: OutlinePartGroup[] = []
+  const groupByPartId = new Map<string, OutlinePartGroup>()
+  const chapterById = new Map<string, OutlineChapterGroup>()
+  let fallback: OutlinePartGroup | null = null
+
+  const ensureFallback = (): OutlinePartGroup => {
+    if (!fallback) {
+      fallback = { part: null, chapters: [], loose: [] }
+      groups.push(fallback)
+    }
+    return fallback
+  }
+
+  for (const node of nodes) {
+    if (node.level === 1) {
+      const group: OutlinePartGroup = { part: node, chapters: [], loose: [] }
+      groups.push(group)
+      groupByPartId.set(node.id, group)
+      fallback = null
+      continue
+    }
+
+    const parent = node.parentId ? byId.get(node.parentId) : undefined
+
+    if (node.level === 2) {
+      const group =
+        (parent && parent.level === 1 ? groupByPartId.get(parent.id) : undefined) ?? ensureFallback()
+      const chapter: OutlineChapterGroup = { chapter: node, lessons: [] }
+      group.chapters.push(chapter)
+      chapterById.set(node.id, chapter)
+      continue
+    }
+
+    const chapter = parent && parent.level === 2 ? chapterById.get(parent.id) : undefined
+    if (chapter) chapter.lessons.push(node)
+    else ensureFallback().loose.push(node)
+  }
+
+  return groups
+}
