@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { PlanSectionNodeView } from '@trend-suite/contracts'
-import { buildOutlineTree, countOutlineLevels } from './outlineTree'
+import { buildOutlineTree, countOutlineLevels, siblingInfoOf } from './outlineTree'
 
 /**
  * 目录分组与计数（呈现层）：骨架是扁平数组，靠 level 归拢成篇/章/课时，
@@ -58,4 +58,15 @@ test('buildOutlineTree：没有篇的章与没有章的课时都有归属', () =
     groups[0]?.loose.map((item) => item.id),
     ['n3'],
   )
+})
+
+test('siblingInfoOf：给出同级位置与总数，上移下移据此算', () => {
+  assert.deepEqual(siblingInfoOf(NODES, 'n3'), { parentId: 'n2', index: 0, count: 1 })
+  assert.deepEqual(siblingInfoOf(NODES, 'n5'), { parentId: 'n4', index: 0, count: 1 })
+  assert.deepEqual(siblingInfoOf(NODES, 'n2'), { parentId: 'n1', index: 0, count: 2 })
+  assert.deepEqual(siblingInfoOf(NODES, 'n4'), { parentId: 'n1', index: 1, count: 2 })
+  // 顶级节点（篇）互为同级
+  assert.deepEqual(siblingInfoOf(NODES, 'n6'), { parentId: null, index: 1, count: 2 })
+  // 节点不存在返回 null
+  assert.equal(siblingInfoOf(NODES, 'nope'), null)
 })

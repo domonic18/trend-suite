@@ -272,6 +272,101 @@ test('微调：结构化即时生效，版本 +1 且不调模型', { skip }, asy
   )
 })
 
+const MOVE_OUTLINE_TEXT = [
+  '第一篇 总论',
+  '第一章 甲',
+  '1. 甲一',
+  '2. 甲二',
+  '第二章 乙',
+  '1. 乙一',
+].join('\n')
+
+test('微调：移动章节换父节点，目录树与骨架同步落库', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-plan-move',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourse(teacher.id, '方案课移动')
+  await seedReadyAsset(course.id)
+  await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: MOVE_OUTLINE_TEXT,
+    allowPartial: false,
+  })
+  // 草案骨架要与提交的目录同源（节点 id 一致），移动才挂得上
+  const moveOutline = parseOutline(MOVE_OUTLINE_TEXT)
+  const moveSkeleton = buildSkeleton(
+    moveOutline,
+    moveOutline.nodes.map((node) => ({ nodeId: node.id, matchScore: 0.9 })),
+  )
+  await repo.insertPlan({
+    id: newId('plan'),
+    courseId: course.id,
+    version: await repo.nextPlanVersion(course.id),
+    status: 'draft',
+    origin: 'initial',
+    createdBy: teacher.id,
+    skeleton: moveSkeleton.skeleton,
+    conceptMap: { concepts: [], edges: [] },
+    glossary: { items: [] },
+    sectionPlan: { lessons: [] },
+    violations: [],
+  })
+
+  const nodes = moveOutline.nodes
+  const chapterB = nodes[4]!
+  const lessonA2 = nodes[3]!
+  const tweaked = await tweakPlan(teacher, course.id, {
+    op: 'move_node',
+    nodeId: lessonA2.id,
+    newParentId: chapterB.id,
+    position: 0,
+  })
+  const skeleton = tweaked.skeleton as { nodes: { id: string; parentId: string | null }[] }
+  const moved = skeleton.nodes.find((node) => node.id === lessonA2.id)
+  assert.equal(moved?.parentId, chapterB.id)
+
+  // 目录树同步落库
+  const stored = await query<{ outline: { nodes: { id: string; parentId: string | null }[] } }>(
+    'SELECT outline FROM courses WHERE id = $1',
+    [course.id],
+  )
+  const tree = stored[0]?.outline
+  assert.equal(tree?.nodes.find((node) => node.id === lessonA2.id)?.parentId, chapterB.id)
+})
+
+test('自检结论：getPlanFor 带回最近一次自检结果，没有则为空', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-plan-review',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourse(teacher.id, '方案课自检')
+  await seedReadyAsset(course.id)
+  await savePlanInput(teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: OUTLINE_TEXT,
+    allowPartial: false,
+  })
+  await insertDraft(course.id, teacher.id)
+
+  const before = await getPlanFor(teacher, course.id)
+  assert.equal(before?.review, null)
+
+  await repo.insertReview({
+    courseId: course.id,
+    planId: null,
+    status: 'manual',
+    attempts: 3,
+    issues: [{ code: 'lesson_without_source', subject: '趋势的定义', message: '课时没有出处' }],
+  })
+  const after = await getPlanFor(teacher, course.id)
+  assert.equal(after?.review?.status, 'manual')
+  assert.equal(after?.review?.attempts, 3)
+  assert.equal(after?.review?.issues.length, 1)
+})
+
 test('概念落库：同课程重名由数据库唯一约束兜底', { skip }, async () => {
   const teacher = await createAccount({
     username: 'laoshi-plan-6',

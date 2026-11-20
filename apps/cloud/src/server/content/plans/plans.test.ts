@@ -316,3 +316,189 @@ test('applyTweak：粒度微调改子节数，别名撞名报 409', () => {
   // 术语表与概念图谱同源：别名同步进术语表
   assert.deepEqual(aliased.content.glossary.items[0]?.aliases, ['价格趋势'])
 })
+
+/** 两篇两章四课时——移动/重排用例的骨架。 */
+const MOVE_TEXT = [
+  '第一篇 总论',
+  '第一章 甲',
+  '1. 甲一',
+  '2. 甲二',
+  '第二章 乙',
+  '1. 乙一',
+].join('\n')
+
+function moveFixture(): { content: TweakedContent; outline: ReturnType<typeof parseOutline> } {
+  const outline = parseOutline(MOVE_TEXT)
+  const { skeleton } = buildSkeleton(
+    outline,
+    outline.nodes.map((node) => ({ nodeId: node.id, matchScore: 0.9 })),
+  )
+  const content: TweakedContent = {
+    skeleton,
+    conceptMap: { concepts: [], edges: [] },
+    glossary: { items: [] },
+    sectionPlan: {
+      lessons: outline.nodes
+        .filter((node) => node.level === 3)
+        .map((node, index) => ({
+          id: `l${index + 1}`,
+          sectionId: node.id,
+          title: node.title,
+          subLessonCount: 2,
+          estimatedMinutes: 9,
+          parallelSlot: 1,
+          sourceUnitIds: [],
+        })),
+    },
+    violations: [],
+  }
+  return { content, outline }
+}
+
+test('applyTweak：移动节点换父章，目录树与骨架同步', () => {
+  const { content, outline } = moveFixture()
+  const part = outline.nodes[0]!
+  const chapterA = outline.nodes[1]!
+  const lessonA2 = outline.nodes[3]!
+  const chapterB = outline.nodes[4]!
+  const result = applyTweak(
+    content,
+    { op: 'move_node', nodeId: lessonA2.id, newParentId: chapterB.id, position: 0 },
+    outline,
+  )
+  const moved = result.outline.nodes.find((node) => node.id === lessonA2.id)
+  assert.equal(moved?.parentId, chapterB.id)
+  // 骨架跟着换父
+  const skeletonNode = result.content.skeleton.nodes.find((node) => node.id === lessonA2.id)
+  assert.equal(skeletonNode?.parentId, chapterB.id)
+  // 原父节点不再挂着它
+  assert.ok(
+    !result.outline.nodes.some(
+      (node) => node.id === lessonA2.id && node.parentId === chapterA.id,
+    ),
+  )
+  // 目录树仍是「先父后子」的文档顺序：甲一留在甲下，甲二挪到乙下
+  assert.deepEqual(
+    result.outline.nodes.map((node) => node.id),
+    [part.id, chapterA.id, outline.nodes[2]!.id, chapterB.id, lessonA2.id, outline.nodes[5]!.id],
+  )
+})
+
+test('applyTweak：移动节点到同级指定位置', () => {
+  const { content, outline } = moveFixture()
+  const chapterA = outline.nodes[1]!
+  const lessonA1 = outline.nodes[2]!
+  const lessonA2 = outline.nodes[3]!
+  const result = applyTweak(
+    content,
+    { op: 'move_node', nodeId: lessonA2.id, newParentId: chapterA.id, position: 0 },
+    outline,
+  )
+  const chapterChildren = result.outline.nodes
+    .filter((node) => node.parentId === chapterA.id)
+    .map((node) => node.id)
+  assert.deepEqual(chapterChildren, [lessonA2.id, lessonA1.id])
+})
+
+test('applyTweak：拒绝把章节移进自己的下级', () => {
+  const { content, outline } = moveFixture()
+  const chapterA = outline.nodes[1]!
+  const lessonA1 = outline.nodes[2]!
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'move_node', nodeId: chapterA.id, newParentId: lessonA1.id, position: 0 },
+        outline,
+      ),
+    (err: unknown) => err instanceof HttpError && err.status === 400,
+  )
+})
+
+test('applyTweak：拒绝跨层级移动（课时只挂章、章只挂篇、篇只挂顶级）', () => {
+  const { content, outline } = moveFixture()
+  const part = outline.nodes[0]!
+  const chapterA = outline.nodes[1]!
+  const lessonA1 = outline.nodes[2]!
+  // 课时挂到篇下
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'move_node', nodeId: lessonA1.id, newParentId: part.id, position: 0 },
+        outline,
+      ),
+    (err: unknown) => err instanceof HttpError && err.status === 400,
+  )
+  // 章挂到章下
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'move_node', nodeId: chapterA.id, newParentId: outline.nodes[4]!.id, position: 0 },
+        outline,
+      ),
+    (err: unknown) => err instanceof HttpError && err.status === 400,
+  )
+  // 篇挂到章下
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'move_node', nodeId: part.id, newParentId: chapterA.id, position: 0 },
+        outline,
+      ),
+    (err: unknown) => err instanceof HttpError && err.status === 400,
+  )
+})
+
+test('applyTweak：拒绝把父节点搬空（移走最后一个子节点）', () => {
+  const { content, outline } = moveFixture()
+  const chapterB = outline.nodes[4]!
+  const lessonB1 = outline.nodes[5]!
+  const chapterA = outline.nodes[1]!
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'move_node', nodeId: lessonB1.id, newParentId: chapterA.id, position: 0 },
+        outline,
+      ),
+    (err: unknown) =>
+      err instanceof HttpError && err.status === 400 && err.message.includes('移走会留下空节点'),
+  )
+})
+
+test('applyTweak：课时重排必须给出全排列，否则 400', () => {
+  const { content, outline } = moveFixture()
+  const ids = content.sectionPlan.lessons.map((lesson) => lesson.id)
+  const reordered = applyTweak(
+    content,
+    { op: 'reorder_lessons', lessonIds: [...ids].reverse() },
+    outline,
+  )
+  assert.deepEqual(
+    reordered.content.sectionPlan.lessons.map((lesson) => lesson.id),
+    [...ids].reverse(),
+  )
+
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'reorder_lessons', lessonIds: [ids[0]!] },
+        outline,
+      ),
+    (err: unknown) =>
+      err instanceof HttpError && err.status === 400 && err.message.includes('全排列'),
+  )
+  assert.throws(
+    () =>
+      applyTweak(
+        content,
+        { op: 'reorder_lessons', lessonIds: [...ids.slice(1), 'l_unknown'] },
+        outline,
+      ),
+    (err: unknown) => err instanceof HttpError && err.status === 400,
+  )
+})

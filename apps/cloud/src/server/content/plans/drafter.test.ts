@@ -191,6 +191,217 @@ async function createCourseFor(ownerId: string): Promise<{ id: string }> {
 }
 
 /**
+ * 规划自检（迭代 8 PR#47）：自检不通过的方案不呈现给教师——
+ * 带失败原因自动重规划，连续 3 次不过转人工，坏草案一行都不落。
+ */
+
+/** 目录代拟按调用次数依次返回不同版本（第一次坏、第二次好）。 */
+function stubSelfCheckFetch(outlines: { sections: unknown[] }[], lessonUnitId: string): () => void {
+  const original = globalThis.fetch
+  let outlineCalls = 0
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    const body = typeof init.body === 'string' ? init.body : ''
+    const payload = body.includes('目录设计助手')
+      ? (outlines[Math.min(outlineCalls++, outlines.length - 1)] ?? outlines[0])
+      : {
+          matches: [],
+          concepts: [{ name: '趋势', aliases: [], definition: '价格运行方向' }],
+          edges: [],
+          lessons: [
+            {
+              sectionId: 'n3',
+              title: '趋势的方向性',
+              subLessonCount: 2,
+              estimatedMinutes: 9,
+              parallelSlot: 1,
+              sourceUnitIds: [lessonUnitId],
+            },
+          ],
+        }
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  }) as typeof fetch
+  return () => {
+    globalThis.fetch = original
+  }
+}
+
+/** 建一门带两个理解单元的课（3 条要点、20 分钟素材 → 规模上限 2 课时）。 */
+async function courseWithUnits(
+  username: string,
+  unitPrefix: string,
+): Promise<{
+  id: string
+  teacher: Awaited<ReturnType<typeof createAccount>>
+  unitIds: [string, string]
+}> {
+  const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
+  const course = await createCourseFor(teacher.id)
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'f.mp4', expectedByteSize: 10 })
+  await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/f.mp4' WHERE id = $1`, [
+    assetId,
+  ])
+  const unitIds: [string, string] = [`${unitPrefix}1`, `${unitPrefix}2`]
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 0, 600000, '讲解内容', $4::jsonb, 0)`,
+    [
+      unitIds[0],
+      course.id,
+      assetId,
+      JSON.stringify({ teachingPoints: ['趋势有方向性', '趋势有持续性'] }),
+    ],
+  )
+  await query(
+    `INSERT INTO source_units (id, course_id, asset_id, start_ms, end_ms, text, extra, chunk_index)
+     VALUES ($1, $2, $3, 600000, 1200000, '讲解内容', $4::jsonb, 1)`,
+    [unitIds[1], course.id, assetId, JSON.stringify({ teachingPoints: ['级别由时间尺度定义'] })],
+  )
+  return { id: course.id, teacher, unitIds }
+}
+
+test('智能规划：自检不通过自动重规划，第二版通过才落库', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-自检重规划',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const course = await courseWithUnits('laoshi-selfcheck-retry', 'su_r1_')
+
+  const job = await savePlanInput(course.teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+    mode: 'smart',
+  })
+
+  const restore = stubSelfCheckFetch(
+    [
+      // 第一版：课时没出处且标题是空话 → 自检不通过
+      {
+        sections: [
+          { level: 1, title: '趋势入门', sourceUnitIds: [] },
+          { level: 2, title: '什么是趋势', sourceUnitIds: [] },
+          { level: 3, title: '概述', sourceUnitIds: [] },
+        ],
+      },
+      // 第二版：出处齐、标题是知识点 → 通过
+      {
+        sections: [
+          { level: 1, title: '趋势入门', sourceUnitIds: [] },
+          { level: 2, title: '什么是趋势', sourceUnitIds: [] },
+          { level: 3, title: '趋势的方向性', sourceUnitIds: [course.unitIds[0]] },
+          { level: 3, title: '趋势的级别', sourceUnitIds: [course.unitIds[1]] },
+        ],
+      },
+    ],
+    course.unitIds[0],
+  )
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    restore()
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null }>(
+    'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  assert.equal(jobs[0]?.status, 'succeeded')
+
+  const reviews = await query<{ status: string; attempts: number; issues: unknown }>(
+    'SELECT status, attempts, issues FROM plan_reviews WHERE course_id = $1 ORDER BY created_at',
+    [course.id],
+  )
+  // 第一轮失败留痕，第二轮通过
+  assert.equal(reviews.length, 2)
+  assert.equal(reviews[0]?.status, 'fail')
+  assert.equal(reviews[0]?.attempts, 1)
+  assert.equal(reviews[1]?.status, 'pass')
+  assert.equal(reviews[1]?.attempts, 2)
+
+  // 通过的那版才落库
+  const draft = await repo.findDraftPlan(course.id)
+  assert.ok(draft)
+  const outline = (await query<{ outline: unknown }>('SELECT outline FROM courses WHERE id = $1', [
+    course.id,
+  ]))[0]?.outline as { nodes: { title: string }[] }
+  assert.equal(outline.nodes.length, 4)
+  assert.equal(outline.nodes[0]?.title, '第一篇 趋势入门')
+})
+
+test('智能规划：连续 3 次自检不通过转人工，坏方案一行都不落', { skip }, async () => {
+  const entry = await createModelEntry({
+    name: '起草模型-自检转人工',
+    purposes: ['llm'],
+    provider: 'Test',
+    protocol: 'openai',
+    model: 'test-model',
+    baseUrl: 'https://llm.example.com',
+    apiKey: 'sk-test-key',
+  })
+  await updateTaskBinding({ task: 'content.curriculum', primaryModelId: entry.id, backupModelId: null })
+
+  const course = await courseWithUnits('laoshi-selfcheck-manual', 'su_m1_')
+
+  const job = await savePlanInput(course.teacher, course.id, {
+    goal: '学会看盘',
+    outlineText: '',
+    allowPartial: false,
+    mode: 'smart',
+  })
+
+  const restore = stubSelfCheckFetch(
+    [
+      {
+        sections: [
+          { level: 1, title: '趋势入门', sourceUnitIds: [] },
+          { level: 2, title: '什么是趋势', sourceUnitIds: [] },
+          { level: 3, title: '概述', sourceUnitIds: [] },
+        ],
+      },
+    ],
+    course.unitIds[0],
+  )
+  try {
+    assert.equal(await runWorkerOnce('test-worker'), true)
+  } finally {
+    restore()
+  }
+
+  const jobs = await query<{ status: string; error_code: string | null }>(
+    'SELECT status, error_code FROM pipeline_jobs WHERE id = $1',
+    [job.id],
+  )
+  assert.equal(jobs[0]?.status, 'failed')
+  assert.equal(jobs[0]?.error_code, 'plan_self_check_failed')
+
+  const reviews = await query<{ status: string; attempts: number }>(
+    'SELECT status, attempts FROM plan_reviews WHERE course_id = $1 ORDER BY created_at',
+    [course.id],
+  )
+  assert.equal(reviews.length, 4, '三轮失败各留一条，第 3 轮额外留一条转人工')
+  assert.equal(reviews.at(-1)?.status, 'manual')
+  assert.equal(reviews.at(-1)?.attempts, 3)
+
+  // 坏方案不落库：没有草案行，目录树也没有被改写
+  assert.equal(await repo.findDraftPlan(course.id), null)
+  const stored = await query<{ outline: unknown }>('SELECT outline FROM courses WHERE id = $1', [
+    course.id,
+  ])
+  assert.equal(stored[0]?.outline, null)
+})
+
+/**
  * 智能规划（迭代 8）：规划输入换成「讲解要点」清单，目录由 Agent 重排，
  * 教师粘贴的原文留着不动；骨架的出处与覆盖率都从要点绑定推导。
  */

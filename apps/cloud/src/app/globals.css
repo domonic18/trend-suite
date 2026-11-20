@@ -1370,6 +1370,13 @@ dialog::backdrop {
   gap: 6px;
 }
 
+/* 行内「换父章节」下拉：微调移动用 */
+.oe-row .oe-move {
+  max-width: 130px;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
 .oe-pick {
   display: inline-flex;
   align-items: center;
