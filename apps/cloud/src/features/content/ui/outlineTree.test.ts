@@ -14,7 +14,7 @@ function node(
   parentId: string | null,
   title = id,
 ): PlanSectionNodeView {
-  return { id, level, parentId, title, matchScore: 1, matchStatus: 'ok' }
+  return { id, level, parentId, title, matchScore: 1, matchStatus: 'ok', sourceUnitIds: [] }
 }
 
 const NODES: PlanSectionNodeView[] = [

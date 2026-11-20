@@ -93,6 +93,43 @@ export async function retryAsset(
 }
 
 /**
+ * 重跑理解（迭代 8）：只补理解阶段（转写与关键帧保留），按块去重续跑。
+ * 智能规划要用素材的教学要点——存量素材没有理解结果时从这里补。
+ */
+export async function rerunUnderstand(
+  user: SessionUser,
+  assetId: string,
+): Promise<{ asset: MediaAssetView; jobId: string }> {
+  const row = await repo.findAssetById(assetId)
+  if (!row) throw notFound('素材不存在')
+  await getCourseForUser(user, row.course_id)
+  if (row.status !== 'ready') {
+    throw conflict('素材尚未就绪，先完成加工再重跑理解')
+  }
+
+  const existing = await jobRepo.findJobByAsset({ assetId, kind: 'understand_rerun' })
+  if (existing && (existing.status === 'queued' || existing.status === 'running')) {
+    throw conflict('理解任务正在进行中')
+  }
+  if (existing && existing.status === 'failed') {
+    await jobRepo.cancelJob(existing.id)
+  }
+
+  const job = await jobRepo.enqueueJob({ assetId, kind: 'understand_rerun' })
+  await procRepo.setAssetProgress({
+    assetId,
+    step: 'understand',
+    progress: 0,
+    message: '排队中',
+  })
+  const updated = await repo.findAssetById(assetId)
+  return {
+    asset: { ...toView(updated!), jobStatus: job.status as JobStatus },
+    jobId: job.id,
+  }
+}
+
+/**
  * 停止加工（T19）：排队中直接取消；运行中置取消标记，worker 在阶段边界
  * 安全中止并把素材拨回「已上传」。已转块与关键帧保留，重新加工按块去重续转。
  */

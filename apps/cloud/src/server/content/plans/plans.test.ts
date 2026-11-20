@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { HttpError } from '@/server/lib/http'
-import { buildSkeleton, parseOutline } from './outline'
+import { buildSkeleton, deriveMatchesFromUnits, parseOutline, trimOutlineToBudget } from './outline'
 import { validateConceptMap } from './concepts'
 import { applyTweak, type TweakedContent } from './tweak'
 
@@ -53,6 +53,65 @@ test('buildSkeleton：目录外章节进拒绝记录，漏掉的目录节点记�
   assert.equal(skeleton.nodes[1]?.matchStatus, 'low_match')
   assert.equal(skeleton.nodes[1]?.matchScore, null)
   assert.equal(skeleton.nodes[0]?.matchStatus, 'ok')
+})
+
+test('deriveMatchesFromUnits：课时有出处即算匹配，章与篇取子节点均值', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const matches = deriveMatchesFromUnits(
+    outline,
+    new Map([
+      [outline.nodes[2]!.id, ['su_1']],
+      [outline.nodes[3]!.id, ['su_2']],
+    ]),
+  )
+  const byId = new Map(matches.map((match) => [match.nodeId, match.matchScore]))
+  assert.equal(byId.get(outline.nodes[2]!.id), 1)
+  assert.equal(byId.get(outline.nodes[3]!.id), 1)
+  // 章：两个课时都有出处 → 1；篇：取章的均值 → 1
+  assert.equal(byId.get(outline.nodes[1]!.id), 1)
+  assert.equal(byId.get(outline.nodes[0]!.id), 1)
+})
+
+test('deriveMatchesFromUnits：没有出处的课时判证据不足，父章节不虚高', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const matches = deriveMatchesFromUnits(
+    outline,
+    new Map([[outline.nodes[2]!.id, ['su_1']]]),
+  )
+  const byId = new Map(matches.map((match) => [match.nodeId, match.matchScore]))
+  assert.equal(byId.get(outline.nodes[2]!.id), 1)
+  assert.equal(byId.get(outline.nodes[3]!.id), null)
+  // 章的两个孩子只有一个有出处 → 0.5，仍是 low_match
+  assert.equal(byId.get(outline.nodes[1]!.id), 0.5)
+  assert.equal(byId.get(outline.nodes[0]!.id), 0.5)
+})
+
+test('trimOutlineToBudget：超上限的课时被裁掉，空章空篇一并清掉', () => {
+  const outline = parseOutline(
+    [
+      '第一篇 总论',
+      '第一章 甲',
+      '1. 甲之一',
+      '2. 甲之二',
+      '3. 甲之三',
+      '第二章 乙',
+      '1. 乙之一',
+      '2. 乙之二',
+    ].join('\n'),
+  )
+  const { outline: trimmed, trimmed: dropped } = trimOutlineToBudget(outline, 3)
+  assert.equal(dropped, 2)
+  assert.equal(trimmed.nodes.filter((node) => node.level === 3).length, 3)
+  // 第二章的课时全被裁掉 → 章也不留；第一篇还有章 → 篇留着
+  assert.equal(trimmed.nodes.filter((node) => node.level === 2).length, 1)
+  assert.equal(trimmed.nodes.filter((node) => node.level === 1).length, 1)
+})
+
+test('trimOutlineToBudget：没超上限时原样返回', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const { outline: trimmed, trimmed: dropped } = trimOutlineToBudget(outline, 10)
+  assert.equal(dropped, 0)
+  assert.equal(trimmed.nodes.length, outline.nodes.length)
 })
 
 test('validateConceptMap：重名只保留首个并留痕', () => {
@@ -151,6 +210,7 @@ function baseContent(): TweakedContent {
           subLessonCount: 3,
           estimatedMinutes: 18,
           parallelSlot: 1,
+          sourceUnitIds: [],
         },
       ],
     },

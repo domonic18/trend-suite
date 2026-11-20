@@ -396,3 +396,30 @@ export function findSourceUnitsByIds(ids: string[]): Promise<SourceUnitRow[]> {
     [ids],
   )
 }
+
+/** 课程内每个证据单元的要点条数：算素材覆盖率用（不取正文，省流量）。 */
+export function listSourceUnitPointsByCourse(
+  courseId: string,
+): Promise<{ id: string; points: string[] }[]> {
+  return query<{ id: string; points: string[] }>(
+    `SELECT id, COALESCE(extra->'teachingPoints', '[]'::jsonb) AS points
+       FROM source_units WHERE course_id = $1`,
+    [courseId],
+  )
+}
+
+/** 每个素材的理解产出条数（单元数 + 要点数）：规划页给教师看「这份素材有多少可规划的知识点」。 */
+export function listUnitCountsByCourse(
+  courseId: string,
+): Promise<{ asset_id: string; unit_count: number; point_count: number }[]> {
+  return query<{ asset_id: string; unit_count: number; point_count: number }>(
+    `SELECT asset_id,
+            COUNT(*)::int AS unit_count,
+            COALESCE(SUM(CASE WHEN jsonb_typeof(extra->'teachingPoints') = 'array'
+                              THEN jsonb_array_length(extra->'teachingPoints') ELSE 0 END), 0)::int AS point_count
+       FROM source_units
+      WHERE course_id = $1
+      GROUP BY asset_id`,
+    [courseId],
+  )
+}
