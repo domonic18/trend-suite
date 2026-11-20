@@ -22,10 +22,10 @@ export async function listCourses(): Promise<CourseSummaryView[]> {
   return courseListResponse.parse(data).items
 }
 
-export async function createCourse(title: string): Promise<CourseView> {
+export async function createCourse(title: string, outlineText?: string): Promise<CourseView> {
   const data = await apiRequest<unknown>('/v1/admin/content/courses', {
     method: 'POST',
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, ...(outlineText ? { outlineText } : {}) }),
   })
   return createCourseResponse.parse(data).course
 }

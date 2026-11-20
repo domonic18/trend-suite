@@ -225,6 +225,11 @@ export function MaterialPanel({ courseId }: { courseId: string }) {
           <b>上传视频</b>
           <span className="meta">mp4 / mov · 单文件 ≤ 2GiB · 必须含音频轨</span>
         </div>
+        <p className="form-note">
+          上传的视频属于<b>这门课</b>；一门课可以上传多个视频，
+          默认全部参与规划（起草方案时可勾选其中几份）。
+          {assets.length > 0 ? `本课已有 ${assets.length} 个素材。` : ''}
+        </p>
         <div
           className={dragOver ? 'dropzone over' : 'dropzone'}
           onDragOver={(e) => {

@@ -4,6 +4,11 @@ import { idShape } from './ids.js'
 
 export const createCourseRequest = z.object({
   title: z.string().min(1, '课程名称必填').max(120, '课程名称最长 120 个字符'),
+  /**
+   * 目录先验（可选）：建课时粘贴的三级目录（篇 / 章 / 课时）。
+   * 之后起草方案直接用它做骨架——教师原文优先，Agent 不改目录。
+   */
+  outlineText: z.string().max(20000, '目录最长 20000 个字符').optional(),
 })
 
 export const courseView = z.object({

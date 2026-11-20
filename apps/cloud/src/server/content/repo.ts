@@ -17,12 +17,21 @@ export async function insertCourse(input: {
   id: string
   ownerId: string
   title: string
+  /** 目录先验（可选）：文本与目录树同源，落已有列（不加列）。 */
+  outlineText?: string
+  outline?: unknown
 }): Promise<CourseRow> {
   const row = await queryOne<CourseRow>(
-    `INSERT INTO courses (id, owner_id, title)
-     VALUES ($1, $2, $3)
+    `INSERT INTO courses (id, owner_id, title, outline_text, outline)
+     VALUES ($1, $2, $3, $4, $5::jsonb)
      RETURNING ${COURSE_COLUMNS}`,
-    [input.id, input.ownerId, input.title],
+    [
+      input.id,
+      input.ownerId,
+      input.title,
+      input.outlineText ?? null,
+      input.outline === undefined ? null : JSON.stringify(input.outline),
+    ],
   )
   if (!row) throw new Error('课程写入失败')
   return row

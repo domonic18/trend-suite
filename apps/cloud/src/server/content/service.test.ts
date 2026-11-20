@@ -74,6 +74,40 @@ test('教师只看得到自己的课，运营看得到全部', { skip }, async (
   assert.ok(opsTitles.includes('范围课二'))
 })
 
+test('建课带目录先验：原文与目录树同源落库；认不出的行不拦建课', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-outline',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+
+  const course = await createCourse(
+    teacher.id,
+    '有目录的课',
+    '第一篇 总论\n第一章 什么是趋势\n1. 趋势的定义\n2. 趋势与波动',
+  )
+
+  const [row] = await query<{ outline_text: string | null; outline: unknown }>(
+    'SELECT outline_text, outline FROM courses WHERE id = $1',
+    [course.id],
+  )
+  assert.ok(row)
+  assert.equal(row.outline_text, '第一篇 总论\n第一章 什么是趋势\n1. 趋势的定义\n2. 趋势与波动')
+  const outline = row.outline as { nodes?: { level: number; title: string }[] }
+  assert.equal(outline.nodes?.length, 4)
+  assert.equal(outline.nodes?.[0]?.level, 1)
+  assert.equal(outline.nodes?.[3]?.level, 3)
+
+  // 格式认不出的行：原文照存，目录树不落——教师可在方案页改格式重提。
+  const bad = await createCourse(teacher.id, '坏格式目录的课', '这一行认不出层级')
+  const [badRow] = await query<{ outline_text: string | null; outline: unknown }>(
+    'SELECT outline_text, outline FROM courses WHERE id = $1',
+    [bad.id],
+  )
+  assert.equal(badRow?.outline_text, '这一行认不出层级')
+  assert.equal(badRow?.outline, null)
+})
+
 test('课程摘要：素材数、方案状态、章·课时数与生产进度一次取齐', { skip }, async () => {
   const teacher = await createAccount({
     username: 'laoshi-summary',
