@@ -5,6 +5,7 @@ import type { PlanSectionNodeView } from '@trend-suite/contracts'
 import { countOutlineLevels } from '@trend-suite/contracts'
 import { IconCheck, IconClose, IconPencil, IconTrash } from '@/features/lib/icons'
 import { buildOutlineTree, siblingInfoOf } from './outlineTree'
+import { evidenceDetailLinesOf, evidenceSummaryOf } from './planAudit'
 
 /** 骨架章节列表：匹配度 + 裁决动作（改名 / 删除 / 合并选）。教师主动加章不算未决项。 */
 export function OutlineCard({
@@ -64,6 +65,9 @@ export function OutlineCard({
   const row = (node: PlanSectionNodeView, level: 1 | 2 | 3) => {
     const low = node.matchStatus === 'low_match'
     const sibling = siblingInfoOf(nodes, node.id)
+    // 出处摘要：出自哪个素材的哪几分钟——教师一眼能核对，不必翻素材页。
+    const evidenceText = evidenceSummaryOf(node.evidence)
+    const evidenceTitle = evidenceDetailLinesOf(node.evidence).join('\n')
     // 可挂载的父节点：章挂篇、课时挂章——层级不乱。
     const candidates = level === 3 ? chapters : level === 2 ? parts : []
     const currentParent = node.parentId
@@ -89,6 +93,11 @@ export function OutlineCard({
             {node.sourceUnitIds.length > 0 ? ` · 出处 ${node.sourceUnitIds.length} 段` : ''}
             {low ? ' · 待裁决：改名 / 删除 / 与相近章合并' : ''}
           </span>
+          {evidenceText ? (
+            <span className="meta" title={evidenceTitle}>
+              出处：{evidenceText}
+            </span>
+          ) : null}
         </div>
         <span className={`st ${low ? 'st-err' : 'st-ok'}`}>
           <i />

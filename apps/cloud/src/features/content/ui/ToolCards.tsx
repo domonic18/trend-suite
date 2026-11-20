@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { PlanConceptMapView, PlanGlossaryView, PlanSectionPlanView } from '@trend-suite/contracts'
+import { evidenceDetailLinesOf, evidenceSummaryOf } from './planAudit'
 
 /** 折叠工具卡：概念图谱 + 术语表 + 分节计划（术语校验基准与图谱同源）。 */
 export function ToolCards({
@@ -142,6 +143,7 @@ export function ToolCards({
                 <th>节</th>
                 <th>子节数</th>
                 <th>预估时长</th>
+                <th>出处</th>
                 <th>并行</th>
                 <th>顺序</th>
               </tr>
@@ -165,6 +167,12 @@ export function ToolCards({
                     />
                   </td>
                   <td>{lesson.estimatedMinutes} 分钟</td>
+                  <td
+                    className="evidence-cell"
+                    title={evidenceDetailLinesOf(lesson.evidence).join('\n')}
+                  >
+                    {evidenceSummaryOf(lesson.evidence) ?? '—'}
+                  </td>
                   <td>slot {lesson.parallelSlot}</td>
                   <td>
                     <button

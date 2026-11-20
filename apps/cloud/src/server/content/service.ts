@@ -1,6 +1,7 @@
 import 'server-only'
 import {
   countOutlineLevels,
+  parseOutlineText,
   type CourseSummaryView,
   type CourseStatus,
   type CourseView,
@@ -61,8 +62,25 @@ function toCourseSummaryView(row: repo.CourseSummaryRow): CourseSummaryView {
 }
 
 /** 新课程恒为草稿——producer 只写草稿，签批与发布是运营的事（arch/01 端职责边界）。 */
-export async function createCourse(ownerId: string, title: string): Promise<CourseView> {
-  const row = await repo.insertCourse({ id: newId('course'), ownerId, title })
+export async function createCourse(
+  ownerId: string,
+  title: string,
+  outlineText?: string,
+): Promise<CourseView> {
+  // 目录先验：文本与目录树同源。认不出的层级不拦建课——教师可在方案页改格式重提。
+  const text = (outlineText ?? '').trim()
+  let outline: unknown
+  if (text.length > 0) {
+    const parsed = parseOutlineText(text)
+    if (parsed.issues.length === 0) outline = { nodes: parsed.nodes }
+  }
+  const row = await repo.insertCourse({
+    id: newId('course'),
+    ownerId,
+    title,
+    ...(text.length > 0 ? { outlineText: text } : {}),
+    ...(outline === undefined ? {} : { outline }),
+  })
   return toCourseView(row)
 }
 

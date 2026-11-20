@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       throw badRequest('参数不合法', firstIssueOf(parsed.error))
     }
-    const course = await createCourse(user.id, parsed.data.title)
+    const course = await createCourse(user.id, parsed.data.title, parsed.data.outlineText)
     return json(createCourseResponse.parse({ course }), 201)
   } catch (err) {
     return errorResponse(err)
