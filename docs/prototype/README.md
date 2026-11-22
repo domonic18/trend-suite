@@ -49,6 +49,7 @@
 
 | 原型 | 覆盖需求 / 流程节点 |
 |---|---|
+| [teacher-studio](teacher-studio.html) | **教师工作台（新稿·待评审）**：按教师期望重做的四屏一条主流程——**我的课程**（课程卡带状态/进度/唯一下一步）→ **素材库**（全局素材库 + 归属课程；每份素材拆成**逐字稿 / 关键帧 / 视频理解**三段，每段各有查看·重新生成·删除结果；理解未完成会挡住智能规划并指向「重跑理解」）→ **课程大纲**（新建课程弹窗内勾选素材 → 「创建课程并生成大纲」→ Agent 对话流梳理素材成大纲；大纲逐行可编辑，每行带匹配度与出处明细（素材名 + 时间码 + 要点））→ **课件制作**（批准大纲后逐节制作，Agent 对话流同步产出，正文段落选中即改，**可随时停止**并从停止点改完继续）。URL 深链：`#courses` / `#library` / `#outline` / `#build` / `#new`。流程：`h_brief` · `c_upload` · `a_section` |
 | [teacher-login](teacher-login.html) | 登录（分屏）：零安装零密钥、会话 sessionStorage、邀请码开户指引；说明 Agent 执行可见与确认动作内嵌。 |
 | [teacher-workbench](teacher-workbench.html) | **所有课程**：极简课程卡列表 + 新建课程；点开即进入教材；**无 Agent rail**。流程：`h_brief` |
 | [teacher-course-center](teacher-course-center.html) | **课程中心**：一门课收在一页——左侧课程栏（切课）+ 竖排阶段轨（素材与转写 / 制作方案 / 九步生产 / 发布就绪度，各带状态点与一句说明）+ 常驻「下一步该干什么」。阶段轨即导航，不再另设页签。流程：`h_brief` · `c_upload` |
@@ -57,6 +58,8 @@
 | [teacher-edit](teacher-edit.html) | **教材轻量编辑**（对应需求「教材轻量编辑」场景）：渲染教材上**选中即改**，不绕对话。浮动工具条：加粗 / 斜体 / 下划线 / 颜色 / 字号 / 对齐 / 清除格式 + 撤销重做（快照栈，脏计数 `n 处未保存`）；右侧检查器显示段落来源 unit 与「改动将触发轻校验」。**图片**：选中后可删除或替换——素材库 / 库内搜索 / 本地上传，替换留痕新旧素材 ID 并可回退原图。**K 线属性**：代码 / 周期（日线·周线）/ 起始时间 / 采集状态（已采集 / 部分 / 未采集），未采集降级为显式占位并可「去采集」，改代码或周期后重校验。**校验边界**：事实段「锚保护」只可改样式，正文直改被拒；保存跑轻校验并提示内容指纹失效（`approval_stale`）。流程：`a_section` / `c_readiness` |
 | 互动课堂（**原型待补**） | 学员端需求「互动课堂」：场景骨架（讲解页 / 随堂测验 / 交互课件 / 项目制练习）+ 播放轨道（讲解、聚光灯与激光笔、白板、片段播放、组件引导）+ 增强互动（讨论、圆桌辩论、自由问答）。详见 [学员端需求](../requirement/学员端需求.md) |
 | 参考页（保留文件，不进主导航） | [teacher-plan](teacher-plan.html) 课程大纲 · [teacher-assets](teacher-assets.html) 内容资产 · [teacher-production](teacher-production.html) 逐节生产 · [teacher-compose](teacher-compose.html) 编排预览 · [teacher-review](teacher-review.html) 成品审核 |
+
+> **主流程以 [teacher-studio](teacher-studio.html) 为准**（教师端主流程新稿）。上表的 teacher-workbench / teacher-course-center / teacher-material / teacher-textbook 为上一版旧稿，评审新稿后按新稿合并或下线；teacher-edit（T17 轻量编辑）与 teacher-textbook 的教材渲染部分仍是后续迭代的素材。
 
 ### 门户 · 公开网站（portal-*）
 
