@@ -74,7 +74,7 @@ export async function listAssets(
         await getCourseForUser(user, courseId)
         return repo.listAssetsByCourse(courseId)
       })()
-    : await repo.listAssetsByOwner(user.id)
+    : await repo.listAssetsByOwner(user.role === 'producer' ? user.id : null)
   const jobs = await listLatestJobs(rows.map((row) => row.id))
   return assetViewsOf(rows, jobs)
 }

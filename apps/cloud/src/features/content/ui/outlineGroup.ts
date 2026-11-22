@@ -87,3 +87,32 @@ export function buildOutlineTree(nodes: PlanSectionNodeView[]): OutlinePartGroup
 
   return groups
 }
+
+/**
+ * 每个节点底下有多少课时（自己 + 所有后代）。
+ * 篇与章在树里显示「N 课时」，教师一眼看出这一层有多厚。
+ */
+export function descendantLessonCounts(
+  nodes: PlanSectionNodeView[],
+): Map<string, number> {
+  const byId = new Map(nodes.map((node) => [node.id, node]))
+  const children = new Map<string, string[]>()
+  for (const node of nodes) {
+    if (!node.parentId) continue
+    const list = children.get(node.parentId) ?? []
+    list.push(node.id)
+    children.set(node.parentId, list)
+  }
+  const counts = new Map<string, number>()
+  const resolve = (nodeId: string): number => {
+    const cached = counts.get(nodeId)
+    if (cached !== undefined) return cached
+    const node = byId.get(nodeId)
+    let total = node?.level === 3 ? 1 : 0
+    for (const childId of children.get(nodeId) ?? []) total += resolve(childId)
+    counts.set(nodeId, total)
+    return total
+  }
+  for (const node of nodes) resolve(node.id)
+  return counts
+}

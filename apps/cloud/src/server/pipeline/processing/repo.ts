@@ -486,9 +486,18 @@ export async function detachFrameRefs(assetId: string, frameIds: string[]): Prom
   )
 }
 
+/**
+ * 课程可见的证据单元：本课素材的理解单元 + 规划时勾选的跨课素材的理解单元。
+ *
+ * 跨课选用的勾选关系落在 courses.plan_asset_ids；单元的归属列
+ * （source_units.course_id）仍是素材的归属课程，不改写。
+ */
 export function listSourceUnitsByCourse(courseId: string): Promise<SourceUnitRow[]> {
   return query<SourceUnitRow>(
-    `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units WHERE course_id = $1 ORDER BY asset_id, start_ms ASC`,
+    `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units
+      WHERE course_id = $1
+         OR asset_id = ANY(COALESCE((SELECT plan_asset_ids FROM courses WHERE id = $1), ARRAY[]::text[]))
+      ORDER BY asset_id, start_ms ASC`,
     [courseId],
   )
 }
@@ -507,8 +516,27 @@ export function listSourceUnitPointsByCourse(
 ): Promise<{ id: string; points: string[] }[]> {
   return query<{ id: string; points: string[] }>(
     `SELECT id, COALESCE(extra->'teachingPoints', '[]'::jsonb) AS points
-       FROM source_units WHERE course_id = $1`,
+       FROM source_units
+      WHERE course_id = $1
+         OR asset_id = ANY(COALESCE((SELECT plan_asset_ids FROM courses WHERE id = $1), ARRAY[]::text[]))`,
     [courseId],
+  )
+}
+
+/** 一批素材的理解产出条数：素材库选材时给教师看「这份素材有多少可规划的知识点」。 */
+export function listUnitCountsByAssets(
+  assetIds: string[],
+): Promise<{ asset_id: string; unit_count: number; point_count: number }[]> {
+  if (assetIds.length === 0) return Promise.resolve([])
+  return query<{ asset_id: string; unit_count: number; point_count: number }>(
+    `SELECT asset_id,
+            COUNT(*)::int AS unit_count,
+            COALESCE(SUM(CASE WHEN jsonb_typeof(extra->'teachingPoints') = 'array'
+                              THEN jsonb_array_length(extra->'teachingPoints') ELSE 0 END), 0)::int AS point_count
+       FROM source_units
+      WHERE asset_id = ANY($1::text[])
+      GROUP BY asset_id`,
+    [assetIds],
   )
 }
 
@@ -523,6 +551,7 @@ export function listUnitCountsByCourse(
                               THEN jsonb_array_length(extra->'teachingPoints') ELSE 0 END), 0)::int AS point_count
        FROM source_units
       WHERE course_id = $1
+         OR asset_id = ANY(COALESCE((SELECT plan_asset_ids FROM courses WHERE id = $1), ARRAY[]::text[]))
       GROUP BY asset_id`,
     [courseId],
   )

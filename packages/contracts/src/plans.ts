@@ -241,15 +241,24 @@ export const agentTraceView = z.object({
 /**
  * 规划可选素材：教师勾选参与本次规划的素材。
  * pointCount 是素材理解产出的教学要点条数——目录规模由它推导（迭代 8）。
+ *
+ * 素材库是跨课程的全局视角（需求 T4）：勾选列表给的是教师名下的全库素材，
+ * courseTitle 标出归属课程，selected 表示是否已纳入本课。
  */
 export const planMaterialView = z.object({
   id: z.string(),
   fileName: z.string(),
+  /** 归属课程标题（素材上传时定的归属，不因被本课选用而改变）。 */
+  courseTitle: z.string().nullable().default(null),
   durationS: z.number().nullable(),
   /** 理解产出的证据单元数（0 = 还没跑理解，智能规划用不了）。 */
   unitCount: z.number().int().min(0),
   /** 证据单元里的教学要点条数。 */
   pointCount: z.number().int().min(0),
+  /** 是否已纳入本课（勾选参与规划）。 */
+  selected: z.boolean().default(false),
+  /** 素材状态：awaiting_upload / uploaded / processing / ready / failed。 */
+  status: z.string().default('ready'),
 })
 
 export const planResponse = z.object({
@@ -378,6 +387,7 @@ export type PlanConceptEdgeView = z.infer<typeof planConceptEdgeView>
 export type PlanConceptMapView = z.infer<typeof planConceptMapView>
 export type PlanGlossaryView = z.infer<typeof planGlossaryView>
 export type PlanSectionPlanView = z.infer<typeof planSectionPlanView>
+export type PlanLessonView = z.infer<typeof planLessonView>
 export type PlanViolationView = z.infer<typeof planViolationView>
 export type PlanCheckCode = z.infer<typeof planCheckCode>
 export type PlanCheckIssueView = z.infer<typeof planCheckIssueView>

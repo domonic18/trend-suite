@@ -9,6 +9,13 @@ export const createCourseRequest = z.object({
    * 之后起草方案直接用它做骨架——教师原文优先，Agent 不改目录。
    */
   outlineText: z.string().max(20000, '目录最长 20000 个字符').optional(),
+  /** 课程目标（可选）：建课时就给 Agent 方向，留空则到方案页再填。 */
+  goal: z.string().max(2000, '课程目标最长 2000 个字符').optional(),
+  /**
+   * 参与本课建设的素材 id（可选）：素材库是跨课程的全局视角，一份素材可以被
+   * 多门课选用。不传 = 只用本课自己的素材。
+   */
+  assetIds: z.array(z.string().min(1)).max(50, '单次最多选 50 份素材').optional(),
 })
 
 export const courseView = z.object({
