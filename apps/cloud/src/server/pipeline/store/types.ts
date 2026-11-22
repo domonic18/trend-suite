@@ -70,4 +70,7 @@ export interface MediaStore {
 
   /** 删掉素材的全部字节（暂存位 + 正式位）：素材行作废时用。 */
   remove(assetId: string): Promise<void>
+
+  /** 只删关键帧字节：删「关键帧」这一段的结果时用，原片与其余产物不动。 */
+  removeFrames(assetId: string): Promise<void>
 }

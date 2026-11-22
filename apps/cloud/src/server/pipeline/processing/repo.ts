@@ -200,6 +200,54 @@ export async function clearFrames(assetId: string): Promise<void> {
   await query(`DELETE FROM media_frames WHERE asset_id = $1`, [assetId])
 }
 
+/** 一批素材的逐字稿统计：段数与最后落库时刻（素材库三段格要显示「N 段 · 何时更新」）。 */
+export async function transcriptStatsByAssets(
+  assetIds: string[],
+): Promise<Map<string, { count: number; updatedAt: Date | null }>> {
+  return statsByAssets(
+    assetIds,
+    `SELECT asset_id, COUNT(*)::int AS count, MAX(created_at) AS updated_at
+       FROM transcript_segments WHERE asset_id = ANY($1::text[]) GROUP BY asset_id`,
+  )
+}
+
+/** 一批素材的关键帧统计。 */
+export async function frameStatsByAssets(
+  assetIds: string[],
+): Promise<Map<string, { count: number; updatedAt: Date | null }>> {
+  return statsByAssets(
+    assetIds,
+    `SELECT asset_id, COUNT(*)::int AS count, MAX(created_at) AS updated_at
+       FROM media_frames WHERE asset_id = ANY($1::text[]) GROUP BY asset_id`,
+  )
+}
+
+/** 一批素材的理解单元统计（单元数 + 最后产出时刻）。 */
+export async function unitStatsByAssets(
+  assetIds: string[],
+): Promise<Map<string, { count: number; updatedAt: Date | null }>> {
+  return statsByAssets(
+    assetIds,
+    `SELECT asset_id, COUNT(*)::int AS count, MAX(updated_at) AS updated_at
+       FROM source_units WHERE asset_id = ANY($1::text[]) GROUP BY asset_id`,
+  )
+}
+
+async function statsByAssets(
+  assetIds: string[],
+  sql: string,
+): Promise<Map<string, { count: number; updatedAt: Date | null }>> {
+  const map = new Map<string, { count: number; updatedAt: Date | null }>()
+  if (assetIds.length === 0) return map
+  const rows = await query<{ asset_id: string; count: number; updated_at: Date | null }>(sql, [
+    assetIds,
+  ])
+  for (const row of rows) {
+    map.set(row.asset_id, { count: Number(row.count), updatedAt: row.updated_at })
+  }
+  return map
+}
+
 /** 素材加工进度：就绪度面板读它。 */
 export async function setAssetProgress(input: {
   assetId: string
@@ -379,6 +427,62 @@ export function listSourceUnitsByAsset(assetId: string): Promise<SourceUnitRow[]
   return query<SourceUnitRow>(
     `SELECT ${SOURCE_UNIT_COLUMNS} FROM source_units WHERE asset_id = $1 ORDER BY start_ms ASC`,
     [assetId],
+  )
+}
+
+/** 某素材的理解单元 id：删理解结果前要查方案有没有引用这些单元。 */
+export function listSourceUnitIdsByAsset(assetId: string): Promise<string[]> {
+  return query<{ id: string }>(
+    `SELECT id FROM source_units WHERE asset_id = $1 ORDER BY start_ms ASC`,
+    [assetId],
+  ).then((rows) => rows.map((row) => row.id))
+}
+
+/** 某素材的理解单元数：段状态落「完成 / 空」要用它。 */
+export async function countSourceUnits(assetId: string): Promise<number> {
+  const row = await queryOne<{ count: string }>(
+    `SELECT count(*)::text AS count FROM source_units WHERE asset_id = $1`,
+    [assetId],
+  )
+  return row ? Number(row.count) : 0
+}
+
+/**
+ * 删掉某素材的全部理解单元，并把逐字稿段落上的回填锚一并清掉——
+ * 段落还在，但不再指向已被删掉的单元。
+ */
+export async function clearSourceUnits(assetId: string): Promise<number> {
+  return withTransaction(async (client) => {
+    await client.query(`UPDATE transcript_segments SET unit_id = NULL WHERE asset_id = $1`, [
+      assetId,
+    ])
+    const deleted = await client.query(
+      `DELETE FROM source_units WHERE asset_id = $1 RETURNING id`,
+      [assetId],
+    )
+    return deleted.rowCount ?? 0
+  })
+}
+
+/**
+ * 删掉关键帧后清掉理解单元里对它们的引用——单元还在，但不再指向已删的帧。
+ */
+export async function detachFrameRefs(assetId: string, frameIds: string[]): Promise<void> {
+  if (frameIds.length === 0) return
+  await query(
+    `UPDATE source_units
+        SET extra = jsonb_set(
+              extra,
+              '{frameIds}',
+              COALESCE(
+                (SELECT jsonb_agg(value)
+                   FROM jsonb_array_elements(extra->'frameIds') AS value
+                  WHERE NOT (value #>> '{}') = ANY($2::text[])),
+                '[]'::jsonb))
+      WHERE asset_id = $1
+        AND extra ? 'frameIds'
+        AND (extra->'frameIds') ?| $2::text[]`,
+    [assetId, frameIds],
   )
 }
 

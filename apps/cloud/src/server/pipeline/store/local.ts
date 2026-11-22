@@ -141,6 +141,11 @@ export class LocalMediaStore implements MediaStore {
     await rm(join(this.root, 'sources', assetId), { recursive: true, force: true })
     await rm(join(this.root, 'hls', assetId), { recursive: true, force: true })
   }
+
+  /** 只删关键帧目录：原片（sources/<id>/source）与 HLS 不动。 */
+  async removeFrames(assetId: string): Promise<void> {
+    await rm(join(this.root, 'sources', assetId, 'frames'), { recursive: true, force: true })
+  }
 }
 
 class PayloadTooLarge extends Error {

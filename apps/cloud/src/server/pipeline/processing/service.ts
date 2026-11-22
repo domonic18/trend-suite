@@ -3,14 +3,18 @@ import {
   type JobStatus,
   type MediaAssetView,
   type MediaFrameListResponse,
+  type MediaUnderstandingItem,
   type SessionUser,
   type TranscriptResponse,
 } from '@trend-suite/contracts'
 import { getCourseForUser } from '@/server/content/service'
+import { teachingPointsOf } from '@/server/content/plans/planning'
 import { HttpError, conflict, notFound } from '@/server/lib/http'
 import type { HlsPlaybackResponse } from '@trend-suite/contracts'
 import * as jobRepo from '../jobs/repo'
 import * as repo from '../repo'
+import { assetViewOf } from '../asset-view'
+import { rerunStage } from '../stages'
 import { signFrameUrl } from './frame-url'
 import { signHlsPlaybackUrl } from './hls-url'
 import * as procRepo from './repo'
@@ -51,10 +55,7 @@ export async function ingestAsset(
   await procRepo.setAssetStatus({ assetId, status: 'uploaded' })
   const updated = await repo.findAssetById(assetId)
   return {
-    asset: {
-      ...toView(updated!),
-      jobStatus: job.status as JobStatus,
-    },
+    asset: await assetViewOf(updated!, job.status as JobStatus),
     jobId: job.id,
   }
 }
@@ -87,7 +88,7 @@ export async function retryAsset(
   await procRepo.setAssetStatus({ assetId, status: 'uploaded' })
   const updated = await repo.findAssetById(assetId)
   return {
-    asset: { ...toView(updated!), jobStatus: job.status as JobStatus },
+    asset: await assetViewOf(updated!, job.status as JobStatus),
     jobId: job.id,
   }
 }
@@ -95,6 +96,8 @@ export async function retryAsset(
 /**
  * 重跑理解（迭代 8）：只补理解阶段（转写与关键帧保留），按块去重续跑。
  * 智能规划要用素材的教学要点——存量素材没有理解结果时从这里补。
+ *
+ * 与三段重跑走同一套机制（stages.rerunStage）：段状态与去重口径只有一份。
  */
 export async function rerunUnderstand(
   user: SessionUser,
@@ -103,19 +106,8 @@ export async function rerunUnderstand(
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
   await getCourseForUser(user, row.course_id)
-  if (row.status !== 'ready') {
-    throw conflict('素材尚未就绪，先完成加工再重跑理解')
-  }
 
-  const existing = await jobRepo.findJobByAsset({ assetId, kind: 'understand_rerun' })
-  if (existing && (existing.status === 'queued' || existing.status === 'running')) {
-    throw conflict('理解任务正在进行中')
-  }
-  if (existing && existing.status === 'failed') {
-    await jobRepo.cancelJob(existing.id)
-  }
-
-  const job = await jobRepo.enqueueJob({ assetId, kind: 'understand_rerun' })
+  const { jobId } = await rerunStage(user, assetId, 'understanding', false)
   await procRepo.setAssetProgress({
     assetId,
     step: 'understand',
@@ -123,10 +115,7 @@ export async function rerunUnderstand(
     message: '排队中',
   })
   const updated = await repo.findAssetById(assetId)
-  return {
-    asset: { ...toView(updated!), jobStatus: job.status as JobStatus },
-    jobId: job.id,
-  }
+  return { asset: await assetViewOf(updated!), jobId }
 }
 
 /**
@@ -161,7 +150,7 @@ export async function cancelMaterialProcessing(
   const updated = await repo.findAssetById(assetId)
   const latest = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
   return {
-    asset: { ...toView(updated!), jobStatus: (latest?.status ?? null) as JobStatus | null },
+    asset: await assetViewOf(updated!, (latest?.status ?? null) as JobStatus | null),
   }
 }
 
@@ -234,6 +223,25 @@ export async function getHlsPlayback(
   return { playback: signHlsPlaybackUrl({ assetId }) }
 }
 
+/** 视频理解段的产物：讲解要点 + 出处时间码（教师核对「这一条出自哪几分钟」）。 */
+export async function getUnderstanding(
+  user: SessionUser,
+  assetId: string,
+): Promise<MediaUnderstandingItem[]> {
+  const row = await repo.findAssetById(assetId)
+  if (!row) throw notFound('素材不存在')
+  await getCourseForUser(user, row.course_id)
+
+  const units = await procRepo.listSourceUnitsByAsset(assetId)
+  return units.map((unit) => ({
+    id: unit.id,
+    startMs: unit.start_ms,
+    endMs: unit.end_ms,
+    text: unit.text,
+    teachingPoints: teachingPointsOf(unit.extra),
+  }))
+}
+
 /** 加工状态：阶段、进度、任务状态。 */
 export async function getProcessingState(
   user: SessionUser,
@@ -243,29 +251,6 @@ export async function getProcessingState(
   if (!row) throw notFound('素材不存在')
   await getCourseForUser(user, row.course_id)
   const job = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
-  return { asset: toView(row), jobStatus: job?.status ?? null }
+  return { asset: await assetViewOf(row), jobStatus: job?.status ?? null }
 }
 
-function toView(row: repo.MediaAssetRow): MediaAssetView {
-  return {
-    id: row.id,
-    courseId: row.course_id,
-    fileName: row.original_name ?? '',
-    status: row.status as MediaAssetView['status'],
-    byteSize: row.byte_size === null ? null : Number(row.byte_size),
-    sha256: row.sha256,
-    durationS: row.duration_s === null ? null : Number(row.duration_s),
-    videoOk: row.video_ok,
-    audioOk: row.audio_ok,
-    errorCode: row.error_code,
-    errorMessage: row.error_message,
-    processStep: row.process_step as MediaAssetView['processStep'],
-    processProgress: Number(row.process_progress),
-    processMessage: row.process_message,
-    jobStatus: null,
-    segmentCount: row.segment_count,
-    frameCount: row.frame_count,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
-  }
-}

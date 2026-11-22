@@ -20,9 +20,31 @@ export const createMediaAssetRequest = z.object({
   sha256: z.string().regex(/^[0-9a-f]{64}$/, 'sha256 必须是 64 位小写 hex').optional(),
 })
 
+/**
+ * 素材分析三段（教师端需求 T4/T4b）：逐字稿 / 关键帧 / 视频理解。
+ * 三段各自可单独重跑、单独删除结果——删一段不动素材字节，也不影响其他两段。
+ */
+export const mediaStages = ['transcript', 'frames', 'understanding'] as const
+export const mediaStage = z.enum(mediaStages)
+
+/** 段落态：空（未产出）/ 进行中 / 已完成 / 部分完成 / 失败。 */
+export const mediaStageStatuses = ['empty', 'running', 'done', 'partial', 'failed'] as const
+export const mediaStageStatus = z.enum(mediaStageStatuses)
+
+export const mediaAssetStageView = z.object({
+  stage: mediaStage,
+  status: mediaStageStatus,
+  /** 该段产物条数：逐字稿段数 / 关键帧张数 / 理解单元数。 */
+  count: z.number(),
+  updatedAt: z.string().nullable(),
+  errorMessage: z.string().nullable(),
+})
+
 export const mediaAssetView = z.object({
   id: z.string().regex(idShape.mediaAsset),
   courseId: z.string(),
+  /** 归属课程标题：素材库是跨课程的全局视角，教师要看得出这份素材属于哪门课。 */
+  courseTitle: z.string().nullable(),
   fileName: z.string(),
   status: mediaAssetStatus,
   byteSize: z.number().nullable(),
@@ -39,6 +61,8 @@ export const mediaAssetView = z.object({
   jobStatus: jobStatus.nullable(),
   segmentCount: z.number(),
   frameCount: z.number(),
+  /** 三段分析各自的产出与状态。 */
+  stages: z.array(mediaAssetStageView),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -55,6 +79,17 @@ export const createMediaAssetResponse = z.object({
   asset: mediaAssetView,
   upload: mediaUploadTarget,
 })
+
+/** 理解单元：视频理解段的产物——教师核对「这一条出自原视频哪几分钟」。 */
+export const mediaUnderstandingItem = z.object({
+  id: z.string(),
+  startMs: z.number(),
+  endMs: z.number(),
+  text: z.string(),
+  teachingPoints: z.array(z.string()),
+})
+
+export const mediaUnderstandingResponse = z.object({ items: z.array(mediaUnderstandingItem) })
 
 export const mediaAssetListResponse = z.object({ items: z.array(mediaAssetView) })
 
@@ -78,12 +113,39 @@ export const deleteMaterialResponse = z.object({
   deleted: z.literal(true),
 })
 
+/**
+ * 重跑某一段分析：
+ * - force 缺省或 false → 只补缺口（按块去重，不重复计费）；
+ * - force=true → 先清掉该段已有结果再重新生成。
+ */
+export const rerunMediaStageRequest = z.object({
+  force: z.boolean().optional(),
+})
+
+export const rerunMediaStageResponse = z.object({
+  asset: mediaAssetView,
+  jobId: z.string(),
+})
+
+/** 删除某一段的结果：素材字节与另外两段不受影响。 */
+export const deleteMediaStageResponse = z.object({
+  asset: mediaAssetView,
+})
+
 export type CreateMediaAssetRequest = z.infer<typeof createMediaAssetRequest>
 export type MediaAssetView = z.infer<typeof mediaAssetView>
 export type MediaUploadTarget = z.infer<typeof mediaUploadTarget>
 export type CreateMediaAssetResponse = z.infer<typeof createMediaAssetResponse>
 export type MediaAssetListResponse = z.infer<typeof mediaAssetListResponse>
+export type MediaUnderstandingItem = z.infer<typeof mediaUnderstandingItem>
+export type MediaUnderstandingResponse = z.infer<typeof mediaUnderstandingResponse>
 export type IngestRequest = z.infer<typeof ingestRequest>
 export type IngestResponse = z.infer<typeof ingestResponse>
 export type CancelMaterialResponse = z.infer<typeof cancelMaterialResponse>
 export type DeleteMaterialResponse = z.infer<typeof deleteMaterialResponse>
+export type MediaStage = z.infer<typeof mediaStage>
+export type MediaStageStatus = z.infer<typeof mediaStageStatus>
+export type MediaAssetStageView = z.infer<typeof mediaAssetStageView>
+export type RerunMediaStageRequest = z.infer<typeof rerunMediaStageRequest>
+export type RerunMediaStageResponse = z.infer<typeof rerunMediaStageResponse>
+export type DeleteMediaStageResponse = z.infer<typeof deleteMediaStageResponse>

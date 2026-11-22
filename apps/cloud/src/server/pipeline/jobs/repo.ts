@@ -13,6 +13,8 @@ export type PipelineJobRow = {
   asset_id: string | null
   course_id: string | null
   kind: string
+  /** 分段任务跑哪一段（kind='media_stage' 时有值）。 */
+  stage: string | null
   status: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled'
   step: string
   progress: string
@@ -33,6 +35,7 @@ const COLUMNS = [
   'asset_id',
   'course_id',
   'kind',
+  'stage',
   'status',
   'step',
   'progress',
@@ -73,6 +76,19 @@ export function findJobByCourse(input: {
   )
 }
 
+/**
+ * 素材上任意类型的在跑任务：分段重跑与整条加工互斥——
+ * 同一份素材同时跑两个写同一批产物的任务，结果不可预期。
+ */
+export function findActiveJobByAsset(assetId: string): Promise<PipelineJobRow | null> {
+  return queryOne<PipelineJobRow>(
+    `SELECT ${COLUMNS} FROM pipeline_jobs
+      WHERE asset_id = $1 AND status IN ('queued','running')
+      ORDER BY created_at DESC LIMIT 1`,
+    [assetId],
+  )
+}
+
 /** 一批素材的最近一个任务：列表页一次查完，不逐条打库。 */
 export async function listLatestJobs(assetIds: string[]): Promise<Map<string, PipelineJobRow>> {
   const map = new Map<string, PipelineJobRow>()
@@ -92,7 +108,7 @@ export async function listLatestJobs(assetIds: string[]): Promise<Map<string, Pi
  * 终态任务（succeeded/failed/canceled）不复活——重试走显式重新加工/重新起草。
  */
 export async function enqueueJob(
-  input: { assetId?: string; courseId?: string; kind: string },
+  input: { assetId?: string; courseId?: string; kind: string; stage?: string | undefined },
 ): Promise<PipelineJobRow> {
   const refId = input.assetId ?? input.courseId
   if (!refId || (input.assetId && input.courseId)) {
@@ -112,10 +128,10 @@ export async function enqueueJob(
     if (row) return row
 
     const inserted = await client.query<PipelineJobRow>(
-      `INSERT INTO pipeline_jobs (id, ${refCol}, kind, status, step, available_at)
-       VALUES ($1, $2, $3, 'queued', $4, now())
+      `INSERT INTO pipeline_jobs (id, ${refCol}, kind, stage, status, step, available_at)
+       VALUES ($1, $2, $3, $4, 'queued', $5, now())
        RETURNING ${COLUMNS}`,
-      [newId('pipelineJob'), refId, input.kind, initialStep],
+      [newId('pipelineJob'), refId, input.kind, input.stage ?? null, initialStep],
     )
     return inserted.rows[0]!
   })

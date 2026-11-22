@@ -1,0 +1,890 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>生产工作台 · 新版流程（待评审）· 趋势课程</title>
+<link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
+<style>
+/* ============ 本页新增：课程卡 / 素材库 / 阶段管线 / 三栏工作区 ============ */
+.scr{display:none}
+.scr.on{display:block}
+
+/* 课程卡 */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(236px,1fr));gap:14px}
+.ccard{display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid var(--p-line);border-radius:12px;padding:16px;color:inherit;text-decoration:none;transition:border-color .12s,box-shadow .12s;cursor:pointer}
+.ccard:hover{border-color:#b9c6dd;box-shadow:0 6px 18px rgba(16,24,40,.06)}
+.cc-top{display:flex;align-items:center;gap:8px}
+.cc-top b{font-size:14.5px}
+.cc-top .tag{margin-left:auto}
+.cc-meta{font-size:12px;color:var(--p-mut);line-height:1.7}
+.cc-bar{height:5px;border-radius:3px;background:var(--p-soft);overflow:hidden}
+.cc-bar i{display:block;height:100%;background:var(--p-pri)}
+.cc-bar i.ok{background:#0f9d76}
+.cc-foot{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#9aa3b8;margin-top:auto}
+.cc-foot .go{margin-left:auto;color:var(--p-pri);font-weight:600}
+.ccard.add{align-items:center;justify-content:center;border-style:dashed;background:#fafbfd;color:var(--p-mut);font-size:13px;min-height:150px}
+.ccard.add:hover{color:var(--p-pri);border-color:var(--p-pri)}
+.ccard.add svg{width:18px;height:18px}
+
+/* 新建课程对话框 */
+dialog.newc{border:none;border-radius:14px;padding:0;width:620px;max-width:calc(100vw - 32px);box-shadow:0 24px 64px rgba(16,24,40,.28)}
+dialog.newc::backdrop{background:rgba(16,24,40,.42)}
+.newc .nh{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--p-line)}
+.newc .nh b{font-size:15px}
+.newc .nh .x{margin-left:auto;border:none;background:none;font-size:20px;line-height:1;color:#9aa3b8;cursor:pointer}
+.newc .nb{padding:14px 18px;display:grid;gap:12px;max-height:66vh;overflow-y:auto}
+.newc .nf{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--p-line);background:#fafbfd}
+.pick{border:1px solid var(--p-line);border-radius:10px;background:#fff;overflow:hidden}
+.pick .ph{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--p-line);font-size:12.5px;font-weight:700;color:var(--p-mut)}
+.pick .ph .grow{flex:1}
+.pick .pi{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #eef1f6;font-size:13px;cursor:pointer}
+.pick .pi:last-child{border-bottom:none}
+.pick .pi:hover{background:#fafcff}
+.pick .pi.on{background:var(--p-pri-soft)}
+.pick .pi .nm{font-weight:600;color:var(--p-ink)}
+.pick .pi .meta{font:500 10.5px var(--font-mono);color:#9aa3b8;margin-top:2px}
+.pick .pi .st{margin-left:auto;flex:none}
+
+/* 素材库 */
+.lib-grid{display:grid;gap:12px}
+.lib{border:1px solid var(--p-line);border-radius:12px;background:#fff;overflow:hidden;box-shadow:var(--p-sh-sm)}
+.lib .lh{display:flex;align-items:center;gap:10px;padding:12px 16px;flex-wrap:wrap}
+.lib .lh .nm{font-size:14px;font-weight:650;color:var(--p-ink)}
+.lib .lh .id{font:500 11px var(--font-mono);color:#9aa3b8}
+.lib .lh .own{font-size:11.5px;color:var(--p-mut);border:1px solid var(--p-line);border-radius:999px;padding:2px 9px;background:#fafbfd}
+.lib .lh .st{margin-left:auto;display:flex;gap:8px;align-items:center}
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--p-line);background:#fafbfd}
+.stage{padding:11px 16px;border-right:1px solid var(--p-line)}
+.stage:last-child{border-right:none}
+.stage .sh{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:650;color:var(--p-ink)}
+.stage .sh .dot{width:7px;height:7px;border-radius:50%;background:#b3bccd;flex:none}
+.stage.done .sh .dot{background:#0f9d76}
+.stage.run .sh .dot{background:var(--p-pri);box-shadow:0 0 0 3px var(--p-pri-soft)}
+.stage.warn .sh .dot{background:#d48806}
+.stage.err .sh .dot{background:#d9483f}
+.stage .sc{font-size:11.5px;color:var(--p-mut);margin-top:4px}
+.stage .sa{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.stage .sa .btn{font-size:11px;padding:2px 7px;height:auto}
+.lib .lb{border-top:1px solid var(--p-line);padding:11px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff}
+.lib .lb .note{font-size:11.5px;color:var(--p-mut)}
+.libdetail{border-top:1px dashed var(--p-line);padding:12px 16px;background:#fcfdff}
+.libdetail h4{margin:0 0 8px;font-size:11.5px;color:var(--p-mut);font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.libdetail h4 .grow{flex:1}
+
+/* 三栏工作区（左树 / 中工件 / 右 Agent） */
+.split3{display:grid;grid-template-columns:246px minmax(0,1fr);gap:14px;align-items:start}
+.tree{background:#fff;border:1px solid var(--p-line);border-radius:12px;overflow:hidden}
+.tree .th{padding:10px 14px;border-bottom:1px solid var(--p-line);font-size:12.5px;font-weight:700;color:var(--p-mut);display:flex;align-items:center;gap:8px}
+.tree .th .grow{flex:1}
+.tnode{display:flex;gap:8px;align-items:flex-start;padding:8px 14px;border-bottom:1px solid #eef1f6;font-size:13px;cursor:pointer;color:var(--p-ink)}
+.tnode:hover{background:#fafcff}
+.tnode.on{background:var(--p-pri-soft);box-shadow:inset 2px 0 0 var(--p-pri)}
+.tnode .lv{font:700 10px var(--font-mono);color:#9aa3b8;flex:none;margin-top:2px;width:16px}
+.tnode .tt{flex:1;min-width:0}
+.tnode .tt b{font-weight:600;display:block}
+.tnode .tt small{color:var(--p-mut);font-size:11px}
+.tnode.lv1 .tt b{font-weight:700}
+.tnode.lv3{padding-left:30px;font-size:12.5px}
+
+/* 大纲编辑行——这一棵树就是大纲本体。
+   上行：层级（折叠钮 + 标签）· 标题 · 匹配度 · 时长 · 操作；课行下方再挂出处。 */
+.olrow{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:8px 12px;border:1px solid var(--p-line);border-radius:9px;background:#fff;font-size:13px;margin-bottom:5px}
+.olrow:hover{border-color:#c9d3e2;box-shadow:var(--p-sh-sm)}
+.olrow .gh{display:flex;align-items:center;gap:5px;font:700 10.5px var(--font-mono);color:#9aa3b8}
+.olrow .ttl{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap}
+.olrow .ttl b{font-weight:600}
+.olrow .ttl .sc{font:600 12px var(--font-mono);color:var(--p-ink)}
+.olrow .ttl .dur{font-size:11.5px;color:var(--p-mut)}
+.olrow .ttl .cnt{font-size:11.5px;color:var(--p-mut)}
+.olrow .src{grid-column:2/4}
+.olrow .acts{display:flex;gap:1px;justify-content:flex-end;opacity:.45}
+.olrow:hover .acts{opacity:1}
+.olrow .acts .btn{border:none;background:none;color:var(--p-pri);padding:2px 5px;font-size:11px;height:auto}
+/* 层级：篇 / 章是分组行，课是叶子 */
+.olrow.lv1{background:#f7f9fc;border-left:3px solid #aebfd8}
+.olrow.lv1 .ttl b{font-weight:700}
+.olrow.lv2{margin-left:24px;background:#fbfcfe;border-left:3px solid #d5dfec}
+.olrow.lv3{margin-left:48px}
+.caret{width:14px;height:14px;border:none;background:none;padding:0;cursor:pointer;flex:none}
+.caret::before{content:'';display:block;border-left:4.5px solid #8c96a8;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;transition:transform .15s}
+.olrow.closed .caret::before{transform:rotate(-90deg)}
+.olrow.closed .ttl b{color:var(--p-mut)}
+/* 校验口径默认收起，不与正文抢视线 */
+.why{margin-top:10px;border:1px solid var(--p-line);border-radius:9px;background:#fff;font-size:12.5px}
+.why summary{cursor:pointer;padding:9px 13px;color:var(--p-mut);font-weight:600;list-style:none}
+.why summary::-webkit-details-marker{display:none}
+.why summary::before{content:'＋ ';color:var(--p-pri)}
+.why[open] summary::before{content:'－ '}
+.why .wb{padding:0 14px 12px;color:var(--p-mut);line-height:1.9}
+.src{font-size:11.5px;color:var(--p-mut);line-height:1.6}
+.src .cite2{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--p-line);border-radius:5px;background:#fff;padding:0 5px;font:500 10.5px var(--font-mono);color:var(--p-mut)}
+.src .pts{display:block;color:#9aa3b8;margin-top:2px}
+
+/* 制作：正文与出处 */
+.doc{background:#fff;border:1px solid var(--p-line);border-radius:12px;overflow:hidden}
+.doc .dh{padding:13px 18px;border-bottom:1px solid var(--p-line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.doc .dh b{font-size:15px}
+.doc .dh .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.doc .db{padding:16px 20px;font-size:14px;line-height:1.95;color:var(--p-ink)}
+.doc .db h4{font-size:15.5px;margin:16px 0 6px;color:var(--p-ink)}
+.doc .db h4:first-child{margin-top:0}
+.doc .db p{margin:0 0 10px}
+.doc .db p.sel{background:#fff8e1;border-radius:6px;box-shadow:0 0 0 6px #fff8e1;cursor:text}
+.doc .db .anchor{display:inline-flex;align-items:center;gap:3px;margin-left:6px;border:1px solid #d6e4fb;background:var(--p-pri-soft);color:var(--p-pri);border-radius:5px;padding:0 5px;font:500 10.5px var(--font-mono);vertical-align:1px;cursor:pointer}
+.doc .db .anchor:hover{background:#dbe8ff}
+.floatbar{position:sticky;bottom:8px;display:inline-flex;gap:2px;border:1px solid var(--p-line);border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(16,24,40,.12);padding:4px;margin-top:4px}
+.floatbar .btn{border:none;background:none;font-size:12px;padding:3px 9px;color:var(--p-ink);height:auto}
+.floatbar .btn:hover{background:var(--p-soft)}
+.floatbar .btn.pri{background:var(--p-pri);color:#fff}
+.floatbar .btn.danger{color:#b3352c}
+.media3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.mcard{border:1px solid var(--p-line);border-radius:10px;overflow:hidden;background:#fff}
+.mcard .mh{padding:8px 10px;font-size:12px;font-weight:650;color:var(--p-ink);border-bottom:1px solid var(--p-line);display:flex;align-items:center;gap:6px;flex-wrap:wrap;row-gap:4px}
+.mcard .mh .lbl{white-space:nowrap}
+.mcard .mh .tag{font-size:10.5px;padding:1px 6px}
+.mcard .mh .grow{flex:1}
+.mcard .mb{padding:9px 10px;font-size:11.5px;color:var(--p-mut);line-height:1.7}
+
+/* 停止条 / 运行态 */
+.runbar{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;border:1px solid #d4e3ff;background:linear-gradient(100deg,#f5f9ff,#fff);font-size:12.5px;margin-bottom:12px;flex-wrap:wrap}
+.runbar.stop{border-color:#f3cfcb;background:linear-gradient(100deg,#fdeeed,#fff)}
+.runbar .grow{flex:1}
+.runbar b{color:var(--p-ink)}
+.btn.stop{border-color:#f0c8c4;color:#b3352c;background:#fff}
+.btn.stop:hover{background:#fdeeed;border-color:#e0a9a3}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--p-pri);box-shadow:0 0 0 3px var(--p-pri-soft);animation:agent-pulse 1.8s ease-in-out infinite}
+@keyframes agent-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media (max-width:1100px){.split3{grid-template-columns:1fr}.stages{grid-template-columns:1fr}.stage{border-right:none;border-bottom:1px solid var(--p-line)}}
+</style></head><body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 0 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M3 15h18M8 4v16M16 4v16" stroke="currentColor" stroke-width="1.2"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9" r="1.6" fill="currentColor"/><path d="M4 18l5.5-5.5 3.5 3.5 3-3L20 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 14l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
+</svg>
+
+<div class="ops-app" id="app">
+
+<!-- ============ 左侧导航 ============ -->
+<aside class="ops-sb">
+ <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
+ <nav class="ops-menu">
+  <div class="ops-g">工作台</div>
+  <a class="ops-i on" data-go="courses" href="#courses"><svg><use href="#i-book"/></svg>我的课程</a>
+  <a class="ops-i" data-go="library" href="#library"><svg><use href="#i-film"/></svg>素材库<span class="cnt">4</span></a>
+
+  <div class="ops-g">当前课程</div>
+  <div class="sb-course" data-sb-course>
+   <button class="sbc-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="切换课程">
+    <span class="dot-run"></span>
+    <span class="sbc-t"><b>趋势交易总论</b><small>生产中 · 1/4 节</small></span>
+    <svg class="sbc-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+   </button>
+   <div class="sbc-pop" role="menu" aria-label="切换课程">
+    <div class="sbc-h">切换课程</div>
+    <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="趋势交易总论" data-meta="生产中 · 1/4 节">
+     <span class="dot-run"></span><span class="sbc-t"><b>趋势交易总论</b><small>3 章 · 3 课时 · 1 素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-wait" data-name="级别与周期" data-meta="待上传素材">
+     <span class="dot-wait"></span><span class="sbc-t"><b>级别与周期</b><small>空课程 · 未上传素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-ok" data-name="趋势入门" data-meta="生产完成">
+     <span class="dot-ok"></span><span class="sbc-t"><b>趋势入门</b><small>2 章 · 4 课时 · 已完成</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="sbc-f"><a data-go="courses" href="#courses">＋ 新建课程</a></div>
+   </div>
+  </div>
+
+  <div class="ops-g">当前课程</div>
+  <a class="ops-i" data-go="outline" href="#outline"><svg><use href="#i-file"/></svg>课程大纲</a>
+  <a class="ops-i" data-go="build" href="#build"><svg><use href="#i-run"/></svg>课件制作</a>
+  <div class="ops-g">用量</div>
+  <a class="ops-i" href="ops-usage.html"><svg><use href="#i-board"/></svg>用量与成本</a>
+ </nav>
+ <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
+</aside>
+
+<!-- ============ 主区 ============ -->
+<div class="wb-col">
+<header class="ops-top">
+ <span id="crumb">我的课程</span>
+ <span class="right">
+  <span class="agent-pill" id="top-pill"><i class="dot-ok"></i>素材就绪</span>
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+
+<main class="ops-main">
+
+<!-- ---------- 屏幕 1：我的课程 ---------- -->
+<section class="scr on" id="scr-courses">
+ <div class="ops-ph">
+  <div><div class="t">我的课程</div><div class="s">课程恒为草稿；签批与发布由运营执行。每张卡只有一个明确的下一步。</div></div>
+  <div class="a"><button class="btn pri" onclick="openNewCourse()"><svg style="width:12px;height:12px"><use href="#i-plus"/></svg> 新建课程</button></div>
+ </div>
+
+ <div class="cgrid">
+  <a class="ccard" data-go="build">
+   <div class="cc-top"><b>趋势交易总论</b><span class="tag run">生产中</span></div>
+   <div class="cc-meta">3 章 · 3 课时 · 1 个素材<br>大纲 v1 已批准 · 逐节生产 1/4</div>
+   <div class="cc-bar"><i style="width:25%"></i></div>
+   <div class="cc-foot"><span>更新于 19:02</span><span class="go">继续制作 →</span></div>
+  </a>
+  <a class="ccard" data-go="outline">
+   <div class="cc-top"><b>筹码分布实战</b><span class="tag warn">大纲待审</span></div>
+   <div class="cc-meta">1 个素材 · 目录已起草<br>8 个节点 · 24 术语 · 待你批准</div>
+   <div class="cc-bar"><i style="width:60%"></i></div>
+   <div class="cc-foot"><span>更新于 18:40</span><span class="go">审阅大纲 →</span></div>
+  </a>
+  <a class="ccard" data-go="library">
+   <div class="cc-top"><b>级别与周期</b><span class="tag gray">待上传素材</span></div>
+   <div class="cc-meta">还没有素材<br>到素材库上传视频后再建课</div>
+   <div class="cc-bar"><i style="width:0"></i></div>
+   <div class="cc-foot"><span>创建于 11-09</span><span class="go">去素材库 →</span></div>
+  </a>
+  <a class="ccard" data-go="courses">
+   <div class="cc-top"><b>趋势入门</b><span class="tag ok">生产完成</span></div>
+   <div class="cc-meta">2 章 · 4 课时 · 2 个素材<br>全部节通过三层校验</div>
+   <div class="cc-bar"><i class="ok" style="width:100%"></i></div>
+   <div class="cc-foot"><span>更新于 11-06</span><span class="go">查看成品 →</span></div>
+  </a>
+  <button class="ccard add" onclick="openNewCourse()">
+   <svg><use href="#i-plus"/></svg><span>新建课程</span>
+  </button>
+ </div>
+</section>
+
+<!-- ---------- 屏幕 2：素材库 ---------- -->
+<section class="scr" id="scr-library">
+ <div class="ops-ph">
+  <div><div class="t">素材库</div><div class="s">所有课程的视频都收在这里。每一份素材都拆成三段可单独重跑的分析：逐字稿 · 关键帧 · 视频理解。</div></div>
+  <div class="a"><button class="btn pri" onclick="document.getElementById('upload-box').scrollIntoView({behavior:'smooth'})"><svg style="width:12px;height:12px"><use href="#i-upload"/></svg> 上传视频</button></div>
+ </div>
+
+ <!-- 上传区 -->
+ <div class="ops-card" id="upload-box">
+  <div class="h"><div><b>上传视频</b><small>mp4 / mov · 单文件 ≤ 2GiB · 必须含音频轨</small></div><span class="tag gray">归属课程</span></div>
+  <div class="b">
+   <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <label class="note">这份视频属于哪门课</label>
+    <select class="fi" style="width:auto"><option>趋势交易总论</option><option>级别与周期</option><option>筹码分布实战</option></select>
+    <span class="note">素材归属课程是硬约束：一门课可上传多个视频，默认全部参与规划（起草时可勾选其中几份）。</span>
+   </div>
+   <div class="upload-hero" style="border:1.5px dashed #c9d3e2;border-radius:12px;background:#fafbfd;padding:26px 20px;text-align:center">
+    <span style="width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #dbe5f6;color:var(--p-pri);display:grid;place-items:center;margin:0 auto 10px"><svg style="width:21px;height:21px"><use href="#i-upload"/></svg></span>
+    <b style="display:block;font-size:15px">把视频拖到这里</b>
+    <p style="margin:2px 0 10px;color:var(--p-mut);font-size:12.5px">或</p>
+    <button class="btn pri"><svg style="width:13px;height:13px"><use href="#i-plus"/></svg> 选择视频文件</button>
+    <small style="display:block;margin-top:9px;color:#9aa3b8;font-size:11px">上传后自动进入「转写 → 关键帧 → 理解」三段分析；断网从断点续传。</small>
+   </div>
+  </div>
+ </div>
+
+ <!-- 素材列表 -->
+ <div class="ops-card">
+  <div class="h"><div><b>素材 · 4</b><small>就绪 2 · 处理中 1 · 失败 1</small></div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <span class="srch" style="display:flex;align-items:center;gap:5px;border:1px solid var(--p-line);border-radius:7px;padding:4px 8px;background:#fff;font-size:11.5px;color:var(--p-mut)"><svg style="width:11px;height:11px"><use href="#i-search"/></svg><input placeholder="搜索文件名" style="border:none;outline:none;font-size:11.5px;width:110px;background:none"></span>
+    <span class="tag gray">全部课程</span>
+   </div>
+  </div>
+  <div class="b" style="padding-top:6px">
+   <div class="lib-grid">
+
+    <!-- 素材 1：全就绪 -->
+    <div class="lib">
+     <div class="lh">
+      <span class="nm">趋势交易体系总论1.mp4</span>
+      <span class="id">ast_a1b2c3d4e5f60718</span>
+      <span class="own">趋势交易总论</span>
+      <span class="st"><span class="tag ok">就绪</span><span class="note">33:09 · 200.5 MiB · 上传于 19:01</span></span>
+     </div>
+     <div class="stages">
+      <div class="stage done" data-stage="s1t">
+       <div class="sh"><i class="dot"></i>逐字稿</div>
+       <div class="sc">20 段 · 置信度 96.4%</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn" onclick="rerun(this,'重新转写中…','done')">重新生成</button><button class="btn" onclick="clearStage(this,'已删除 · 可重新生成')">删除结果</button></div>
+      </div>
+      <div class="stage done" data-stage="s1f">
+       <div class="sh"><i class="dot"></i>关键帧</div>
+       <div class="sc">6 张 · 每 5 分钟采样</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn" onclick="rerun(this,'重新抽帧中…','done')">重新生成</button><button class="btn" onclick="clearStage(this,'已删除 · 可重新生成')">删除结果</button></div>
+      </div>
+      <div class="stage done" data-stage="s1u">
+       <div class="sh"><i class="dot"></i>视频理解</div>
+       <div class="sc">24 条讲解要点 · 可用于大纲</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn" onclick="rerun(this,'重跑理解中…','done')">重跑理解</button><button class="btn" onclick="clearStage(this,'已删除 · 可重新生成')">删除结果</button></div>
+      </div>
+     </div>
+     <details class="libdetail">
+      <summary style="cursor:pointer;font-size:12.5px;color:var(--p-pri)">展开分析结果</summary>
+      <h4 style="margin-top:10px">逐字稿（节选）<span class="grow"></span><span class="note">点击段落可定位原视频</span></h4>
+      <div class="asr">
+       <div class="seg"><span class="ts">00:00:12</span><span class="sp">讲师</span><span>趋势不是预测，而是对已经发生的价格结构的跟随。我们先把「趋势」这个词拆开。</span></div>
+       <div class="seg"><span class="ts">00:03:40</span><span class="sp">讲师</span><span>先定级别，再谈方向；这是后面所有判断的前提。</span></div>
+       <div class="seg"><span class="ts">00:06:44</span><span class="sp">讲师</span><span>不能。摆动高低点被依次抬高，才构成上升趋势；否则只是反弹或震荡。</span></div>
+      </div>
+      <h4 style="margin-top:12px">关键帧 <span class="grow"></span><span class="note">6 张</span></h4>
+      <div class="kfgrid">
+       <figure class="kf"><div class="thumb"><i style="height:38%"></i><i style="height:44%"></i><i style="height:52%" class="g"></i><i style="height:64%"></i></div><figcaption><span class="ts">15:58</span>通道识别</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:52%"></i><i style="height:48%"></i><i style="height:66%" class="g"></i><i style="height:74%"></i></div><figcaption><span class="ts">19:18</span>趋势形成</figcaption></figure>
+       <figure class="kf"><div class="thumb"><i style="height:70%"></i><i style="height:66%" class="g"></i><i style="height:80%"></i><i style="height:88%"></i></div><figcaption><span class="ts">23:56</span>能量与惯性</figcaption></figure>
+      </div>
+      <h4 style="margin-top:12px">视频理解（讲解要点）<span class="grow"></span><span class="note">大纲起草的输入</span></h4>
+      <div class="note" style="line-height:1.9">· 趋势包含明确方向与蕴藏能量<br>· 股票的本质是周期加趋势<br>· 通道是趋势成立的空间条件，跌破通道下沿即证伪<br>· 级别决定趋势的成立与否，同一段行情在更大级别只是摆动</div>
+     </details>
+     <div class="lb">
+      <button class="btn pri sm" onclick="go('outline');document.getElementById('pick-note').textContent='已选 1 份素材（趋势交易体系总论1.mp4）'">用这份素材做课</button>
+      <span class="note">已用于：趋势交易总论 · 筹码分布实战</span>
+      <span style="flex:1"></span>
+      <button class="btn sm">停止加工</button>
+      <button class="btn sm" style="color:#b3352c">删除素材</button>
+     </div>
+    </div>
+
+    <!-- 素材 2：理解未完成 -->
+    <div class="lib">
+     <div class="lh">
+      <span class="nm">趋势交易体系总论2.mp4</span>
+      <span class="id">ast_b2c3d4e5f60718293</span>
+      <span class="own">趋势交易总论</span>
+      <span class="st"><span class="tag warn">理解未完成</span><span class="note">41:22 · 312.0 MiB · 上传于 19:03</span></span>
+     </div>
+     <div class="stages">
+      <div class="stage done">
+       <div class="sh"><i class="dot"></i>逐字稿</div><div class="sc">38 段 · 置信度 95.1%</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn" onclick="rerun(this,'重新转写中…','done')">重新生成</button><button class="btn" onclick="clearStage(this,'已删除 · 可重新生成')">删除结果</button></div>
+      </div>
+      <div class="stage done">
+       <div class="sh"><i class="dot"></i>关键帧</div><div class="sc">9 张</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn" onclick="rerun(this,'重新转写中…','done')">重新生成</button><button class="btn" onclick="clearStage(this,'已删除 · 可重新生成')">删除结果</button></div>
+      </div>
+      <div class="stage warn">
+       <div class="sh"><i class="dot"></i>视频理解</div><div class="sc">17/32 块失败 · 理解未完成</div>
+       <div class="sa"><button class="btn pri" onclick="rerun(this,'重跑理解中…','done')">重跑理解</button><button class="btn">查看</button></div>
+      </div>
+     </div>
+     <div class="lb">
+      <span class="note">理解未完成的素材不能参与智能大纲起草——请先重跑理解。</span>
+      <span style="flex:1"></span>
+      <button class="btn sm">停止加工</button>
+      <button class="btn sm" style="color:#b3352c">删除素材</button>
+     </div>
+    </div>
+
+    <!-- 素材 3：处理中 -->
+    <div class="lib">
+     <div class="lh">
+      <span class="nm">级别与周期公开课.mp4</span>
+      <span class="id">ast_c3d4e5f6071829304</span>
+      <span class="own">级别与周期</span>
+      <span class="st"><span class="tag run">解析中</span><span class="note">22:10 · 96.4 MiB · 上传于 19:05</span></span>
+     </div>
+     <div class="stages">
+      <div class="stage run">
+       <div class="sh"><i class="dot"></i>逐字稿</div><div class="sc">62% · 已出 13 段（可边转边读）</div>
+       <div class="sa"><button class="btn">查看</button><button class="btn stop">停止加工</button></div>
+      </div>
+      <div class="stage"><div class="sh"><i class="dot"></i>关键帧</div><div class="sc">等待</div><div class="sa"><button class="btn" onclick="rerun(this,'生成中…','done')">单独生成</button></div></div>
+      <div class="stage"><div class="sh"><i class="dot"></i>视频理解</div><div class="sc">等待逐字稿完成</div><div class="sa"><button class="btn" onclick="rerun(this,'生成中…','done')">单独生成</button></div></div>
+     </div>
+     <div class="lb"><span class="note">逐字稿完成后自动接着抽关键帧与做理解。</span></div>
+    </div>
+
+    <!-- 素材 4：失败 -->
+    <div class="lib">
+     <div class="lh">
+      <span class="nm">筹码分布实战.mp4</span>
+      <span class="id">ast_d4e5f607182930415</span>
+      <span class="own">筹码分布实战</span>
+      <span class="st"><span class="tag err">失败</span><span class="note">18:40 · 84.1 MiB · 上传于 19:06</span></span>
+     </div>
+     <div class="stages">
+      <div class="stage err">
+       <div class="sh"><i class="dot"></i>逐字稿</div><div class="sc">未开始 · 未检测到音频轨</div>
+       <div class="sa"><button class="btn">查看原因</button><button class="btn">重新上传</button></div>
+      </div>
+      <div class="stage"><div class="sh"><i class="dot"></i>关键帧</div><div class="sc">—</div></div>
+      <div class="stage"><div class="sh"><i class="dot"></i>视频理解</div><div class="sc">—</div></div>
+     </div>
+     <div class="lb"><span class="note">半成品已清理，不占用素材配额。</span><span style="flex:1"></span><button class="btn sm">重新上传</button></div>
+    </div>
+
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- ---------- 屏幕 3：课程大纲 ---------- -->
+<section class="scr" id="scr-outline">
+ <div class="ops-ph">
+  <div><div class="t">课程大纲</div><div class="s">筹码分布实战 · 大纲 v1 · 待你批准</div></div>
+  <div class="a">
+   <button class="btn" onclick="go('library')">回到素材库</button>
+   <button class="btn pri" onclick="approveOutline()">批准大纲并开始制作 <svg style="width:12px;height:12px"><use href="#i-arrow"/></svg></button>
+  </div>
+ </div>
+
+ <div class="steps5" style="margin-bottom:14px">
+  <a class="on"><i>1</i>课程大纲</a><span class="arw">→</span>
+  <a onclick="go('build')"><i>2</i>课件制作</a><span class="arw">→</span>
+  <a><i>3</i>成品审阅</a><span class="arw">→</span>
+  <a><i>4</i>交付运营</a>
+  <span class="sep" style="flex:1"></span>
+  <span class="note">目录先验：教师粘贴的 7 行人工目录（篇 / 章 / 课时三级）</span>
+ </div>
+
+ <div class="runbar">
+  <span class="pulse" id="outline-pulse"></span>
+  <b id="outline-state">大纲已生成</b>
+  <span class="note" id="outline-state-note">自检通过</span>
+  <span class="grow"></span>
+  <button class="btn sm">＋ 加课时</button>
+  <button class="btn sm">保存</button>
+ </div>
+
+ <div class="ops-card" style="margin-top:12px">
+  <div class="h"><div><b>课程大纲</b><small>这一棵树就是大纲本体——改名、挪位、删节都在这里做</small></div>
+   <span class="tag ok">素材覆盖 40%（29/73 要点）</span>
+  </div>
+  <div class="b" style="padding-top:8px">
+    <div class="olrow lv1"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>篇</span><span class="ttl"><b>第一篇 交易认知的反思与选择</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button></span></div>
+    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第一章 从盈亏困惑到方法反思</b><span class="cnt">1 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
+    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>1. 通道识别与趋势确认</b><span class="sc">100%</span><span class="dur">3 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 15:58–19:18</span><span class="pts">通道是趋势成立的空间条件 · 跌破下沿即证伪</span></span></div>
+    <div class="olrow lv1"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>篇</span><span class="ttl"><b>第二篇 趋势理论的基本框架</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button></span></div>
+    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第二章 通道识别与趋势形成</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
+    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>1. 趋势方向、能量与惯性</b><span class="sc">100%</span><span class="dur">2 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 21:29–23:56</span><span class="pts">趋势包含明确方向与蕴藏能量</span></span></div>
+    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>2. 周期机会与趋势主线</b><span class="sc">100%</span><span class="dur">14 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 19:18–33:04</span><span class="pts">股票的本质是周期加趋势</span></span></div>
+    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第三章 趋势的构成与运行特征</b><span class="cnt">1 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
+  </div>
+ </div>
+
+ <details class="why">
+  <summary>校验口径（4 条）</summary>
+  <div class="wb">
+   · 匹配度一律由出处推导（不是模型自评），所以每一条都能点开核对到原视频的哪几分钟<br>
+   · 教师原文的 7 行目录是下界，Agent 只在其上做证据匹配与分节；目录外的章节不会被创建<br>
+   · 课时估时按绑定出处的真实跨度计算，没有出处才取模型估值<br>
+   · 已剔除 2 个挂不上出处的模型课时（留痕，不阻塞批准）
+  </div>
+ </details>
+</section>
+
+<!-- ---------- 屏幕 4：课件制作 ---------- -->
+<section class="scr" id="scr-build">
+ <div class="ops-ph">
+  <div><div class="t">课件制作</div><div class="s">趋势交易总论 · 九步生产逐节进行；随时可以停下来改内容</div></div>
+  <div class="a">
+   <button class="btn" onclick="go('outline')">回到大纲</button>
+   <button class="btn stop" onclick="stopBuild()" id="stop-build-btn"><svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 停止制作</button>
+  </div>
+ </div>
+
+ <div class="steps5" style="margin-bottom:14px">
+  <a onclick="go('outline')"><i>1</i>课程大纲</a><span class="arw">→</span>
+  <a class="on"><i>2</i>课件制作</a><span class="arw">→</span>
+  <a><i>3</i>成品审阅</a><span class="arw">→</span>
+  <a><i>4</i>交付运营</a>
+  <span class="sep" style="flex:1"></span>
+  <span class="note">并行度 2 · 单课生产不阻塞其他课</span>
+ </div>
+
+ <div class="split3">
+  <!-- 左：课时列表 -->
+  <div class="tree">
+   <div class="th">课时 <span class="grow"></span><span class="tag run">1/4 完成</span></div>
+   <div class="tnode lv3" data-sec="s1"><span class="lv">1.1</span><span class="tt"><b>通道识别与趋势确认</b><small>已完成 · 6m12s</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span></span></span></div>
+   <div class="tnode lv3 on" data-sec="s2"><span class="lv">1.2</span><span class="tt"><b>趋势方向、能量与惯性</b><small>进行中 · 第 6 步 正文</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s c"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+   <div class="tnode lv3" data-sec="s3"><span class="lv">1.3</span><span class="tt"><b>周期机会与趋势主线</b><small>排队中 · 前面 1 节</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+   <div class="tnode lv3" data-sec="s4"><span class="lv">2.1</span><span class="tt"><b>从盈亏困惑到方法反思</b><small>排队中</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+   <div style="padding:10px 14px"><button class="oe-add" style="width:100%">＋ 追加一节</button></div>
+  </div>
+
+  <!-- 中：当前节的工作区 -->
+  <div>
+   <div class="runbar" id="build-runbar">
+    <span class="pulse" id="build-pulse"></span>
+    <b id="build-state">第 2 节「趋势方向、能量与惯性」· 正在写正文</b>
+    <span class="grow"></span>
+    <span class="note" id="build-note">已用 3m48s · 12.4k tokens</span>
+   </div>
+
+   <div class="doc">
+    <div class="dh">
+     <b>1.2 趋势方向、能量与惯性</b>
+     <span class="tag run">生成中 · 第 6/9 步</span>
+     <span class="right">
+      <span class="note">出处：总论1 21:29–23:56</span>
+      <button class="btn sm">本节预览</button>
+     </span>
+    </div>
+    <div class="db">
+     <h4>一、方向与能量：趋势的两个维度</h4>
+     <p>趋势有两个维度：<b>方向</b>与<b>能量</b>。方向回答「往哪走」，能量回答「能走多远」。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 21:29</span></p>
+     <p class="sel">只有方向没有能量的趋势，走不远——它更像一次摆动，而不是趋势。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 22:04</span></p>
+     <p class="streaming">能量来自哪里？来自成交的持续性，来自推动的连续性。</p>
+     <div class="floatbar">
+      <button class="btn"><b>B</b></button><button class="btn"><i>I</i></button><button class="btn">改写</button>
+      <button class="btn danger">删段</button>
+      <span style="width:1px;background:var(--p-line);margin:0 4px"></span>
+      <button class="btn pri" onclick="saveEdit(this)">保存</button>
+      <button class="btn">撤销</button>
+    </div>
+    <p class="note" style="margin-top:8px">选中段落即可改：加粗 / 斜体 / 改写 / 删段。事实段与 `[[unit]]` 锚受保护——结构性改动走生产回灌。</p>
+
+    <div class="media3">
+     <div class="mcard">
+      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-image"/></svg><span class="lbl">图示</span><span class="grow"></span><span class="tag ok">已生成</span></div>
+      <div class="mb">趋势方向与能量分解示意<br><span class="note">SVG · diagram · 不承载教学信息</span></div>
+     </div>
+     <div class="mcard">
+      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-chart"/></svg><span class="lbl">回放课件</span><span class="grow"></span><span class="tag run">校验中</span></div>
+      <div class="mb">600519 日线 · 均线束回踩<br><span class="note">断言 3 条 · 读回 1,284 根 K</span></div>
+     </div>
+     <div class="mcard">
+      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-play"/></svg><span class="lbl">原片片段</span><span class="grow"></span><span class="tag ok">已定位</span></div>
+      <div class="mb">讲师原话 · 21:29–23:56<br><span class="note">2 段 · 关键帧 2 张</span></div>
+     </div>
+    </div>
+   </div>
+
+   <div class="ops-card" style="margin-top:12px">
+    <div class="h"><div><b>本节引用的素材</b><small>每个事实段都能回溯到原视频的哪几分钟</small></div><span class="tag gray">1 份素材 · 2 段出处</span></div>
+    <div class="b" style="padding-top:8px">
+     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <figure class="kf" style="width:150px"><div class="thumb"><i style="height:44%"></i><i style="height:52%"></i><i style="height:66%" class="g"></i><i style="height:74%"></i></div><figcaption><span class="ts">21:29</span>方向与能量</figcaption></figure>
+      <figure class="kf" style="width:150px"><div class="thumb"><i style="height:66%"></i><i style="height:58%"></i><i style="height:72%" class="g"></i><i style="height:82%"></i></div><figcaption><span class="ts">23:56</span>惯性</figcaption></figure>
+      <div class="note" style="flex:1;min-width:220px;line-height:1.9">趋势交易体系总论1.mp4 · 21:29–23:56<br>· 趋势包含明确方向与蕴藏能量<br>· 推动的连续性决定趋势的持续时间</div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+</main>
+</div>
+
+<!-- ============ 右侧 Agent 面板 ============ -->
+<aside class="agent-rail" id="agent-rail" aria-label="Agent 面板">
+ <div class="agent-head">
+  <span class="agent-ava" id="agent-ava">策</span>
+  <div class="agent-id"><b id="agent-name">课程 Agent</b><small id="agent-sub">大纲起草</small></div>
+  <span class="agent-live" id="agent-live"><i class="dot-ok"></i>空闲</span>
+ </div>
+ <div class="agent-tabs">
+  <label class="on" id="tab-chat">对话</label>
+  <label id="tab-run">执行<span class="n" id="n-run">1</span></label>
+  <label id="tab-files">产物<span class="n" id="n-files">4</span></label>
+ </div>
+
+ <div class="agent-body" id="agent-body">
+
+  <!-- 大纲 Agent -->
+  <div id="pane-outline">
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">课程 Agent · 19:14</div>
+     <div class="m-text"><p>收到。我按你给的<b>人工目录</b>做骨架，用两份素材的讲解要点做证据匹配。</p></div>
+     <div class="planw">
+      <div class="ph">起草计划 <span class="n">5/5</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>读取素材与要点</span><span class="pn">73 要点</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>校验人工目录层级</span><span class="pn">7 行</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>归一概念与术语</span><span class="pn">24 术语</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>逐节点匹配出处</span><span class="pn">8 节点</span></div>
+      <div class="pw-item done"><span class="tick">✓</span><span>自检</span><span class="pn">通过</span></div>
+     </div>
+     <div class="tool-group">
+      <div class="tg-h">5 次工具调用 · 21.6k tokens · 1m48s</div>
+      <details class="tool"><summary><span class="tn">source_units.read</span><span class="ta">{"assetIds":["ast_a1b2…","ast_b2c3…"]}</span><span class="ts">1.2s</span></summary><div class="tbody">{"units":73,"teachingPoints":73}</div></details>
+      <details class="tool"><summary><span class="tn">outline.validate</span><span class="ta">{"prior":"manual"}</span><span class="ts">0.4s</span></summary><div class="tbody">{"rows":7,"accepted":7,"rejected":0}</div></details>
+      <details class="tool"><summary><span class="tn">plan.match_evidence</span><span class="ta">{"mode":"follow_manual"}</span><span class="ts">8.9s</span></summary><div class="tbody">{"nodes":8,"matched":8,"dropped":2}</div></details>
+     </div>
+    </div>
+   </div>
+   <div class="msg user">
+    <span class="m-av">周</span>
+    <div class="m-body"><div class="m-meta">你 · 19:12</div><div class="m-text"><p>按我贴的目录来，别改我的标题。第 2 课多给点素材。</p></div></div>
+   </div>
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">课程 Agent · 19:15</div>
+     <div class="m-text"><p>大纲好了，标题全是你的原文。<b>8 个节点全部有出处</b>，匹配度 93%～100%；剔了 2 个挂不上出处的模型课时（留痕，不影响批准）。</p>
+     <p>要我现在开始逐节做课件吗？</p></div>
+    </div>
+   </div>
+   <div class="interrupt" id="outline-interrupt">
+    <div class="ih"><span class="tag run">等待你批准</span>大纲 v1</div>
+    <div class="it">批准后锁定为基准版，逐节生产解锁</div>
+    <div class="ia" style="margin-top:9px"><button class="btn pri sm" onclick="approveOutline()">批准并开始制作</button><button class="btn sm">微调</button><button class="btn sm">打回重起草</button></div>
+   </div>
+  </div>
+
+  <!-- 制作 Agent -->
+  <div id="pane-build" style="display:none">
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">制作 Agent · 19:20</div>
+     <div class="m-text"><p>第 1 节做完了：教材正文 + 图示 + 回放课件，三层校验都过，评审 <b>8.6/10</b>。</p></div>
+     <div class="tool-group">
+      <div class="tg-h">9 步全过 · 18.2k tokens · 6m12s</div>
+      <details class="tool"><summary><span class="tn">market.kline_pull</span><span class="ta">{"code":"600519","period":"D"}</span><span class="ts">6.4s</span></summary><div class="tbody">{"bars":1284}</div></details>
+      <details class="tool"><summary><span class="tn">validate.schema</span><span class="ta">{"section":"1.1"}</span><span class="ts">0.3s</span></summary><div class="tbody">{"ok":true}</div></details>
+      <details class="tool"><summary><span class="tn">validate.rubric</span><span class="ta">{"section":"1.1"}</span><span class="ts">2.1s</span></summary><div class="tbody">{"score":8.6,"veto":null}</div></details>
+     </div>
+    </div>
+   </div>
+   <div class="msg">
+    <span class="m-av">A</span>
+    <div class="m-body">
+     <div class="m-meta">制作 Agent · 19:24</div>
+     <div class="m-text"><p>第 2 节走到<b>第 6 步「正文」</b>，正在写「方向与能量」这一段——写到一半，你随时可以打断我。</p>
+      <div class="planw" style="margin-top:8px">
+       <div class="ph">1.2 趋势方向、能量与惯性 <span class="n">6/9</span></div>
+       <div class="pw-item done"><span class="tick">✓</span><span>案例股</span><span class="pn">600519</span></div>
+       <div class="pw-item done"><span class="tick">✓</span><span>行情同步</span><span class="pn">1,284 根</span></div>
+       <div class="pw-item done"><span class="tick">✓</span><span>行情读回</span><span class="pn">校验通过</span></div>
+       <div class="pw-item done"><span class="tick">✓</span><span>图示</span><span class="pn">1 张</span></div>
+       <div class="pw-item done"><span class="tick">✓</span><span>回放课件</span><span class="pn">3 断言</span></div>
+       <div class="pw-item doing"><span class="tick"></span><span>正文</span><span class="pn">now</span></div>
+       <div class="pw-item"><span class="tick"></span><span>其余课件</span><span class="pn"></span></div>
+       <div class="pw-item"><span class="tick"></span><span>评审</span><span class="pn"></span></div>
+       <div class="pw-item"><span class="tick"></span><span>溯源</span><span class="pn"></span></div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <div id="stop-card" style="display:none">
+    <div class="interrupt err">
+     <div class="ih"><span class="tag err">已停止</span>第 2 节 · 第 6 步「正文」</div>
+     <div class="it">我在当前步骤边界安全停下了</div>
+     <p style="margin:6px 0 0">已完成的前 5 步成果保留（案例股、行情、图示、回放课件）；正文写到一半的段落已保留为草稿，<b>没有部分落库</b>。随时可以改完继续。</p>
+     <div class="ia" style="margin-top:9px">
+      <button class="btn pri sm" onclick="resumeBuild()">改完继续制作</button>
+      <button class="btn sm" onclick="go('outline')">先改大纲</button>
+      <button class="btn sm">放弃本节重做</button>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="agent-foot">
+  <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:42%"></i></span><span>42% · 15.1k / 36k</span></div>
+  <div class="quick">
+   <button onclick="focusChat('把第 2 节的方向与能量讲得更具体些。')">讲具体些</button>
+   <button onclick="focusChat('这一节加一个反例。')">加反例</button>
+   <button onclick="focusChat('换成周线级别再看一遍。')">换级别</button>
+   <button onclick="focusChat('这一节先停，我要改内容。')">先停一下</button>
+  </div>
+  <div class="composer">
+   <textarea id="chat-input" placeholder="告诉 Agent 要补什么、改哪一段，或让它停下…"></textarea>
+   <div class="cr">
+    <button class="ic-btn" title="引用素材"><svg><use href="#i-paperclip"/></svg></button>
+    <button class="ic-btn" title="引用出处"><svg><use href="#i-at"/></svg></button>
+    <span class="grow"></span><span class="kbd">⌘↵</span>
+    <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
+   </div>
+  </div>
+ </div>
+</aside>
+
+</div>
+
+<!-- ============ 新建课程对话框 ============ -->
+<dialog class="newc" id="new-course">
+ <form method="dialog" onsubmit="return createCourse(event)">
+  <div class="nh"><b>新建课程</b><button class="x" value="cancel" aria-label="关闭">×</button></div>
+  <div class="nb">
+   <div>
+    <div class="note" style="margin-bottom:5px">课程名称</div>
+    <input class="fi" id="nc-title" placeholder="例：筹码分布实战">
+   </div>
+   <div>
+    <div class="note" style="margin-bottom:5px">这门课要讲什么（给 Agent 的目标）</div>
+    <textarea class="fi" id="nc-goal" style="min-height:56px" placeholder="例：讲清筹码分布与趋势主线的关系：先反思盈亏，再建立趋势理论框架">讲清筹码分布与趋势主线的关系</textarea>
+   </div>
+   <div class="pick">
+    <div class="ph"><svg style="width:13px;height:13px"><use href="#i-film"/></svg>从素材库选素材（可多选）<span class="grow"></span><span class="note" id="pick-note">已选 1 份素材</span></div>
+    <label class="pi on" data-pick><input type="checkbox" checked><span><span class="nm">趋势交易体系总论1.mp4</span><span class="meta">33:09 · 理解完成 · 24 要点</span></span><span class="st tag ok">就绪</span></label>
+    <label class="pi" data-pick><input type="checkbox"><span><span class="nm">趋势交易体系总论2.mp4</span><span class="meta">41:22 · 理解未完成（17/32 块失败）</span></span><span class="st tag warn">需重跑理解</span></label>
+    <label class="pi" data-pick><input type="checkbox" disabled><span><span class="nm">级别与周期公开课.mp4</span><span class="meta">22:10 · 逐字稿 62%</span></span><span class="st tag run">解析中 · 不可选</span></label>
+    <p class="note" style="padding:8px 12px;margin:0">没勾选 = 用这门课的全部素材。勾了就只对勾选的做规划；素材未就绪时「生成大纲」会被拒并说明原因。</p>
+   </div>
+   <details class="toolcard">
+    <summary><span class="tname">目录先验（可选）</span><span class="targs">人工目录 · 三级：篇 / 章 / 课时</span></summary>
+    <div class="tout">
+     <textarea class="fi" style="min-height:92px;width:100%" placeholder="第一篇 交易认知的反思与选择&#10;第一章 从盈亏困惑到方法反思&#10;第二篇 趋势理论的基本框架&#10;第二章 通道识别与趋势形成&#10;1. 通道识别与趋势确认"></textarea>
+     <p class="note" style="margin:8px 0 0">贴了就以你的目录为下界（标题取原文）；不贴则由 Agent 代拟一版给你审。目录外的内容不会创建章节。</p>
+    </div>
+   </details>
+  </div>
+  <div class="nf">
+   <span class="note" style="margin-right:auto">创建后自动进入「课程大纲」，Agent 会把素材梳理成大纲。</span>
+   <button class="btn" value="cancel">取消</button>
+   <button class="btn pri" value="default" id="nc-go">创建课程并生成大纲</button>
+  </div>
+ </form>
+</dialog>
+
+<script src="assets/sb-course.js" defer></script>
+<script>
+/* ---------------- 屏幕切换 ---------------- */
+var SCREENS = {
+  courses: { crumb: '我的课程', agent: null },
+  library: { crumb: '素材库', agent: null },
+  outline: { crumb: '筹码分布实战 / 课程大纲', agent: 'outline' },
+  build:   { crumb: '趋势交易总论 / 课件制作', agent: 'build' }
+};
+function go(name){
+  document.querySelectorAll('.scr').forEach(function(s){ s.classList.toggle('on', s.id === 'scr-' + name); });
+  document.querySelectorAll('[data-go]').forEach(function(a){
+    var t = a.getAttribute('data-go');
+    if (a.classList.contains('ops-i')) a.classList.toggle('on', t === name);
+  });
+  document.getElementById('crumb').textContent = SCREENS[name].crumb;
+  var agent = SCREENS[name].agent;
+  var app = document.getElementById('app');
+  app.classList.toggle('has-agent', !!agent);
+  document.getElementById('pane-outline').style.display = (agent === 'outline') ? '' : 'none';
+  document.getElementById('pane-build').style.display = (agent === 'build') ? '' : 'none';
+  if (agent === 'outline'){
+    document.getElementById('agent-ava').textContent = '策';
+    document.getElementById('agent-name').textContent = '课程 Agent';
+    document.getElementById('agent-sub').textContent = '大纲起草与审阅';
+    document.getElementById('agent-live').innerHTML = '<i class="dot-ok"></i>待你批准';
+  }
+  if (agent === 'build'){
+    document.getElementById('agent-ava').textContent = '制';
+    document.getElementById('agent-name').textContent = '制作 Agent';
+    document.getElementById('agent-sub').textContent = '九步逐节生产';
+  }
+  if (name === 'courses') document.getElementById('top-pill').innerHTML = '<i class="dot-ok"></i>素材就绪';
+  if (name === 'library') document.getElementById('top-pill').innerHTML = '<i class="dot-wait"></i>1 份解析中';
+  if (location.hash.slice(1) !== name) location.hash = name;
+  window.scrollTo({top: 0});
+}
+window.addEventListener('hashchange', function(){
+  var n = location.hash.slice(1);
+  if (SCREENS[n] && !document.getElementById('scr-' + n).classList.contains('on')) go(n);
+});
+document.querySelectorAll('[data-go]').forEach(function(a){
+  a.addEventListener('click', function(e){ go(a.getAttribute('data-go')); });
+});
+
+/* ---------------- 大纲分组折叠 ---------------- */
+function toggleGroup(btn){
+  var row = btn.closest('.olrow');
+  var lvl = row.classList.contains('lv1') ? 1 : 2;
+  var collapsed = row.classList.toggle('closed');
+  var sib = row.nextElementSibling;
+  while (sib){
+    if (sib.classList.contains('olrow')){
+      var l = sib.classList.contains('lv1') ? 1 : (sib.classList.contains('lv2') ? 2 : 3);
+      if (l <= lvl) break;
+      sib.style.display = collapsed ? 'none' : '';
+    }
+    sib = sib.nextElementSibling;
+  }
+}
+
+/* ---------------- 素材阶段：重新生成 / 删除结果 ---------------- */
+function rerun(btn, label, back){
+  var stage = btn.closest('.stage');
+  stage.classList.remove('done','warn','err'); stage.classList.add('run');
+  stage.querySelector('.sc').textContent = label;
+  var acts = stage.querySelector('.sa');
+  acts.innerHTML = '<span class="note">处理中…</span>';
+  setTimeout(function(){
+    stage.classList.remove('run'); stage.classList.add(back);
+    stage.querySelector('.sc').textContent = '已重新生成 · 计数已更新';
+    acts.innerHTML = '<button class="btn">查看</button><button class="btn" onclick="rerun(this,\'重新生成中…\',\'done\')">重新生成</button><button class="btn" onclick="clearStage(this,\'已删除 · 可重新生成\')">删除结果</button>';
+  }, 1800);
+}
+function clearStage(btn, label){
+  var stage = btn.closest('.stage');
+  stage.classList.remove('done','run'); stage.classList.add('warn');
+  stage.querySelector('.sc').textContent = label;
+  stage.querySelector('.sa').innerHTML = '<button class="btn" onclick="rerun(this,\'重新生成中…\',\'done\')">重新生成</button>';
+}
+
+/* ---------------- 新建课程 ---------------- */
+function openNewCourse(){ document.getElementById('new-course').showModal(); }
+document.querySelectorAll('[data-pick]').forEach(function(row){
+  row.addEventListener('change', function(){
+    row.classList.toggle('on', row.querySelector('input').checked);
+    var n = document.querySelectorAll('[data-pick] input:checked').length;
+    document.getElementById('pick-note').textContent = n ? ('已选 ' + n + ' 份素材') : '未勾选 = 用这门课的全部素材';
+  });
+});
+function createCourse(e){
+  e.preventDefault();
+  document.getElementById('new-course').close();
+  go('outline');
+  var st = document.getElementById('outline-state');
+  var note = document.getElementById('outline-state-note');
+  document.getElementById('outline-pulse').style.display = '';
+  st.textContent = '正在梳理素材 → 生成大纲…';
+  note.textContent = '已读 2 份素材 · 73 条讲解要点';
+  document.getElementById('agent-live').innerHTML = '<i class="dot-run"></i>生成中';
+  document.getElementById('outline-interrupt').style.display = 'none';
+  setTimeout(function(){
+    st.textContent = '大纲已生成';
+    note.textContent = '自检通过 · 匹配度全部由出处推导';
+    document.getElementById('agent-live').innerHTML = '<i class="dot-ok"></i>待你批准';
+    document.getElementById('outline-interrupt').style.display = '';
+  }, 2600);
+}
+function approveOutline(){
+  go('build');
+  document.getElementById('build-state').textContent = '第 1 节「通道识别与趋势确认」· 案例股';
+  document.getElementById('build-note').textContent = '刚开始 · 0.4k tokens';
+}
+
+/* ---------------- 制作：停止 / 继续 ---------------- */
+function stopBuild(){
+  document.getElementById('stop-card').style.display = '';
+  document.getElementById('build-runbar').classList.add('stop');
+  document.getElementById('build-runbar').classList.remove('runbar');
+  document.getElementById('build-runbar').classList.add('runbar','stop');
+  document.getElementById('build-pulse').style.display = 'none';
+  document.getElementById('build-state').textContent = '已停止 · 第 2 节第 6 步「正文」';
+  document.getElementById('build-note').textContent = '前 5 步成果保留 · 正文半成品保留为草稿';
+  document.getElementById('stop-build-btn').innerHTML = '<svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 已停止';
+  document.getElementById('agent-live').innerHTML = '<i class="dot-wait"></i>已停止';
+}
+function resumeBuild(){
+  document.getElementById('stop-card').style.display = 'none';
+  document.getElementById('build-pulse').style.display = '';
+  document.getElementById('build-state').textContent = '第 2 节「趋势方向、能量与惯性」· 正在写正文';
+  document.getElementById('build-note').textContent = '已用 3m48s · 12.4k tokens';
+  document.getElementById('stop-build-btn').innerHTML = '<svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 停止制作';
+  document.getElementById('agent-live').innerHTML = '<i class="dot-run"></i>进行中';
+}
+function saveEdit(btn){
+  btn.textContent = '已保存';
+  setTimeout(function(){ btn.textContent = '保存'; }, 1600);
+}
+function focusChat(text){
+  var c = document.getElementById('chat-input');
+  c.value = text || ''; c.focus();
+}
+if (location.hash.slice(1) === 'new') { go('courses'); openNewCourse(); }
+else if (SCREENS[location.hash.slice(1)]) go(location.hash.slice(1));
+</script>
+</body></html>

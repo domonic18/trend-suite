@@ -3,25 +3,64 @@
 import {
   cancelMaterialResponse,
   createMediaAssetResponse,
+  deleteMediaStageResponse,
   ingestResponse,
   mediaAssetListResponse,
   mediaAssetView,
   mediaFrameListResponse,
+  mediaUnderstandingResponse,
+  rerunMediaStageResponse,
   transcriptResponse,
   type IngestResponse,
   type MediaAssetView,
   type MediaFrameListResponse,
+  type MediaStage,
   type MediaUploadTarget,
+  type MediaUnderstandingItem,
   type TranscriptResponse,
 } from '@trend-suite/contracts'
 import { getToken } from '@/features/accounts/session'
 import { ApiError, apiRequest } from '@/features/lib/http'
 
-export async function listAssets(courseId: string): Promise<MediaAssetView[]> {
+/**
+ * 素材列表。courseId 省略 = 素材库的全局视角（教师名下所有课程的素材）。
+ */
+export async function listAssets(courseId?: string | undefined): Promise<MediaAssetView[]> {
+  const query =
+    courseId === undefined ? '' : `?courseId=${encodeURIComponent(courseId)}`
   const data = await apiRequest<unknown>(
-    `/v1/admin/content/media-assets?courseId=${encodeURIComponent(courseId)}`,
+    `/v1/admin/content/media-assets${query}`,
   )
   return mediaAssetListResponse.parse(data).items
+}
+
+/**
+ * 重跑某一段分析：
+ * - force 缺省或 false → 只补缺口（按块去重，不重复计费）；
+ * - force=true → 先清掉该段已有结果再重新生成。
+ */
+export async function rerunStage(
+  assetId: string,
+  stage: MediaStage,
+  force = false,
+): Promise<MediaAssetView> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/stages/${stage}/rerun`,
+    { method: 'POST', body: JSON.stringify({ force }) },
+  )
+  return rerunMediaStageResponse.parse(data).asset
+}
+
+/** 删除某一段的结果：素材字节与另外两段不受影响。 */
+export async function deleteStage(
+  assetId: string,
+  stage: MediaStage,
+): Promise<MediaAssetView> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/stages/${stage}`,
+    { method: 'DELETE' },
+  )
+  return deleteMediaStageResponse.parse(data).asset
 }
 
 /** 触发加工（force=true 清旧产物重跑）。 */
@@ -37,15 +76,6 @@ export async function ingestAsset(assetId: string, force = false): Promise<Inges
 export async function retryAsset(assetId: string): Promise<IngestResponse> {
   const data = await apiRequest<unknown>(
     `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/retry`,
-    { method: 'POST' },
-  )
-  return ingestResponse.parse(data)
-}
-
-/** 重跑理解（迭代 8）：只补理解阶段，转写与关键帧保留，按块去重续跑。 */
-export async function rerunUnderstand(assetId: string): Promise<IngestResponse> {
-  const data = await apiRequest<unknown>(
-    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/understand`,
     { method: 'POST' },
   )
   return ingestResponse.parse(data)
@@ -82,6 +112,14 @@ export async function getFrames(assetId: string): Promise<MediaFrameListResponse
     `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/frames`,
   )
   return mediaFrameListResponse.parse(data)
+}
+
+/** 视频理解段产物：讲解要点与出处时间码。 */
+export async function getUnderstanding(assetId: string): Promise<MediaUnderstandingItem[]> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/media-assets/${encodeURIComponent(assetId)}/understanding`,
+  )
+  return mediaUnderstandingResponse.parse(data).items
 }
 
 export async function createAsset(

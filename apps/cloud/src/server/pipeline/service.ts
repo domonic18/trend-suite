@@ -1,7 +1,6 @@
 import 'server-only'
 import {
   MAX_MEDIA_BYTES,
-  type JobStatus,
   type MediaAssetView,
   type MediaUploadTarget,
   type SessionUser,
@@ -13,6 +12,7 @@ import { newId } from '@/server/lib/ids'
 import { getEnv } from '@/env'
 import { ProbeUnavailableError } from './probe'
 import * as repo from './repo'
+import { assetViewOf, assetViewsOf } from './asset-view'
 import { cancelJob, findJobByAsset, listLatestJobs } from './jobs/repo'
 import { getMediaStore } from './store'
 import {
@@ -23,30 +23,6 @@ import {
 } from './upload-token'
 
 const UPLOAD_CONTENT_TYPE = 'application/octet-stream'
-
-function toAssetView(row: repo.MediaAssetRow, jobStatus: JobStatus | null = null): MediaAssetView {
-  return {
-    id: row.id,
-    courseId: row.course_id,
-    fileName: row.original_name ?? '',
-    status: row.status as MediaAssetView['status'],
-    byteSize: row.byte_size === null ? null : Number(row.byte_size),
-    sha256: row.sha256,
-    durationS: row.duration_s === null ? null : Number(row.duration_s),
-    videoOk: row.video_ok,
-    audioOk: row.audio_ok,
-    errorCode: row.error_code,
-    errorMessage: row.error_message,
-    processStep: row.process_step as MediaAssetView['processStep'],
-    processProgress: Number(row.process_progress),
-    processMessage: row.process_message,
-    jobStatus,
-    segmentCount: row.segment_count,
-    frameCount: row.frame_count,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
-  }
-}
 
 /**
  * 建素材并签发直传凭据（arch/05 §3.1）。
@@ -82,17 +58,25 @@ export async function createAsset(
   const expiresAt =
     reusable && sameDigest ? await repo.refreshUploadExpiry(row.id) : await expiryOf(row)
 
-  return { asset: toAssetView(row), upload: uploadTargetFor(row, expiresAt) }
+  return { asset: await assetViewOf(row), upload: uploadTargetFor(row, expiresAt) }
 }
 
+/**
+ * 素材列表。
+ * courseId 给了就看这门课的素材；不给就是素材库的全局视角——教师名下所有课程的素材。
+ */
 export async function listAssets(
   user: SessionUser,
-  courseId: string,
+  courseId?: string | undefined,
 ): Promise<MediaAssetView[]> {
-  await getCourseForUser(user, courseId)
-  const rows = await repo.listAssetsByCourse(courseId)
+  const rows = courseId
+    ? await (async () => {
+        await getCourseForUser(user, courseId)
+        return repo.listAssetsByCourse(courseId)
+      })()
+    : await repo.listAssetsByOwner(user.id)
   const jobs = await listLatestJobs(rows.map((row) => row.id))
-  return rows.map((row) => toAssetView(row, jobs.get(row.id)?.status ?? null))
+  return assetViewsOf(rows, jobs)
 }
 
 /**
@@ -184,7 +168,7 @@ export async function receiveUpload(
     audioOk: probe.audioOk,
     sourcePath: store.sourceRef(row.id),
   })
-  return toAssetView(updated)
+  return assetViewOf(updated)
 }
 
 /**
