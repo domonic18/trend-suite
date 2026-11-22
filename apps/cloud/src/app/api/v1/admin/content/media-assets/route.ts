@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     const user = await requireUser(req, workbenchRoles)
-    const courseId = new URL(req.url).searchParams.get('courseId') ?? ''
-    if (!courseId) throw badRequest('缺少 courseId')
-    const items = await listAssets(user, courseId)
+    // courseId 省略即素材库的全局视角：教师名下所有课程的素材。
+    const courseId = new URL(req.url).searchParams.get('courseId')
+    const items = await listAssets(user, courseId ?? undefined)
     return json(mediaAssetListResponse.parse({ items }))
   } catch (err) {
     return errorResponse(err)

@@ -61,6 +61,31 @@ export class ProcessingError extends Error {
 }
 
 export async function runProcessing(ctx: ProcessingContext): Promise<void> {
+  await transcriptStage(ctx)
+
+  await transcodeStage(ctx)
+
+  await framesStage(ctx)
+
+  await understandStage(ctx)
+
+  await ctx.onProgress?.({ step: 'index', progress: 94, message: '建立索引' })
+  await repo.finalizeSegments(ctx.assetId)
+  const [segmentCount, frameCount] = await Promise.all([
+    repo.countSegments(ctx.assetId),
+    repo.countFrames(ctx.assetId),
+  ])
+  await repo.setAssetCounts({ assetId: ctx.assetId, segmentCount, frameCount })
+  await ctx.onProgress?.({ step: 'done', progress: 100, message: '就绪' })
+
+  await rm(assetWorkDir(ctx.assetId), { recursive: true, force: true })
+}
+
+/**
+ * 转写段（可单独重跑）：抽音频 → 分块转写 → 逐块落库 → 定稿。
+ * 已转块跳过（transcript_segments.chunk_index），重跑不重复计费。
+ */
+export async function transcriptStage(ctx: ProcessingContext): Promise<void> {
   await ctx.onProgress?.({ step: 'audio', progress: 2, message: '抽取音频' })
   const audio = await extractAudio({
     assetId: ctx.assetId,
@@ -69,10 +94,12 @@ export async function runProcessing(ctx: ProcessingContext): Promise<void> {
     shouldCancel: ctx.shouldCancel,
   })
 
-  await transcribeStage(ctx, audio)
+  await transcribeChunks(ctx, audio)
+  await repo.finalizeSegments(ctx.assetId)
+}
 
-  await transcodeStage(ctx)
-
+/** 关键帧段（可单独重跑）：抽帧并落库，同一时间点只留一张，重跑只刷新。 */
+export async function framesStage(ctx: ProcessingContext): Promise<void> {
   await ctx.onProgress?.({ step: 'frames', progress: 78, message: '抽取关键帧' })
   const frames = await extractFrames({
     assetId: ctx.assetId,
@@ -89,23 +116,10 @@ export async function runProcessing(ctx: ProcessingContext): Promise<void> {
       height: f.height,
     })),
   })
-
-  await understandStage(ctx)
-
-  await ctx.onProgress?.({ step: 'index', progress: 94, message: '建立索引' })
-  await repo.finalizeSegments(ctx.assetId)
-  const [segmentCount, frameCount] = await Promise.all([
-    repo.countSegments(ctx.assetId),
-    repo.countFrames(ctx.assetId),
-  ])
-  await repo.setAssetCounts({ assetId: ctx.assetId, segmentCount, frameCount })
-  await ctx.onProgress?.({ step: 'done', progress: 100, message: '就绪' })
-
-  await rm(assetWorkDir(ctx.assetId), { recursive: true, force: true })
 }
 
 /** 转写阶段：分块 → 并发转写 → 逐块落库。 */
-async function transcribeStage(
+async function transcribeChunks(
   ctx: ProcessingContext,
   audio: { audioPath: string; durationS: number; silenceCuts: number[] },
 ): Promise<void> {

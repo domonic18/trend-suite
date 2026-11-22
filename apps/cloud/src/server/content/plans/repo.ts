@@ -93,6 +93,34 @@ export function findPlanById(id: string): Promise<CoursePlanRow | null> {
   return queryOne<CoursePlanRow>(`SELECT ${PLAN_COLUMNS} FROM course_plans WHERE id = $1`, [id])
 }
 
+/**
+ * 课程里是否有方案引用了这些证据单元。
+ *
+ * 引用落在两处：骨架节点的 sourceUnitIds 与分节计划的课时 sourceUnitIds。
+ * 删掉被引用的理解单元会让方案里的出处悬空——所以删前先问一句。
+ */
+export async function findPlansReferencingUnits(input: {
+  courseId: string
+  unitIds: string[]
+}): Promise<{ planId: string; version: number }[]> {
+  if (input.unitIds.length === 0) return []
+  const rows = await query<{ id: string; version: number }>(
+    `SELECT id, version FROM course_plans
+      WHERE course_id = $1
+        AND (
+          EXISTS (
+            SELECT 1 FROM jsonb_array_elements(COALESCE(skeleton->'nodes', '[]'::jsonb)) AS node
+             WHERE (node->'sourceUnitIds') ?| $2::text[])
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(COALESCE(section_plan->'lessons', '[]'::jsonb)) AS lesson
+             WHERE (lesson->'sourceUnitIds') ?| $2::text[])
+        )
+      ORDER BY version DESC`,
+    [input.courseId, input.unitIds],
+  )
+  return rows.map((row) => ({ planId: row.id, version: row.version }))
+}
+
 export function nextPlanVersion(courseId: string): Promise<number> {
   return queryOne<{ version: number }>(
     `SELECT COALESCE(MAX(version), 0) + 1 AS version FROM course_plans WHERE course_id = $1`,

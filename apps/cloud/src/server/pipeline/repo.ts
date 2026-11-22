@@ -28,7 +28,7 @@ export type MediaAssetRow = {
   updated_at: Date
 }
 
-const COLUMNS = [
+/** 一批课程的标题：素材卡要标出归属课程（跨课程全局视角）。 */const COLUMNS = [
   'id',
   'course_id',
   'original_name',
@@ -53,6 +53,18 @@ const COLUMNS = [
   'created_at',
   'updated_at',
 ].join(', ')
+
+/** 一批课程的标题：素材卡要标出归属课程（跨课程全局视角）。 */
+export async function listCourseTitles(courseIds: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  if (courseIds.length === 0) return map
+  const rows = await query<{ id: string; title: string }>(
+    `SELECT id, title FROM courses WHERE id = ANY($1::text[])`,
+    [courseIds],
+  )
+  for (const row of rows) map.set(row.id, row.title)
+  return map
+}
 
 export async function insertAsset(input: {
   id: string
@@ -113,10 +125,24 @@ export function findReusableAsset(input: {
   )
 }
 
+/** 课程内的素材（课程页的素材视图）。 */
 export function listAssetsByCourse(courseId: string): Promise<MediaAssetRow[]> {
   return query<MediaAssetRow>(
     `SELECT ${COLUMNS} FROM media_assets WHERE course_id = $1 ORDER BY created_at DESC`,
     [courseId],
+  )
+}
+
+/**
+ * 素材库视角：教师名下所有课程的素材（教师端需求 T4「库全局、归属显式」）。
+ * 按更新时间倒序——最近动过的排前面。
+ */
+export function listAssetsByOwner(ownerId: string): Promise<MediaAssetRow[]> {
+  return query<MediaAssetRow>(
+    `SELECT ${COLUMNS} FROM media_assets
+      WHERE course_id IN (SELECT id FROM courses WHERE owner_id = $1)
+      ORDER BY updated_at DESC`,
+    [ownerId],
   )
 }
 

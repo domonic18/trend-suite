@@ -1,14 +1,19 @@
 import 'server-only'
 import { hostname } from 'node:os'
+import type { MediaStage } from '@trend-suite/contracts'
 import { getMediaStore } from '../store'
 import { findAssetById } from '../repo'
 import {
   ProcessingCancelledError,
   ProcessingError,
+  framesStage,
   runProcessing,
+  transcriptStage,
+  type ProcessingContext,
 } from '../processing/runner'
 import { understandStage } from '../processing/understand'
 import * as procRepo from '../processing/repo'
+import { setStageState } from '../stage-repo'
 import * as jobs from './repo'
 import { DEFAULT_STALL_TIMEOUT_MS, isStalled } from './stall'
 import { runCurriculumDraft } from '@/server/content/plans/drafter'
@@ -64,7 +69,10 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
         await runIngestJob(job)
         break
       case 'understand_rerun':
-        await runUnderstandJob(job)
+        await runStageJob(job, 'understanding')
+        break
+      case 'media_stage':
+        await runStageJob(job, (job.stage ?? 'transcript') as MediaStage)
         break
       case 'curriculum_draft':
         await runCurriculumDraft(job)
@@ -206,12 +214,15 @@ async function runIngestJob(job: PipelineJobRow): Promise<void> {
 }
 
 /**
- * 重跑理解（迭代 8）：只跑理解阶段，转写与关键帧保留。
- * 幂等按 transcript_segments.chunk_index 去重——已理解的块跳过，只补缺口。
- * 智能规划要用素材的教学要点，存量素材没有理解结果时从这里补。
+ * 分段任务：只跑指定的那一段（逐字稿 / 关键帧 / 视频理解）。
+ *
+ * 段状态落 media_asset_stages：跑完按实际产出落「完成 / 空」，
+ * 产出不全落「部分完成」并带上原因——教师一眼看得出哪一段没跑完。
+ * 失败不影响素材整体就绪态：另外两段的产物照旧可用。
  */
-async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
+async function runStageJob(job: PipelineJobRow, stage: MediaStage): Promise<void> {
   const assetId = job.asset_id
+  let lastStep: string | null = null
   if (!assetId) {
     await jobs.failJob({ jobId: job.id, code: 'asset_not_found', message: '素材不存在', retryable: false })
     return
@@ -222,20 +233,25 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
       await jobs.failJob({ jobId: job.id, code: 'asset_not_found', message: '素材不存在', retryable: false })
       return
     }
-    if (asset.status !== 'ready') {
+    if (!asset.source_path) {
       await jobs.failJob({
         jobId: job.id,
-        code: 'asset_not_ready',
-        message: '素材尚未就绪，先完成加工再重跑理解',
+        code: 'asset_source_missing',
+        message: '素材原片缺失',
         retryable: false,
+      })
+      await setStageState({
+        assetId,
+        stage,
+        status: 'failed',
+        errorMessage: '素材原片缺失',
       })
       return
     }
+
     const store = getMediaStore()
-    // 理解阶段的进度消息（如「理解完成」/「理解未完成（2 块失败）」）留在素材上，
-    // 但阶段要回到 done——素材本来就绪，停在 understand 会让步进条永远停在半路。
     let lastMessage: string | null = null
-    await understandStage({
+    const ctx: ProcessingContext = {
       assetId: asset.id,
       courseId: asset.course_id,
       sourcePath: await store.sourcePath(asset.id),
@@ -244,6 +260,7 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
       shouldCancel: async () => jobs.isCancelRequested(job.id),
       onProgress: async (input) => {
         lastMessage = input.message ?? null
+        lastStep = input.step
         await jobs.updateJobProgress({
           jobId: job.id,
           step: input.step,
@@ -256,28 +273,72 @@ async function runUnderstandJob(job: PipelineJobRow): Promise<void> {
           message: input.message ?? null,
         })
       },
+    }
+
+    if (stage === 'transcript') await transcriptStage(ctx)
+    else if (stage === 'frames') await framesStage(ctx)
+    else await understandStage(ctx)
+
+    const count = await countStageProducts(assetId, stage)
+    const incomplete = lastMessage !== null && /未完成|失败/.test(lastMessage)
+    await setStageState({
+      assetId,
+      stage,
+      status: incomplete ? (count > 0 ? 'partial' : 'failed') : count > 0 ? 'done' : 'empty',
+      errorMessage: incomplete ? lastMessage : null,
     })
-    await procRepo.setAssetProgress({
-      assetId: asset.id,
-      step: 'done',
-      progress: 100,
-      message: lastMessage ?? '就绪',
-    })
+    await syncAssetCounts(assetId)
     await jobs.completeJob(job.id)
-  } catch (err) {
     await procRepo.setAssetProgress({
       assetId,
       step: 'done',
       progress: 100,
-      message: `理解失败：${(err as Error).message.slice(0, 80)}，重跑可补齐`,
+      message: lastMessage ?? '就绪',
     })
+  } catch (err) {
+    if (err instanceof ProcessingCancelledError) {
+      await jobs.cancelJob(job.id)
+      await setStageState({ assetId, stage, status: 'empty' })
+      await procRepo.setAssetProgress({
+        assetId,
+        step: 'done',
+        progress: 100,
+        message: '已取消',
+      })
+      return
+    }
+    const message = (err as Error).message
+    await setStageState({ assetId, stage, status: 'failed', errorMessage: message })
     await jobs.failJob({
       jobId: job.id,
-      code: 'understand_failed',
-      message: (err as Error).message,
-      retryable: false,
+      code: err instanceof ProcessingError ? err.code : 'stage_failed',
+      message,
+      retryable: err instanceof ProcessingError ? err.retryable : true,
+    })
+    // 段失败不动素材的完成态：另外两段可能还好，失败的是哪一段由段台账说。
+    await procRepo.setAssetProgress({
+      assetId,
+      step: lastStep ?? 'uploaded',
+      progress: 0,
+      message: `重跑可补齐：${message.slice(0, 80)}`,
     })
   }
+}
+
+/** 某一段的产出条数：段状态落「完成 / 空」按它判。 */
+async function countStageProducts(assetId: string, stage: MediaStage): Promise<number> {
+  if (stage === 'transcript') return procRepo.countSegments(assetId)
+  if (stage === 'frames') return procRepo.countFrames(assetId)
+  return procRepo.countSourceUnits(assetId)
+}
+
+/** 段产物变了，素材上的缓存计数跟着刷新。 */
+async function syncAssetCounts(assetId: string): Promise<void> {
+  const [segmentCount, frameCount] = await Promise.all([
+    procRepo.countSegments(assetId),
+    procRepo.countFrames(assetId),
+  ])
+  await procRepo.setAssetCounts({ assetId, segmentCount, frameCount })
 }
 
 /** worker 主循环：空转时按固定间隔轮询；每 30s 回收心跳丢失的任务。 */

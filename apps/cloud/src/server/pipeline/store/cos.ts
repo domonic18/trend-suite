@@ -102,6 +102,10 @@ export class CosMediaStore implements MediaStore {
   async remove(_assetId: string): Promise<void> {
     throw new CosNotReadyError()
   }
+
+  async removeFrames(_assetId: string): Promise<void> {
+    throw new CosNotReadyError()
+  }
 }
 
 export type CosConfig = {
