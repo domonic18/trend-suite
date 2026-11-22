@@ -8,7 +8,7 @@ import {
   type TweakPlanRequest,
 } from '@trend-suite/contracts'
 import { badRequest, conflict } from '@/server/lib/http'
-import { appendOutlineNode, isLeafNode } from './outline'
+import { appendOutlineNode, deriveMatchesFromUnits, isLeafNode, matchStatusOf } from './outline'
 
 /**
  * 结构化微调（arch/05 §5 门禁①）：教师直接改草案，不走 LLM、即时生效。
@@ -112,6 +112,60 @@ export function applyTweak(
 function requireNode(skeleton: PlanSkeletonView, nodeId: string) {
   if (!skeleton.nodes.some((node) => node.id === nodeId)) {
     throw badRequest('章节不存在或已被移除')
+  }
+}
+
+/**
+ * 微调后重算匹配度与课时标题。
+ *
+ * 匹配度由出处推导（与起草同一口径）：删节、挪位改了节点的归属，
+ * 匹配度不能留在旧值——父章节的覆盖率要跟着孩子重算。
+ * 没有出处的节点保留原值（人工目录模式下模型给的语料判断兜底，不推翻）。
+ * 课时标题跟着骨架节点走：改了章名，下面那节课的名字不该还是旧的。
+ *
+ * 空掉的章 / 篇（一个子节点都不剩）判为证据不足：它没有内容可匹配，
+ * 留着会变成一节没有课时的生产节，必须由教师裁决（补内容或删掉）。
+ */
+export function refreshAfterTweak(
+  content: TweakedContent,
+  outline: CourseOutlineView,
+): TweakedContent {
+  const unitIdsByNodeId = new Map<string, string[]>(
+    content.skeleton.nodes.map((node) => [node.id, node.sourceUnitIds]),
+  )
+  const derived = new Map(
+    deriveMatchesFromUnits(outline, unitIdsByNodeId).map((match) => [match.nodeId, match.matchScore]),
+  )
+  const childIdsByParent = new Map<string, string[]>()
+  for (const node of outline.nodes) {
+    if (!node.parentId) continue
+    const list = childIdsByParent.get(node.parentId) ?? []
+    list.push(node.id)
+    childIdsByParent.set(node.parentId, list)
+  }
+  const titleById = new Map(content.skeleton.nodes.map((node) => [node.id, node.title]))
+  return {
+    ...content,
+    skeleton: {
+      nodes: content.skeleton.nodes.map((node) => {
+        const score = derived.get(node.id)
+        if (score === undefined) return node
+        if (score === null) {
+          // 课时可能是教师主动加的（无证据属教师决策）；空掉的章 / 篇不是。
+          if (node.level === 3) return node
+          if ((childIdsByParent.get(node.id) ?? []).length > 0) return node
+          return { ...node, matchScore: null, matchStatus: 'low_match' as const }
+        }
+        return { ...node, matchScore: score, matchStatus: matchStatusOf(score) }
+      }),
+    },
+    sectionPlan: {
+      lessons: content.sectionPlan.lessons.map((lesson) => {
+        if (!lesson.sectionId) return lesson
+        const title = titleById.get(lesson.sectionId)
+        return title && title !== lesson.title ? { ...lesson, title } : lesson
+      }),
+    },
   }
 }
 

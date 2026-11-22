@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { HttpError } from '@/server/lib/http'
 import { buildSkeleton, deriveMatchesFromUnits, parseOutline, trimOutlineToBudget } from './outline'
 import { validateConceptMap } from './concepts'
-import { applyTweak, type TweakedContent } from './tweak'
+import { applyTweak, refreshAfterTweak, type TweakedContent } from './tweak'
 
 /**
  * 纯函数用例：目录先验、概念归一、结构化微调。
@@ -501,4 +501,52 @@ test('applyTweak：课时重排必须给出全排列，否则 400', () => {
       ),
     (err: unknown) => err instanceof HttpError && err.status === 400,
   )
+})
+
+test('refreshAfterTweak：匹配度由出处重算，父章节跟着孩子走', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const content = baseContent()
+  // 课时有出处 → 课时 100%，章与篇按子节点覆盖比例。
+  const withUnits: TweakedContent = {
+    ...content,
+    skeleton: {
+      nodes: content.skeleton.nodes.map((node) =>
+        node.id === outline.nodes[2]!.id ? { ...node, sourceUnitIds: ['u1'] } : node,
+      ),
+    },
+  }
+  const refreshed = refreshAfterTweak(withUnits, outline)
+  const lesson = refreshed.skeleton.nodes.find((node) => node.id === outline.nodes[2]!.id)
+  const chapter = refreshed.skeleton.nodes.find((node) => node.id === outline.nodes[1]!.id)
+  const part = refreshed.skeleton.nodes.find((node) => node.id === outline.nodes[0]!.id)
+  assert.equal(lesson?.matchScore, 1)
+  assert.equal(chapter?.matchScore, 0.5)
+  assert.equal(part?.matchScore, 0.5)
+})
+
+test('refreshAfterTweak：删空一章的课让空章判为证据不足（不能再当成满匹配）', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const content = baseContent()
+  const first = applyTweak(content, { op: 'remove_chapter', nodeId: outline.nodes[2]!.id }, outline)
+  const removed = applyTweak(
+    first.content,
+    { op: 'remove_chapter', nodeId: outline.nodes[3]!.id },
+    first.outline,
+  )
+  const refreshed = refreshAfterTweak(removed.content, removed.outline)
+  const chapter = refreshed.skeleton.nodes.find((node) => node.id === outline.nodes[1]!.id)
+  assert.equal(chapter?.matchScore, null)
+  assert.equal(chapter?.matchStatus, 'low_match')
+})
+
+test('refreshAfterTweak：课时标题跟着骨架节点改名', () => {
+  const outline = parseOutline(OUTLINE_TEXT)
+  const content = baseContent()
+  const renamed = applyTweak(
+    content,
+    { op: 'rename_chapter', nodeId: outline.nodes[2]!.id, title: '趋势的新定义' },
+    outline,
+  )
+  const refreshed = refreshAfterTweak(renamed.content, renamed.outline)
+  assert.equal(refreshed.sectionPlan.lessons[0]?.title, '趋势的新定义')
 })
