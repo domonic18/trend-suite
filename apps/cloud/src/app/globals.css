@@ -1292,116 +1292,189 @@ dialog::backdrop {
   font-weight: 600;
 }
 
-/* 目录行 */
-.oe {
+/* 大纲树（唯一的大纲载体）：行即节点，篇 / 章 / 课时三层 */
+.ol {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
-.oe-group {
+.olgroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
-.oe-group + .oe-group {
+.olgroup + .olgroup {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed var(--p-line);
 }
 
-.oe-chapter {
+.olchapter {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-left: 16px;
+  gap: 5px;
+  margin-left: 24px;
 }
 
-.oe-row {
+.olrow {
   display: grid;
-  grid-template-columns: 18px 1fr auto auto;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 3px 10px;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--p-line);
-  border-radius: var(--r-ctrl);
+  border-left: 3px solid var(--p-line);
+  border-radius: 9px;
   background: var(--p-bg);
+  font-size: 13px;
 }
 
-/* 层级：篇顶格、章缩进一档、课时再缩进一档 */
-.oe-row.lv1 {
-  background: var(--p-pri-soft);
-  border-color: #cfe0ff;
+.olrow:hover {
+  border-color: #c9d3e2;
+  box-shadow: var(--p-sh-sm);
 }
 
-.oe-row.lv3 {
-  margin-left: 16px;
+.olrow.lv1 {
+  background: #f7f9fc;
+  border-left-color: #aebfd8;
 }
 
-.oe-row.err {
+.olrow.lv2 {
+  background: #fbfcfe;
+  border-left-color: #d5dfec;
+}
+
+.olrow.lv3 {
+  margin-left: 24px;
+}
+
+.olrow.err {
   border-color: #f3cfcb;
   background: var(--p-err-soft);
 }
 
-.oe-row .gh {
-  font-size: 12px;
-  color: var(--p-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.oe-row .ot {
-  min-width: 0;
-}
-
-.oe-row .ot b {
-  display: block;
-  font-size: 13.5px;
-}
-
-.oe-row .ot .meta {
-  font-size: 12px;
-  color: var(--p-mut);
-}
-
-.oe-row .oa {
+.olrow .gh {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-/* 行内「换父章节」下拉：微调移动用 */
-.oe-row .oe-move {
-  max-width: 130px;
-  font-size: 12px;
-  padding: 2px 4px;
-}
-
-.oe-pick {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.oe-pick-all {
-  display: inline-flex;
-  align-items: center;
   gap: 5px;
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--p-mut);
-  cursor: pointer;
-  white-space: nowrap;
+  font: 700 10.5px var(--font-mono);
+  color: var(--p-faint);
 }
 
-.oe-pick input[type='checkbox'],
-.oe-pick-all input[type='checkbox'] {
-  width: 15px;
-  height: 15px;
-  margin: 0;
+.caret {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
   cursor: pointer;
-  accent-color: var(--p-pri);
+}
+
+.caret::before {
+  content: '';
+  display: block;
+  border-left: 4.5px solid #8c96a8;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  transition: transform 0.15s;
+}
+
+.olrow .ttl {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.olrow .ttl b {
+  font-weight: 600;
+}
+
+.olrow .ttl .sc {
+  font: 600 12px var(--font-mono);
+  color: var(--p-ink);
+}
+
+.olrow .ttl .dur,
+.olrow .ttl .cnt {
+  font-size: 11.5px;
+  color: var(--p-mut);
+}
+
+.olrow .ttl .gran {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--p-mut);
+}
+
+.olrow .ttl .gran input {
+  width: 48px;
+  padding: 2px 4px;
+  border: 1px solid var(--p-line);
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+
+.olrow .acts {
+  display: flex;
+  gap: 1px;
+  justify-content: flex-end;
+  opacity: 0.55;
+}
+
+.olrow:hover .acts,
+.olrow .acts:focus-within {
+  opacity: 1;
+}
+
+.olrow .acts .btn {
+  height: auto;
+  padding: 2px 5px;
+  border: none;
+  background: none;
+  font-size: 11px;
+}
+
+.olrow .acts .btn.danger:hover:not(:disabled) {
+  color: var(--p-err);
+}
+
+.olrow .src {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.olrow .src .cite2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 5px;
+  border: 1px solid var(--p-line);
+  border-radius: 5px;
+  background: var(--p-bg);
+  font: 500 10.5px var(--font-mono);
+  color: var(--p-mut);
+}
+
+.olrow .src .pts {
+  display: block;
+  flex-basis: 100%;
+  margin-top: 2px;
+  color: var(--p-faint);
+  font-size: 11.5px;
+}
+
+.olrow .addrow {
+  grid-column: 2 / 4;
 }
 
 /* 行内图标按钮（改名 / 删除 / 存 / 取消） */
@@ -1441,24 +1514,6 @@ dialog::backdrop {
 
 .oe-inline input {
   width: 140px;
-}
-
-.oe-ops {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--p-line);
-}
-
-.oe-ops input,
-.oe-ops select {
-  padding: 6px 8px;
-  border: 1px solid var(--p-line);
-  border-radius: var(--r-ctrl);
-  font-size: 13px;
 }
 
 /* 状态点：通过 / 待决定 */
@@ -1703,6 +1758,25 @@ dialog::backdrop {
   margin-left: auto;
   font-size: 11.5px;
   color: var(--p-mut);
+}
+
+/* 还没跑完理解的素材：置灰不可勾（没有教学要点可比） */
+.mat-pick.off {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--p-soft);
+}
+
+/* 弹窗里的折叠区（目录先验） */
+.dialog-body details.field > summary {
+  font-size: 13px;
+  color: var(--p-mut);
+  cursor: pointer;
+}
+
+.dialog-body details.field[open] > summary {
+  margin-bottom: 6px;
+  color: var(--p-ink);
 }
 
 /* 规划方式单选 */

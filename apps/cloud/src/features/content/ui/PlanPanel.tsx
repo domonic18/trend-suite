@@ -8,7 +8,8 @@ import { approvePlan, getPlan, rejectPlan, tweakPlan } from '../api'
 import { NextActionBanner } from './NextActionBanner'
 import { AgentRail } from './AgentRail'
 import { classifyDraftFailure } from './draftFailure'
-import { OutlineCard } from './OutlineCard'
+import { takeDraftNotice } from './draftNotice'
+import { OutlineTree } from './OutlineTree'
 import { PlanDraftForm } from './PlanDraftForm'
 import { InterruptCard } from './InterruptCard'
 import { ToolCards } from './ToolCards'
@@ -37,8 +38,14 @@ export function PlanPanel({
   const [data, setData] = useState<PlanResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [editingInput, setEditingInput] = useState(false)
+
+  // 建课后触发起草失败的原因：课程已建好，提示带到这一页，别让教师再建一门课。
+  useEffect(() => {
+    setNotice(takeDraftNotice())
+  }, [])
 
   const refresh = useCallback(async () => {
     try {
@@ -148,7 +155,7 @@ export function PlanPanel({
       ) : null}
       {plan && !approved && blocked ? (
         <NextActionBanner tone="warn" action={{ label: '去裁决', onClick: () => scrollToId('plan-outline') }}>
-          {lowMatchCount} 章证据不足、{violationCount} 条拒绝记录——在大纲中改名 / 删除 / 合并裁决后才能批准。
+          {lowMatchCount} 章证据不足、{violationCount} 条拒绝记录——在大纲里改名或删掉这些章节后才能批准。
         </NextActionBanner>
       ) : null}
       {plan && !approved && !blocked ? (
@@ -164,6 +171,7 @@ export function PlanPanel({
       ) : null}
 
       {error ? <div className="notice err">{error}</div> : null}
+      {notice ? <div className="notice warn">{notice}</div> : null}
 
       {!plan && !running ? (
         <div id="plan-form">
@@ -216,47 +224,47 @@ export function PlanPanel({
             />
           ) : null}
 
-          <OutlineCard
+          <OutlineTree
             nodes={plan.skeleton.nodes}
+            lessons={plan.sectionPlan.lessons}
             coverage={plan.coverage}
             busy={busy}
             onRename={(nodeId, title) => tweak({ op: 'rename_chapter', nodeId, title })}
             onRemove={(nodeId) => tweak({ op: 'remove_chapter', nodeId })}
-            onMerge={(nodeIds, title) => tweak({ op: 'merge_chapters', nodeIds, title })}
             onAdd={(parentId, title) => tweak({ op: 'add_chapter', parentId, title })}
             onMove={(nodeId, newParentId, position) =>
               tweak({ op: 'move_node', nodeId, newParentId, position })
             }
+            onSetGranularity={(lessonId, subLessonCount) =>
+              tweak({ op: 'set_granularity', lessonId, subLessonCount })
+            }
           />
 
           {plan.violations.length > 0 ? (
-            <div className="card">
-              <div className="card-top">
-                <b>拒绝记录</b>
-                <span className="meta">{plan.violations.length} 条</span>
+            <details className="toolcard">
+              <summary>
+                <span className="tname">校验口径与拒绝记录</span>
+                <span className="targs">{plan.violations.length} 条</span>
+              </summary>
+              <div className="tout">
+                <ul className="viol-list">
+                  {plan.violations.map((violation, index) => (
+                    <li key={`${violation.kind}-${violation.subject}-${index}`}>
+                      <b>{violation.subject}</b>
+                      <span>{violation.reason}</span>
+                      {violation.resolved ? <span className="tag ok">已自动处理</span> : null}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="viol-list">
-                {plan.violations.map((violation, index) => (
-                  <li key={`${violation.kind}-${violation.subject}-${index}`}>
-                    <b>{violation.subject}</b>
-                    <span>{violation.reason}</span>
-                    {violation.resolved ? <span className="tag ok">已自动处理</span> : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </details>
           ) : null}
 
           <ToolCards
             conceptMap={plan.conceptMap}
             glossary={plan.glossary}
-            sectionPlan={plan.sectionPlan}
             busy={busy}
-            onSetGranularity={(lessonId, subLessonCount) =>
-              tweak({ op: 'set_granularity', lessonId, subLessonCount })
-            }
             onAddAlias={(conceptId, alias) => tweak({ op: 'add_alias', conceptId, alias })}
-            onReorderLessons={(lessonIds) => tweak({ op: 'reorder_lessons', lessonIds })}
           />
 
           <InterruptCard
