@@ -22,10 +22,21 @@ export async function listCourses(): Promise<CourseSummaryView[]> {
   return courseListResponse.parse(data).items
 }
 
-export async function createCourse(title: string, outlineText?: string): Promise<CourseView> {
+/** 建课：可带上课程目标、人工目录先验与参与本次建设的素材（可跨课选用）。 */
+export async function createCourse(input: {
+  title: string
+  goal?: string
+  outlineText?: string
+  assetIds?: string[]
+}): Promise<CourseView> {
   const data = await apiRequest<unknown>('/v1/admin/content/courses', {
     method: 'POST',
-    body: JSON.stringify({ title, ...(outlineText ? { outlineText } : {}) }),
+    body: JSON.stringify({
+      title: input.title,
+      ...(input.goal ? { goal: input.goal } : {}),
+      ...(input.outlineText ? { outlineText: input.outlineText } : {}),
+      ...(input.assetIds && input.assetIds.length > 0 ? { assetIds: input.assetIds } : {}),
+    }),
   })
   return createCourseResponse.parse(data).course
 }

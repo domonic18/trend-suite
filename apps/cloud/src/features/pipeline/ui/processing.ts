@@ -44,6 +44,19 @@ export const READINESS_TEXT: Record<Readiness, string> = {
   failed: '失败',
 }
 
+/** 理解段产出的条数：0 = 还没跑理解（智能规划与出处匹配都用不了）。 */
+export function understandingCountOf(asset: MediaAssetView): number {
+  return asset.stages.find((stage) => stage.stage === 'understanding')?.count ?? 0
+}
+
+/**
+ * 能不能参与规划：加工完成 + 理解有产出。
+ * 只转写没理解 = 没有教学要点可比，勾了也规划不出东西。
+ */
+export function planningReadyOf(asset: MediaAssetView): boolean {
+  return readinessOf(asset) === 'ready' && understandingCountOf(asset) > 0
+}
+
 /** 毫秒 → HH:MM:SS。 */
 export function formatTimestamp(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
