@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { countOutlineLevels, type PlanSectionNodeView } from '@trend-suite/contracts'
-import { buildOutlineTree, siblingInfoOf } from './outlineTree'
+import { buildOutlineTree, descendantLessonCounts, siblingInfoOf } from './outlineGroup'
 
 /**
  * 目录分组与计数（呈现层）：骨架是扁平数组，靠 level 归拢成篇/章/课时，
@@ -69,4 +69,13 @@ test('siblingInfoOf：给出同级位置与总数，上移下移据此算', () =
   assert.deepEqual(siblingInfoOf(NODES, 'n6'), { parentId: null, index: 1, count: 2 })
   // 节点不存在返回 null
   assert.equal(siblingInfoOf(NODES, 'nope'), null)
+})
+
+test('descendantLessonCounts：篇与章显示底下的课时数', () => {
+  const counts = descendantLessonCounts(NODES)
+  assert.equal(counts.get('n1'), 2)
+  assert.equal(counts.get('n2'), 1)
+  assert.equal(counts.get('n4'), 1)
+  assert.equal(counts.get('n6'), 1)
+  assert.equal(counts.get('n3'), 1)
 })

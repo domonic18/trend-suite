@@ -24,11 +24,12 @@ import { newId } from '@/server/lib/ids'
 import { withTransaction } from '@/server/lib/db'
 import { badRequest, forbidden, HttpError } from '@/server/lib/http'
 import { getCourseForUser } from '../service'
-import { listAssetsByCourse } from '@/server/pipeline/repo'
+import { listOwnedAssetIds } from '../repo'
+import { listAssetsByCourse, listAssetsByIds, listAssetsByOwner, listCourseTitles } from '@/server/pipeline/repo'
 import {
   findSourceUnitsByIds,
   listSourceUnitPointsByCourse,
-  listUnitCountsByCourse,
+  listUnitCountsByAssets,
 } from '@/server/pipeline/processing/repo'
 import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
@@ -36,7 +37,7 @@ import { seedProduction } from '@/server/production/repo'
 import { buildEvidenceMap, evidenceOf } from './evidence'
 import { parseOutline, parseStoredOutline } from './outline'
 import { buildAgentTrace } from './trace'
-import { applyTweak, type PlanLesson, type TweakedContent } from './tweak'
+import { applyTweak, refreshAfterTweak, type PlanLesson, type TweakedContent } from './tweak'
 import * as repo from './repo'
 
 /**
@@ -225,7 +226,15 @@ export async function savePlanInput(
   const outline = outlineText.length > 0 ? parseOutline(outlineText) : null
 
   // 就绪度门禁（T7）：素材未全部就绪不可触发起草（partial 本迭代不开放）。
-  const assets = await listAssetsByCourse(courseId)
+  // 参与本次规划的是教师勾选的那几份（可跨课）；不勾就是本课素材。
+  let assets = await listAssetsByCourse(courseId)
+  if (body.assetIds && body.assetIds.length > 0) {
+    const owned = await listOwnedAssetIds(actor.id, body.assetIds)
+    if (owned.length !== body.assetIds.length) {
+      throw badRequest('素材不存在或不属于你', { path: 'assetIds', message: '请重新选择素材' })
+    }
+    assets = await listAssetsByIds(body.assetIds)
+  }
   const readyCount = assets.filter((asset) => asset.status === 'ready').length
   if (assets.length === 0) {
     throw new HttpError(409, 'plan_not_draftable', '请先上传并加工课程素材')
@@ -266,13 +275,13 @@ export async function getPlanFor(
   review: PlanReviewView | null
 }> {
   await getCourseForUser(actor, courseId)
-  const [draft, approved, job, input, assets, unitCounts, review] = await Promise.all([
+  const [draft, approved, job, input, courseAssets, library, review] = await Promise.all([
     repo.findDraftPlan(courseId),
     repo.findApprovedPlan(courseId),
     findJobByCourse({ courseId, kind: CURRICULUM_JOB_KIND }),
     repo.findCoursePlanInput(courseId),
     listAssetsByCourse(courseId),
-    listUnitCountsByCourse(courseId),
+    listAssetsByOwner(actor.role === 'producer' ? actor.id : null),
     repo.findLatestReview(courseId),
   ])
   const active = draft ?? approved
@@ -295,15 +304,25 @@ export async function getPlanFor(
       submittedAt: input?.updated_at ?? null,
     },
   })
-  const countsByAsset = new Map(unitCounts.map((row) => [row.asset_id, row]))
-  const materials: PlanMaterialView[] = assets.map((asset) => {
+  const countsByAsset = new Map(
+    (await listUnitCountsByAssets(library.map((asset) => asset.id))).map((row) => [
+      row.asset_id,
+      row,
+    ]),
+  )
+  const courseTitles = await listCourseTitles([...new Set(library.map((asset) => asset.course_id))])
+  const selectedIds = new Set(courseAssets.map((asset) => asset.id))
+  const materials: PlanMaterialView[] = library.map((asset) => {
     const counts = countsByAsset.get(asset.id)
     return {
       id: asset.id,
       fileName: asset.original_name ?? '素材',
+      courseTitle: courseTitles.get(asset.course_id) ?? null,
       durationS: asset.duration_s === null ? null : Number(asset.duration_s),
       unitCount: counts?.unit_count ?? 0,
       pointCount: counts?.point_count ?? 0,
+      selected: selectedIds.has(asset.id),
+      status: asset.status,
     }
   })
   return {
@@ -438,6 +457,8 @@ export async function tweakPlan(
   if (!inputRow?.outline) throw badRequest('课程目录缺失，请先提交课程目标与目录')
   const outline = outlineOf(inputRow.outline)
   const tweaked = applyTweak(contentOf(active), op, outline)
+  // 微调后重算匹配度与课时标题：删节、挪位、改名都要立刻反映到方案视图上。
+  const refreshed = refreshAfterTweak(tweaked.content, tweaked.outline)
 
   const version = await repo.nextPlanVersion(courseId)
   const wasApproved = active.status === 'approved'
@@ -453,7 +474,7 @@ export async function tweakPlan(
         parentPlanId: active.id,
         triggerNote: JSON.stringify(op),
         createdBy: actor.id,
-        ...tweaked.content,
+        ...refreshed,
       },
       tx,
     )

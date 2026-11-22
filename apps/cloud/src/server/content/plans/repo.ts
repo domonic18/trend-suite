@@ -94,29 +94,29 @@ export function findPlanById(id: string): Promise<CoursePlanRow | null> {
 }
 
 /**
- * 课程里是否有方案引用了这些证据单元。
+ * 哪些方案引用了这些证据单元。
  *
  * 引用落在两处：骨架节点的 sourceUnitIds 与分节计划的课时 sourceUnitIds。
  * 删掉被引用的理解单元会让方案里的出处悬空——所以删前先问一句。
+ *
+ * 不按课程过滤：素材可以被多门课选用，别家的方案引用了这些单元同样要挡住删除。
  */
 export async function findPlansReferencingUnits(input: {
-  courseId: string
   unitIds: string[]
 }): Promise<{ planId: string; version: number }[]> {
   if (input.unitIds.length === 0) return []
   const rows = await query<{ id: string; version: number }>(
     `SELECT id, version FROM course_plans
-      WHERE course_id = $1
-        AND (
-          EXISTS (
-            SELECT 1 FROM jsonb_array_elements(COALESCE(skeleton->'nodes', '[]'::jsonb)) AS node
-             WHERE (node->'sourceUnitIds') ?| $2::text[])
-          OR EXISTS (
-            SELECT 1 FROM jsonb_array_elements(COALESCE(section_plan->'lessons', '[]'::jsonb)) AS lesson
-             WHERE (lesson->'sourceUnitIds') ?| $2::text[])
-        )
+      WHERE (
+        EXISTS (
+          SELECT 1 FROM jsonb_array_elements(COALESCE(skeleton->'nodes', '[]'::jsonb)) AS node
+           WHERE (node->'sourceUnitIds') ?| $1::text[])
+        OR EXISTS (
+          SELECT 1 FROM jsonb_array_elements(COALESCE(section_plan->'lessons', '[]'::jsonb)) AS lesson
+           WHERE (lesson->'sourceUnitIds') ?| $1::text[])
+      )
       ORDER BY version DESC`,
-    [input.courseId, input.unitIds],
+    [input.unitIds],
   )
   return rows.map((row) => ({ planId: row.id, version: row.version }))
 }
@@ -328,12 +328,15 @@ export type TranscriptLineRow = {
   text: string
 }
 
+/** 起草语料：本课可见素材（本课 + 勾选的跨课素材）的转写文本。 */
 export function listTranscriptLines(courseId: string): Promise<TranscriptLineRow[]> {
   return query<TranscriptLineRow>(
     `SELECT m.id AS asset_id, m.original_name, s.start_ms, s.text
      FROM media_assets m
      JOIN transcript_segments s ON s.asset_id = m.id
-     WHERE m.course_id = $1 AND m.status = 'ready'
+     WHERE (m.course_id = $1
+            OR m.id = ANY(COALESCE((SELECT plan_asset_ids FROM courses WHERE id = $1), ARRAY[]::text[])))
+       AND m.status = 'ready'
      ORDER BY m.created_at ASC, s.seq ASC`,
     [courseId],
   )
