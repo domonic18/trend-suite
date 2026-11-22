@@ -7,7 +7,7 @@ import {
   type CourseView,
   type SessionUser,
 } from '@trend-suite/contracts'
-import { forbidden, notFound } from '@/server/lib/http'
+import { badRequest, forbidden, notFound } from '@/server/lib/http'
 import { newId } from '@/server/lib/ids'
 import * as repo from './repo'
 
@@ -61,25 +61,43 @@ function toCourseSummaryView(row: repo.CourseSummaryRow): CourseSummaryView {
   }
 }
 
-/** 新课程恒为草稿——producer 只写草稿，签批与发布是运营的事（arch/01 端职责边界）。 */
+/**
+ * 新建课程（恒为草稿——producer 只写草稿，签批与发布是运营的事，arch/01 端职责边界）。
+ *
+ * 建课时可以一次给齐：课程名、目标、人工目录先验、参与建设的素材。
+ * 素材来自素材库（跨课程的全局视角），可以选用别的课的素材——归属课程不变，
+ * 这门课把它选进来用（勾选关系落 courses.plan_asset_ids）。
+ */
 export async function createCourse(
   ownerId: string,
   title: string,
-  outlineText?: string,
+  input: { outlineText?: string; goal?: string; assetIds?: string[] } = {},
 ): Promise<CourseView> {
   // 目录先验：文本与目录树同源。认不出的层级不拦建课——教师可在方案页改格式重提。
-  const text = (outlineText ?? '').trim()
+  const text = (input.outlineText ?? '').trim()
   let outline: unknown
   if (text.length > 0) {
     const parsed = parseOutlineText(text)
     if (parsed.issues.length === 0) outline = { nodes: parsed.nodes }
   }
+  const assetIds = (input.assetIds ?? []).filter((id) => id.length > 0)
+  if (assetIds.length > 0) {
+    const owned = await repo.listOwnedAssetIds(ownerId, assetIds)
+    if (owned.length !== assetIds.length) {
+      throw badRequest('素材不存在或不属于你', { path: 'assetIds', message: '请重新选择素材' })
+    }
+  }
+  const goal = (input.goal ?? '').trim()
   const row = await repo.insertCourse({
     id: newId('course'),
     ownerId,
     title,
     ...(text.length > 0 ? { outlineText: text } : {}),
     ...(outline === undefined ? {} : { outline }),
+    ...(goal.length > 0 ? { goal } : {}),
+    ...(assetIds.length > 0 ? { planAssetIds: assetIds } : {}),
+    // 有目录先验就沿用它做骨架；没有就让 Agent 依据目标与素材代拟一版。
+    planMode: text.length > 0 ? 'follow_manual' : 'smart',
   })
   return toCourseView(row)
 }

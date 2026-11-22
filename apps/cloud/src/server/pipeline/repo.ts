@@ -125,22 +125,39 @@ export function findReusableAsset(input: {
   )
 }
 
-/** 课程内的素材（课程页的素材视图）。 */
+/**
+ * 课程可见的素材：本课自己的素材 + 规划时勾选的跨课素材。
+ *
+ * 素材库是跨课程的全局视角（需求 T4），一份素材可以被多门课选用：
+ * 勾选关系落在 courses.plan_asset_ids，归属课程（media_assets.course_id）不变。
+ */
 export function listAssetsByCourse(courseId: string): Promise<MediaAssetRow[]> {
   return query<MediaAssetRow>(
-    `SELECT ${COLUMNS} FROM media_assets WHERE course_id = $1 ORDER BY created_at DESC`,
+    `SELECT ${COLUMNS} FROM media_assets
+      WHERE course_id = $1
+         OR id = ANY(COALESCE((SELECT plan_asset_ids FROM courses WHERE id = $1), ARRAY[]::text[]))
+      ORDER BY created_at DESC`,
     [courseId],
+  )
+}
+
+/** 按 id 取素材（教师勾选参与规划的那几份，可跨课）。 */
+export function listAssetsByIds(assetIds: string[]): Promise<MediaAssetRow[]> {
+  if (assetIds.length === 0) return Promise.resolve([])
+  return query<MediaAssetRow>(
+    `SELECT ${COLUMNS} FROM media_assets WHERE id = ANY($1::text[]) ORDER BY created_at DESC`,
+    [assetIds],
   )
 }
 
 /**
  * 素材库视角：教师名下所有课程的素材（教师端需求 T4「库全局、归属显式」）。
- * 按更新时间倒序——最近动过的排前面。
+ * 按更新时间倒序——最近动过的排前面。ownerId 传 null = 全部课程（运营视角）。
  */
-export function listAssetsByOwner(ownerId: string): Promise<MediaAssetRow[]> {
+export function listAssetsByOwner(ownerId: string | null): Promise<MediaAssetRow[]> {
   return query<MediaAssetRow>(
     `SELECT ${COLUMNS} FROM media_assets
-      WHERE course_id IN (SELECT id FROM courses WHERE owner_id = $1)
+      WHERE ($1::text IS NULL OR course_id IN (SELECT id FROM courses WHERE owner_id = $1))
       ORDER BY updated_at DESC`,
     [ownerId],
   )

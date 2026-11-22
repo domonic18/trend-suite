@@ -20,10 +20,16 @@ export async function insertCourse(input: {
   /** 目录先验（可选）：文本与目录树同源，落已有列（不加列）。 */
   outlineText?: string
   outline?: unknown
+  /** 课程目标：建课时就给 Agent 的方向（落已有列 goal）。 */
+  goal?: string
+  /** 参与本课建设的素材 id（可跨课选用；落已有列 plan_asset_ids）。 */
+  planAssetIds?: string[] | null
+  /** 规划模式：有目录先验 = follow_manual，没有 = smart（Agent 代拟）。 */
+  planMode?: string
 }): Promise<CourseRow> {
   const row = await queryOne<CourseRow>(
-    `INSERT INTO courses (id, owner_id, title, outline_text, outline)
-     VALUES ($1, $2, $3, $4, $5::jsonb)
+    `INSERT INTO courses (id, owner_id, title, outline_text, outline, goal, plan_asset_ids, plan_mode)
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7::text[], $8)
      RETURNING ${COURSE_COLUMNS}`,
     [
       input.id,
@@ -31,10 +37,27 @@ export async function insertCourse(input: {
       input.title,
       input.outlineText ?? null,
       input.outline === undefined ? null : JSON.stringify(input.outline),
+      input.goal ?? null,
+      input.planAssetIds && input.planAssetIds.length > 0 ? input.planAssetIds : null,
+      input.planMode ?? null,
     ],
   )
   if (!row) throw new Error('课程写入失败')
   return row
+}
+
+/**
+ * 教师名下这些素材里哪些真的存在（跨课选用的素材也得是他自己的）。
+ * 素材归属课程不变，只是这门课把它选进来用了。
+ */
+export function listOwnedAssetIds(ownerId: string, assetIds: string[]): Promise<string[]> {
+  if (assetIds.length === 0) return Promise.resolve([])
+  return query<{ id: string }>(
+    `SELECT m.id FROM media_assets m
+       JOIN courses c ON c.id = m.course_id
+      WHERE c.owner_id = $1 AND m.id = ANY($2::text[])`,
+    [ownerId, assetIds],
+  ).then((rows) => rows.map((row) => row.id))
 }
 
 export function listCoursesByOwner(ownerId: string): Promise<CourseRow[]> {

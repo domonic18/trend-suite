@@ -81,11 +81,9 @@ test('建课带目录先验：原文与目录树同源落库；认不出的行�
     role: 'producer',
   })
 
-  const course = await createCourse(
-    teacher.id,
-    '有目录的课',
-    '第一篇 总论\n第一章 什么是趋势\n1. 趋势的定义\n2. 趋势与波动',
-  )
+  const course = await createCourse(teacher.id, '有目录的课', {
+    outlineText: '第一篇 总论\n第一章 什么是趋势\n1. 趋势的定义\n2. 趋势与波动',
+  })
 
   const [row] = await query<{ outline_text: string | null; outline: unknown }>(
     'SELECT outline_text, outline FROM courses WHERE id = $1',
@@ -99,7 +97,7 @@ test('建课带目录先验：原文与目录树同源落库；认不出的行�
   assert.equal(outline.nodes?.[3]?.level, 3)
 
   // 格式认不出的行：原文照存，目录树不落——教师可在方案页改格式重提。
-  const bad = await createCourse(teacher.id, '坏格式目录的课', '这一行认不出层级')
+  const bad = await createCourse(teacher.id, '坏格式目录的课', { outlineText: '这一行认不出层级' })
   const [badRow] = await query<{ outline_text: string | null; outline: unknown }>(
     'SELECT outline_text, outline FROM courses WHERE id = $1',
     [bad.id],
@@ -161,4 +159,68 @@ test('课程摘要：素材数、方案状态、章·课时数与生产进度一
   assert.equal(summary.lessonCount, 2)
   assert.equal(summary.sectionCount, 2)
   assert.equal(summary.doneSectionCount, 1)
+})
+
+test('建课可带目标与素材：素材可跨课选用，归属课程不变', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-asset',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const stranger = await createAccount({
+    username: 'laoshi-asset-stranger',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+
+  // 素材归属老课。
+  const owner = await createCourse(teacher.id, '素材归属课')
+  const assetId = `ma_pick_${owner.id}`
+  await query(
+    `INSERT INTO media_assets (id, course_id, original_name, status)
+     VALUES ($1, $2, '素材.mp4', 'ready')`,
+    [assetId, owner.id],
+  )
+  const strangerCourse = await createCourse(stranger.id, '别人的课')
+  const strangerAsset = `ma_pick_stranger_${strangerCourse.id}`
+  await query(
+    `INSERT INTO media_assets (id, course_id, original_name, status)
+     VALUES ($1, $2, '别人的素材.mp4', 'ready')`,
+    [strangerAsset, strangerCourse.id],
+  )
+
+  // 别人的素材不能选进自己的课。
+  await assert.rejects(
+    () => createCourse(teacher.id, '越权课', { assetIds: [strangerAsset] }),
+    (err: unknown) => err instanceof Error && err.message.includes('不属于你'),
+  )
+
+  const course = await createCourse(teacher.id, '选材新课', {
+    goal: '让学员看懂趋势',
+    assetIds: [assetId],
+  })
+  const [row] = await query<{
+    goal: string | null
+    plan_asset_ids: string[] | null
+    plan_mode: string | null
+    outline_text: string | null
+  }>(
+    'SELECT goal, plan_asset_ids, plan_mode, outline_text FROM courses WHERE id = $1',
+    [course.id],
+  )
+  assert.equal(row?.goal, '让学员看懂趋势')
+  assert.deepEqual(row?.plan_asset_ids, [assetId])
+  // 没有目录先验 = 让 Agent 代拟（smart）；有目录先验 = 沿用人工目录。
+  assert.equal(row?.plan_mode, 'smart')
+
+  const withOutline = await createCourse(teacher.id, '有目录的新课', {
+    outlineText: '第一篇 总论',
+    assetIds: [assetId],
+  })
+  const [outlineRow] = await query<{ plan_mode: string | null; outline_text: string | null }>(
+    'SELECT plan_mode, outline_text FROM courses WHERE id = $1',
+    [withOutline.id],
+  )
+  assert.equal(outlineRow?.plan_mode, 'follow_manual')
+  assert.equal(outlineRow?.outline_text, '第一篇 总论')
 })

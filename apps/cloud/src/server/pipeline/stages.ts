@@ -209,7 +209,7 @@ async function clearStageOutputs(
 async function assertUnderstandingNotReferenced(asset: repo.MediaAssetRow): Promise<void> {
   const unitIds = await procRepo.listSourceUnitIdsByAsset(asset.id)
   if (unitIds.length === 0) return
-  const plans = await findPlansReferencingUnits({ courseId: asset.course_id, unitIds })
+  const plans = await findPlansReferencingUnits({ unitIds })
   if (plans.length === 0) return
   throw new HttpError(
     409,
