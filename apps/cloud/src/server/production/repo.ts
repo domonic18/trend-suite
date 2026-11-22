@@ -275,3 +275,36 @@ export async function saveStepOutput(taskId: string, key: string, value: unknown
     [taskId, JSON.stringify({ [key]: value })],
   )
 }
+
+/** 正在跑的步（停止点：教师按下停止时停在哪一步）。 */
+export function listRunningTasks(courseId: string): Promise<ProductionTaskRow[]> {
+  return query<ProductionTaskRow>(
+    `SELECT ${TASK_COLUMNS} FROM production_tasks
+      WHERE course_id = $1 AND status = 'running'
+      ORDER BY section_id ASC, step ASC`,
+    [courseId],
+  )
+}
+
+export type TaskRunRow = {
+  id: string
+  model: string
+  status: string
+  tokens_in: number | null
+  tokens_out: number | null
+  latency_ms: number | null
+  summary: string | null
+  created_at: Date
+}
+
+/** 步任务的模型调用记录（工具卡的事实来源：模型、耗时、token）。 */
+export function listTaskRuns(taskIds: string[]): Promise<TaskRunRow[]> {
+  if (taskIds.length === 0) return Promise.resolve([])
+  return query<TaskRunRow>(
+    `SELECT id, model, status, tokens_in, tokens_out, latency_ms, summary, created_at
+       FROM ai_runs
+      WHERE ref_type = 'production_task' AND ref_id = ANY($1::text[])
+      ORDER BY created_at ASC`,
+    [taskIds],
+  )
+}
