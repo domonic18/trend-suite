@@ -14,8 +14,14 @@ import { runWorkerOnce, workerId } from '@/server/pipeline/jobs/worker'
 import { findJobByCourse } from '@/server/pipeline/jobs/repo'
 import { createModelEntry, updateTaskBinding } from '@/server/models/service'
 import { HttpError } from '@/server/lib/http'
-import { getProductionBoard, retryProductionSection } from './service'
-import { claimNextStep, listSections, listTasks } from './repo'
+import {
+  getProductionBoard,
+  getProductionStream,
+  resumeProduction,
+  retryProductionSection,
+  stopProduction,
+} from './service'
+import { claimNextStep, listRunningTasks, listSections, listTasks } from './repo'
 import { startMockLlm, mockUnitIdFor, type MockLlm } from './mock-llm'
 import { startMockQuotes, type MockQuotes } from '@/server/content/quotes/mock-quotes'
 
@@ -271,4 +277,150 @@ test('顺序强制：更小步未 done 时认领被结构性挡住', { skip }, a
   // 第 2 步卡 running：第 3 步不可认领（前序未 done），且它自己也不再被认领
   const claimedAgain = await claimNextStep(courseId, sectionId)
   assert.equal(claimedAgain, null)
+})
+
+// ---------------------------------------------------------------- 停止制作（教师端需求 T21）
+
+/** 轮询等待条件成立（跑批时序：等 worker 真的动起来）。 */
+async function waitFor(predicate: () => Promise<boolean>, timeoutMs = 15_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (await predicate()) return
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  throw new Error('等待条件超时')
+}
+
+test('停止制作：步边界中止、成果保留、继续不重跑已完成的步', { skip }, async () => {
+  const { teacherId, username, courseId } = await seedApprovedCourse('停止课')
+  const teacher = { id: teacherId, username, role: 'producer' } as never
+  mock.delayMs = 250
+  try {
+    const running = runWorkerOnce(workerId())
+    await waitFor(async () => (await listRunningTasks(courseId)).length > 0)
+    const stop = await stopProduction(teacher, courseId)
+    assert.equal(stop.stopped, true)
+    assert.ok(stop.sectionId, '停止点落在具体某一节')
+    assert.ok(stop.step && stop.step >= 1 && stop.step <= 9, '停止点落在具体某一步')
+    await running
+  } finally {
+    mock.delayMs = 0
+  }
+
+  const job = await findJobByCourse({ courseId, kind: 'production_run' })
+  assert.equal(job?.status, 'canceled', '停止后 job 记 canceled（不是失败）')
+
+  const tasks = await listTasks(courseId)
+  const doneBefore = tasks
+    .filter((task) => task.status === 'done')
+    .map((task) => `${task.section_id}:${task.step}:${task.attempts}`)
+    .sort()
+  assert.ok(doneBefore.length > 0, '已完成的步成果保留')
+
+  const board = await getProductionBoard(teacher, courseId)
+  assert.ok(board.stop, '看板回报停止点')
+  assert.equal(board.stop?.stopped, true)
+
+  await resumeProduction(teacher, courseId)
+  const job2 = await findJobByCourse({ courseId, kind: 'production_run' })
+  assert.equal(job2?.status, 'queued', '继续制作重新入队')
+  assert.notEqual(job2?.id, job?.id, '终态 job 不复活，新建一行')
+
+  assert.equal(await runWorkerOnce(workerId()), true)
+  await assertCourseDone(courseId)
+
+  const tasks2 = await listTasks(courseId)
+  const doneAfter = tasks2
+    .filter((task) => task.status === 'done')
+    .map((task) => `${task.section_id}:${task.step}:${task.attempts}`)
+    .sort()
+  // 已完成的步 attempts 不变 → 继续时没有重跑它们。
+  const kept = doneBefore.filter((entry) => doneAfter.includes(entry))
+  assert.equal(kept.length, doneBefore.length, '继续不重跑已完成的步')
+})
+
+test('停止与继续：排队中可停止（尚未开跑）、继续可再次入队、在跑时重复继续被挡', { skip }, async () => {
+  const { teacherId, username, courseId } = await seedApprovedCourse('停止二课')
+  const teacher = { id: teacherId, username, role: 'producer' } as never
+  // 批准后 job 还在排队：停止 = 取消排队（还没开跑，无产物可保）。
+  const stop = await stopProduction(teacher, courseId)
+  assert.equal(stop.stopped, true)
+  assert.equal(stop.step, null, '尚未开跑，停止点没有步')
+  const stoppedJob = await findJobByCourse({ courseId, kind: 'production_run' })
+  assert.equal(stoppedJob?.status, 'canceled')
+
+  await resumeProduction(teacher, courseId)
+  const job = await findJobByCourse({ courseId, kind: 'production_run' })
+  assert.equal(job?.status, 'queued')
+  assert.notEqual(job?.id, stoppedJob?.id, '终态 job 不复活，新建一行')
+  await assert.rejects(
+    () => resumeProduction(teacher, courseId),
+    (err: unknown) =>
+      err instanceof HttpError && err.status === 409 && err.code === 'production_already_running',
+  )
+  // 消费入队的 job，避免占住队列影响后续用例。
+  assert.equal(await runWorkerOnce(workerId()), true)
+  // 全部跑完后 job 终态：再停止被挡（没有在跑的制作任务可停）。
+  await assert.rejects(
+    () => stopProduction(teacher, courseId),
+    (err: unknown) =>
+      err instanceof HttpError && err.status === 409 && err.code === 'production_not_running',
+  )
+})
+
+test('继续制作：worker 还在步边界收尾时继续——撤销停止请求，同一个 job 接着跑', { skip }, async () => {
+  const { teacherId, username, courseId } = await seedApprovedCourse('继续一课')
+  const teacher = { id: teacherId, username, role: 'producer' } as never
+  mock.delayMs = 250
+  try {
+    const running = runWorkerOnce(workerId())
+    await waitFor(async () => (await listRunningTasks(courseId)).length > 0)
+    await stopProduction(teacher, courseId)
+    const mid = await findJobByCourse({ courseId, kind: 'production_run' })
+    assert.equal(mid?.status, 'running', '停止请求下达后 job 仍在跑')
+    assert.equal(mid?.cancel_requested, true, '停止请求已挂在 job 上')
+
+    await resumeProduction(teacher, courseId)
+    const after = await findJobByCourse({ courseId, kind: 'production_run' })
+    // 两种落点都算继续成功：同一个 job 撤销停止继续跑，或 worker 先一步停掉后新建一行。
+    // 绝不接受「同一个 job 仍挂着 cancel_requested」——那等于点了继续什么都没发生。
+    if (after?.id === mid?.id) {
+      assert.equal(after.cancel_requested, false, '停止请求已撤销')
+      assert.equal(after.status, 'running')
+    } else {
+      assert.equal(after?.status, 'queued', 'worker 先停掉时新建一行排队')
+    }
+
+    await running
+  } finally {
+    mock.delayMs = 0
+  }
+  await runWorkerOnce(workerId())
+  await assertCourseDone(courseId)
+})
+
+test('事件流：步事件按序留痕、游标增量续读、tool 卡只记事实', { skip }, async () => {
+  const { courseId } = await seedApprovedCourse('事件课')
+  const admin = { id: 'x', username: 'x', role: 'admin' } as never
+  assert.equal(await runWorkerOnce(workerId()), true)
+
+  const stream = await getProductionStream(admin, courseId, null)
+  assert.ok(stream.events.length > 0, '有事件')
+  const stepEvents = stream.events.filter((event) => event.kind === 'step')
+  // 两节 × 九步，每步一条开始、一条完成。
+  assert.ok(stepEvents.filter((event) => event.status === 'running').length >= 18)
+  assert.ok(stepEvents.filter((event) => event.status === 'done').length >= 18)
+  assert.ok(
+    stepEvents.every((event) => event.sectionId && event.sectionTitle),
+    '步事件带着节，可定位到哪一节',
+  )
+
+  const toolEvents = stream.events.filter((event) => event.kind === 'tool')
+  assert.ok(toolEvents.length > 0, '模型调用记成工具卡')
+  assert.ok(toolEvents.every((event) => event.model), '工具卡记模型')
+  assert.ok(toolEvents.some((event) => (event.tokensOut ?? 0) > 0), '工具卡记 token')
+
+  assert.ok(stream.cursor, '带游标')
+  const again = await getProductionStream(admin, courseId, stream.cursor)
+  assert.equal(again.events.length, 0, '游标之后没有新事件（增量续读）')
 })

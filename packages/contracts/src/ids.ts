@@ -22,6 +22,7 @@ export const idPrefix = {
   figure: 'fig',
   widget: 'wid',
   planReview: 'prv',
+  productionEvent: 'pev',
 } as const
 
 export const idShape = {
@@ -44,6 +45,7 @@ export const idShape = {
   figure: /^fig_[0-9a-f]{16}$/,
   widget: /^wid_[0-9a-f]{16}$/,
   planReview: /^prv_[0-9a-f]{16}$/,
+  productionEvent: /^pev_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape

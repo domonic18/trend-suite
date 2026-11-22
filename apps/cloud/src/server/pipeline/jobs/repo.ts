@@ -268,6 +268,23 @@ export async function isCancelRequested(jobId: string): Promise<boolean> {
 }
 
 /**
+ * 撤销取消请求：教师「停止后马上继续」时用。
+ *
+ * 只清 cancel_requested，不动 status——同一个 job 继续跑，
+ * 避免「新建 job」带来的并发认领（同一课的活跃 job 有唯一索引，
+ * 且新 worker 起来会重置孤儿 running 步，可能与旧 worker 抢同一步）。
+ */
+export async function revokeCancel(jobId: string): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `UPDATE pipeline_jobs SET cancel_requested = false, updated_at = now()
+     WHERE id = $1 AND status = 'running' AND cancel_requested = true
+     RETURNING id`,
+    [jobId],
+  )
+  return rows.length > 0
+}
+
+/**
  * 回收僵尸任务（arch/02 §4）：心跳超时 120 秒的 running 任务回 queued。
  * 超过最大重试次数的落 failed，不再空转。
  *

@@ -3,12 +3,18 @@
 import {
   hlsPlaybackResponse,
   productionBoardResponse,
+  productionStopView,
+  productionStreamResponse,
   resyncQuotesResponse,
+  resumeProductionResponse,
   retryProductionSectionResponse,
   sectionContentResponse,
   sectionQuotesResponse,
+  stopProductionResponse,
   type HlsPlayback,
   type ProductionBoardView,
+  type ProductionStopView,
+  type ProductionStreamResponse,
   type SectionContentView,
   type SectionQuotesView,
 } from '@trend-suite/contracts'
@@ -58,4 +64,37 @@ export async function getSectionContent(courseId: string, sectionId: string): Pr
 export async function getHlsPlayback(assetId: string): Promise<HlsPlayback> {
   const data = await apiRequest<unknown>(`/v1/admin/content/media-assets/${assetId}/hls`)
   return hlsPlaybackResponse.parse(data).playback
+}
+
+/**
+ * 停止制作（教师端需求 T21）：步边界安全中止——
+ * 当前步跑完才停，已完成的步成果保留，回灌预算不清零。
+ */
+export async function stopProduction(courseId: string): Promise<ProductionStopView> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/courses/${courseId}/production/stop`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+  return productionStopView.parse(stopProductionResponse.parse(data).stop)
+}
+
+/** 继续制作：从停下的地方续跑，已完成的步不重跑。 */
+export async function resumeProduction(courseId: string): Promise<void> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/courses/${courseId}/production/resume`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+  resumeProductionResponse.parse(data)
+}
+
+/** Agent 事件流（增量）：带上次游标续读，不全量拉。 */
+export async function getProductionStream(
+  courseId: string,
+  afterSeq: string | null,
+): Promise<ProductionStreamResponse> {
+  const query = afterSeq ? `?afterSeq=${encodeURIComponent(afterSeq)}` : ''
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/courses/${courseId}/production/stream${query}`,
+  )
+  return productionStreamResponse.parse(data)
 }

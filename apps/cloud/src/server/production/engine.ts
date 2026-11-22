@@ -12,16 +12,18 @@ import { persistWidgets, replayMarketAvailable } from '@/server/content/widgets/
 import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 import { runStepAgent } from './agent'
 import { formatIssues, formatWidgetIssues } from './issues'
+import { recordEvent, listRecordedRunIds } from './events'
 import {
   completeStep,
   countSectionRuns,
   failStep,
   getTaskCheckpoint,
+  listTaskRuns,
   suspendTask,
   type ProductionTaskRow,
   type SectionRow,
 } from './repo'
-import { stepDef, STEP_COUNT } from './steps'
+import { stepDef, STEP_COUNT, type StepDef } from './steps'
 
 /**
  * 步执行状态机（arch/05 §6/§7）：按 STEP_DEFS 分发 agent/pure，
@@ -36,6 +38,25 @@ import { stepDef, STEP_COUNT } from './steps'
 
 export async function executeStep(task: ProductionTaskRow, section: SectionRow): Promise<void> {
   const def = stepDef(task.step)
+  let output: Record<string, unknown> | undefined
+  // 步开始即入事件流：教师端制作页据此显示「Agent 正在做什么」。
+  await recordStepEvent(task, 'running', `第 ${def.n} 步「${def.label}」开始`)
+  try {
+    output = await runStepBody(task, section, def)
+  } finally {
+    // 模型调用记成工具卡：只记事实（模型、耗时、token），不记模型措辞。
+    await recordToolEvents(task, def)
+  }
+  await completeStep(task, output)
+  await recordStepEvent(task, 'done', `第 ${def.n} 步「${def.label}」完成`)
+}
+
+/** 单步执行体（产物产出 + 复检），失败抛错由调用方走回灌。 */
+async function runStepBody(
+  task: ProductionTaskRow,
+  section: SectionRow,
+  def: StepDef,
+): Promise<Record<string, unknown> | undefined> {
   let output: Record<string, unknown> | undefined
   if (def.kind === 'pure') {
     // pure 步产物按步骤键入 checkpoint（读回步按键取前置产物）。
@@ -87,7 +108,7 @@ export async function executeStep(task: ProductionTaskRow, section: SectionRow):
       await recheckSectionDraft(task, product.markdown)
     }
   }
-  await completeStep(task, output)
+  return output
 }
 
 /** 本节已落库的回放课件 code（正文 :::replay 按 code 定位，arch/06 §2.2）。 */
@@ -158,9 +179,73 @@ export async function handleStepError(task: ProductionTaskRow, err: unknown): Pr
         : String(err)
   if (err instanceof LlmError && err.code === 'budget_exhausted') {
     await suspendTask(task.id, message)
+    await recordStepEvent(task, 'pending_manual', `第 ${stepDef(task.step).n} 步「${stepDef(task.step).label}」挂起待人工`, message)
     return 'pending_manual'
   }
-  return failStep(task, message)
+  const outcome = await failStep(task, message)
+  const def = stepDef(task.step)
+  await recordStepEvent(
+    task,
+    outcome === 'pending_manual' ? 'pending_manual' : 'failed',
+    outcome === 'pending_manual'
+      ? `第 ${def.n} 步「${def.label}」回灌超上限，挂起待人工`
+      : `第 ${def.n} 步「${def.label}」失败，回灌重写`,
+    message,
+  )
+  return outcome
+}
+
+/** 步状态事件（running / done / failed / pending_manual）：只记事实与原因。 */
+async function recordStepEvent(
+  task: ProductionTaskRow,
+  status: 'running' | 'done' | 'failed' | 'pending_manual',
+  title: string,
+  detail?: string | null,
+): Promise<void> {
+  const def = stepDef(task.step)
+  await recordEvent({
+    courseId: task.course_id,
+    sectionId: task.section_id,
+    kind: 'step',
+    step: task.step,
+    title,
+    detail: detail ?? null,
+    payload: { status, stepKey: def.key, stepLabel: def.label },
+  })
+}
+
+/**
+ * 模型调用记成工具卡：只记事实（模型、耗时、token），不记模型措辞。
+ *
+ * ai_runs 里没有 prompt/response 列——措辞无从取，也不该由我们复述。
+ * 同一次调用只记一张卡（runId 去重：重跑同一步时旧的卡不重复记）。
+ */
+async function recordToolEvents(task: ProductionTaskRow, def: StepDef): Promise<void> {
+  if (def.kind !== 'agent') return
+  const runs = await listTaskRuns([task.id])
+  if (runs.length === 0) return
+  const recorded = new Set(await listRecordedRunIds(task.course_id, runs.map((run) => run.id)))
+  for (const run of runs) {
+    if (recorded.has(run.id)) continue
+    await recordEvent({
+      courseId: task.course_id,
+      sectionId: task.section_id,
+      kind: 'tool',
+      step: task.step,
+      title: `第 ${def.n} 步「${def.label}」调用模型 ${run.model}`,
+      detail: run.summary,
+      payload: {
+        runId: run.id,
+        model: run.model,
+        status: run.status,
+        latencyMs: run.latency_ms,
+        tokensIn: run.tokens_in,
+        tokensOut: run.tokens_out,
+        stepKey: def.key,
+        stepLabel: def.label,
+      },
+    })
+  }
 }
 
 // ---------------------------------------------------------------- pure 步（确定性，不走模型）

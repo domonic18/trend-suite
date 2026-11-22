@@ -33,6 +33,10 @@ export const errorCodes = [
   'step_out_of_order',
   // production_not_retryable：节不在可重试状态（非 pending_manual / failed）。
   'production_not_retryable',
+  // production_not_running：没有在跑/排队的制作任务，无「停止」可执行。
+  'production_not_running',
+  // production_already_running：制作已在跑，「继续」无意义。
+  'production_already_running',
   // budget_exhausted：预算触顶，停止新增调用（arch/05 §14）。
   'budget_exhausted',
   // 素材治理（T19/T20）。
