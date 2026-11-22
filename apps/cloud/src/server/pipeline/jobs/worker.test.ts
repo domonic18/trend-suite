@@ -16,7 +16,7 @@ import { runWorkerOnce } from './worker'
 
 /**
  * 重跑理解任务（迭代 8）：存量素材没有理解结果时，教师端点「重跑理解」
- * → 入队 understand_rerun → worker 只跑理解阶段 → 产出教学要点。
+ * → 入队 media_stage(understanding) → worker 只跑理解阶段 → 产出教学要点。
  */
 
 const url = testDatabaseUrl()
@@ -109,7 +109,7 @@ async function seedReadyAsset(name: string): Promise<{
   }
 }
 
-test('重跑理解：入队 understand_rerun，worker 跑完理解阶段产出要点', { skip }, async () => {
+test('重跑理解：入队 media_stage(understanding)，worker 跑完理解阶段产出要点', { skip }, async () => {
   const entry = await createModelEntry({
     name: '重跑理解模型',
     purposes: ['vlm'],
@@ -124,11 +124,12 @@ test('重跑理解：入队 understand_rerun，worker 跑完理解阶段产出�
   const { user, assetId } = await seedReadyAsset('重跑理解课')
   const { jobId } = await rerunUnderstand(user, assetId)
 
-  const queued = await query<{ status: string; kind: string }>(
-    'SELECT status, kind FROM pipeline_jobs WHERE id = $1',
+  const queued = await query<{ status: string; kind: string; stage: string | null }>(
+    'SELECT status, kind, stage FROM pipeline_jobs WHERE id = $1',
     [jobId],
   )
-  assert.equal(queued[0]?.kind, 'understand_rerun')
+  assert.equal(queued[0]?.kind, 'media_stage')
+  assert.equal(queued[0]?.stage, 'understanding')
   assert.equal(queued[0]?.status, 'queued')
 
   assert.equal(await runWorkerOnce('test-worker'), true)
@@ -157,8 +158,8 @@ test('重跑理解：入队 understand_rerun，worker 跑完理解阶段产出�
   assert.equal(asset[0]?.status, 'ready')
 })
 
-test('重跑理解：素材未就绪时拒绝入队', { skip }, async () => {
-  const { user, assetId } = await seedReadyAsset('未就绪课')
-  await query(`UPDATE media_assets SET status = 'uploaded' WHERE id = $1`, [assetId])
+test('重跑理解：素材还没上传完时拒绝入队', { skip }, async () => {
+  const { user, assetId } = await seedReadyAsset('未上传课')
+  await query(`UPDATE media_assets SET status = 'awaiting_upload' WHERE id = $1`, [assetId])
   await assert.rejects(() => rerunUnderstand(user, assetId))
 })
