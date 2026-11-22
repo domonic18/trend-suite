@@ -2,17 +2,17 @@
 
 import { useParams } from 'next/navigation'
 import { useSession } from '@/features/accounts/SessionProvider'
-import { ProductionBoard } from '@/features/production/ui/ProductionBoard'
+import { ProductionStudio } from '@/features/production/ui/ProductionStudio'
 
-/** 生产阶段：九步状态机看板。 */
+/** 生产阶段：课件制作台（课时树 + 当前节工作区 + Agent 对话流）。 */
 export default function CourseProductionPage() {
   const params = useParams<{ courseId: string }>()
   const session = useSession()
   const role = session.user?.role
   return (
-    <ProductionBoard
+    <ProductionStudio
       courseId={params.courseId}
-      canResync={role === 'admin' || role === 'producer'}
+      canControl={role === 'admin' || role === 'producer'}
     />
   )
 }
