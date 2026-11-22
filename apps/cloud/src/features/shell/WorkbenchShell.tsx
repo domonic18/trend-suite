@@ -30,6 +30,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
   const { courses } = useCourses()
 
   const courseId = courseIdOfPath(pathname)
+  const onLibrary = pathname.startsWith('/workbench/library')
   const current = courses.find((c) => c.id === courseId) ?? null
   const phase = courseId ? phaseOfPath(pathname) : null
   const user = session.user
@@ -60,6 +61,10 @@ export function WorkbenchShell(props: { children: ReactNode }) {
               <span className="wb-course-meta">{courseStatusTagOf(course).text}</span>
             </Link>
           ))}
+          <div className="ops-g">素材</div>
+          <Link className={`ops-i ${onLibrary ? 'on' : ''}`} href="/workbench/library">
+            素材库
+          </Link>
         </nav>
         <div className="ops-user">
           <span className="ava">{name.slice(0, 1)}</span>
@@ -93,6 +98,11 @@ export function WorkbenchShell(props: { children: ReactNode }) {
                   <span>{PHASE_LABELS[phase]}</span>
                 </>
               ) : null}
+            </>
+          ) : onLibrary ? (
+            <>
+              <span className="sep">/</span>
+              <b>素材库</b>
             </>
           ) : (
             <>
