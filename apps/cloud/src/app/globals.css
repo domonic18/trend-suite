@@ -1093,6 +1093,14 @@ dialog::backdrop {
   width: 100%;
 }
 
+/* chat-center 两页（方案 / 制作台）对齐原型 family-agent.css：三栏铺满视口，
+   右栏工作区贴右缘，不吃 .ops-main 的 1200px 宽度帽与 24px 边距。
+   （.plan-split 隔着课程栏外壳 wb-col/wb-center/wb-content，故用后代选择器） */
+.ops-main:has(.plan-split) {
+  max-width: none;
+  padding: 18px 16px 40px;
+}
+
 .ops-ph {
   display: flex;
   align-items: flex-start;
