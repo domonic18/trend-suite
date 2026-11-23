@@ -219,7 +219,8 @@ export const agentCallView = z.object({
   at: z.string(),
 })
 
-export const agentMessageView = z.object({
+/** trace 内的消息投影（旧只读 trace；对话式交互上线后随 trace 一并移除，见 arch/08）。 */
+export const agentTraceMessageView = z.object({
   role: z.enum(['agent', 'user']),
   text: z.string(),
   at: z.string(),
@@ -234,7 +235,7 @@ export const agentTraceView = z.object({
   status: z.enum(['idle', 'running', 'done', 'failed']),
   steps: z.array(agentStepView),
   calls: z.array(agentCallView),
-  messages: z.array(agentMessageView),
+  messages: z.array(agentTraceMessageView),
   artifacts: z.array(agentArtifactView),
 })
 
@@ -402,7 +403,6 @@ export type PlanMaterialView = z.infer<typeof planMaterialView>
 export type AgentStepStatus = z.infer<typeof agentStepStatus>
 export type AgentStepView = z.infer<typeof agentStepView>
 export type AgentCallView = z.infer<typeof agentCallView>
-export type AgentMessageView = z.infer<typeof agentMessageView>
 export type AgentArtifactView = z.infer<typeof agentArtifactView>
 export type AgentTraceView = z.infer<typeof agentTraceView>
 export type SubmitPlanInputRequest = z.infer<typeof submitPlanInputRequest>
