@@ -119,7 +119,6 @@ export function PlanPanel({
         <div className="ws-drag" onPointerDown={ws.onPointerDown} aria-hidden="true" />
         <PlanWorkspace
           courseId={courseId}
-          courseTitle={courseTitle ?? null}
           plan={plan}
           job={job}
           input={data?.input ?? null}
