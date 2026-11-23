@@ -65,7 +65,7 @@ CREATE INDEX idx_agent_messages_thread ON agent_messages (thread_id, seq);
 
 - 每课每 phase 至多一个 open thread；批准方案 / 制作完成不关闭线程（同一 phase 内继续对话），仅课程删除级联关闭。
 - `seq` 单调递增，前端以 `?cursor=<seq>` 增量拉取；消息只追加、不更新（TODO 以「新消息替换旧清单」表达，前端始终渲染最新一份 `todo`）。
-- question 消息带状态：payload 内 `answeredAt/answerMessageId` 由答案处理器**回写**（这是唯一的更新路径，且只允许线程属主回写一次）。
+- question 消息带状态：payload 内 `question.answeredIndex` 由答案处理器**回写**（这是唯一的更新路径，且只允许线程属主回写一次）。
 
 ## 3. 契约（`packages/contracts/src/agent-chat.ts`）
 
@@ -76,13 +76,13 @@ agentMessageView = { id, seq, role, createdAt, aiRunId? } & (
   | { role: 'assistant';  text: string; tools?: toolEventView[] }   // 工具名+摘要+耗时
   | { role: 'question';   question: { text, options: [{ label, description? }], answeredIndex?: number } }
   | { role: 'answer';     questionMessageId: string; optionIndex: number; label: string }
-  | { role: 'todo';       items: [{ content, status: 'pending'|'doing'|'done' }] }
+  | { role: 'todo';       title?: string; items: [{ content, status: 'pending'|'doing'|'done' }] }  // title=节标题（九步 TODO 卡）
   | { role: 'event';      kind: string; detail?: string; level?: 'info'|'ok'|'err' }
 );
 
 sendMessageRequest  = { text: string }                       // 1..2000 字
 answerQuestionRequest = { optionIndex: number }
-agentStreamResponse = { messages: agentMessageView[], cursor: number, agentBusy: boolean }
+agentStreamResponse = { messages: agentMessageView[], cursor: number, agentBusy: boolean, pendingQuestionId: string | null }
 ```
 
 端点（全部 `producer` + 课程属主校验，沿用既有会话鉴权）：
@@ -100,6 +100,7 @@ agentStreamResponse = { messages: agentMessageView[], cursor: number, agentBusy:
 - `service.ts`：`sendMessage` / `answerQuestion` / `stream`；open-thread 的获取与创建（唯一索引兜底并发）；答案处理器。
 - `engine.ts`：队列 worker 内的多轮循环——deepagents（进程内）+ 自定义 BaseChatModel + provider adapter（arch/07）。LLM 上下文 = 系统提示词（按 phase）+ 线程消息历史（截断至预算）+ 课程当前产物摘要；**工具调用逐条落 `agent_messages`**（tool 事件组随下一条 assistant 消息或即时 event 消息写入）。
 - **Question 挂起**：`ask_question` 落 question 消息后本轮 run 正常结束；线程呈「pending question」。用户回答 → `answerQuestion` → 若选项绑定确定性动作先执行并落 `event` 消息 → 再投一次 `agent_chat` job 续跑（携带「用户已选 X」上下文）。
+- **停止后的确认卡由服务端补发**（不经模型）：`stop_production` 执行落定后，服务端在线程里补发确认卡（改完继续制作 → `resume_production` / 先去调整内容 / 放弃本节重做 → `retry_section`），选项动作由答案处理器确定性执行——与方案批准同一红线。九步进度由引擎逐步写带节标题的 TODO 卡（每步开始/完成/失败时刷新）。
 - 失败：run 失败落 `event`（level=err，含失败原因与重试指引），线程回到 idle；消息不丢。
 
 ### 工具白名单（引擎外不可配）
