@@ -66,24 +66,6 @@ export async function submitPlanInput(
   return planJobResponse.parse(data).job
 }
 
-/** 批准草案锁定基准版（有未决项时服务端 409）。 */
-export async function approvePlan(courseId: string): Promise<PlanView> {
-  const data = await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/plan/approve`, {
-    method: 'POST',
-    body: JSON.stringify({}),
-  })
-  return planView.parse((data as { plan: unknown }).plan)
-}
-
-/** 打回 + 一句意见 → 新草案重起草。 */
-export async function rejectPlan(courseId: string, feedback: string): Promise<PlanView> {
-  const data = await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/plan/reject`, {
-    method: 'POST',
-    body: JSON.stringify({ feedback }),
-  })
-  return planView.parse((data as { plan: unknown }).plan)
-}
-
 /** 结构化微调：即时生效，版本 +1（不走 LLM）。 */
 export async function tweakPlan(courseId: string, op: TweakPlanRequest): Promise<PlanView> {
   const data = await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/plan/tweak`, {
