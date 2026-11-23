@@ -25,6 +25,7 @@
 | [arch/05内容生产链路实现方案.md](arch/05内容生产链路实现方案.md) | 实现方案：**直传上传 → 存储 → 转码 → ASR → 关键帧 → 四角色九步生产 → 三层校验 → 门禁与签批发布** |
 | [arch/06教材呈现与交互课件实现方案.md](arch/06教材呈现与交互课件实现方案.md) | 实现方案：**教材 DSL 与呈现层 + K 线图/互动题目**：组件白名单、断言证明、行情口径、运行时契约 |
 | [arch/07平台服务方案.md](arch/07平台服务方案.md) | 实现方案：额度计费与充值、模型配置与 AI 用量、预算硬停 |
+| [arch/08教师端Agent对话交互实现方案.md](arch/08教师端Agent对话交互实现方案.md) | 实现方案：**方案页与制作台统一的中置对话交互**——会话模型（threads/messages）、AskQuestion 确认卡与确定性动作红线、工具白名单、前端组件与旧实现清理 |
 | [standard/01项目规范.md](standard/01项目规范.md) | 分支/提交/代码纪律/测试/文档规则 |
 | [prototype/](prototype/) | 原型图（portal / student-dsh / teacher / ops 四组 + 原型索引 + 设计约定），见 [prototype/README.md](prototype/README.md) |
 | [flow/teacher-e2e.html](flow/teacher-e2e.html) | 教师端端到端流程图（Agent 驱动制作：人只把关方案与审核，异常分支闭环） |
