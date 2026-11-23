@@ -18,6 +18,7 @@ import * as jobs from './repo'
 import { DEFAULT_STALL_TIMEOUT_MS, isStalled } from './stall'
 import { runCurriculumDraft } from '@/server/content/plans/drafter'
 import { runProductionRun } from '@/server/production/runner'
+import { runAgentChat } from '@/server/agent-chat/engine'
 import type { PipelineJobRow } from './repo'
 
 /**
@@ -79,6 +80,11 @@ export async function runWorkerOnce(id = workerId()): Promise<boolean> {
         break
       case 'production_run':
         await runProductionRun(job)
+        break
+      case 'agent_chat':
+        // 会话任务：引擎按「有待处理输入的线程」解析并排空，失败落成 err event
+        // 后按成功收口（不重试）；跨线程待处理输入由引擎收口后自行入队续跑。
+        await runAgentChat(job)
         break
       default:
         await jobs.failJob({

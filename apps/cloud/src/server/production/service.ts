@@ -1,13 +1,9 @@
 import 'server-only'
 import {
   productionBoardView,
-  productionEventView,
   productionStopView,
-  productionStreamResponse,
   type ProductionBoardView,
-  type ProductionEventView,
   type ProductionStopView,
-  type ProductionStreamResponse,
   type SectionQuotesView,
   type SessionUser,
 } from '@trend-suite/contracts'
@@ -22,13 +18,16 @@ import {
   revokeCancel,
   type PipelineJobRow,
 } from '@/server/pipeline/jobs/repo'
-import { findLastStopEvent, listEvents, recordEvent } from './events'
+import { ensureCourseThread, lastProgressEvent, recordProgressEvent } from '@/server/agent-chat/progress'
+import { insertMessage } from '@/server/agent-chat/repo'
 import * as repo from './repo'
 import { PRODUCTION_RUN_JOB_KIND, STEP_DEFS, stepDef } from './steps'
 
 /**
  * 九步看板与挂起重试（arch/05 §6）：看板对 producer 本人可读写，
  * admin 兼具 producer 权限（arch/01 角色口径），operator 只读；写动作只动本节待办。
+ * 停止/继续在对话里由 Agent 调用 internal 变体执行（教师意图驱动），
+ * 权限已在 sendMessage/answer 时校验；HTTP 端点只剩看板/重试/行情/内容。
  */
 
 export async function getProductionBoard(
@@ -39,6 +38,11 @@ export async function getProductionBoard(
   if (actor.role === 'producer' && course.ownerId !== actor.id) {
     throw forbidden('只有课程所属教师可以查看该看板')
   }
+  return getProductionBoardInternal(courseId)
+}
+
+/** 看板读取（线程工具复用）：在线程授权语境下调用，不再重复权限校验。 */
+export async function getProductionBoardInternal(courseId: string): Promise<ProductionBoardView> {
   const [sections, tasks, job] = await Promise.all([
     repo.listSections(courseId),
     repo.listTasks(courseId),
@@ -108,6 +112,15 @@ export async function retryProductionSection(
   if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
     throw forbidden('只有课程所属教师可以重试该节')
   }
+  await retryProductionSectionInternal(courseId, sectionId)
+  return { ok: true }
+}
+
+/** 节重试（线程工具复用）：重置挂起/失败步并重投 job，无可重试步抛 409。 */
+export async function retryProductionSectionInternal(
+  courseId: string,
+  sectionId: string,
+): Promise<void> {
   const section = await repo.findSection(courseId, sectionId)
   if (!section) throw notFound('节不存在')
   const reset = await repo.retrySection(courseId, sectionId)
@@ -115,7 +128,12 @@ export async function retryProductionSection(
     throw new HttpError(409, 'production_not_retryable', '该节没有可重试的挂起/失败步')
   }
   await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
-  return { ok: true }
+  await recordProgressEvent(courseId, 'production', {
+    kind: 'section_retried',
+    detail: `「${section.title}」已重置挂起/失败步并重新排队制作。`,
+    level: 'info',
+    extra: { sectionId },
+  })
 }
 
 /** 节行情视图（看板「产物」面板）：读权限同看板（producer 本人 / operator / admin）。 */
@@ -160,7 +178,7 @@ export async function resyncProductionQuotes(
   return { ok: true }
 }
 
-// ---------------------------------------------------------------- 停止 / 继续（教师端需求 T21）
+// ---------------------------------------------------------------- 停止 / 继续（教师端需求 T21，对话动作）
 
 /**
  * 停止制作（教师端需求 T21）：**步边界**安全中止。
@@ -168,14 +186,7 @@ export async function resyncProductionQuotes(
  * 当前步跑完才停——步内产物不丢；已完成的步成果保留；回灌预算（attempts）不清零，
  * 教师改完内容继续时，重跑的是没做完的步，不重跑已完成的步。
  */
-export async function stopProduction(
-  actor: SessionUser,
-  courseId: string,
-): Promise<ProductionStopView> {
-  const course = await getCourseForUser(actor, courseId)
-  if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
-    throw forbidden('只有课程所属教师可以停止制作')
-  }
+export async function stopProductionInternal(courseId: string): Promise<ProductionStopView> {
   const job = await findJobByCourse({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
   if (!job || (job.status !== 'running' && job.status !== 'queued')) {
     throw new HttpError(409, 'production_not_running', '当前没有在跑的制作任务，无需停止')
@@ -188,17 +199,13 @@ export async function stopProduction(
     // 在跑：置取消请求，runner 在步边界读到后安全中止。
     await requestCancel(job.id)
   }
-  await recordEvent({
-    courseId,
-    sectionId: point.sectionId,
-    kind: 'stop',
-    step: point.step,
-    title: '教师停止制作',
+  await recordProgressEvent(courseId, 'production', {
+    kind: 'production_stopped',
     detail: point.step
-      ? `停在第 ${point.step} 步「${point.stepLabel ?? ''}」，已完成的步成果保留，改完可继续`
-      : '尚未开跑，已停止',
-    payload: {
-      action: 'stop',
+      ? `已停止：${point.sectionTitle ?? ''}停在第 ${point.step} 步「${point.stepLabel ?? ''}」——已完成的步成果保留，改完可继续`
+      : '已停止：尚未开跑，已停止',
+    level: 'info',
+    extra: {
       sectionId: point.sectionId,
       sectionTitle: point.sectionTitle,
       step: point.step,
@@ -206,6 +213,29 @@ export async function stopProduction(
       stepLabel: point.stepLabel,
     },
   })
+  // 停止后确认卡接续（需求 T21）：三个选项里「继续/重做」绑定确定性动作，
+  // 由答案处理器执行，不经模型——与方案批准同一红线。
+  if (point.sectionId) {
+    const thread = await ensureCourseThread(courseId, 'production')
+    if (thread) {
+      await insertMessage(thread.id, 'question', {
+        question: {
+          text: `已停在「${point.sectionTitle ?? ''}」第 ${point.step ?? '?'} 步「${point.stepLabel ?? ''}」。接下来怎么处理？`,
+          options: [
+            { label: '改完继续制作', description: '我先调整内容，之后从停下的步接着跑', action: 'resume_production' },
+            { label: '先去调整内容', description: '暂不继续，稍后在对话里吩咐「继续制作」' },
+            {
+              label: '放弃本节重做',
+              description: '重置该节失败/挂起的步，重新排队制作',
+              action: 'retry_section',
+              sectionId: point.sectionId,
+            },
+          ],
+          answeredIndex: null,
+        },
+      })
+    }
+  }
   return productionStopView.parse({
     stopped: true,
     sectionId: point.sectionId,
@@ -227,11 +257,7 @@ export async function stopProduction(
  *    新 worker 起来还会重置孤儿 running 步，可能与旧 worker 抢同一步。
  * ③ job 确实在跑 → 409（继续无意义）。
  */
-export async function resumeProduction(actor: SessionUser, courseId: string): Promise<{ ok: true }> {
-  const course = await getCourseForUser(actor, courseId)
-  if (actor.role !== 'admin' && (actor.role !== 'producer' || course.ownerId !== actor.id)) {
-    throw forbidden('只有课程所属教师可以继续制作')
-  }
+export async function resumeProductionInternal(courseId: string): Promise<void> {
   const job = await findJobByCourse({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
   if (job && job.status === 'running') {
     if (!job.cancel_requested) {
@@ -242,63 +268,10 @@ export async function resumeProduction(actor: SessionUser, courseId: string): Pr
     throw new HttpError(409, 'production_already_running', '制作已经在跑了，无需继续')
   }
   await enqueueJob({ courseId, kind: PRODUCTION_RUN_JOB_KIND })
-  await recordEvent({
-    courseId,
-    kind: 'stop',
-    title: '教师继续制作',
-    detail: '从停下的地方继续，已完成的步不重跑',
-    payload: { action: 'resume' },
-  })
-  return { ok: true }
-}
-
-/**
- * Agent 事件流（增量）：教师端制作页的「Agent 正在做什么」。
- *
- * 游标 = 事件 seq（单调递增）；前端带上次游标续读，不全量拉。
- */
-export async function getProductionStream(
-  actor: SessionUser,
-  courseId: string,
-  afterSeq: string | null,
-): Promise<ProductionStreamResponse> {
-  const course = await getCourseForUser(actor, courseId)
-  if (actor.role === 'producer' && course.ownerId !== actor.id) {
-    throw forbidden('只有课程所属教师可以查看该课程的制作过程')
-  }
-  const [rows, sections, job] = await Promise.all([
-    listEvents(courseId, afterSeq),
-    repo.listSections(courseId),
-    findJobByCourse({ courseId, kind: PRODUCTION_RUN_JOB_KIND }),
-  ])
-  const titleBySection = new Map(sections.map((section) => [section.section_id, section.title]))
-  const events: ProductionEventView[] = rows.map((row) => {
-    const payload = row.payload ?? {}
-    const step = row.step
-    return productionEventView.parse({
-      id: row.id,
-      at: row.created_at.toISOString(),
-      kind: row.kind,
-      sectionId: row.section_id,
-      sectionTitle: row.section_id ? (titleBySection.get(row.section_id) ?? null) : null,
-      step,
-      stepKey: typeof payload.stepKey === 'string' ? payload.stepKey : null,
-      stepLabel: typeof payload.stepLabel === 'string' ? payload.stepLabel : null,
-      title: row.title,
-      detail: row.detail,
-      status: typeof payload.status === 'string' ? payload.status : null,
-      model: typeof payload.model === 'string' ? payload.model : null,
-      latencyMs: typeof payload.latencyMs === 'number' ? payload.latencyMs : null,
-      tokensIn: typeof payload.tokensIn === 'number' ? payload.tokensIn : null,
-      tokensOut: typeof payload.tokensOut === 'number' ? payload.tokensOut : null,
-    })
-  })
-  const stopState = await stopStateOf(courseId, job)
-  return productionStreamResponse.parse({
-    events,
-    cursor: rows.length > 0 ? rows[rows.length - 1]!.seq : afterSeq,
-    stopped: stopState.stopped,
-    stop: stopState.stop,
+  await recordProgressEvent(courseId, 'production', {
+    kind: 'production_resumed',
+    detail: '继续制作：从停下的地方接着跑，已完成的步不重跑。',
+    level: 'info',
   })
 }
 
@@ -333,7 +306,7 @@ async function stopPointOf(courseId: string): Promise<StopPoint> {
 /**
  * 当前是否处于「已停止」状态。
  *
- * 口径：**没有在跑/排队的 job**，且最后一条控制事件是「停止」→ 已停止（可继续）。
+ * 口径：**没有在跑/排队的 job**，且线程里最后一条控制事件是「停止」→ 已停止（可继续）。
  * 取消请求已下达但 runner 还没走到步边界的这一小段时间里，也算「已停止」——
  * 否则按钮刚点完，界面又跳回「正在执行」，教师会以为没点上。
  */
@@ -342,18 +315,20 @@ async function stopStateOf(
   job: PipelineJobRow | null,
 ): Promise<{ stopped: boolean; stop: ProductionStopView | null }> {
   if (job && job.status === 'queued') return { stopped: false, stop: null }
-  const event = await findLastStopEvent(courseId)
-  if (!event) return { stopped: false, stop: null }
-  const payload = event.payload ?? {}
-  if (payload.action !== 'stop') return { stopped: false, stop: null }
+  const event = await lastProgressEvent(courseId, 'production', [
+    'production_stopped',
+    'production_resumed',
+  ])
+  if (!event || event.kind !== 'production_stopped') return { stopped: false, stop: null }
   // 停止之后又起了新一轮（继续/重试/重新批准）：停止已过期。
-  if (job && job.created_at.getTime() > event.created_at.getTime()) {
+  if (job && job.created_at.getTime() > event.createdAt.getTime()) {
     return { stopped: false, stop: null }
   }
   // job 仍在跑且没有取消请求：不是停止态。
   if (job && job.status === 'running' && !job.cancel_requested) {
     return { stopped: false, stop: null }
   }
+  const payload = event.payload
   const stop = productionStopView.parse({
     stopped: true,
     sectionId: typeof payload.sectionId === 'string' ? payload.sectionId : null,
@@ -361,7 +336,7 @@ async function stopStateOf(
     step: typeof payload.step === 'number' ? payload.step : null,
     stepKey: typeof payload.stepKey === 'string' ? payload.stepKey : null,
     stepLabel: typeof payload.stepLabel === 'string' ? payload.stepLabel : null,
-    at: event.created_at.toISOString(),
+    at: event.createdAt.toISOString(),
   })
   return { stopped: true, stop }
 }

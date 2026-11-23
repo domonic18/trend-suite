@@ -21,6 +21,7 @@ export default function CoursePlanPage() {
       courseId={params.courseId}
       materials={materials}
       userName={session.user?.displayName ?? session.user?.username ?? '教师'}
+      courseTitle={course?.title ?? null}
     />
   )
 }

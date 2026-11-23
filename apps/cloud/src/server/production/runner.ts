@@ -1,5 +1,6 @@
 import 'server-only'
 import { executeStep, handleStepError } from './engine'
+import { recordProgressEvent } from '@/server/agent-chat/progress'
 import {
   claimNextStep,
   completeSectionIfAllDone,
@@ -38,6 +39,16 @@ export async function runProductionRun(job: PipelineJobRow): Promise<void> {
 
   const sections = await listSections(courseId)
   const pending = sections.filter((section) => section.status === 'pending')
+  if (pending.length === 0) {
+    await jobs.completeJob(job.id)
+    return
+  }
+  // 本轮起点入对话流：教师在制作台一眼看到「这轮要产几节」。
+  await recordProgressEvent(courseId, 'production', {
+    kind: 'production_started',
+    detail: `本轮制作开始：${pending.length} 节待产，九步逐节推进。`,
+    level: 'info',
+  })
   const outcomes = await mapPool(pending, MAX_SECTIONS_PARALLEL, (section) =>
     runProductionSection(job.id, courseId, section),
   )
@@ -58,9 +69,19 @@ export async function runProductionRun(job: PipelineJobRow): Promise<void> {
       message: `全部 ${suspended} 节挂起（失败或预算触线），请在看板重试`,
       retryable: false,
     })
+    await recordProgressEvent(courseId, 'production', {
+      kind: 'production_failed',
+      detail: `本轮制作全部挂起：${suspended} 节失败或预算触线，重试后可续跑。`,
+      level: 'err',
+    })
     return
   }
   await jobs.completeJob(job.id)
+  await recordProgressEvent(courseId, 'production', {
+    kind: 'production_completed',
+    detail: `本轮制作收尾：${completed}/${pending.length} 节完成${suspended > 0 ? `，${suspended} 节挂起待人工` : ''}。`,
+    level: suspended > 0 ? 'info' : 'ok',
+  })
 }
 
 /**
@@ -81,7 +102,7 @@ async function runProductionSection(
     try {
       await executeStep(task, section)
     } catch (err) {
-      const outcome = await handleStepError(task, err)
+      const outcome = await handleStepError(task, err, section.title)
       if (outcome === 'pending_manual') return 'suspended'
     }
   }

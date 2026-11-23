@@ -19,6 +19,7 @@ import type { PipelineJobRow } from '@/server/pipeline/jobs/repo'
 import { listAssetsByCourse } from '@/server/pipeline/repo'
 import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 import { runLlmJson, LlmError } from '../agents/llm'
+import { recordSystemEvent } from '@/server/agent-chat/repo'
 import {
   buildSkeleton,
   deriveMatchesFromUnits,
@@ -644,10 +645,27 @@ export async function runCurriculumDraft(job: PipelineJobRow): Promise<void> {
       })
     }
 
+    // 起草完成通知对话流：教师在会话里看得到「草案好了」，再决定微调或批准。
+    await recordSystemEvent(
+      courseId,
+      'plan',
+      'plan_drafted',
+      '方案草案已生成，右栏可查看。可继续对话微调；通过门禁后系统会发出批准确认卡。',
+      'ok',
+    )
     await jobs.completeJob(job.id, 'drafted')
   } catch (err) {
     const retryable = err instanceof LlmError ? err.retryable : false
     const code = err instanceof LlmError ? err.code : 'draft_failed'
-    await jobs.failJob({ jobId: job.id, code, message: (err as Error).message, retryable })
+    const outcome = await jobs.failJob({ jobId: job.id, code, message: (err as Error).message, retryable })
+    if (outcome === 'failed') {
+      await recordSystemEvent(
+        courseId,
+        'plan',
+        'draft_failed',
+        `起草失败：${(err as Error).message}。可在对话里重试起草。`,
+        'err',
+      )
+    }
   }
 }
