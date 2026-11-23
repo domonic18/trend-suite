@@ -1093,12 +1093,30 @@ dialog::backdrop {
   width: 100%;
 }
 
-/* chat-center 两页（方案 / 制作台）对齐原型 family-agent.css：三栏铺满视口，
-   右栏工作区贴右缘，不吃 .ops-main 的 1200px 宽度帽与 24px 边距。
-   （.plan-split 隔着课程栏外壳 wb-col/wb-center/wb-content，故用后代选择器） */
+/* chat-center 两页（方案 / 制作台）对齐原型 family-agent.css：对话流是页面主轴，
+   通栏贴顶全高；外壳的顶栏 / 课程阶段栏 / 页头 / 下一步横幅 / 版本脚注都不出现。 */
 .ops-main:has(.plan-split) {
   max-width: none;
-  padding: 18px 16px 40px;
+  padding: 0;
+}
+
+.ops-main:has(.plan-split) .build-info {
+  display: none;
+}
+
+.wb-col:has(.plan-split) > .ops-top {
+  display: none;
+}
+
+.wb-center:has(.plan-split) {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.wb-center:has(.plan-split) > .wb-rail,
+.wb-center:has(.plan-split) > .wb-content > .page-head,
+.wb-center:has(.plan-split) > .wb-content > .wb-next {
+  display: none;
 }
 
 .ops-ph {
@@ -1304,13 +1322,13 @@ dialog::backdrop {
 .ol {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0;
 }
 
 .olgroup {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0;
 }
 
 .olgroup + .olgroup {
@@ -1322,36 +1340,31 @@ dialog::backdrop {
 .olchapter {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0;
   margin-left: 24px;
 }
 
+/* 对齐原型 .ot：平行行、hover 才亮操作，不再是卡片 */
 .olrow {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  gap: 3px 10px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 2px 8px;
   align-items: center;
-  padding: 8px 12px;
-  border: 1px solid var(--p-line);
-  border-left: 3px solid var(--p-line);
-  border-radius: 9px;
-  background: var(--p-bg);
-  font-size: 13px;
+  padding: 6px 6px;
+  border-radius: 7px;
+  font-size: 12.5px;
 }
 
 .olrow:hover {
-  border-color: #c9d3e2;
-  box-shadow: var(--p-sh-sm);
+  background: #f6f8fb;
 }
 
 .olrow.lv1 {
-  background: #f7f9fc;
-  border-left-color: #aebfd8;
+  background: none;
 }
 
 .olrow.lv2 {
-  background: #fbfcfe;
-  border-left-color: #d5dfec;
+  background: none;
 }
 
 .olrow.lv3 {
@@ -1359,21 +1372,45 @@ dialog::backdrop {
 }
 
 .olrow.err {
-  border-color: #f3cfcb;
   background: var(--p-err-soft);
 }
 
+.olrow.err:hover {
+  background: var(--p-err-soft);
+}
+
+/* 层级徽标（篇黑底 / 章蓝底 / 课白底，原型同款） */
 .olrow .gh {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font: 700 10.5px var(--font-mono);
-  color: var(--p-faint);
+  justify-content: center;
+  gap: 3px;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 5px;
+  font: 700 10px var(--font-mono);
+}
+
+.olrow.lv1 .gh {
+  background: #232b3a;
+  color: #fff;
+}
+
+.olrow.lv2 .gh {
+  background: var(--p-pri-soft);
+  color: var(--p-pri);
+}
+
+.olrow.lv3 .gh {
+  border: 1px solid var(--p-line);
+  color: var(--p-mut);
+  background: #fff;
 }
 
 .caret {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 12px;
   flex: none;
   padding: 0;
   border: none;
@@ -1384,7 +1421,7 @@ dialog::backdrop {
 .caret::before {
   content: '';
   display: block;
-  border-left: 4.5px solid #8c96a8;
+  border-left: 4px solid currentcolor;
   border-top: 3.5px solid transparent;
   border-bottom: 3.5px solid transparent;
   transition: transform 0.15s;
@@ -1433,7 +1470,7 @@ dialog::backdrop {
   display: flex;
   gap: 1px;
   justify-content: flex-end;
-  opacity: 0.55;
+  opacity: 0;
 }
 
 .olrow:hover .acts,
@@ -1442,11 +1479,20 @@ dialog::backdrop {
 }
 
 .olrow .acts .btn {
-  height: auto;
-  padding: 2px 5px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
   border: none;
   background: none;
-  font-size: 11px;
+  border-radius: 5px;
+  color: var(--p-mut);
+  font-size: 12px;
+  text-align: center;
+}
+
+.olrow .acts .btn:hover:not(:disabled) {
+  background: #e8eef5;
+  color: var(--p-ink);
 }
 
 .olrow .acts .btn.danger:hover:not(:disabled) {
@@ -1986,6 +2032,30 @@ dialog::backdrop {
   .plan-split > .wb-col .ws-drag {
     display: none;
   }
+}
+
+/* chat-center 语境（方案 / 制作台，原型同款几何）：对话通栏贴顶全高（右缘分隔线），
+   右栏工作区带原型 ops-main 同款内边距、贴顶。 */
+.ops-main:has(.plan-split) .plan-split {
+  gap: 0;
+}
+
+.ops-main:has(.plan-split) .plan-split > .wb-col {
+  padding: 20px 24px 40px;
+}
+
+.ops-main:has(.plan-split) .agent-rail {
+  top: 0;
+  height: 100vh;
+  min-height: 0;
+  border: none;
+  border-right: 1px solid var(--p-line);
+  border-radius: 0;
+}
+
+.ops-main:has(.plan-split) .ws {
+  top: 0;
+  max-height: 100vh;
 }
 
 /* 右栏工作区（WorkBuddy 式页签）：头部页签切换产物，正文滚动，微调即生效。 */

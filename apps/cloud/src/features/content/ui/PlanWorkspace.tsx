@@ -36,7 +36,6 @@ type TabKey = (typeof TABS)[number]['key']
 
 export function PlanWorkspace({
   courseId,
-  courseTitle,
   plan,
   job,
   input,
@@ -52,7 +51,6 @@ export function PlanWorkspace({
   onGoChat,
 }: {
   courseId: string
-  courseTitle?: string | null
   plan: PlanView | null
   job: PlanJobView | null
   input: { goal: string; outlineText: string } | null
@@ -105,7 +103,7 @@ export function PlanWorkspace({
     <div className="ws" aria-label="方案工作区">
       <div className="ws-head">
         <div className="ws-title">
-          {courseTitle ? `${courseTitle} · ` : ''}制作方案
+          方案工作区
           <span className={`tag ${tag.cls}`}>{tag.text}</span>
           <span className="grow" />
           {plan ? (

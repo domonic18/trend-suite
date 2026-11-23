@@ -240,7 +240,7 @@ export function ProductionStudio({
         <div className="ws" aria-label="制作工作区">
           <div className="ws-head">
             <div className="ws-title">
-              {courseTitle ? `${courseTitle} · ` : ''}制作台
+              制作工作区
               <span className={`tag ${tag.cls}`}>{tag.text}</span>
               <span className="grow" />
               <span className="ws-meta">

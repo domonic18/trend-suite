@@ -65,6 +65,38 @@ function textOf(message: BaseMessage): string {
   return ''
 }
 
+/** 工具行的紧凑参数摘要（原型 .ta：短小可读，不甩原始 JSON）。 */
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
+function compactArgs(name: string, args: Record<string, unknown> | undefined): string {
+  const a = args ?? {}
+  switch (name) {
+    case 'revise_plan':
+      return typeof a.feedback === 'string' && a.feedback ? `「${clip(a.feedback, 26)}」` : ''
+    case 'apply_tweak': {
+      const op = a.op
+      if (op && typeof op === 'object' && op !== null) {
+        const kind = (op as Record<string, unknown>).op
+        return typeof kind === 'string' ? `{${kind}}` : '{…}'
+      }
+      return ''
+    }
+    case 'ask_question':
+      return typeof a.text === 'string' && a.text ? `「${clip(a.text, 26)}」` : ''
+    case 'todo_write':
+      return Array.isArray(a.items) ? `${a.items.length} 项` : ''
+    case 'retry_section':
+      return typeof a.sectionId === 'string' && a.sectionId ? `{${clip(a.sectionId, 20)}}` : ''
+    default: {
+      const raw = JSON.stringify(a)
+      if (raw === '{}') return ''
+      return clip(raw, 40)
+    }
+  }
+}
+
 /** 一轮回复里的工具事件组：AI 消息的 tool_calls + 对应 ToolMessage 的结果状态。 */
 function summarizeTools(messages: BaseMessage[]): AgentToolEventView[] {
   const pending = new Map<string, { name: string; argsSummary: string }>()
@@ -72,10 +104,9 @@ function summarizeTools(messages: BaseMessage[]): AgentToolEventView[] {
   for (const message of messages) {
     if (message instanceof AIMessage) {
       for (const call of message.tool_calls ?? []) {
-        const raw = JSON.stringify(call.args ?? {})
         pending.set(call.id ?? '', {
           name: call.name,
-          argsSummary: raw.length > 120 ? `${raw.slice(0, 119)}…` : raw,
+          argsSummary: compactArgs(call.name, call.args as Record<string, unknown> | undefined),
         })
       }
     } else if (message instanceof ToolMessage) {

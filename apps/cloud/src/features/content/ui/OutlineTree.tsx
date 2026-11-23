@@ -161,13 +161,14 @@ export function OutlineTree({
               type="button"
               className="btn link"
               title="改名"
+              aria-label="改名"
               disabled={busy}
               onClick={() => {
                 setRenaming(node.id)
                 setRenameTitle(node.title)
               }}
             >
-              改名
+              ✎
             </button>
           ) : null}
           {sibling && sibling.count > 1 ? (
@@ -176,19 +177,21 @@ export function OutlineTree({
                 type="button"
                 className="btn link"
                 title="上移"
+                aria-label="上移"
                 disabled={busy || sibling.index <= 0}
                 onClick={() => onMove(node.id, sibling.parentId, sibling.index - 1)}
               >
-                上移
+                ↑
               </button>
               <button
                 type="button"
                 className="btn link"
                 title="下移"
+                aria-label="下移"
                 disabled={busy || sibling.index >= sibling.count - 1}
                 onClick={() => onMove(node.id, sibling.parentId, sibling.index + 1)}
               >
-                下移
+                ↓
               </button>
             </>
           ) : null}
@@ -197,13 +200,14 @@ export function OutlineTree({
               type="button"
               className="btn link"
               title={level === 1 ? '在这一篇下加一章' : '在这一章下加一课时'}
+              aria-label={level === 1 ? '加一章' : '加一课时'}
               disabled={busy}
               onClick={() => {
                 setAdding(adding === node.id ? null : node.id)
                 setAddTitle('')
               }}
             >
-              {level === 1 ? '加章' : '加课时'}
+              ＋
             </button>
           ) : null}
           {!childIds.has(node.id) ? (
@@ -211,10 +215,11 @@ export function OutlineTree({
               type="button"
               className="btn link danger"
               title="删除"
+              aria-label="删除"
               disabled={busy}
               onClick={() => onRemove(node.id)}
             >
-              删
+              ✕
             </button>
           ) : null}
         </span>
