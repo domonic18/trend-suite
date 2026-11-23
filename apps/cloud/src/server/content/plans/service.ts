@@ -1,6 +1,5 @@
 import 'server-only'
 import {
-  type AgentTraceView,
   type CourseOutlineView,
   type PlanCoverageView,
   type PlanJobView,
@@ -10,6 +9,7 @@ import {
   type PlanView,
   type SessionUser,
   type SubmitPlanInputRequest,
+  type TweakPlanRequest,
   conceptEdgeRecordView,
   conceptView,
   conceptsResponse,
@@ -36,7 +36,6 @@ import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
 import { seedProduction } from '@/server/production/repo'
 import { buildEvidenceMap, evidenceOf } from './evidence'
 import { parseOutline, parseStoredOutline } from './outline'
-import { buildAgentTrace } from './trace'
 import { applyTweak, refreshAfterTweak, type PlanLesson, type TweakedContent } from './tweak'
 import * as repo from './repo'
 
@@ -270,7 +269,6 @@ export async function getPlanFor(
   plan: PlanView | null
   job: PlanJobView | null
   input: { goal: string; outlineText: string } | null
-  trace: AgentTraceView | null
   materials: PlanMaterialView[]
   review: PlanReviewView | null
 }> {
@@ -287,23 +285,6 @@ export async function getPlanFor(
   const active = draft ?? approved
   // 目标必回填（教师可能只交了目标）；目录可能是空的（待 Agent 代拟）。
   const inputMeta = input?.goal ? { goal: input.goal, outlineText: input.outline_text ?? '' } : null
-  const trace = await buildAgentTrace({
-    courseId,
-    plan: active,
-    job: job
-      ? {
-          status: job.status,
-          attempts: job.attempts,
-          step: job.step,
-          errorMessage: job.error_message,
-        }
-      : null,
-    input: {
-      goal: input?.goal ?? null,
-      outlineText: input?.outline_text ?? null,
-      submittedAt: input?.updated_at ?? null,
-    },
-  })
   const countsByAsset = new Map(
     (await listUnitCountsByAssets(library.map((asset) => asset.id))).map((row) => [
       row.asset_id,
@@ -329,7 +310,6 @@ export async function getPlanFor(
     plan: active ? await toPlanView(active) : null,
     job: job ? toPlanJobView(job) : null,
     input: inputMeta,
-    trace,
     materials,
     review: review
       ? {
@@ -415,6 +395,15 @@ export async function rejectPlan(
 ): Promise<PlanView> {
   await requireOwnedCourse(actor, courseId)
   const body = rejectPlanRequest.parse(input)
+  return rejectPlanInternal(courseId, body.feedback, actor.id)
+}
+
+/** 打回的核心逻辑（不含权限校验）：agent-chat 的 revise_plan 工具在线程授权语境下复用。 */
+export async function rejectPlanInternal(
+  courseId: string,
+  feedback: string,
+  actorId: string,
+): Promise<PlanView> {
   const draft = await repo.findDraftPlan(courseId)
   if (!draft) throw badRequest('没有可打回的草案')
 
@@ -430,8 +419,8 @@ export async function rejectPlan(
         status: 'draft',
         origin: 'revision',
         parentPlanId: draft.id,
-        triggerNote: body.feedback,
-        createdBy: actor.id,
+        triggerNote: feedback,
+        createdBy: actorId,
         ...contentOf(draft),
       },
       tx,
@@ -449,7 +438,15 @@ export async function tweakPlan(
   input: unknown,
 ): Promise<PlanView> {
   await requireOwnedCourse(actor, courseId)
-  const op = tweakPlanRequest.parse(input)
+  return tweakPlanInternal(courseId, tweakPlanRequest.parse(input), actor.id)
+}
+
+/** 微调的核心逻辑（不含权限校验）：agent-chat 的 apply_tweak 工具在线程授权语境下复用。 */
+export async function tweakPlanInternal(
+  courseId: string,
+  op: TweakPlanRequest,
+  actorId: string,
+): Promise<PlanView> {
   const active = (await repo.findDraftPlan(courseId)) ?? (await repo.findApprovedPlan(courseId))
   if (!active) throw badRequest('暂无可微调的方案')
 
@@ -473,7 +470,7 @@ export async function tweakPlan(
         origin: 'tweak',
         parentPlanId: active.id,
         triggerNote: JSON.stringify(op),
-        createdBy: actor.id,
+        createdBy: actorId,
         ...refreshed,
       },
       tx,

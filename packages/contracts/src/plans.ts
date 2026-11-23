@@ -195,50 +195,6 @@ export const planJobView = z.object({
 
 export const planJobResponse = z.object({ job: planJobView })
 
-// ---------------------------------------------------------------- Agent 执行轨迹（工作台 Agent 面板）
-
-/** 步骤状态：done 完成 / running 进行中 / waiting 等教师确认 / pending 未开始 / failed 失败。 */
-export const agentStepStatus = z.enum(['done', 'running', 'waiting', 'pending', 'failed'])
-
-export const agentStepView = z.object({
-  key: z.string(),
-  label: z.string(),
-  status: agentStepStatus,
-  metrics: z.array(z.string()),
-})
-
-/** 一次模型调用（取自 ai_runs 台账，工作台按阶段归类展示）。 */
-export const agentCallView = z.object({
-  id: z.string(),
-  label: z.string(),
-  model: z.string(),
-  status: z.enum(['running', 'succeeded', 'failed']),
-  tokensIn: z.number().int().nullable(),
-  tokensOut: z.number().int().nullable(),
-  latencyMs: z.number().int().nullable(),
-  at: z.string(),
-})
-
-/** trace 内的消息投影（旧只读 trace；对话式交互上线后随 trace 一并移除，见 arch/08）。 */
-export const agentTraceMessageView = z.object({
-  role: z.enum(['agent', 'user']),
-  text: z.string(),
-  at: z.string(),
-})
-
-export const agentArtifactView = z.object({
-  path: z.string(),
-  note: z.string(),
-})
-
-export const agentTraceView = z.object({
-  status: z.enum(['idle', 'running', 'done', 'failed']),
-  steps: z.array(agentStepView),
-  calls: z.array(agentCallView),
-  messages: z.array(agentTraceMessageView),
-  artifacts: z.array(agentArtifactView),
-})
-
 /**
  * 规划可选素材：教师勾选参与本次规划的素材。
  * pointCount 是素材理解产出的教学要点条数——目录规模由它推导（迭代 8）。
@@ -266,8 +222,6 @@ export const planResponse = z.object({
   plan: planView.nullable(),
   job: planJobView.nullable(),
   input: planInputView.nullable(),
-  /** Agent 执行轨迹（工作台 Agent 面板的对话 / 执行 / 产物三个页签）。 */
-  trace: agentTraceView.nullable(),
   /** 课程素材（勾选哪些参与规划）。 */
   materials: z.array(planMaterialView).default([]),
   /** 最近一次规划自检结论（未自检过则 null）。 */
@@ -400,11 +354,6 @@ export type PlanInputView = z.infer<typeof planInputView>
 export type PlanJobView = z.infer<typeof planJobView>
 export type PlanResponse = z.infer<typeof planResponse>
 export type PlanMaterialView = z.infer<typeof planMaterialView>
-export type AgentStepStatus = z.infer<typeof agentStepStatus>
-export type AgentStepView = z.infer<typeof agentStepView>
-export type AgentCallView = z.infer<typeof agentCallView>
-export type AgentArtifactView = z.infer<typeof agentArtifactView>
-export type AgentTraceView = z.infer<typeof agentTraceView>
 export type SubmitPlanInputRequest = z.infer<typeof submitPlanInputRequest>
 export type RejectPlanRequest = z.infer<typeof rejectPlanRequest>
 export type TweakOp = z.infer<typeof tweakOp>

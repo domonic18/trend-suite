@@ -68,6 +68,8 @@ export const agentMessageView = z.discriminatedUnion('role', [
   }),
   agentMessageBase.extend({
     role: z.literal('todo'),
+    /** 卡片标题（九步 TODO 卡=节标题）；无标题的通用任务清单为 null/缺省。 */
+    title: z.string().min(1).max(200).nullish(),
     /** 始终渲染线程内最新一份 todo；旧 todo 由前端折叠。 */
     items: z.array(agentTodoItem).min(1).max(12),
   }),

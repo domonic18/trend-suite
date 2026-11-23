@@ -12,18 +12,19 @@ import { persistWidgets, replayMarketAvailable } from '@/server/content/widgets/
 import { listSourceUnitsByCourse } from '@/server/pipeline/processing/repo'
 import { runStepAgent } from './agent'
 import { formatIssues, formatWidgetIssues } from './issues'
-import { recordEvent, listRecordedRunIds } from './events'
+import { recordProgressEvent, recordProgressTodo, recordedToolRunIds } from '@/server/agent-chat/progress'
 import {
   completeStep,
   countSectionRuns,
   failStep,
   getTaskCheckpoint,
   listTaskRuns,
+  listTasks,
   suspendTask,
   type ProductionTaskRow,
   type SectionRow,
 } from './repo'
-import { stepDef, STEP_COUNT, type StepDef } from './steps'
+import { stepDef, STEP_COUNT, STEP_DEFS, type StepDef } from './steps'
 
 /**
  * 步执行状态机（arch/05 §6/§7）：按 STEP_DEFS 分发 agent/pure，
@@ -39,16 +40,18 @@ import { stepDef, STEP_COUNT, type StepDef } from './steps'
 export async function executeStep(task: ProductionTaskRow, section: SectionRow): Promise<void> {
   const def = stepDef(task.step)
   let output: Record<string, unknown> | undefined
-  // 步开始即入事件流：教师端制作页据此显示「Agent 正在做什么」。
-  await recordStepEvent(task, 'running', `第 ${def.n} 步「${def.label}」开始`)
+  // 步开始即入对话流：教师端制作台据此看到「Agent 正在做什么」。
+  await recordStepEvent(task, section.title, 'running')
+  await recordSectionTodo(task, section.title)
   try {
     output = await runStepBody(task, section, def)
   } finally {
-    // 模型调用记成工具卡：只记事实（模型、耗时、token），不记模型措辞。
-    await recordToolEvents(task, def)
+    // 模型调用记成事实行：只记模型、耗时、token，不记模型措辞。
+    await recordToolEvents(task, def, section.title)
   }
   await completeStep(task, output)
-  await recordStepEvent(task, 'done', `第 ${def.n} 步「${def.label}」完成`)
+  await recordStepEvent(task, section.title, 'done')
+  await recordSectionTodo(task, section.title)
 }
 
 /** 单步执行体（产物产出 + 复检），失败抛错由调用方走回灌。 */
@@ -170,80 +173,100 @@ async function recheckSectionDraft(task: ProductionTaskRow, markdown: string): P
 }
 
 /** 步失败分级（arch/05 §7）：预算触线直接挂起；其余回灌，超上限挂起。 */
-export async function handleStepError(task: ProductionTaskRow, err: unknown): Promise<'pending' | 'pending_manual'> {
+export async function handleStepError(
+  task: ProductionTaskRow,
+  err: unknown,
+  sectionTitle: string,
+): Promise<'pending' | 'pending_manual'> {
   const message =
     err instanceof LlmError
       ? `${err.code}: ${err.message}`
       : err instanceof Error
         ? err.message
         : String(err)
+  const def = stepDef(task.step)
   if (err instanceof LlmError && err.code === 'budget_exhausted') {
     await suspendTask(task.id, message)
-    await recordStepEvent(task, 'pending_manual', `第 ${stepDef(task.step).n} 步「${stepDef(task.step).label}」挂起待人工`, message)
+    await recordStepEvent(task, sectionTitle, 'pending_manual', message)
     return 'pending_manual'
   }
   const outcome = await failStep(task, message)
-  const def = stepDef(task.step)
   await recordStepEvent(
     task,
+    sectionTitle,
     outcome === 'pending_manual' ? 'pending_manual' : 'failed',
-    outcome === 'pending_manual'
-      ? `第 ${def.n} 步「${def.label}」回灌超上限，挂起待人工`
-      : `第 ${def.n} 步「${def.label}」失败，回灌重写`,
     message,
   )
+  await recordSectionTodo(task, sectionTitle)
   return outcome
 }
 
-/** 步状态事件（running / done / failed / pending_manual）：只记事实与原因。 */
+/**
+ * 逐节九步 TODO 卡（需求 T11：进度由生产引擎写 Agent TODO 卡）。
+ * 节标题为卡头，九步按当前任务行状态映射 pending/doing/done；步开始/完成/失败时刷新。
+ */
+async function recordSectionTodo(task: ProductionTaskRow, sectionTitle: string): Promise<void> {
+  const rows = (await listTasks(task.course_id)).filter((row) => row.section_id === task.section_id)
+  const statusByStep = new Map(rows.map((row) => [row.step, row.status]))
+  await recordProgressTodo(task.course_id, 'production', {
+    title: sectionTitle,
+    items: STEP_DEFS.map((def) => {
+      const status = statusByStep.get(def.n)
+      return {
+        content: `第 ${def.n} 步「${def.label}」`,
+        status: status === 'done' ? 'done' : status === 'running' ? 'doing' : 'pending',
+      }
+    }),
+  })
+}
+
+/** 步状态事实入对话流（running / done / failed / pending_manual）：只记状态与原因。 */
 async function recordStepEvent(
   task: ProductionTaskRow,
+  sectionTitle: string,
   status: 'running' | 'done' | 'failed' | 'pending_manual',
-  title: string,
   detail?: string | null,
 ): Promise<void> {
   const def = stepDef(task.step)
-  await recordEvent({
-    courseId: task.course_id,
-    sectionId: task.section_id,
-    kind: 'step',
-    step: task.step,
-    title,
-    detail: detail ?? null,
-    payload: { status, stepKey: def.key, stepLabel: def.label },
+  const text: Record<typeof status, string> = {
+    running: `开始`,
+    done: `完成`,
+    failed: `失败，回灌重写`,
+    pending_manual: `挂起待人工`,
+  }
+  await recordProgressEvent(task.course_id, 'production', {
+    kind: `step_${status}`,
+    detail: `${sectionTitle} · 第 ${def.n} 步「${def.label}」${text[status]}${detail ? `：${detail}` : ''}`,
+    level: status === 'done' ? 'ok' : status === 'running' ? 'info' : 'err',
+    extra: { sectionId: task.section_id, step: task.step },
   })
 }
 
 /**
- * 模型调用记成工具卡：只记事实（模型、耗时、token），不记模型措辞。
+ * 模型调用记成事实行：只记模型、耗时、token，不记模型措辞。
  *
  * ai_runs 里没有 prompt/response 列——措辞无从取，也不该由我们复述。
- * 同一次调用只记一张卡（runId 去重：重跑同一步时旧的卡不重复记）。
+ * 同一次调用只记一行（runId 去重：重跑同一步时旧的行不重复记）。
  */
-async function recordToolEvents(task: ProductionTaskRow, def: StepDef): Promise<void> {
+async function recordToolEvents(task: ProductionTaskRow, def: StepDef, sectionTitle: string): Promise<void> {
   if (def.kind !== 'agent') return
   const runs = await listTaskRuns([task.id])
   if (runs.length === 0) return
-  const recorded = new Set(await listRecordedRunIds(task.course_id, runs.map((run) => run.id)))
+  const recorded = new Set(
+    await recordedToolRunIds(task.course_id, 'production', runs.map((run) => run.id)),
+  )
   for (const run of runs) {
     if (recorded.has(run.id)) continue
-    await recordEvent({
-      courseId: task.course_id,
-      sectionId: task.section_id,
-      kind: 'tool',
-      step: task.step,
-      title: `第 ${def.n} 步「${def.label}」调用模型 ${run.model}`,
-      detail: run.summary,
-      payload: {
-        runId: run.id,
-        model: run.model,
-        status: run.status,
-        latencyMs: run.latency_ms,
-        tokensIn: run.tokens_in,
-        tokensOut: run.tokens_out,
-        stepKey: def.key,
-        stepLabel: def.label,
-      },
+    const parts = [`第 ${def.n} 步「${def.label}」`, `模型 ${run.model}`]
+    if (run.latency_ms != null) parts.push(`${(run.latency_ms / 1000).toFixed(1)}s`)
+    if (run.tokens_in != null || run.tokens_out != null) {
+      parts.push(`tokens ${run.tokens_in ?? 0} / ${run.tokens_out ?? 0}`)
+    }
+    await recordProgressEvent(task.course_id, 'production', {
+      kind: 'model_call',
+      detail: parts.join(' · '),
+      level: run.status === 'failed' ? 'err' : 'info',
+      extra: { runId: run.id, sectionId: task.section_id, step: task.step },
     })
   }
 }
