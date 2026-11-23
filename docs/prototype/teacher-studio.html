@@ -83,29 +83,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
 .tnode.lv1 .tt b{font-weight:700}
 .tnode.lv3{padding-left:30px;font-size:12.5px}
 
-/* 大纲编辑行——这一棵树就是大纲本体。
-   上行：层级（折叠钮 + 标签）· 标题 · 匹配度 · 时长 · 操作；课行下方再挂出处。 */
-.olrow{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:8px 12px;border:1px solid var(--p-line);border-radius:9px;background:#fff;font-size:13px;margin-bottom:5px}
-.olrow:hover{border-color:#c9d3e2;box-shadow:var(--p-sh-sm)}
-.olrow .gh{display:flex;align-items:center;gap:5px;font:700 10.5px var(--font-mono);color:#9aa3b8}
-.olrow .ttl{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap}
-.olrow .ttl b{font-weight:600}
-.olrow .ttl .sc{font:600 12px var(--font-mono);color:var(--p-ink)}
-.olrow .ttl .dur{font-size:11.5px;color:var(--p-mut)}
-.olrow .ttl .cnt{font-size:11.5px;color:var(--p-mut)}
-.olrow .src{grid-column:2/4}
-.olrow .acts{display:flex;gap:1px;justify-content:flex-end;opacity:.45}
-.olrow:hover .acts{opacity:1}
-.olrow .acts .btn{border:none;background:none;color:var(--p-pri);padding:2px 5px;font-size:11px;height:auto}
-/* 层级：篇 / 章是分组行，课是叶子 */
-.olrow.lv1{background:#f7f9fc;border-left:3px solid #aebfd8}
-.olrow.lv1 .ttl b{font-weight:700}
-.olrow.lv2{margin-left:24px;background:#fbfcfe;border-left:3px solid #d5dfec}
-.olrow.lv3{margin-left:48px}
-.caret{width:14px;height:14px;border:none;background:none;padding:0;cursor:pointer;flex:none}
-.caret::before{content:'';display:block;border-left:4.5px solid #8c96a8;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;transition:transform .15s}
-.olrow.closed .caret::before{transform:rotate(-90deg)}
-.olrow.closed .ttl b{color:var(--p-mut)}
+/* 大纲树：outliner 组件见 assets/outline.js 与 family-agent.css（拖拽挪位 / 悬停操作 / 行内改名） */
 /* 校验口径默认收起，不与正文抢视线 */
 .why{margin-top:10px;border:1px solid var(--p-line);border-radius:9px;background:#fff;font-size:12.5px}
 .why summary{cursor:pointer;padding:9px 13px;color:var(--p-mut);font-weight:600;list-style:none}
@@ -151,6 +129,9 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
 .btn.stop:hover{background:#fdeeed;border-color:#e0a9a3}
 .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--p-pri);box-shadow:0 0 0 3px var(--p-pri-soft);animation:agent-pulse 1.8s ease-in-out infinite}
 @keyframes agent-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* 中置对话布局：右栏收窄后的产物适配 */
+.ops-app.chat-center .media3{grid-template-columns:1fr}
+.ops-app.chat-center .ops-main{padding:18px 16px 40px}
 @media (max-width:1100px){.split3{grid-template-columns:1fr}.stages{grid-template-columns:1fr}.stage{border-right:none;border-bottom:1px solid var(--p-line)}}
 </style></head><body>
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
@@ -195,7 +176,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
    <div class="sbc-pop" role="menu" aria-label="切换课程">
     <div class="sbc-h">切换课程</div>
     <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="趋势交易总论" data-meta="生产中 · 1/4 节">
-     <span class="dot-run"></span><span class="sbc-t"><b>趋势交易总论</b><small>3 章 · 3 课时 · 1 素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+     <span class="dot-run"></span><span class="sbc-t"><b>趋势交易总论</b><small>3 章 · 3 课时 · 2 素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-wait" data-name="级别与周期" data-meta="待上传素材">
      <span class="dot-wait"></span><span class="sbc-t"><b>级别与周期</b><small>空课程 · 未上传素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -216,12 +197,11 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
  <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
 </aside>
 
-<!-- ============ 主区 ============ -->
+<!-- ============ 右栏：产物呈现与微调（调整即生效，不进对话） ============ -->
 <div class="wb-col">
+<div class="ws-drag" title="拖拽调整工作区宽度"></div>
 <header class="ops-top">
- <span id="crumb">我的课程</span>
  <span class="right">
-  <span class="agent-pill" id="top-pill"><i class="dot-ok"></i>素材就绪</span>
   <a href="index.html" class="note">原型索引</a>
  </span>
 </header>
@@ -238,7 +218,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
  <div class="cgrid">
   <a class="ccard" data-go="build">
    <div class="cc-top"><b>趋势交易总论</b><span class="tag run">生产中</span></div>
-   <div class="cc-meta">3 章 · 3 课时 · 1 个素材<br>大纲 v1 已批准 · 逐节生产 1/4</div>
+   <div class="cc-meta">3 章 · 3 课时 · 2 个素材<br>大纲 v1 已批准 · 逐节生产 1/4</div>
    <div class="cc-bar"><i style="width:25%"></i></div>
    <div class="cc-foot"><span>更新于 19:02</span><span class="go">继续制作 →</span></div>
   </a>
@@ -280,7 +260,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
     <label class="note">这份视频属于哪门课</label>
     <select class="fi" style="width:auto"><option>趋势交易总论</option><option>级别与周期</option><option>筹码分布实战</option></select>
-    <span class="note">素材归属课程是硬约束：一门课可上传多个视频，默认全部参与规划（起草时可勾选其中几份）。</span>
+    <span class="note">素材归属课程不可更改。</span>
    </div>
    <div class="upload-hero" style="border:1.5px dashed #c9d3e2;border-radius:12px;background:#fafbfd;padding:26px 20px;text-align:center">
     <span style="width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #dbe5f6;color:var(--p-pri);display:grid;place-items:center;margin:0 auto 10px"><svg style="width:21px;height:21px"><use href="#i-upload"/></svg></span>
@@ -342,7 +322,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
        <figure class="kf"><div class="thumb"><i style="height:52%"></i><i style="height:48%"></i><i style="height:66%" class="g"></i><i style="height:74%"></i></div><figcaption><span class="ts">19:18</span>趋势形成</figcaption></figure>
        <figure class="kf"><div class="thumb"><i style="height:70%"></i><i style="height:66%" class="g"></i><i style="height:80%"></i><i style="height:88%"></i></div><figcaption><span class="ts">23:56</span>能量与惯性</figcaption></figure>
       </div>
-      <h4 style="margin-top:12px">视频理解（讲解要点）<span class="grow"></span><span class="note">大纲起草的输入</span></h4>
+      <h4 style="margin-top:12px">视频理解（讲解要点）<span class="grow"></span></h4>
       <div class="note" style="line-height:1.9">· 趋势包含明确方向与蕴藏能量<br>· 股票的本质是周期加趋势<br>· 通道是趋势成立的空间条件，跌破通道下沿即证伪<br>· 级别决定趋势的成立与否，同一段行情在更大级别只是摆动</div>
      </details>
      <div class="lb">
@@ -400,7 +380,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
       <div class="stage"><div class="sh"><i class="dot"></i>关键帧</div><div class="sc">等待</div><div class="sa"><button class="btn" onclick="rerun(this,'生成中…','done')">单独生成</button></div></div>
       <div class="stage"><div class="sh"><i class="dot"></i>视频理解</div><div class="sc">等待逐字稿完成</div><div class="sa"><button class="btn" onclick="rerun(this,'生成中…','done')">单独生成</button></div></div>
      </div>
-     <div class="lb"><span class="note">逐字稿完成后自动接着抽关键帧与做理解。</span></div>
+     <div class="lb"><span class="note">排队中：逐字稿完成后接着抽关键帧与做理解。</span></div>
     </div>
 
     <!-- 素材 4：失败 -->
@@ -429,147 +409,177 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
 
 <!-- ---------- 屏幕 3：课程大纲 ---------- -->
 <section class="scr" id="scr-outline">
- <div class="ops-ph">
-  <div><div class="t">课程大纲</div><div class="s">筹码分布实战 · 大纲 v1 · 待你批准</div></div>
-  <div class="a">
-   <button class="btn" onclick="go('library')">回到素材库</button>
-   <button class="btn pri" onclick="approveOutline()">批准大纲并开始制作 <svg style="width:12px;height:12px"><use href="#i-arrow"/></svg></button>
+ <!-- 大纲工作区：页签切换产物；内容即产物，微调即生效（不进对话） -->
+ <div class="ws">
+  <div class="ws-head">
+   <div class="ws-title">大纲工作区 <span class="tag warn">待批准</span><span class="grow"></span><span class="tag ok">素材覆盖 40%（29/73 要点）</span></div>
+   <div class="ctabs" role="tablist" aria-label="大纲产物">
+    <button class="on" type="button" data-pane="p-ol">大纲</button>
+   </div>
+  </div>
+  <div class="ws-body">
+   <div class="ctpane on" id="p-ol">
+    <div class="ot">
+     <div class="ot-item lv-pian">
+      <div class="ot-row">
+       <button class="ot-chev" type="button" aria-label="折叠"></button><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">篇</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-num">第一篇</span><span class="ot-name">交易认知的反思与选择</span></div><div class="ot-meta"><span class="ot-cnt"></span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="添加章" data-act="addkid">＋</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+      <div class="ot-kids">
+       <div class="ot-item lv-zhang">
+        <div class="ot-row">
+         <button class="ot-chev" type="button" aria-label="折叠"></button><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">章</span>
+         <div class="ot-main"><div class="ot-title"><span class="ot-num">第一章</span><span class="ot-name">从盈亏困惑到方法反思</span></div><div class="ot-meta"><span class="ot-cnt"></span></div></div>
+         <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="添加课时" data-act="addkid">＋</button><button type="button" title="删除" data-act="del">✕</button></span>
+        </div>
+        <div class="ot-kids">
+         <div class="ot-item lv-ke">
+          <div class="ot-row">
+           <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">1</span>
+           <div class="ot-main"><div class="ot-title"><span class="ot-name">通道识别与趋势确认</span></div><div class="ot-meta"><span class="sc">100%</span><span>3 分钟</span><span class="cite2">总论1 15:58–19:18</span><span>通道是趋势成立的空间条件 · 跌破下沿即证伪</span></div></div>
+           <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="ot-item lv-pian">
+      <div class="ot-row">
+       <button class="ot-chev" type="button" aria-label="折叠"></button><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">篇</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-num">第二篇</span><span class="ot-name">趋势理论的基本框架</span></div><div class="ot-meta"><span class="ot-cnt"></span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="添加章" data-act="addkid">＋</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+      <div class="ot-kids">
+       <div class="ot-item lv-zhang">
+        <div class="ot-row">
+         <button class="ot-chev" type="button" aria-label="折叠"></button><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">章</span>
+         <div class="ot-main"><div class="ot-title"><span class="ot-num">第二章</span><span class="ot-name">通道识别与趋势形成</span></div><div class="ot-meta"><span class="ot-cnt"></span></div></div>
+         <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="添加课时" data-act="addkid">＋</button><button type="button" title="删除" data-act="del">✕</button></span>
+        </div>
+        <div class="ot-kids">
+         <div class="ot-item lv-ke">
+          <div class="ot-row">
+           <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">1</span>
+           <div class="ot-main"><div class="ot-title"><span class="ot-name">趋势方向、能量与惯性</span></div><div class="ot-meta"><span class="sc">100%</span><span>2 分钟</span><span class="cite2">总论1 21:29–23:56</span><span>趋势包含明确方向与蕴藏能量</span></div></div>
+           <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+          </div>
+         </div>
+         <div class="ot-item lv-ke">
+          <div class="ot-row">
+           <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">2</span>
+           <div class="ot-main"><div class="ot-title"><span class="ot-name">周期机会与趋势主线</span></div><div class="ot-meta"><span class="sc">100%</span><span>14 分钟</span><span class="cite2">总论1 19:18–33:04</span><span>股票的本质是周期加趋势</span></div></div>
+           <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+          </div>
+         </div>
+        </div>
+       </div>
+       <div class="ot-item lv-zhang">
+        <div class="ot-row">
+         <button class="ot-chev" type="button" aria-label="折叠"></button><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">章</span>
+         <div class="ot-main"><div class="ot-title"><span class="ot-num">第三章</span><span class="ot-name">趋势的构成与运行特征</span></div><div class="ot-meta"><span class="ot-cnt"></span></div></div>
+         <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="添加课时" data-act="addkid">＋</button><button type="button" title="删除" data-act="del">✕</button></span>
+        </div>
+        <div class="ot-kids">
+         <div class="ot-item lv-ke">
+          <div class="ot-row">
+           <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">1</span>
+           <div class="ot-main"><div class="ot-title"><span class="ot-name">均线、结构与多空分界</span></div><div class="ot-meta"><span class="sc">86%</span><span>12 分钟</span><span class="cite2">总论1 33:04–41:10</span><span>均线束收敛确认趋势启动</span></div></div>
+           <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
   </div>
  </div>
-
- <div class="steps5" style="margin-bottom:14px">
-  <a class="on"><i>1</i>课程大纲</a><span class="arw">→</span>
-  <a onclick="go('build')"><i>2</i>课件制作</a><span class="arw">→</span>
-  <a><i>3</i>成品审阅</a><span class="arw">→</span>
-  <a><i>4</i>交付运营</a>
-  <span class="sep" style="flex:1"></span>
-  <span class="note">目录先验：教师粘贴的 7 行人工目录（篇 / 章 / 课时三级）</span>
- </div>
-
- <div class="runbar">
-  <span class="pulse" id="outline-pulse"></span>
-  <b id="outline-state">大纲已生成</b>
-  <span class="note" id="outline-state-note">自检通过</span>
-  <span class="grow"></span>
-  <button class="btn sm">＋ 加课时</button>
-  <button class="btn sm">保存</button>
- </div>
-
- <div class="ops-card" style="margin-top:12px">
-  <div class="h"><div><b>课程大纲</b><small>这一棵树就是大纲本体——改名、挪位、删节都在这里做</small></div>
-   <span class="tag ok">素材覆盖 40%（29/73 要点）</span>
-  </div>
-  <div class="b" style="padding-top:8px">
-    <div class="olrow lv1"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>篇</span><span class="ttl"><b>第一篇 交易认知的反思与选择</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button></span></div>
-    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第一章 从盈亏困惑到方法反思</b><span class="cnt">1 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
-    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>1. 通道识别与趋势确认</b><span class="sc">100%</span><span class="dur">3 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 15:58–19:18</span><span class="pts">通道是趋势成立的空间条件 · 跌破下沿即证伪</span></span></div>
-    <div class="olrow lv1"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>篇</span><span class="ttl"><b>第二篇 趋势理论的基本框架</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button></span></div>
-    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第二章 通道识别与趋势形成</b><span class="cnt">2 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
-    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>1. 趋势方向、能量与惯性</b><span class="sc">100%</span><span class="dur">2 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 21:29–23:56</span><span class="pts">趋势包含明确方向与蕴藏能量</span></span></div>
-    <div class="olrow lv3"><span class="gh">课</span><span class="ttl"><b>2. 周期机会与趋势主线</b><span class="sc">100%</span><span class="dur">14 分钟</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span><span class="src"><span class="cite2">总论1 19:18–33:04</span><span class="pts">股票的本质是周期加趋势</span></span></div>
-    <div class="olrow lv2"><span class="gh"><button class="caret" onclick="toggleGroup(this)" aria-label="折叠"></button>章</span><span class="ttl"><b>第三章 趋势的构成与运行特征</b><span class="cnt">1 课时</span></span><span class="acts"><button class="btn">改名</button><button class="btn">上移</button><button class="btn">下移</button><button class="btn">删</button></span></div>
-  </div>
- </div>
-
- <details class="why">
-  <summary>校验口径（4 条）</summary>
-  <div class="wb">
-   · 匹配度一律由出处推导（不是模型自评），所以每一条都能点开核对到原视频的哪几分钟<br>
-   · 教师原文的 7 行目录是下界，Agent 只在其上做证据匹配与分节；目录外的章节不会被创建<br>
-   · 课时估时按绑定出处的真实跨度计算，没有出处才取模型估值<br>
-   · 已剔除 2 个挂不上出处的模型课时（留痕，不阻塞批准）
-  </div>
- </details>
 </section>
 
 <!-- ---------- 屏幕 4：课件制作 ---------- -->
 <section class="scr" id="scr-build">
- <div class="ops-ph">
-  <div><div class="t">课件制作</div><div class="s">趋势交易总论 · 九步生产逐节进行；随时可以停下来改内容</div></div>
-  <div class="a">
-   <button class="btn" onclick="go('outline')">回到大纲</button>
-   <button class="btn stop" onclick="stopBuild()" id="stop-build-btn"><svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 停止制作</button>
-  </div>
- </div>
-
- <div class="steps5" style="margin-bottom:14px">
-  <a onclick="go('outline')"><i>1</i>课程大纲</a><span class="arw">→</span>
-  <a class="on"><i>2</i>课件制作</a><span class="arw">→</span>
-  <a><i>3</i>成品审阅</a><span class="arw">→</span>
-  <a><i>4</i>交付运营</a>
-  <span class="sep" style="flex:1"></span>
-  <span class="note">并行度 2 · 单课生产不阻塞其他课</span>
- </div>
-
- <div class="split3">
-  <!-- 左：课时列表 -->
-  <div class="tree">
-   <div class="th">课时 <span class="grow"></span><span class="tag run">1/4 完成</span></div>
-   <div class="tnode lv3" data-sec="s1"><span class="lv">1.1</span><span class="tt"><b>通道识别与趋势确认</b><small>已完成 · 6m12s</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span></span></span></div>
-   <div class="tnode lv3 on" data-sec="s2"><span class="lv">1.2</span><span class="tt"><b>趋势方向、能量与惯性</b><small>进行中 · 第 6 步 正文</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s c"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
-   <div class="tnode lv3" data-sec="s3"><span class="lv">1.3</span><span class="tt"><b>周期机会与趋势主线</b><small>排队中 · 前面 1 节</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
-   <div class="tnode lv3" data-sec="s4"><span class="lv">2.1</span><span class="tt"><b>从盈亏困惑到方法反思</b><small>排队中</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
-   <div style="padding:10px 14px"><button class="oe-add" style="width:100%">＋ 追加一节</button></div>
-  </div>
-
-  <!-- 中：当前节的工作区 -->
-  <div>
-   <div class="runbar" id="build-runbar">
-    <span class="pulse" id="build-pulse"></span>
-    <b id="build-state">第 2 节「趋势方向、能量与惯性」· 正在写正文</b>
-    <span class="grow"></span>
-    <span class="note" id="build-note">已用 3m48s · 12.4k tokens</span>
+ <!-- 制作工作区：页签切换本节产物 -->
+ <div class="ws">
+  <div class="ws-head">
+   <div class="ws-title">制作工作区 <span class="tag run">生成中 · 第 6/9 步</span><span class="grow"></span><span class="note">1.2 趋势方向、能量与惯性</span></div>
+   <div class="ctabs" role="tablist" aria-label="本节产物">
+    <button class="on" type="button" data-pane="p-doc">课件</button>
+    <button type="button" data-pane="p-src">出处<span class="n">2</span></button>
+    <button type="button" data-pane="p-lessons">课时<span class="n">1/4</span></button>
    </div>
+  </div>
+  <div class="ws-body">
 
-   <div class="doc">
-    <div class="dh">
-     <b>1.2 趋势方向、能量与惯性</b>
-     <span class="tag run">生成中 · 第 6/9 步</span>
-     <span class="right">
+   <div class="ctpane on" id="p-doc">
+    <div class="doc">
+     <div class="dh">
       <span class="note">出处：总论1 21:29–23:56</span>
-      <button class="btn sm">本节预览</button>
-     </span>
-    </div>
-    <div class="db">
-     <h4>一、方向与能量：趋势的两个维度</h4>
-     <p>趋势有两个维度：<b>方向</b>与<b>能量</b>。方向回答「往哪走」，能量回答「能走多远」。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 21:29</span></p>
-     <p class="sel">只有方向没有能量的趋势，走不远——它更像一次摆动，而不是趋势。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 22:04</span></p>
-     <p class="streaming">能量来自哪里？来自成交的持续性，来自推动的连续性。</p>
-     <div class="floatbar">
-      <button class="btn"><b>B</b></button><button class="btn"><i>I</i></button><button class="btn">改写</button>
-      <button class="btn danger">删段</button>
-      <span style="width:1px;background:var(--p-line);margin:0 4px"></span>
-      <button class="btn pri" onclick="saveEdit(this)">保存</button>
-      <button class="btn">撤销</button>
-    </div>
-    <p class="note" style="margin-top:8px">选中段落即可改：加粗 / 斜体 / 改写 / 删段。事实段与 `[[unit]]` 锚受保护——结构性改动走生产回灌。</p>
+      <span class="right">
+       <button class="btn sm">本节预览</button>
+      </span>
+     </div>
+     <div class="db">
+      <h4>一、方向与能量：趋势的两个维度</h4>
+      <p>趋势有两个维度：<b>方向</b>与<b>能量</b>。方向回答「往哪走」，能量回答「能走多远」。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 21:29</span></p>
+      <p class="sel">只有方向没有能量的趋势，走不远——它更像一次摆动，而不是趋势。<span class="anchor" title="出自 总论1 21:29–23:56">总论1 22:04</span></p>
+      <p class="streaming">能量来自哪里？来自成交的持续性，来自推动的连续性。</p>
+      <div class="floatbar">
+       <button class="btn"><b>B</b></button><button class="btn"><i>I</i></button><button class="btn">改写</button>
+       <button class="btn danger">删段</button>
+       <span style="width:1px;background:var(--p-line);margin:0 4px"></span>
+       <button class="btn pri" onclick="saveEdit(this)">保存</button>
+       <button class="btn">撤销</button>
+      </div>
 
-    <div class="media3">
-     <div class="mcard">
-      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-image"/></svg><span class="lbl">图示</span><span class="grow"></span><span class="tag ok">已生成</span></div>
-      <div class="mb">趋势方向与能量分解示意<br><span class="note">SVG · diagram · 不承载教学信息</span></div>
-     </div>
-     <div class="mcard">
-      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-chart"/></svg><span class="lbl">回放课件</span><span class="grow"></span><span class="tag run">校验中</span></div>
-      <div class="mb">600519 日线 · 均线束回踩<br><span class="note">断言 3 条 · 读回 1,284 根 K</span></div>
-     </div>
-     <div class="mcard">
-      <div class="mh"><svg style="width:13px;height:13px"><use href="#i-play"/></svg><span class="lbl">原片片段</span><span class="grow"></span><span class="tag ok">已定位</span></div>
-      <div class="mb">讲师原话 · 21:29–23:56<br><span class="note">2 段 · 关键帧 2 张</span></div>
+      <div class="media3">
+       <div class="mcard">
+        <div class="mh"><svg style="width:13px;height:13px"><use href="#i-image"/></svg><span class="lbl">图示</span><span class="grow"></span><span class="tag ok">已生成</span></div>
+        <div class="mb">趋势方向与能量分解示意<br><span class="note">SVG · diagram</span></div>
+       </div>
+       <div class="mcard">
+        <div class="mh"><svg style="width:13px;height:13px"><use href="#i-chart"/></svg><span class="lbl">回放课件</span><span class="grow"></span><span class="tag run">校验中</span></div>
+        <div class="mb">600519 日线 · 均线束回踩<br><span class="note">断言 3 条 · 读回 1,284 根 K</span></div>
+       </div>
+       <div class="mcard">
+        <div class="mh"><svg style="width:13px;height:13px"><use href="#i-play"/></svg><span class="lbl">原片片段</span><span class="grow"></span><span class="tag ok">已定位</span></div>
+        <div class="mb">讲师原话 · 21:29–23:56<br><span class="note">2 段 · 关键帧 2 张</span></div>
+       </div>
+      </div>
      </div>
     </div>
    </div>
 
-   <div class="ops-card" style="margin-top:12px">
-    <div class="h"><div><b>本节引用的素材</b><small>每个事实段都能回溯到原视频的哪几分钟</small></div><span class="tag gray">1 份素材 · 2 段出处</span></div>
-    <div class="b" style="padding-top:8px">
+   <div class="ctpane" id="p-src">
+    <div class="stabs">
+     <button class="on" type="button" data-pane="m-zl1">总论1<span class="n">本节 2 段</span></button>
+     <button type="button" data-pane="m-zl2">总论2<span class="n">本节 0 段</span></button>
+    </div>
+    <div class="spane on" id="m-zl1">
      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <figure class="kf" style="width:150px"><div class="thumb"><i style="height:44%"></i><i style="height:52%"></i><i style="height:66%" class="g"></i><i style="height:74%"></i></div><figcaption><span class="ts">21:29</span>方向与能量</figcaption></figure>
       <figure class="kf" style="width:150px"><div class="thumb"><i style="height:66%"></i><i style="height:58%"></i><i style="height:72%" class="g"></i><i style="height:82%"></i></div><figcaption><span class="ts">23:56</span>惯性</figcaption></figure>
-      <div class="note" style="flex:1;min-width:220px;line-height:1.9">趋势交易体系总论1.mp4 · 21:29–23:56<br>· 趋势包含明确方向与蕴藏能量<br>· 推动的连续性决定趋势的持续时间</div>
+      <div class="note" style="flex:1;min-width:220px;line-height:1.9">趋势交易体系总论1.mp4 · 21:29–23:56<br>· 趋势包含明确方向与蕴藏能量<br>· 推动的连续性决定趋势的持续时间<br><b>被 1.2「趋势方向、能量与惯性」引用</b></div>
+     </div>
+    </div>
+    <div class="spane" id="m-zl2">
+     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <figure class="kf" style="width:150px"><div class="thumb"><i style="height:38%"></i><i style="height:44%"></i><i style="height:52%" class="g"></i><i style="height:64%"></i></div><figcaption><span class="ts">08:12</span>级别与周期</figcaption></figure>
+      <div class="note" style="flex:1;min-width:220px;line-height:1.9">趋势交易体系总论2.mp4 · 08:12–09:45<br>· 级别决定趋势的成立与否，同一段行情在更大级别只是摆动<br>被 1.3「周期机会与趋势主线」引用 · <b>本节未引用</b></div>
      </div>
     </div>
    </div>
+
+   <div class="ctpane" id="p-lessons">
+    <div class="tnode lv3" data-sec="s1"><span class="lv">1.1</span><span class="tt"><b>通道识别与趋势确认</b><small>已完成 · 6m12s</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span></span></span></div>
+    <div class="tnode lv3 on" data-sec="s2"><span class="lv">1.2</span><span class="tt"><b>趋势方向、能量与惯性</b><small>进行中 · 第 6 步 正文</small><span class="steps mini" style="margin-top:6px"><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s d"></span><span class="s c"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+    <div class="tnode lv3" data-sec="s3"><span class="lv">1.3</span><span class="tt"><b>周期机会与趋势主线</b><small>排队中 · 前面 1 节</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+    <div class="tnode lv3" data-sec="s4"><span class="lv">2.1</span><span class="tt"><b>从盈亏困惑到方法反思</b><small>排队中</small><span class="steps mini" style="margin-top:6px"><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span><span class="s"></span></span></span></div>
+    <button class="oe-add" style="width:100%;margin-top:8px">＋ 追加一节</button>
+   </div>
+
   </div>
  </div>
 </section>
@@ -577,17 +587,13 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
 </main>
 </div>
 
-<!-- ============ 右侧 Agent 面板 ============ -->
-<aside class="agent-rail" id="agent-rail" aria-label="Agent 面板">
+<!-- ============ 中栏：Agent 对话流（页面主轴） ============ -->
+<aside class="agent-rail" id="agent-rail" aria-label="Agent 对话">
+ <div class="agent-crumb" id="agent-crumb">我的课程</div>
  <div class="agent-head">
   <span class="agent-ava" id="agent-ava">策</span>
   <div class="agent-id"><b id="agent-name">课程 Agent</b><small id="agent-sub">大纲起草</small></div>
   <span class="agent-live" id="agent-live"><i class="dot-ok"></i>空闲</span>
- </div>
- <div class="agent-tabs">
-  <label class="on" id="tab-chat">对话</label>
-  <label id="tab-run">执行<span class="n" id="n-run">1</span></label>
-  <label id="tab-files">产物<span class="n" id="n-files">4</span></label>
  </div>
 
  <div class="agent-body" id="agent-body">
@@ -623,14 +629,19 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
     <span class="m-av">A</span>
     <div class="m-body">
      <div class="m-meta">课程 Agent · 19:15</div>
-     <div class="m-text"><p>大纲好了，标题全是你的原文。<b>8 个节点全部有出处</b>，匹配度 93%～100%；剔了 2 个挂不上出处的模型课时（留痕，不影响批准）。</p>
+     <div class="m-text"><p>大纲好了，标题全是你的原文。<b>8 个节点全部有出处</b>，匹配度 93%～100%；剔了 2 个挂不上出处的模型课时。</p>
      <p>要我现在开始逐节做课件吗？</p></div>
     </div>
    </div>
-   <div class="interrupt" id="outline-interrupt">
-    <div class="ih"><span class="tag run">等待你批准</span>大纲 v1</div>
-    <div class="it">批准后锁定为基准版，逐节生产解锁</div>
-    <div class="ia" style="margin-top:9px"><button class="btn pri sm" onclick="approveOutline()">批准并开始制作</button><button class="btn sm">微调</button><button class="btn sm">打回重起草</button></div>
+   <div class="ask" id="outline-interrupt">
+    <div class="qh"><svg style="width:12px;height:12px"><use href="#i-check-c"/></svg>需要你确认 · 大纲就绪</div>
+    <div class="qt">大纲 v1 已就绪，是否批准并解锁逐节制作？</div>
+    <p>8 个节点全部有出处（匹配度 93%～100%）。批准后锁定为基准版。</p>
+    <div class="opts">
+     <button class="opt" type="button" onclick="approveOutline()"><span class="ok">✓</span><span class="ot"><b>批准并开始制作</b><small>8 节点 · 4 课时 · 素材覆盖 40%</small></span></button>
+     <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>打回重起草</b><small>告诉我不满意的点，我重新梳理</small></span></button>
+     <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>先在右栏微调</b><small>直接改大纲树，改完再叫我确认</small></span></button>
+    </div>
    </div>
   </div>
 
@@ -670,14 +681,14 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
     </div>
    </div>
    <div id="stop-card" style="display:none">
-    <div class="interrupt err">
-     <div class="ih"><span class="tag err">已停止</span>第 2 节 · 第 6 步「正文」</div>
-     <div class="it">我在当前步骤边界安全停下了</div>
-     <p style="margin:6px 0 0">已完成的前 5 步成果保留（案例股、行情、图示、回放课件）；正文写到一半的段落已保留为草稿，<b>没有部分落库</b>。随时可以改完继续。</p>
-     <div class="ia" style="margin-top:9px">
-      <button class="btn pri sm" onclick="resumeBuild()">改完继续制作</button>
-      <button class="btn sm" onclick="go('outline')">先改大纲</button>
-      <button class="btn sm">放弃本节重做</button>
+    <div class="ev err">已在第 6 步边界安全停止 · 前 5 步成果保留 · 无部分落库</div>
+    <div class="ask err">
+     <div class="qh"><span class="tag err">已停止</span>第 2 节 · 第 6 步「正文」</div>
+     <div class="qt">正文写到一半已保留为草稿。接下来怎么继续？</div>
+     <div class="opts">
+      <button class="opt" type="button" onclick="resumeBuild()"><span class="ok">✓</span><span class="ot"><b>改完这段就继续制作</b><small>从第 6 步续跑，前 5 步成果直接复用</small></span></button>
+      <button class="opt" type="button" onclick="go('outline')"><span class="ok">✓</span><span class="ot"><b>先去右栏改大纲</b><small>改完再回来继续</small></span></button>
+      <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>放弃本节重做</b><small>丢弃本节草稿，重新九步</small></span></button>
      </div>
     </div>
    </div>
@@ -690,7 +701,7 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
    <button onclick="focusChat('把第 2 节的方向与能量讲得更具体些。')">讲具体些</button>
    <button onclick="focusChat('这一节加一个反例。')">加反例</button>
    <button onclick="focusChat('换成周线级别再看一遍。')">换级别</button>
-   <button onclick="focusChat('这一节先停，我要改内容。')">先停一下</button>
+   <button onclick="stopBuild()">停止制作</button>
   </div>
   <div class="composer">
    <textarea id="chat-input" placeholder="告诉 Agent 要补什么、改哪一段，或让它停下…"></textarea>
@@ -724,32 +735,31 @@ dialog.newc::backdrop{background:rgba(16,24,40,.42)}
     <label class="pi on" data-pick><input type="checkbox" checked><span><span class="nm">趋势交易体系总论1.mp4</span><span class="meta">33:09 · 理解完成 · 24 要点</span></span><span class="st tag ok">就绪</span></label>
     <label class="pi" data-pick><input type="checkbox"><span><span class="nm">趋势交易体系总论2.mp4</span><span class="meta">41:22 · 理解未完成（17/32 块失败）</span></span><span class="st tag warn">需重跑理解</span></label>
     <label class="pi" data-pick><input type="checkbox" disabled><span><span class="nm">级别与周期公开课.mp4</span><span class="meta">22:10 · 逐字稿 62%</span></span><span class="st tag run">解析中 · 不可选</span></label>
-    <p class="note" style="padding:8px 12px;margin:0">没勾选 = 用这门课的全部素材。勾了就只对勾选的做规划；素材未就绪时「生成大纲」会被拒并说明原因。</p>
    </div>
    <details class="toolcard">
     <summary><span class="tname">目录先验（可选）</span><span class="targs">人工目录 · 三级：篇 / 章 / 课时</span></summary>
     <div class="tout">
      <textarea class="fi" style="min-height:92px;width:100%" placeholder="第一篇 交易认知的反思与选择&#10;第一章 从盈亏困惑到方法反思&#10;第二篇 趋势理论的基本框架&#10;第二章 通道识别与趋势形成&#10;1. 通道识别与趋势确认"></textarea>
-     <p class="note" style="margin:8px 0 0">贴了就以你的目录为下界（标题取原文）；不贴则由 Agent 代拟一版给你审。目录外的内容不会创建章节。</p>
     </div>
    </details>
   </div>
   <div class="nf">
-   <span class="note" style="margin-right:auto">创建后自动进入「课程大纲」，Agent 会把素材梳理成大纲。</span>
    <button class="btn" value="cancel">取消</button>
    <button class="btn pri" value="default" id="nc-go">创建课程并生成大纲</button>
   </div>
  </form>
 </dialog>
 
+<script src="assets/ws.js" defer></script>
+<script src="assets/outline.js" defer></script>
 <script src="assets/sb-course.js" defer></script>
 <script>
-/* ---------------- 屏幕切换 ---------------- */
+/* ---------------- 屏幕切换（顶部面包屑；交互动作全部在对话流） ---------------- */
 var SCREENS = {
   courses: { crumb: '我的课程', agent: null },
   library: { crumb: '素材库', agent: null },
-  outline: { crumb: '筹码分布实战 / 课程大纲', agent: 'outline' },
-  build:   { crumb: '趋势交易总论 / 课件制作', agent: 'build' }
+  outline: { crumb: '筹码分布实战 / 课程大纲 v1', agent: 'outline' },
+  build:   { crumb: '趋势交易总论 / 第一章 通道识别与趋势形成 / 1.2 趋势方向、能量与惯性', agent: 'build' }
 };
 function go(name){
   document.querySelectorAll('.scr').forEach(function(s){ s.classList.toggle('on', s.id === 'scr-' + name); });
@@ -757,10 +767,10 @@ function go(name){
     var t = a.getAttribute('data-go');
     if (a.classList.contains('ops-i')) a.classList.toggle('on', t === name);
   });
-  document.getElementById('crumb').textContent = SCREENS[name].crumb;
+  document.getElementById('agent-crumb').textContent = SCREENS[name].crumb;
   var agent = SCREENS[name].agent;
   var app = document.getElementById('app');
-  app.classList.toggle('has-agent', !!agent);
+  app.classList.toggle('chat-center', !!agent);
   document.getElementById('pane-outline').style.display = (agent === 'outline') ? '' : 'none';
   document.getElementById('pane-build').style.display = (agent === 'build') ? '' : 'none';
   if (agent === 'outline'){
@@ -774,8 +784,6 @@ function go(name){
     document.getElementById('agent-name').textContent = '制作 Agent';
     document.getElementById('agent-sub').textContent = '九步逐节生产';
   }
-  if (name === 'courses') document.getElementById('top-pill').innerHTML = '<i class="dot-ok"></i>素材就绪';
-  if (name === 'library') document.getElementById('top-pill').innerHTML = '<i class="dot-wait"></i>1 份解析中';
   if (location.hash.slice(1) !== name) location.hash = name;
   window.scrollTo({top: 0});
 }
@@ -786,22 +794,6 @@ window.addEventListener('hashchange', function(){
 document.querySelectorAll('[data-go]').forEach(function(a){
   a.addEventListener('click', function(e){ go(a.getAttribute('data-go')); });
 });
-
-/* ---------------- 大纲分组折叠 ---------------- */
-function toggleGroup(btn){
-  var row = btn.closest('.olrow');
-  var lvl = row.classList.contains('lv1') ? 1 : 2;
-  var collapsed = row.classList.toggle('closed');
-  var sib = row.nextElementSibling;
-  while (sib){
-    if (sib.classList.contains('olrow')){
-      var l = sib.classList.contains('lv1') ? 1 : (sib.classList.contains('lv2') ? 2 : 3);
-      if (l <= lvl) break;
-      sib.style.display = collapsed ? 'none' : '';
-    }
-    sib = sib.nextElementSibling;
-  }
-}
 
 /* ---------------- 素材阶段：重新生成 / 删除结果 ---------------- */
 function rerun(btn, label, back){
@@ -836,44 +828,24 @@ function createCourse(e){
   e.preventDefault();
   document.getElementById('new-course').close();
   go('outline');
-  var st = document.getElementById('outline-state');
-  var note = document.getElementById('outline-state-note');
-  document.getElementById('outline-pulse').style.display = '';
-  st.textContent = '正在梳理素材 → 生成大纲…';
-  note.textContent = '已读 2 份素材 · 73 条讲解要点';
   document.getElementById('agent-live').innerHTML = '<i class="dot-run"></i>生成中';
   document.getElementById('outline-interrupt').style.display = 'none';
   setTimeout(function(){
-    st.textContent = '大纲已生成';
-    note.textContent = '自检通过 · 匹配度全部由出处推导';
     document.getElementById('agent-live').innerHTML = '<i class="dot-ok"></i>待你批准';
     document.getElementById('outline-interrupt').style.display = '';
   }, 2600);
 }
 function approveOutline(){
   go('build');
-  document.getElementById('build-state').textContent = '第 1 节「通道识别与趋势确认」· 案例股';
-  document.getElementById('build-note').textContent = '刚开始 · 0.4k tokens';
 }
 
 /* ---------------- 制作：停止 / 继续 ---------------- */
 function stopBuild(){
   document.getElementById('stop-card').style.display = '';
-  document.getElementById('build-runbar').classList.add('stop');
-  document.getElementById('build-runbar').classList.remove('runbar');
-  document.getElementById('build-runbar').classList.add('runbar','stop');
-  document.getElementById('build-pulse').style.display = 'none';
-  document.getElementById('build-state').textContent = '已停止 · 第 2 节第 6 步「正文」';
-  document.getElementById('build-note').textContent = '前 5 步成果保留 · 正文半成品保留为草稿';
-  document.getElementById('stop-build-btn').innerHTML = '<svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 已停止';
   document.getElementById('agent-live').innerHTML = '<i class="dot-wait"></i>已停止';
 }
 function resumeBuild(){
   document.getElementById('stop-card').style.display = 'none';
-  document.getElementById('build-pulse').style.display = '';
-  document.getElementById('build-state').textContent = '第 2 节「趋势方向、能量与惯性」· 正在写正文';
-  document.getElementById('build-note').textContent = '已用 3m48s · 12.4k tokens';
-  document.getElementById('stop-build-btn').innerHTML = '<svg style="width:12px;height:12px"><use href="#i-stop"/></svg> 停止制作';
   document.getElementById('agent-live').innerHTML = '<i class="dot-run"></i>进行中';
 }
 function saveEdit(btn){

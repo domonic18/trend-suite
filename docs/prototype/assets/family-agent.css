@@ -1,14 +1,15 @@
 /* ============================================================
    教师工作台 · Agent 协作层（family-agent.css）
    依赖 tokens.css / family-portal.css / family-ops.css / family-teacher.css
-   布局：左导航 + 中工件区 + 右 Agent 面板（三栏工作台）
+   布局：has-agent＝左导航 + 中工件 + 右 Agent 面板（旧参考页）；
+         chat-center＝左导航 + 中对话流 + 右产物微调（主流程统一交互）
    组件：阶段条 / 下一步 / Agent 对话 / 计划(todos) / 工具调用 /
          子代理任务 / HITL 打断卡 / Composer / 执行树 / 产物树
    对齐 deepagents 语义：write_todos → 计划卡；task 子代理 → 任务卡；
    __interrupt__ → 打断卡；文件系统 → 产物页签；messages 流 → 对话流。
    ============================================================ */
 
-/* ---------------- 三栏工作台 ---------------- */
+/* ---------------- 三栏工作台（旧参考页） ---------------- */
 .ops-app.has-agent { grid-template-columns: 224px minmax(0, 1fr) 384px; }
 .ops-app.has-agent .wb-col { min-width: 0; }
 .ops-app.has-agent .ops-main { max-width: 1080px; }
@@ -19,6 +20,44 @@
   .ops-app.has-agent { grid-template-columns: 208px minmax(0, 1fr); }
   .ops-app.has-agent .agent-rail { display: none; }
 }
+
+/* ---------------- 中置对话（主流程统一交互） ----------------
+   对话流升级为页面主轴：中栏即 Agent 对话（真多轮），右栏收产物呈现与微调。
+   右栏调整即时生效、不进入对话；需要用户确认的事以 AskQuestion 卡在对话流内呈现。 */
+.ops-app > .agent-rail { display: none; }
+.ops-app.has-agent > .agent-rail { display: flex; }
+.ops-app.chat-center { grid-template-columns: 224px minmax(0, 1fr) 432px; }
+.ops-app.chat-center > .agent-rail { display: flex; }
+.ops-app.chat-center > .wb-col { min-width: 0; order: 1; }
+.ops-app.chat-center .agent-rail { border-left: none; border-right: 1px solid var(--p-line); }
+@media (max-width: 1240px) {
+  .ops-app.chat-center { grid-template-columns: 208px minmax(0, 1fr) 392px; }
+}
+@media (max-width: 1000px) {
+  .ops-app.chat-center { grid-template-columns: 208px minmax(0, 1fr); }
+  .ops-app.chat-center > .wb-col { display: none; }
+}
+
+/* ---------------- 右栏工作区（WorkBuddy 式页签） ----------------
+   右栏是一整个工作区页面：头部页签切换产物（大纲 / 术语 / 分节…），
+   正文区滚动；内容即产物，微调即生效。 */
+.ws { position: sticky; top: 0; max-height: 100vh; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--p-line); border-radius: 12px; overflow: hidden; box-shadow: var(--p-sh-sm); }
+.ws-head { flex: none; border-bottom: 1px solid var(--p-line); background: #fafbfd; padding: 8px 10px 0; }
+.ws-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 2px 2px 8px; font-size: 13px; font-weight: 700; color: var(--p-ink); }
+.ws-title .grow { flex: 1; }
+.ws-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* 工作区宽度可拖拽调整（把手贴住右栏左缘） */
+.ops-app.chat-center > .wb-col { position: relative; }
+.ws-drag { position: absolute; left: -5px; top: 0; bottom: 0; width: 10px; cursor: col-resize; z-index: 6; }
+.ws-drag::after { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: transparent; transition: background .12s; }
+.ws-drag:hover::after, .ws-drag.active::after { background: var(--p-pri); opacity: .5; }
+/* 工作区内的次级页签（如出处按素材切换） */
+.ws .stabs { display: flex; gap: 2px; border-bottom: 1px solid var(--p-line); margin-bottom: 10px; }
+.ws .stabs button { background: none; border: none; border-bottom: 2px solid transparent; padding: 6px 10px; font-size: 12px; color: var(--p-mut); cursor: pointer; white-space: nowrap; }
+.ws .stabs button.on { color: var(--p-pri); border-bottom-color: var(--p-pri); font-weight: 600; }
+.ws .stabs .n { font: 500 10px var(--font-mono); color: #9aa3b8; margin-left: 4px; }
+.spane { display: none; }
+.spane.on { display: block; }
 
 /* ---------------- 课程切换器（按钮 + 锚定浮层） ----------------
    侧栏上下文切换，对齐 Notion / Linear / Vercel 的 workspace switcher：
@@ -88,6 +127,8 @@
 .agent-rail { position: sticky; top: 0; height: 100vh; min-height: 0; display: flex; flex-direction: column; background: #fff; border-left: 1px solid var(--p-line); }
 .atab-in { position: absolute; opacity: 0; pointer-events: none; }
 .agent-head { height: 52px; flex: none; display: flex; align-items: center; gap: 9px; padding: 0 14px; border-bottom: 1px solid var(--p-line); }
+/* 面包屑：对话流上方第一行，显示当前制作的课件位置（课程 / 章 / 课时） */
+.agent-crumb { flex: none; padding: 8px 14px; border-bottom: 1px solid var(--p-line); background: #fafbfd; font-size: 11.5px; color: var(--p-mut); line-height: 1.5; word-break: break-all; }
 .agent-ava { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, #2563eb, #1e4fd8); color: #fff; font-size: 12px; font-weight: 700; }
 .agent-id { min-width: 0; }
 .agent-id b { display: block; font-size: 13px; line-height: 1.3; }
@@ -191,6 +232,40 @@
 .reject-form .rf .fr { display: flex; gap: 6px; align-items: center; }
 .reject-form .rf .fi { font-size: 12px; }
 .reject-form .rf textarea { min-height: 54px; resize: vertical; }
+
+/* ---------------- AskQuestion 确认卡（对话流内提问） ----------------
+   Agent 用行业标准 ask_question 在对话流内发起提问：问题 + 选项 + 说明，
+   点选即回答；「批准」这类确认动作由服务端按所选答案确定性执行，不经 LLM。 */
+.ask { border: 1px solid #d4e3ff; background: #f5f9ff; border-radius: 12px; padding: 11px 12px; margin: 8px 0 12px; box-shadow: 0 4px 14px rgba(37, 99, 235, .06); }
+.ask .qh { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .03em; color: var(--p-pri); flex-wrap: wrap; }
+.ask .qt { font-size: 13px; font-weight: 650; margin: 5px 0 3px; color: var(--p-ink); }
+.ask p { margin: 0 0 8px; font-size: 12px; line-height: 1.7; color: var(--p-mut); }
+.ask p b { color: var(--p-ink); font-weight: 600; }
+.ask .opts { display: grid; gap: 6px; }
+.ask .opt { display: flex; align-items: flex-start; gap: 8px; text-align: left; width: 100%; border: 1px solid var(--p-line); background: #fff; border-radius: 9px; padding: 8px 10px; font: inherit; cursor: pointer; }
+.ask .opt:hover { border-color: var(--p-pri); box-shadow: 0 0 0 2px var(--p-pri-soft); }
+.ask .opt .ot { flex: 1; min-width: 0; }
+.ask .opt .ot b { display: block; font-size: 12.5px; color: var(--p-ink); }
+.ask .opt .ot small { display: block; font-size: 11px; color: var(--p-mut); line-height: 1.6; margin-top: 1px; }
+.ask .opt .ok { width: 14px; height: 14px; border-radius: 50%; background: var(--p-pri); color: #fff; display: grid; place-items: center; font-size: 9px; flex: none; margin-top: 2px; opacity: 0; }
+.ask .opt.on { border-color: var(--p-pri); background: var(--p-pri-soft); }
+.ask .opt.on .ok { opacity: 1; }
+.ask.locked .opt { pointer-events: none; opacity: .72; }
+.ask.locked .opt.on { opacity: 1; }
+.ask.err { border-color: #f3cfcb; background: #fdeeed; box-shadow: none; }
+.ask.err .qh { color: #b3352c; }
+.ask.err .opt.on { border-color: #b3352c; background: #fff; }
+.ask.err .opt .ok { background: #b3352c; }
+
+/* ---------------- 答案回显 / 系统事件行 ----------------
+   answer：用户所选选项的回显；event：系统事实（任务起止 / 失败原因 / 确定性动作结果），
+   两类都占对话流一行但不展开气泡。 */
+.ans { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 12px; padding: 5px 10px; border-radius: 999px; background: var(--p-pri-soft); color: var(--p-pri); font-size: 12px; }
+.ans b { font-weight: 650; }
+.ev { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; font-size: 11px; color: #9aa3b8; font-family: var(--font-mono); }
+.ev::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #c4ccdb; flex: none; }
+.ev.err::before { background: #d9483f; }
+.ev.ok::before { background: #0f9d76; }
 
 /* ---------------- Composer ---------------- */
 .composer { border: 1px solid var(--p-line); border-radius: 12px; background: #fff; padding: 8px 9px; box-shadow: var(--p-sh-sm); }
@@ -469,3 +544,46 @@ details.mat summary::-webkit-details-marker { display: none; }
 
 .oe-row.slim { grid-template-columns: 16px 24px minmax(0, 1fr) auto; padding: 9px 10px; }
 .oe-row.slim .acts { opacity: 1; }
+
+
+/* ============ 大纲树 outliner（右栏直接微调：拖拽挪位 / 悬停行尾操作 / 行内改名） ============ */
+.ot { font-size: 12.5px; line-height: 1.45; }
+.ot-item { border-radius: 7px; }
+.ot-item.dragging { opacity: .35; }
+.ot-row { display: flex; align-items: flex-start; gap: 6px; padding: 5px 6px; border-radius: 7px; }
+.ot-row:hover { background: #f6f8fb; }
+.ot-chev { flex: none; width: 15px; height: 18px; border: 0; background: none; cursor: pointer; position: relative; margin-top: 1px; padding: 0; }
+.ot-chev::before { content: ''; position: absolute; left: 5px; top: 7px; width: 0; height: 0; border-top: 5px solid #b6c0cf; border-left: 4px solid transparent; border-right: 4px solid transparent; transition: transform .15s; }
+.ot-item.closed > .ot-row .ot-chev::before { transform: rotate(-90deg); }
+.ot-chev.leaf { visibility: hidden; }
+.ot-grip { flex: none; width: 12px; margin-top: 3px; color: #9aa6b8; cursor: grab; font-size: 10px; letter-spacing: -1.2px; opacity: .75; user-select: none; }
+.ot-row:hover .ot-grip { opacity: 1; color: #6f7d92; }
+.ot-grip:active { cursor: grabbing; }
+.ot-badge { flex: none; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font: 700 10px var(--font-mono); margin-top: 1px; }
+.lv-pian > .ot-row .ot-badge { background: #232b3a; color: #fff; }
+.lv-zhang > .ot-row .ot-badge { background: var(--p-pri-soft); color: var(--p-pri); }
+.lv-ke > .ot-row .ot-badge { border: 1px solid var(--p-line); color: var(--p-mut); background: #fff; }
+.ot-main { flex: 1; min-width: 0; }
+.ot-title { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.lv-pian .ot-name, .lv-zhang .ot-name { font-weight: 650; }
+.lv-ke .ot-name { font-weight: 500; }
+.ot-num { font: 700 10.5px var(--font-mono); color: #8f99ad; }
+.ot-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 8px; margin-top: 2px; font-size: 10.5px; color: #9aa3b8; }
+.ot-meta .sc { font: 700 10.5px var(--font-mono); color: #1f9d6c; }
+.ot-meta .cite2 { display: inline-flex; border: 1px solid var(--p-line); border-radius: 5px; background: #fff; padding: 0 5px; font: 500 10px var(--font-mono); color: var(--p-mut); }
+.ot-meta .chip { border: 1px solid #bcd0f7; background: #f7faff; color: var(--p-pri); border-radius: 5px; padding: 0 5px; font-size: 10px; }
+.ot-meta .warn-t { color: #b7791f; font-weight: 600; }
+.ot-cnt { font-size: 10.5px; color: #9aa3b8; }
+.ot-item.ot-empty > .ot-row .ot-cnt { color: #b7791f; font-weight: 600; }
+.ot-acts { flex: none; display: flex; gap: 1px; opacity: 0; margin-top: 1px; }
+.ot-row:hover .ot-acts { opacity: 1; }
+.ot-acts button { width: 20px; height: 20px; border: 0; background: none; border-radius: 5px; color: #8f99ad; cursor: pointer; font-size: 11px; display: grid; place-items: center; padding: 0; }
+.ot-acts button:hover { background: #e8eef5; color: var(--p-ink); }
+.ot-acts button[data-act="del"]:hover { background: #fdecec; color: #d64545; }
+.ot-kids { margin-left: 13px; padding-left: 11px; border-left: 1px solid #e4eaf2; }
+.ot-item.closed > .ot-kids { display: none; }
+.ot-name[contenteditable="true"] { outline: 1.5px solid var(--p-pri); outline-offset: 2px; border-radius: 3px; background: #fff; min-width: 40px; }
+.ot-item.drop-before > .ot-row { box-shadow: 0 -2px 0 var(--p-pri); }
+.ot-item.drop-after > .ot-row { box-shadow: 0 2px 0 var(--p-pri); }
+.ot-add { margin-top: 6px; border: 1px dashed var(--p-line); border-radius: 7px; padding: 5px; text-align: center; color: #8f99ad; font-size: 11.5px; cursor: pointer; background: none; width: 100%; }
+.ot-add:hover { border-color: var(--p-pri); color: var(--p-pri); background: #f7faff; }

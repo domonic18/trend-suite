@@ -2,15 +2,15 @@
 <title>素材与方案 · 总论卷 · 生产工作台</title>
 <link rel="stylesheet" href="assets/tokens.css"><link rel="stylesheet" href="assets/family-portal.css"><link rel="stylesheet" href="assets/family-ops.css"><link rel="stylesheet" href="assets/family-teacher.css"><link rel="stylesheet" href="assets/family-agent.css">
 <style>
-.oe-row .ot{min-width:0}
-.oe-row .ot b{display:block;font-size:12.5px}
-.oe-row .ot .chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
-.oe-row .ot .chips .chip{padding:0 6px;font-size:10px}
-.oe-row .ot .chips .chip.err{border-color:#f3cfcb;background:#fdeeed;color:#b3352c}
-.oe-row .ot .chips .chip.warn{border-color:#f0e2bd;background:#fffdf7;color:#8a5a00}
+/* 右栏窄面板适配 */
+.hint-inline{display:flex;align-items:center;gap:6px;font-size:11px;color:#9aa3b8;margin-top:8px}
+.hint-inline svg{width:12px;height:12px;flex:none}
+.vtrail .vt{display:flex;align-items:baseline;gap:8px;padding:7px 2px;border-bottom:1px dashed #eef1f6;font-size:12px;color:var(--p-mut);line-height:1.6}
+.vtrail .vt:last-child{border-bottom:none}
+.vtrail .vt .v{font:600 10.5px var(--font-mono);color:var(--p-pri);flex:none}
+.vtrail .vt .src{font:500 10px var(--font-mono);color:#9aa3b8;flex:none}
 </style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4.2 3.4c-.5.4-.8.2-.8-.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
@@ -19,16 +19,13 @@
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
 <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
-<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
 <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
-<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 7.6v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
 </svg>
-<div class="ops-app has-agent">
+<div class="ops-app chat-center">
 
 <aside class="ops-sb">
  <a class="ops-brand" href="index.html"><span class="mk">趋</span><span><b>趋势课程</b><small>生产工作台</small></span></a>
@@ -38,13 +35,13 @@
   <div class="sb-course" data-sb-course>
    <button class="sbc-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="切换课程">
     <span class="dot-run"></span>
-    <span class="sbc-t"><b>总论卷</b><small>生产中 · 3/6 章</small></span>
+    <span class="sbc-t"><b>总论卷</b><small>方案待批准 · v5</small></span>
     <svg class="sbc-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
    </button>
    <div class="sbc-pop" role="menu" aria-label="切换课程">
     <div class="sbc-h">切换课程</div>
-    <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="总论卷" data-meta="生产中 · 3/6 章">
-     <span class="dot-run"></span><span class="sbc-t"><b>总论卷</b><small>6 章 · 26 节 · 生产中</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <button class="sbc-i on" type="button" role="menuitemradio" aria-checked="true" data-dot="dot-run" data-name="总论卷" data-meta="方案待批准 · v5">
+     <span class="dot-run"></span><span class="sbc-t"><b>总论卷</b><small>6 章 · 26 节 · 方案待批准</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <button class="sbc-i" type="button" role="menuitemradio" aria-checked="false" data-dot="dot-idle" data-name="筹码分布卷" data-meta="草稿 · 暂无章节">
      <span class="dot-idle"></span><span class="sbc-t"><b>筹码分布卷</b><small>空课程 · 未上传素材</small></span><svg class="sbc-chk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -64,239 +61,98 @@
  <div class="ops-user"><span class="ava">周</span><span><span class="un">周老师</span><br><span class="ur">producer</span></span><a class="out" href="teacher-login.html">退出</a></div>
 </aside>
 
-<div class="wb-col">
-<header class="ops-top">
- <span><a href="teacher-workbench.html" style="color:var(--p-mut)">所有课程</a></span><span class="sep">/</span><b>总论卷 · 素材与方案</b>
- <span class="right">
-  <span class="agent-pill warn"><i class="dot-wait"></i>Agent 等待你确认</span>
-  <a href="index.html" class="note">原型索引</a>
- </span>
-</header>
-<main class="ops-main">
-
- <div class="ops-ph">
-  <div><div class="t">课程大纲 <span class="tag warn" style="vertical-align:2px">待确认</span></div></div>
-  <div class="a"><a class="btn sm" href="../flow/teacher-e2e.html">查看端到端流程</a></div>
- </div>
-
- <!-- 阶段内子页 -->
- <div class="stage-tabs" aria-label="阶段 1 · 素材与方案">
-  <a href="teacher-material.html">上传与转写</a>
-  <a href="teacher-plan.html" class="on">制作方案</a>
- </div>
-
- <div class="nextaction">
-  <span class="na-ic"><svg><use href="#i-warn"/></svg></span>
-  <div class="na-txt"><b>第 4 章与素材匹配度 41%，需你决定</b></div>
-  <a class="btn pri" href="#int-gate1">去处理</a>
- </div>
-
- <!-- 梳理入口 -->
- <div class="ops-card" id="trigger">
-  <div class="b" style="padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-   <b style="font-size:12.5px">素材 3</b><span class="note">2 份可用</span>
-   <a class="note" href="teacher-material.html" style="color:var(--p-pri)">打开素材库</a>
-   <span style="flex:1"></span>
-   <span class="tag ok">v4 · 10:38</span>
-   <button class="btn sm" onclick="focusPlan('依据当前素材重新梳理一版大纲，保留已有章节编号。')">重新梳理</button>
-  </div>
- </div>
-
- <!-- 课程大纲 v4 -->
- <div class="ops-card" id="outline">
-  <div class="h"><div><b>课程大纲</b><small>v4 · 6 章</small></div>
-   <button class="btn sm" onclick="focusPlan('请优化当前大纲：指出过粗或过细的章节，并给出调整建议。')">让 Agent 改</button></div>
-  <div class="b" style="padding-top:6px">
-
-   <div class="nextaction" style="margin:0 0 10px;background:#f7faff;border-color:#d4e3ff">
-    <span class="na-ic"><svg><use href="#i-spark"/></svg></span>
-    <div class="na-txt"><b>建议补 2 处术语对照</b><span>第 3 章「均线束 / 均线组」· 第 5 章「筹码峰 / 筹码峰迁移」</span></div>
-    <button class="btn sm" onclick="focusPlan('采纳建议：第 3 章补「均线束 / 均线组」术语对照；第 5 章补「筹码峰 / 筹码峰迁移」术语对照。')">采纳</button>
-   </div>
-
-   <div class="oe">
-    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">01</span><div class="ot"><b>什么是趋势</b></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">02</span><div class="ot"><b>趋势的阻尼运动</b></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">03</span><div class="ot"><b>均线与多空分界</b></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="oe-row slim err" id="mismatch"><span class="drag">⠿</span><span class="gh">04</span><div class="ot"><b>周线级别判断</b></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end"><span class="st st-err"><i></i>待决定</span><a class="btn" href="teacher-material.html">补素材</a></div></div>
-    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">05</span><div class="ot"><b>筹码密集与发散</b></div><span class="st st-ok"><i></i>通过</span></div>
-    <div class="oe-row slim"><span class="drag">⠿</span><span class="gh">06</span><div class="ot"><b>综合研判框架</b></div><span class="st st-ok"><i></i>通过</span></div>
-   </div>
-
-   <details class="toolcard" style="margin-top:14px">
-    <summary><span class="tname">术语与概念图谱</span><span class="targs">26 术语 · 14 别名 · 1 处冲突待裁决</span></summary>
-    <div class="tout">
-     <div class="grid2">
-      <div>
-     <div class="sec-title">概念图谱 <span class="n">26 术语 · 14 别名 · 拒绝自环 2</span></div>
-     <table class="mini-tbl">
-      <tr><th>术语</th><th>别名</th><th>依赖</th></tr>
-      <tr><td>趋势</td><td>—</td><td>级别</td></tr>
-      <tr><td>阻尼运动</td><td>动能衰竭</td><td>动能</td></tr>
-      <tr><td>均线束</td><td>均线组</td><td>M60</td></tr>
-      <tr><td>假突破</td><td>诱多</td><td>—</td></tr>
-      <tr><td>周期共振</td><td>—</td><td>级别</td></tr>
-     </table>
-    </div>
-    <div>
-     <div class="sec-title">术语表 <span class="n">正文与课件校验基准</span></div>
-     <table class="mini-tbl">
-      <tr><th>名称</th><th>状态</th><th>备注</th></tr>
-      <tr><td>假突破</td><td><span class="tag ok">draft</span></td><td>别名 诱多</td></tr>
-      <tr><td>阻尼运动</td><td><span class="tag ok">draft</span></td><td>别名 动能衰竭</td></tr>
-      <tr><td>均线束</td><td><span class="tag warn">待裁决</span></td><td>与「均线组」冲突</td></tr>
-      <tr><td>筹码峰</td><td><span class="tag ok">draft</span></td><td>—</td></tr>
-     </table>
-     <p class="note" style="margin-top:6px">改名走「归档 + 新建」，归档可逆；重复名返回 409。</p>
-      </div>
-     </div>
-    </div>
-   </details>
-
-   <details class="toolcard" style="margin-top:12px">
-    <summary><span class="tname">分节计划</span><span class="targs">6 节 · 每节一个逐节子代理</span></summary>
-    <div class="tout">
-     <table class="mini-tbl">
-      <tr><th>节</th><th>子节</th><th>预估时长</th><th>并行</th></tr>
-      <tr><td>第 1 章 什么是趋势</td><td>3</td><td>18 分钟</td><td>slot 1</td></tr>
-      <tr><td>第 2 章 趋势的阻尼运动</td><td>4</td><td>22 分钟</td><td>slot 2</td></tr>
-      <tr><td>第 3 章 均线与多空分界</td><td>3</td><td>19 分钟</td><td>slot 3</td></tr>
-      <tr><td>第 4 章 周线级别判断</td><td>3</td><td>16 分钟</td><td>待裁决</td></tr>
-     </table>
-    </div>
-   </details>
-
-  </div>
- </div>
-
-</main>
-</div>
-
-<!-- ================= Agent 面板 ================= -->
-<aside class="agent-rail" aria-label="制作 Agent">
- <input class="atab-in" type="radio" name="atab" id="atab-chat" checked>
- <input class="atab-in" type="radio" name="atab" id="atab-run">
- <input class="atab-in" type="radio" name="atab" id="atab-files">
-
+<!-- ================= 中栏：Agent 对话流（页面主轴） ================= -->
+<aside class="agent-rail" aria-label="制作 Agent 对话">
+ <div class="agent-crumb">总论卷 / 制作方案 v5</div>
  <div class="agent-head">
   <span class="agent-ava">制</span>
-  <div class="agent-id"><b>制作 Agent</b><small>综合 Agent · 方案起草</small></div>
-  <span class="agent-live"><i class="dot-wait"></i>等待你确认</span>
- </div>
-
- <div class="agent-tabs">
-  <label for="atab-chat">对话</label>
-  <label for="atab-run">执行<span class="n">4</span></label>
-  <label for="atab-files">产物<span class="n">9</span></label>
+  <div class="agent-id"><b>制作 Agent</b><small>总论卷 · 方案对话</small></div>
+  <span class="agent-live"><i class="dot-wait"></i>等你确认</span>
  </div>
 
  <div class="agent-body">
-  <div class="agent-pane pane-chat">
 
-   <div class="msg">
-    <span class="m-av">A</span>
-    <div class="m-body">
-     <div class="m-meta">制作 Agent · 10:43</div>
-     <div class="m-text"><p>已读取 2 份素材、128 units。大纲 v4 已起草；第 4 章匹配度 41%，需你决定。</p></div>
-     <div class="planw">
-      <div class="ph">执行计划 <span class="n">4/5</span></div>
-      <div class="pw-item done"><span class="tick">✓</span><span>读取素材</span><span class="pn">128</span></div>
-      <div class="pw-item done"><span class="tick">✓</span><span>目录校验</span><span class="pn">5/6</span></div>
-      <div class="pw-item done"><span class="tick">✓</span><span>概念归一</span><span class="pn">26</span></div>
-      <div class="pw-item done"><span class="tick">✓</span><span>起草 v4</span><span class="pn">10:43</span></div>
-      <div class="pw-item doing"><span class="tick"></span><span>等你确认</span><span class="pn">now</span></div>
-     </div>
-     <div class="tool-group">
-      <div class="tg-h">4 次工具调用 · 12.4k tokens</div>
-      <details class="tool"><summary><span class="tn">cloud_read_units</span><span class="ta">{...}</span><span class="ts">12.4s</span></summary><div class="tbody">{"units":128,"frames":42}</div></details>
-      <details class="tool"><summary><span class="tn">cloud_plan_write</span><span class="ta">{"version":4}</span><span class="ts">3.2s</span></summary><div class="tbody">{"path":"plan/v4.md","status":"draft"}</div></details>
-     </div>
-    </div>
-   </div>
+  <div class="ev ok">素材已读取 · 2 份 / 128 units / 42 frames</div>
 
-   <div class="msg user">
-    <span class="m-av">周</span>
-    <div class="m-body"><div class="m-meta">你 · 10:41</div><div class="m-text"><p>「假突破」统一改成「诱多」。</p></div></div>
-   </div>
-
-   <div class="msg">
-    <span class="m-av">A</span>
-    <div class="m-body">
-     <div class="m-meta">制作 Agent · 10:43</div>
-     <div class="m-text"><p>已改名 1 处：<b>「假突破」→「诱多」</b>。章数不变。</p></div>
-    </div>
-   </div>
-
-   <!-- 大纲确认：内联打断卡 -->
-   <div class="interrupt" id="int-gate1">
-    <div class="ih"><span class="tag run">等待你确认</span> 课程大纲 v4</div>
-    <div class="it">第 4 章匹配度 41%，需你决定</div>
-    <div class="ia"><a class="btn sm" href="teacher-material.html">补充素材</a><button class="btn sm" onclick="document.getElementById('mismatch').scrollIntoView({behavior:'smooth',block:'center'})">修订提纲</button></div>
-    <div class="ia" style="margin-top:8px">
-     <button class="btn pri sm" disabled title="第 4 章待裁决，批准暂不可用">批准并开产</button>
-     <button class="btn sm" onclick="document.getElementById('outline').scrollIntoView({behavior:'smooth'})">微调方案</button>
-     <button class="btn sm" onclick="document.getElementById('plan-input').focus()">打回重起草</button>
-    </div>
-    
-   </div>
-
+  <div class="msg user">
+   <span class="m-av">周</span>
+   <div class="m-body"><div class="m-meta">你 · 10:41</div><div class="m-text"><p>依据当前素材梳理一版大纲，保留已有章节编号。</p></div></div>
   </div>
 
-  <!-- 执行页签 -->
-  <div class="agent-pane pane-run">
-   <div class="run-head">
-    <div class="rh"><span class="agent-ava" style="width:22px;height:22px;font-size:10px">制</span>综合 Agent · 方案起草<span class="st"><span class="tag ok">已完成</span></span></div>
-    <div class="rm"><span>model · producer-main</span><span>12.4k tokens</span><span>1m42s</span><span>4 calls</span></div>
+  <div class="msg">
+   <span class="m-av">A</span>
+   <div class="m-body">
+    <div class="m-meta">制作 Agent · 10:43</div>
+    <div class="planw">
+     <div class="ph">起草方案 <span class="n">4/5</span></div>
+     <div class="pw-item done"><span class="tick">✓</span><span>读取素材</span><span class="pn">128</span></div>
+     <div class="pw-item done"><span class="tick">✓</span><span>目录校验</span><span class="pn">5/6</span></div>
+     <div class="pw-item done"><span class="tick">✓</span><span>概念归一</span><span class="pn">26</span></div>
+     <div class="pw-item done"><span class="tick">✓</span><span>起草 v4</span><span class="pn">10:43</span></div>
+     <div class="pw-item doing"><span class="tick"></span><span>等你确认</span><span class="pn">now</span></div>
+    </div>
+    <div class="tool-group">
+     <div class="tg-h">4 次工具调用 · 12.4k tokens</div>
+     <details class="tool"><summary><span class="tn">cloud_read_units</span><span class="ta">{...}</span><span class="ts">12.4s</span></summary><div class="tbody">{"units":128,"frames":42}</div></details>
+     <details class="tool"><summary><span class="tn">cloud_plan_write</span><span class="ta">{"version":4}</span><span class="ts">3.2s</span></summary><div class="tbody">{"path":"plan/v4.md","status":"draft"}</div></details>
+    </div>
+    <div class="m-text"><p>大纲 v4 已起草：6 章 · 26 节。第 4 章匹配度 41%，低于 60% 门槛，需要你裁决。</p></div>
    </div>
-   <div class="run-node">
-    <div class="nh"><b>理解 Agent · 读取素材</b><span class="st"><span class="tag ok">完成</span></span></div>
-    <div class="nm"><span>128 units</span><span>42 frames</span><span>partial 2</span><span>12.4s</span></div>
-   </div>
-   <div class="run-node">
-    <div class="nh"><b>目录先验校验</b><span class="st"><span class="tag ok">完成</span></span></div>
-    <div class="nm"><span>5/6 通过</span><span>ch-04 41%</span><span>8.1s</span></div>
-   </div>
-   <div class="run-node">
-    <div class="nh"><b>概念归一</b><span class="st"><span class="tag ok">完成</span></span></div>
-    <div class="nm"><span>26 术语</span><span>14 别名</span><span>拒绝自环 2</span><span>5.7s</span></div>
-   </div>
-   <div class="run-node">
-    <div class="nh"><b>起草方案 v4</b><span class="st"><span class="tag warn">待确认</span></span></div>
-    <div class="nm"><span>plan/v4.md</span><span>draft</span><span>未锁定</span><span>3.2s</span></div>
-   </div>
-   
   </div>
 
-  <!-- 产物页签 -->
-  <div class="agent-pane pane-files">
-   <div class="filetree">
-    <div class="fh"><svg style="width:13px;height:13px"><use href="#i-folder"/></svg>workspace / TC-ZONGLUN<span class="n">9 files</span></div>
-    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">plan/</span><span class="fs">4</span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/v4.md</span><span class="fm"><span class="tag run">当前</span></span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/v3.md</span><span class="fs">10:39</span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/outline.md</span><span class="fs">5/6</span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">plan/glossary.md</span><span class="fs">26</span></div>
-    <div class="file folder"><svg><use href="#i-folder"/></svg><span class="fn">units/</span><span class="fs">128</span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">sections/plan.json</span><span class="fs">6 节</span></div>
-    <div class="file"><svg><use href="#i-file"/></svg><span class="fn">trigger.json</span><span class="fs">10:38</span></div>
+  <!-- AskQuestion ①：匹配度裁决（已回答态） -->
+  <div class="ask locked" id="ask-match">
+   <div class="qh"><svg style="width:12px;height:12px"><use href="#i-warn"/></svg>需要你确认</div>
+   <div class="qt">第 4 章「周线级别判断」与素材匹配度 41%，如何处理？</div>
+   <p>门槛 60%。这一章只有 2 条挂得上出处的要点。</p>
+   <div class="opts">
+    <button class="opt on" type="button"><span class="ok">✓</span><span class="ot"><b>补充素材后再定</b><small>回素材库补视频或重跑理解，补齐后继续</small></span></button>
+    <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>从大纲移除该章</b><small>其余 5 章不受影响</small></span></button>
+    <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>保留并标注风险</b><small>章节保留，生成时按「低匹配」降级标注</small></span></button>
    </div>
-   <div class="file-preview"># 总论卷 · 制作方案 v4（draft）
-status: 待确认
-chapters: 6 | concepts: 26 | aliases: 14
-open_issue: ch-04 match=0.41 < 0.60
-locked: false</div>
-   <p class="note" style="margin-top:8px">产物由 Agent 写入 workspace；教师的所有修改仍为 draft，签批/发布不在教师侧。</p>
   </div>
+  <div class="ans"><svg style="width:12px;height:12px"><use href="#i-check-c"/></svg>已回答 · <b>补充素材后再定</b></div>
+  <div class="ev">第 4 章已标记「待补素材」· 批准门禁继续拦截该章</div>
+
+  <div class="msg user">
+   <span class="m-av">周</span>
+   <div class="m-body"><div class="m-meta">你 · 10:45</div><div class="m-text"><p>「假突破」统一改成「诱多」，第 3 章补「均线束 / 均线组」对照。</p></div></div>
+  </div>
+
+  <div class="msg">
+   <span class="m-av">A</span>
+   <div class="m-body">
+    <div class="m-meta">制作 Agent · 10:46</div>
+    <div class="tool-group">
+     <div class="tg-h">2 次工具调用</div>
+     <details class="tool"><summary><span class="tn">apply_tweak</span><span class="ta">add_alias 假突破→诱多</span><span class="ts">0.8s</span></summary><div class="tbody">{"aliasAdded":1,"renamed":0}</div></details>
+     <details class="tool"><summary><span class="tn">apply_tweak</span><span class="ta">add_alias 均线束/均线组</span><span class="ts">0.6s</span></summary><div class="tbody">{"aliasAdded":1}</div></details>
+    </div>
+    <div class="m-text"><p>已改 2 处，右栏大纲已是 <b>v5</b>：5 章 · 21 节，校验全过（第 4 章仍待补素材）。</p></div>
+   </div>
+  </div>
+
+  <!-- AskQuestion ②：批准（等待态） -->
+  <div class="ask" id="ask-approve">
+   <div class="qh"><svg style="width:12px;height:12px"><use href="#i-check-c"/></svg>需要你确认 · 方案就绪</div>
+   <div class="qt">大纲 v5 已就绪，是否批准并解锁制作？</div>
+   <p>批准后大纲锁定为基准版，逐节生产解锁。</p>
+   <div class="opts">
+    <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>批准并解锁制作</b><small>5 章 · 21 节 · 校验全过</small></span></button>
+    <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>打回重起草</b><small>告诉我不满意的点，我重新梳理</small></span></button>
+    <button class="opt" type="button"><span class="ok">✓</span><span class="ot"><b>先继续微调</b><small>在右栏直接改，改完再叫我确认</small></span></button>
+   </div>
+  </div>
+
  </div>
 
  <div class="agent-foot">
   <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:34%"></i></span><span>34% · 12.4k / 36k</span></div>
-  <div class="quick"><button>合并章节</button><button>改术语</button><button>调整分节粒度</button></div>
+  <div class="quick"><button onclick="focusPlan('依据当前素材重新梳理一版大纲，保留已有章节编号。')">重新梳理</button><button onclick="focusPlan('合并第 2、3 章，避免过细。')">合并章节</button><button onclick="focusPlan('把分节粒度调粗一点，每章不超过 3 节。')">调整分节粒度</button><button onclick="focusPlan('解释这一版大纲的取舍依据。')">解释这一版</button></div>
   <div class="composer">
-   <textarea id="plan-input" placeholder="输入修改指令，或使用上方快捷操作…"></textarea>
+   <textarea id="plan-input" placeholder="和 Agent 对话：提修改意见、问依据，或让它重新梳理…"></textarea>
    <div class="cr">
     <button class="ic-btn" title="附加素材"><svg><use href="#i-paperclip"/></svg></button>
-    <button class="ic-btn" title="引用产物"><svg><use href="#i-at"/></svg></button>
     <span class="grow"></span><span class="kbd">⌘↵</span>
     <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
    </div>
@@ -304,14 +160,161 @@ locked: false</div>
  </div>
 </aside>
 
+<!-- ================= 右栏：产物呈现与微调（调整即生效，不进对话） ================= -->
+<div class="wb-col">
+<div class="ws-drag" title="拖拽调整工作区宽度"></div>
+<header class="ops-top">
+ <span class="right">
+  <a href="index.html" class="note">原型索引</a>
+ </span>
+</header>
+<main class="ops-main">
+
+ <!-- 右栏工作区：一整个工作区页面，页签切换产物；内容即产物，微调即生效（不进对话） -->
+ <div class="ws" id="outline">
+  <div class="ws-head">
+   <div class="ws-title">方案工作区 <span class="tag warn">待批准</span><span class="grow"></span><span class="note">v5 · 5 章 · 21 节</span></div>
+   <div class="ctabs" role="tablist" aria-label="方案产物">
+    <button class="on" type="button" data-pane="p-outline">大纲</button>
+    <button type="button" data-pane="p-terms">术语<span class="n">26</span></button>
+    <button type="button" data-pane="p-sections">分节<span class="n">21</span></button>
+    <button type="button" data-pane="p-params">参数</button>
+    <button type="button" data-pane="p-trail">轨迹<span class="n">3</span></button>
+   </div>
+  </div>
+  <div class="ws-body">
+
+   <!-- 大纲：这一棵树就是大纲本体，直接改（outliner：拖 ⠿ 挪位 / 悬停行尾操作 / 双击改名） -->
+   <div class="ctpane on" id="p-outline">
+    <div class="ot">
+     <div class="ot-item lv-ke">
+      <div class="ot-row">
+       <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">1</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-name">什么是趋势</span></div><div class="ot-meta"><span class="sc">100%</span><span>5 分钟</span><span class="cite2">总论1 08:12–11:26</span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+     </div>
+     <div class="ot-item lv-ke">
+      <div class="ot-row">
+       <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">2</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-name">趋势的阻尼运动</span></div><div class="ot-meta"><span class="sc">100%</span><span>6 分钟</span><span class="cite2">总论1 11:26–16:40</span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+     </div>
+     <div class="ot-item lv-ke">
+      <div class="ot-row">
+       <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">3</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-name">均线与多空分界</span></div><div class="ot-meta"><span class="sc">86%</span><span>7 分钟</span><span class="cite2">总论1 16:40–22:18</span><span class="chip">＋ 均线束 / 均线组</span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+     </div>
+     <div class="ot-item lv-ke">
+      <div class="ot-row">
+       <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">4</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-name">筹码密集与发散</span></div><div class="ot-meta"><span class="sc">100%</span><span>8 分钟</span><span class="cite2">总论1 22:18–29:03</span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+     </div>
+     <div class="ot-item lv-ke">
+      <div class="ot-row">
+       <span class="ot-chev leaf"></span><span class="ot-grip" draggable="true" title="拖拽挪位">⠿</span><span class="ot-badge">5</span>
+       <div class="ot-main"><div class="ot-title"><span class="ot-name">综合研判框架</span></div><div class="ot-meta"><span class="sc">92%</span><span>9 分钟</span><span class="cite2">总论1 29:03–36:47</span></div></div>
+       <span class="ot-acts"><button type="button" title="改名" data-act="rename">✎</button><button type="button" title="上移" data-act="up">↑</button><button type="button" title="下移" data-act="down">↓</button><button type="button" title="删除" data-act="del">✕</button></span>
+      </div>
+     </div>
+    </div>
+    <button class="ot-add" type="button">＋ 添加一节</button>
+   </div>
+
+   <!-- 术语与概念图谱 -->
+   <div class="ctpane" id="p-terms">
+    <div class="grid2">
+     <div>
+      <div class="sec-title">概念图谱 <span class="n">26 术语 · 16 别名 · 拒绝自环 2</span></div>
+      <table class="mini-tbl">
+       <tr><th>术语</th><th>别名</th><th>依赖</th></tr>
+       <tr><td>趋势</td><td>—</td><td>级别</td></tr>
+       <tr><td>阻尼运动</td><td>动能衰竭</td><td>动能</td></tr>
+       <tr><td>均线束</td><td>均线组 <span class="chip new" style="padding:0 5px;font-size:10px">新</span></td><td>M60</td></tr>
+       <tr><td>假突破</td><td>诱多 <span class="chip new" style="padding:0 5px;font-size:10px">新</span></td><td>—</td></tr>
+       <tr><td>周期共振</td><td>—</td><td>级别</td></tr>
+      </table>
+     </div>
+     <div>
+      <div class="sec-title">术语表 <span class="n">正文与课件校验基准</span></div>
+      <table class="mini-tbl">
+       <tr><th>名称</th><th>状态</th><th>备注</th></tr>
+       <tr><td>假突破</td><td><span class="tag ok">draft</span></td><td>别名 诱多</td></tr>
+       <tr><td>阻尼运动</td><td><span class="tag ok">draft</span></td><td>别名 动能衰竭</td></tr>
+       <tr><td>均线束</td><td><span class="tag ok">draft</span></td><td>别名 均线组</td></tr>
+       <tr><td>筹码峰</td><td><span class="tag ok">draft</span></td><td>—</td></tr>
+      </table>
+     </div>
+    </div>
+   </div>
+
+   <!-- 分节计划 -->
+   <div class="ctpane" id="p-sections">
+    <div class="sec-title">每节一个逐节子代理 <span class="n">5 章 · 21 节</span></div>
+    <table class="mini-tbl">
+     <tr><th>章</th><th>节</th><th>预估时长</th><th>并行</th></tr>
+     <tr><td>第 1 章 什么是趋势</td><td>3</td><td>18 分钟</td><td>slot 1</td></tr>
+     <tr><td>第 2 章 趋势的阻尼运动</td><td>4</td><td>22 分钟</td><td>slot 2</td></tr>
+     <tr><td>第 3 章 均线与多空分界</td><td>3</td><td>19 分钟</td><td>slot 3</td></tr>
+     <tr><td>第 4 章 筹码密集与发散</td><td>5</td><td>26 分钟</td><td>slot 4</td></tr>
+     <tr><td>第 5 章 综合研判框架</td><td>6</td><td>31 分钟</td><td>slot 5</td></tr>
+    </table>
+   </div>
+
+   <!-- 起草参数：改完找 Agent 重新梳理 -->
+   <div class="ctpane" id="p-params">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+     <label class="note">学时目标</label><input class="fi" style="width:86px" value="90 分钟">
+     <label class="note">风格</label>
+     <span class="filter"><span class="on">口语 + 图解</span><span>严谨</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+     <label class="note">术语口径</label><span class="tag gray">A 股</span>
+     <span class="tag ok">素材 2 份 · 128 units</span>
+     <button class="btn sm" onclick="focusPlan('参数改了：学时目标 90 分钟不变，风格改严谨。请重新梳理一版大纲。')">按新参数重新梳理</button>
+    </div>
+   </div>
+
+   <!-- 版本轨迹 -->
+   <div class="ctpane" id="p-trail">
+    <div class="vtrail">
+     <div class="vt"><span class="v">v5</span><span>「假突破」+ 别名「诱多」·「均线束」+ 别名「均线组」</span><span class="src">对话 · 10:46</span></div>
+     <div class="vt"><span class="v">v5</span><span>第 4 章标记「待补素材」，批准门禁拦截中</span><span class="src">对话 · 10:44</span></div>
+     <div class="vt"><span class="v">v4</span><span>Agent 起草 · 6 章 · 26 节</span><span class="src">Agent · 10:43</span></div>
+    </div>
+   </div>
+
+  </div>
+ </div>
+
+</main>
+</div>
+
 </div>
 <script>
 function focusPlan(text){
+  var rail=document.querySelector('.agent-rail');
   var c=document.getElementById('plan-input');
   if(text) c.value=text;
   c.focus();
-  c.scrollIntoView({block:'nearest'});
+  rail.scrollIntoView({block:'end'});
 }
+/* AskQuestion：点选即回答（原型只演示选择态；真实实现里选择会回传服务端确定性执行） */
+document.querySelectorAll('.ask:not(.locked) .opt').forEach(function(b){
+  b.addEventListener('click', function(){
+    var card=b.closest('.ask');
+    card.classList.add('locked');
+    card.querySelectorAll('.opt').forEach(function(o){ o.classList.toggle('on', o===b); });
+    card.querySelector('.qh').textContent='已回答 · 等待执行';
+  });
+});
 </script>
+<script src="assets/ws.js" defer></script>
+<script src="assets/outline.js" defer></script>
 <script src="assets/sb-course.js" defer></script>
 </body></html>
