@@ -39,11 +39,18 @@ export async function runProductionRun(job: PipelineJobRow): Promise<void> {
   const sections = await listSections(courseId)
   const pending = sections.filter((section) => section.status === 'pending')
   const outcomes = await mapPool(pending, MAX_SECTIONS_PARALLEL, (section) =>
-    runProductionSection(courseId, section),
+    runProductionSection(job.id, courseId, section),
   )
 
   const completed = outcomes.filter((o) => o === 'completed').length
   const suspended = outcomes.filter((o) => o === 'suspended').length
+  const stopped = outcomes.filter((o) => o === 'stopped').length
+  // 停止是教师主动动作：job 记 canceled（不是失败），成果与回灌预算保留，可继续。
+  // 只要有节被停下，整轮就不是「成功」——已跑完的节仍留在库里。
+  if (stopped > 0) {
+    await jobs.cancelJob(job.id)
+    return
+  }
   if (pending.length > 0 && completed === 0 && suspended === pending.length) {
     await jobs.failJob({
       jobId: job.id,
@@ -56,8 +63,19 @@ export async function runProductionRun(job: PipelineJobRow): Promise<void> {
   await jobs.completeJob(job.id)
 }
 
-async function runProductionSection(courseId: string, section: SectionRow): Promise<'completed' | 'suspended'> {
+/**
+ * 单节逐步跑（arch/05 §6）。
+ *
+ * 停止是**步边界**安全中止：当前步跑完才停（步内产物不丢），已完成的步成果保留，
+ * 回灌预算（attempts）不清零——教师改完内容继续时，重跑的不是已完成的步。
+ */
+async function runProductionSection(
+  jobId: string,
+  courseId: string,
+  section: SectionRow,
+): Promise<'completed' | 'suspended' | 'stopped'> {
   for (;;) {
+    if (await jobs.isCancelRequested(jobId)) return 'stopped'
     const task = await claimNextStep(courseId, section.section_id)
     if (!task) break
     try {
