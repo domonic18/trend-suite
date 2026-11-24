@@ -9,6 +9,7 @@ export default tseslint.config(
       "**/dist/**", // tsc 产物，非 lint 对象
       "**/.next/**", // Next.js 编译产物，非 lint 对象
       "**/coverage/**",
+      "**/workspace/**", // 运行期数据（媒体字节/转写分段），非源码
       "**/next-env.d.ts", // Next 生成文件
       "docs/**", // 需求/架构文档与 e2e 记录 HTML，非 lint 对象
     ],
