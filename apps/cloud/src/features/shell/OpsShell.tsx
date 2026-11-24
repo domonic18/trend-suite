@@ -1,8 +1,15 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import type { SessionUser } from '@trend-suite/contracts'
 import { BuildInfo } from './BuildInfo'
+
+const MENU: { label: string; href: string | null }[] = [
+  { label: '模型配置', href: '/ops/models' },
+  { label: '行情源', href: '/ops/market' },
+  { label: '账号管理', href: null },
+]
 
 /** 运营控制台外壳：侧栏 + 顶栏 + 主区（原型 ops-models 的 .ops-app 布局）。 */
 export function OpsShell(props: {
@@ -24,10 +31,21 @@ export function OpsShell(props: {
         </div>
         <nav className="ops-menu">
           <div className="ops-g">系统</div>
-          <span className="ops-i on">模型配置</span>
-          <span className="ops-i off" title="待上线">
-            账号管理
-          </span>
+          {MENU.map((item) =>
+            item.href ? (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={item.label === props.active ? 'ops-i on' : 'ops-i'}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span key={item.label} className="ops-i off" title="待上线">
+                {item.label}
+              </span>
+            ),
+          )}
           <div className="ops-g">交付</div>
           <span className="ops-i off" title="待上线">
             发布交接

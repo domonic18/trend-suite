@@ -25,6 +25,7 @@ export const idPrefix = {
   productionEvent: 'pev',
   thread: 'thr',
   agentMessage: 'msg',
+  marketSource: 'mqs',
 } as const
 
 export const idShape = {
@@ -50,6 +51,7 @@ export const idShape = {
   productionEvent: /^pev_[0-9a-f]{16}$/,
   thread: /^thr_[0-9a-f]{16}$/,
   agentMessage: /^msg_[0-9a-f]{16}$/,
+  marketSource: /^mqs_[0-9a-f]{16}$/,
 } as const
 
 export type IdKind = keyof typeof idShape
