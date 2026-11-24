@@ -2055,10 +2055,11 @@ dialog::backdrop {
 }
 
 /* ---------------- Agent 对话式工作台（对齐原型 chat-center：中对话 + 右产物工作区） ----------------
-   --ws-w 由右栏拖拽把手实时写入（340–680px）；窄屏媒体查询回退单栏。 */
+   --ws-w 由右栏拖拽把手实时写入（340–680px），默认 520px 保证产物不挤；
+   窄屏媒体查询回退单栏。 */
 .plan-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--ws-w, 432px);
+  grid-template-columns: minmax(0, 1fr) var(--ws-w, 520px);
   gap: 22px;
   align-items: start;
 }
@@ -2068,7 +2069,7 @@ dialog::backdrop {
   min-width: 0;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .plan-split {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2080,14 +2081,15 @@ dialog::backdrop {
   }
 }
 
-/* chat-center 语境（方案 / 制作台，原型同款几何）：对话通栏贴顶全高（右缘分隔线），
-   右栏工作区带原型 ops-main 同款内边距、贴顶。 */
+/* chat-center 语境（方案 / 制作台，原型同款几何）：对话与右栏工作区都是
+   Codex / WorkBuddy 式通栏全高面板——贴住视口上下、无圆角无外圈留白，
+   相互之间只有一根 hairline；工作区头部页签即面板头。 */
 .ops-main:has(.plan-split) .plan-split {
   gap: 0;
 }
 
 .ops-main:has(.plan-split) .plan-split > .wb-col {
-  padding: 20px 24px 40px;
+  padding: 0;
 }
 
 .ops-main:has(.plan-split) .agent-rail {
@@ -2102,6 +2104,21 @@ dialog::backdrop {
 .ops-main:has(.plan-split) .ws {
   top: 0;
   max-height: 100vh;
+  border: none;
+  border-left: 1px solid var(--p-line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 1280px) {
+  .ops-main:has(.plan-split) .plan-split > .wb-col {
+    padding: 16px 16px 40px;
+  }
+  .ops-main:has(.plan-split) .ws {
+    border: 1px solid var(--p-line);
+    border-radius: var(--r-panel);
+    max-height: none;
+  }
 }
 
 /* 右栏工作区（WorkBuddy 式页签）：头部页签切换产物，正文滚动，微调即生效。 */
@@ -2143,6 +2160,13 @@ dialog::backdrop {
   font: 500 10.5px var(--font-mono);
   color: #9aa3b8;
   font-weight: 500;
+}
+
+/* 制作完成进度条：贴在页签行上方，一眼看到这门课做到百分之几。 */
+.ws-prog {
+  margin: 0 2px 8px;
+  height: 5px;
+  background: #e6eaf2;
 }
 
 .ws-body {

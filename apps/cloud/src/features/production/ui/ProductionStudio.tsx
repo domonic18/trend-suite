@@ -14,32 +14,46 @@ import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { useWsDrag } from '@/features/agent-chat/useWsDrag'
+import { ClipCard } from '@/features/content/ui/ClipCard'
 import { DslRenderer } from '@/features/content/ui/DslRenderer'
+import { FigureCard } from '@/features/content/ui/FigureCard'
+import { WidgetHost } from '@/features/content/ui/widgets/WidgetHost'
+import type { FigureView } from '@trend-suite/contracts'
 import { getProductionBoard, getSectionContent, retryProductionSection } from '../api'
 
 /**
  * 课件制作台（迭代 11，arch/08 chat-center，教师端需求 T21）：与方案页同一形态——
  * 中栏 = 制作 Agent 的真多轮对话（九步事实与逐节 TODO 卡由 worker 写进对话流，
- * 停止/继续/重试是对话动作，停止后确认卡接续）；右栏 = 页签工作区
- * （课件 / 出处 / 行情 / 课时，340–680px 可拖拽，顶部不放按钮与横幅——需求 T21）。
+ * 停止/继续/重试是对话动作，停止后确认卡接续）；右栏 = 页签工作区，按课件数据
+ * 类型查看：大纲 / 课件全文 / 配图 / 视频片段 / K线图 / 练习题 / 其他互动
+ * （340–680px 可拖拽，顶部不放按钮与横幅——需求 T21）。
  *
  * 停止制作是**步边界**安全中止：成果保留、回灌预算保留、改完可继续。
  */
 
 const TABS = [
+  { key: 'outline', label: '大纲' },
   { key: 'artifact', label: '课件' },
-  { key: 'sources', label: '出处' },
-  { key: 'sections', label: '课时' },
+  { key: 'figures', label: '配图' },
+  { key: 'video', label: '视频' },
+  { key: 'kline', label: 'K线图' },
+  { key: 'quiz', label: '练习题' },
+  { key: 'interactive', label: '互动' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
 
-function clockOf(ms: number): string {
-  const total = Math.round(ms / 1000)
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
+/** K 线类课件：K 线标注练习 + 逐根回放决策。 */
+const KLINE_TYPES = new Set<string>(['kline-annotator', 'bar-replay-decision'])
+/** 练习题类：可作答可判分的测验组件（术语卡也算自测练习）。 */
+const QUIZ_TYPES = new Set<string>(['mcq-quiz', 'pattern-quiz', 'calc-trainer', 'flashcards'])
+/** 其余互动课件归入「互动」。 */
+
+const FIGURE_KINDS: ReadonlyArray<{ kind: FigureView['kind']; label: string }> = [
+  { kind: 'keyframe', label: '关键帧' },
+  { kind: 'diagram', label: '示意图' },
+  { kind: 'generated', label: '装饰图' },
+]
 
 function stepClass(status: string): string {
   if (status === 'done') return 'd'
@@ -165,13 +179,14 @@ export function ProductionStudio({
 
   const doneSteps = sections.reduce((sum, section) => sum + section.products, 0)
   const totalSteps = sections.length * 9
+  const progressPct = totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0
   const suspendedCount = sections.filter((section) =>
     section.tasks.some((task) => task.status === 'pending_manual' || task.status === 'failed'),
   ).length
   const allComplete = sections.length > 0 && sections.every((section) => section.status === 'complete')
   const runningTask = current?.tasks.find((task) => task.status === 'running') ?? null
 
-  /** 出处页签：本节引用的素材按份分组，段内时间范围可回溯原视频。 */
+  /** 视频/出处页签：本节引用的素材按份分组，段内时间范围可回溯原视频并可回放。 */
   const unitsByAsset = useMemo(() => {
     const map = new Map<string, SourceUnitView[]>()
     for (const unit of content?.units ?? []) {
@@ -181,6 +196,27 @@ export function ProductionStudio({
     }
     return [...map.entries()]
   }, [content])
+
+  /** 按课件数据类型分拣 widget（K线 / 练习 / 其余互动）。 */
+  const klineWidgets = useMemo(
+    () => content?.widgets.filter((widget) => KLINE_TYPES.has(widget.type)) ?? [],
+    [content],
+  )
+  const quizWidgets = useMemo(
+    () => content?.widgets.filter((widget) => QUIZ_TYPES.has(widget.type)) ?? [],
+    [content],
+  )
+  const interactiveWidgets = useMemo(
+    () =>
+      content?.widgets.filter(
+        (widget) => !KLINE_TYPES.has(widget.type) && !QUIZ_TYPES.has(widget.type),
+      ) ?? [],
+    [content],
+  )
+  const figureMap = useMemo(
+    () => new Map((content?.figures ?? []).map((figure) => [figure.id, figure])),
+    [content],
+  )
 
   // 状态只落在页签区的标题标（需求 T21：页签工作区顶部不放按钮、横幅与运行条）。
   const tag = allComplete
@@ -196,9 +232,14 @@ export function ProductionStudio({
             : { cls: 'mut', text: '空闲' }
 
   const counts: Record<TabKey, string | null> = {
+    outline: sections.length > 0 ? String(sections.length) : null,
     artifact: current ? `${current.products}/9` : null,
-    sources: content && content.units.length > 0 ? String(content.units.length) : null,
-    sections: sections.length > 0 ? String(sections.length) : null,
+    figures:
+      content && content.figures.length > 0 ? String(content.figures.length) : null,
+    video: content && content.units.length > 0 ? String(content.units.length) : null,
+    kline: klineWidgets.length > 0 ? String(klineWidgets.length) : null,
+    quiz: quizWidgets.length > 0 ? String(quizWidgets.length) : null,
+    interactive: interactiveWidgets.length > 0 ? String(interactiveWidgets.length) : null,
   }
 
   if (!board) {
@@ -244,8 +285,11 @@ export function ProductionStudio({
               <span className={`tag ${tag.cls}`}>{tag.text}</span>
               <span className="grow" />
               <span className="ws-meta">
-                {sections.length} 节 · {doneSteps}/{totalSteps} 步
+                {sections.length} 节 · {doneSteps}/{totalSteps} 步 · {progressPct}%
               </span>
+            </div>
+            <div className="prog ws-prog" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="课件制作完成进度">
+              <i style={{ width: `${progressPct}%` }} />
             </div>
             <div className="ctabs" role="tablist">
               {TABS.map((item) => (
@@ -314,43 +358,119 @@ export function ProductionStudio({
               )}
             </div>
 
-            <div className={`ctpane${tab === 'sources' ? ' on' : ''}`}>
-              {current ? (
-                unitsByAsset.length > 0 ? (
-                  unitsByAsset.map(([assetId, units]) => (
-                    <div className="ops-card" key={assetId} style={{ marginBottom: 12 }}>
-                      <div className="h">
-                        <div>
-                          <b>{assetNames.get(assetId) ?? assetId}</b>
-                          <small>这个素材里的哪些分钟被本节引用</small>
-                        </div>
-                        <span className="tag gray">{units.length} 段出处</span>
+            <div className={`ctpane${tab === 'figures' ? ' on' : ''}`}>
+              {content && content.figures.length > 0 ? (
+                FIGURE_KINDS.map(({ kind, label }) => {
+                  const list = content.figures.filter((figure) => figure.kind === kind)
+                  if (list.length === 0) return null
+                  return (
+                    <div key={kind}>
+                      <div className="th">
+                        {label} <span className="grow" />
+                        <span className="tag gray">{list.length}</span>
                       </div>
-                      <div className="b" style={{ paddingTop: 8 }}>
-                        {units.map((unit) => (
-                          <div className="unit-line" key={unit.id}>
-                            <span className="ts">
-                              {clockOf(unit.startMs)}–{clockOf(unit.endMs)}
-                            </span>
-                            <span className="note">
-                              {unit.teachingPoints.slice(0, 2).join(' · ') || unit.text.slice(0, 60)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {list.map((figure) => (
+                        <FigureCard key={figure.id} figure={figure} />
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  <p className="note">本节还没有引用素材——出处步完成后这里按素材列出可回溯的分钟段。</p>
-                )
+                  )
+                })
               ) : (
-                <p className="note">选一节后查看它引用了哪些素材的哪些分钟。</p>
+                <p className="note">
+                  {current
+                    ? '本节还没有配图——图示步完成后这里按 关键帧 / 示意图 / 装饰图 分类列出。'
+                    : '选一节后查看它的配图。'}
+                </p>
               )}
             </div>
 
-            <div className={`ctpane${tab === 'sections' ? ' on' : ''}`}>
+            <div className={`ctpane${tab === 'video' ? ' on' : ''}`}>
+              {current ? (
+                unitsByAsset.length > 0 ? (
+                  unitsByAsset.map(([assetId, units]) => (
+                    <div key={assetId} style={{ marginBottom: 12 }}>
+                      <div className="th">
+                        <b>{assetNames.get(assetId) ?? assetId}</b>
+                        <span className="grow" />
+                        <span className="tag gray">{units.length} 段</span>
+                      </div>
+                      {units.map((unit) => (
+                        <ClipCard
+                          key={unit.id}
+                          assetId={assetId}
+                          from={Math.round(unit.startMs / 1000)}
+                          to={Math.round(unit.endMs / 1000)}
+                          caption={unit.teachingPoints[0] ?? unit.text.slice(0, 40)}
+                          unit={unit}
+                        />
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <p className="note">
+                    本节还没有引用素材片段——出处步完成后这里按素材列出可回放的视频片段。
+                  </p>
+                )
+              ) : (
+                <p className="note">选一节后查看并回放它引用的视频片段。</p>
+              )}
+            </div>
+
+            <div className={`ctpane${tab === 'kline' ? ' on' : ''}`}>
+              {content && klineWidgets.length > 0 ? (
+                <>
+                  {content.caseStocks.length > 0 ? (
+                    <div className="th">
+                      案例股 <span className="grow" />
+                      <span className="tag gray">
+                        {content.caseStocks.map((stock) => `${stock.name} ${stock.code}`).join(' · ')}
+                      </span>
+                    </div>
+                  ) : null}
+                  {klineWidgets.map((widget) => (
+                    <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
+                  ))}
+                </>
+              ) : (
+                <p className="note">
+                  {current
+                    ? '本节还没有 K 线类课件——行情同步 / 逐根回放步完成后这里列出 K 线标注与回放练习。'
+                    : '选一节后查看它的 K 线课件。'}
+                </p>
+              )}
+            </div>
+
+            <div className={`ctpane${tab === 'quiz' ? ' on' : ''}`}>
+              {content && quizWidgets.length > 0 ? (
+                quizWidgets.map((widget) => (
+                  <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
+                ))
+              ) : (
+                <p className="note">
+                  {current
+                    ? '本节还没有练习题——课件步完成后这里列出选择 / 形态 / 计算练习。'
+                    : '选一节后查看它的练习题。'}
+                </p>
+              )}
+            </div>
+
+            <div className={`ctpane${tab === 'interactive' ? ' on' : ''}`}>
+              {content && interactiveWidgets.length > 0 ? (
+                interactiveWidgets.map((widget) => (
+                  <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
+                ))
+              ) : (
+                <p className="note">
+                  {current
+                    ? '本节还没有其他互动课件——分步解盘 / 检查清单 / 决策情景等会出现在这里。'
+                    : '选一节后查看它的互动课件。'}
+                </p>
+              )}
+            </div>
+
+            <div className={`ctpane${tab === 'outline' ? ' on' : ''}`}>
               <div className="th">
-                课时 <span className="grow" />
+                大纲 <span className="grow" />
                 <span className="tag gray">
                   {sections.filter((s) => s.status === 'complete').length}/{sections.length} 完成
                 </span>
