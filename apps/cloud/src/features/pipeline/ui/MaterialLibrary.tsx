@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MediaAssetView } from '@trend-suite/contracts'
-import { useCourses } from '@/features/content/ui/CoursesProvider'
 import { ApiError } from '@/features/lib/http'
 import { listAssets } from '../api'
 import { MaterialCard } from './MaterialCard'
@@ -10,18 +9,14 @@ import { MaterialUploader } from './MaterialUploader'
 import { readinessOf } from './processing'
 
 /**
- * 素材库（教师端需求 T4）：所有课程的视频收在一处。
- *
- * 这里是「全局视角」——教师名下所有课程的素材都能看到，
- * 每份素材标出归属课程；素材上传与转写只收口在这里。
+ * 素材库（教师端需求 T4）：视频素材独立上传、收在一处。
+ * 不耦合课程——上传不选课、列表不按课程分页；素材与课程的关联在建课勾选时建立。
  */
 export function MaterialLibrary() {
-  const { courses } = useCourses()
   const [assets, setAssets] = useState<MediaAssetView[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [courseFilter, setCourseFilter] = useState<string>('all')
   const [query, setQuery] = useState('')
 
   const refresh = useCallback(async () => {
@@ -61,12 +56,9 @@ export function MaterialLibrary() {
 
   const visible = useMemo(() => {
     const keyword = query.trim().toLowerCase()
-    return assets.filter((asset) => {
-      if (courseFilter !== 'all' && asset.courseId !== courseFilter) return false
-      if (keyword && !asset.fileName.toLowerCase().includes(keyword)) return false
-      return true
-    })
-  }, [assets, courseFilter, query])
+    if (!keyword) return assets
+    return assets.filter((asset) => asset.fileName.toLowerCase().includes(keyword))
+  }, [assets, query])
 
   const stats = useMemo(() => {
     let ready = 0
@@ -87,7 +79,7 @@ export function MaterialLibrary() {
         <div>
           <div className="t">素材库</div>
           <div className="s">
-            所有课程的视频都收在这里。每一份素材都拆成三段可单独重跑的分析：逐字稿 · 关键帧 · 视频理解。
+            视频素材独立上传、收在这里。每一份素材都拆成三段可单独重跑的分析：逐字稿 · 关键帧 · 视频理解。
           </div>
         </div>
       </div>
@@ -95,10 +87,7 @@ export function MaterialLibrary() {
       {listError ? <div className="notice err">{listError}</div> : null}
       {actionError ? <div className="notice err">{actionError}</div> : null}
 
-      <MaterialUploader
-        courses={courses.map((course) => ({ id: course.id, title: course.title }))}
-        onDone={refresh}
-      />
+      <MaterialUploader onDone={refresh} />
 
       <div className="page-head" style={{ marginTop: 26 }}>
         <div>
@@ -120,45 +109,18 @@ export function MaterialLibrary() {
         </div>
       </div>
 
-      <div className="ops-tabs">
-        <button
-          type="button"
-          className={`ops-tab ${courseFilter === 'all' ? 'on' : ''}`}
-          onClick={() => setCourseFilter('all')}
-        >
-          全部课程
-        </button>
-        {courses.map((course) => (
-          <button
-            type="button"
-            className={`ops-tab ${courseFilter === course.id ? 'on' : ''}`}
-            key={course.id}
-            onClick={() => setCourseFilter(course.id)}
-          >
-            {course.title}
-          </button>
-        ))}
-      </div>
-
       {loading ? (
         <div className="empty">素材加载中…</div>
       ) : visible.length === 0 ? (
         <div className="empty">
           {assets.length === 0
             ? '还没有素材。把课程录像拖到上面的上传区试试。'
-            : '没有匹配的素材。换个课程或清空搜索词看看。'}
+            : '没有匹配的素材。换个搜索词看看。'}
         </div>
       ) : (
         <div className="matcards">
           {visible.map((asset) => (
-            <MaterialCard
-              key={asset.id}
-              asset={asset}
-              showCourse
-              onChanged={onChanged}
-              onRemoved={onRemoved}
-              onError={setActionError}
-            />
+            <MaterialCard key={asset.id} asset={asset} onChanged={onChanged} onRemoved={onRemoved} onError={setActionError} />
           ))}
         </div>
       )}

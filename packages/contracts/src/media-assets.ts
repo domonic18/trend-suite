@@ -10,7 +10,8 @@ export const MAX_MEDIA_BYTES = 2 * 1024 * 1024 * 1024
 export const MEDIA_UPLOAD_TTL_SECONDS = 15 * 60
 
 export const createMediaAssetRequest = z.object({
-  courseId: z.string().regex(idShape.course, '课程 ID 不合法'),
+  /** 可空：素材独立上传入库（归属关系在建课勾选时建立）；沿用旧行为仍可传。 */
+  courseId: z.string().regex(idShape.course, '课程 ID 不合法').optional(),
   fileName: z.string().min(1, '文件名必填').max(255, '文件名最长 255 个字符'),
   byteSize: z
     .number()
@@ -42,8 +43,9 @@ export const mediaAssetStageView = z.object({
 
 export const mediaAssetView = z.object({
   id: z.string().regex(idShape.mediaAsset),
-  courseId: z.string(),
-  /** 归属课程标题：素材库是跨课程的全局视角，教师要看得出这份素材属于哪门课。 */
+  /** 可空：独立上传的素材还没归属任何课程。 */
+  courseId: z.string().nullable(),
+  /** 归属课程标题：素材库是跨课程的全局视角；未归属课程时为 null。 */
   courseTitle: z.string().nullable(),
   fileName: z.string(),
   status: mediaAssetStatus,

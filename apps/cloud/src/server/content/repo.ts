@@ -47,15 +47,16 @@ export async function insertCourse(input: {
 }
 
 /**
- * 教师名下这些素材里哪些真的存在（跨课选用的素材也得是他自己的）。
- * 素材归属课程不变，只是这门课把它选进来用了。
+ * 这些素材里哪些真的属于这位教师：上传者本人（含独立上传、未归属课程的），
+ * 或归属课程的属主（跨课选用素材归属课程不变，这门课只是把它选进来用）。
  */
 export function listOwnedAssetIds(ownerId: string, assetIds: string[]): Promise<string[]> {
   if (assetIds.length === 0) return Promise.resolve([])
   return query<{ id: string }>(
     `SELECT m.id FROM media_assets m
-       JOIN courses c ON c.id = m.course_id
-      WHERE c.owner_id = $1 AND m.id = ANY($2::text[])`,
+       LEFT JOIN courses c ON c.id = m.course_id
+      WHERE m.id = ANY($2::text[])
+        AND ($1 = m.created_by OR $1 = c.owner_id)`,
     [ownerId, assetIds],
   ).then((rows) => rows.map((row) => row.id))
 }

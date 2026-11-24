@@ -303,14 +303,15 @@ export async function getPlanFor(
       row,
     ]),
   )
-  const courseTitles = await listCourseTitles([...new Set(library.map((asset) => asset.course_id))])
+  const courseIds = [...new Set(library.map((asset) => asset.course_id).filter((id) => id !== null))]
+  const courseTitles = await listCourseTitles(courseIds)
   const selectedIds = new Set(courseAssets.map((asset) => asset.id))
   const materials: PlanMaterialView[] = library.map((asset) => {
     const counts = countsByAsset.get(asset.id)
     return {
       id: asset.id,
       fileName: asset.original_name ?? '素材',
-      courseTitle: courseTitles.get(asset.course_id) ?? null,
+      courseTitle: asset.course_id ? (courseTitles.get(asset.course_id) ?? null) : null,
       durationS: asset.duration_s === null ? null : Number(asset.duration_s),
       unitCount: counts?.unit_count ?? 0,
       pointCount: counts?.point_count ?? 0,

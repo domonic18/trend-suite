@@ -7,7 +7,7 @@ import {
   type SessionUser,
 } from '@trend-suite/contracts'
 import { findPlansReferencingUnits } from '@/server/content/plans/repo'
-import { getCourseForUser } from '@/server/content/service'
+import { assertAssetAccess } from './access'
 import { conflict, HttpError, notFound } from '@/server/lib/http'
 import { findActiveJobByAsset, enqueueJob } from './jobs/repo'
 import * as procRepo from './processing/repo'
@@ -125,7 +125,7 @@ export async function rerunStage(
 ): Promise<{ jobId: string; asset: repo.MediaAssetRow }> {
   const asset = await repo.findAssetById(assetId)
   if (!asset) throw notFound('素材不存在')
-  await getCourseForUser(user, asset.course_id)
+  await assertAssetAccess(user, asset)
 
   if (!asset.source_path || asset.status === 'awaiting_upload') {
     throw conflict('素材尚未上传完成，先完成上传再重跑')
@@ -159,7 +159,7 @@ export async function deleteStage(
 ): Promise<repo.MediaAssetRow> {
   const asset = await repo.findAssetById(assetId)
   if (!asset) throw notFound('素材不存在')
-  await getCourseForUser(user, asset.course_id)
+  await assertAssetAccess(user, asset)
 
   const active = await findActiveJobByAsset(assetId)
   if (active) throw conflict('素材有任务在跑，先停止再删除结果')

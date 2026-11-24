@@ -7,7 +7,7 @@ import {
   type SessionUser,
   type TranscriptResponse,
 } from '@trend-suite/contracts'
-import { getCourseForUser } from '@/server/content/service'
+import { assertAssetAccess } from '../access'
 import { teachingPointsOf } from '@/server/content/plans/planning'
 import { HttpError, conflict, notFound } from '@/server/lib/http'
 import type { HlsPlaybackResponse } from '@trend-suite/contracts'
@@ -33,7 +33,7 @@ export async function ingestAsset(
 ): Promise<{ asset: MediaAssetView; jobId: string }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
   if (row.status === 'awaiting_upload') {
     throw conflict('素材尚未上传完成，不能开始加工')
   }
@@ -67,7 +67,7 @@ export async function retryAsset(
 ): Promise<{ asset: MediaAssetView; jobId: string }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const existing = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
   if (existing && (existing.status === 'queued' || existing.status === 'running')) {
@@ -105,7 +105,7 @@ export async function rerunUnderstand(
 ): Promise<{ asset: MediaAssetView; jobId: string }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const { jobId } = await rerunStage(user, assetId, 'understanding', false)
   await procRepo.setAssetProgress({
@@ -128,7 +128,7 @@ export async function cancelMaterialProcessing(
 ): Promise<{ asset: MediaAssetView }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const job = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
   if (!job || (job.status !== 'queued' && job.status !== 'running')) {
@@ -160,7 +160,7 @@ export async function getTranscript(
 ): Promise<TranscriptResponse> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const segments = await procRepo.listSegments(assetId)
   return {
@@ -186,7 +186,7 @@ export async function getFrames(
 ): Promise<MediaFrameListResponse> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const frames = await procRepo.listFrames(assetId)
   return {
@@ -218,7 +218,7 @@ export async function getHlsPlayback(
 ): Promise<HlsPlaybackResponse> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
   if (!row.hls_path) throw notFound('素材尚未产出 HLS，无法播放')
   return { playback: signHlsPlaybackUrl({ assetId }) }
 }
@@ -230,7 +230,7 @@ export async function getUnderstanding(
 ): Promise<MediaUnderstandingItem[]> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const units = await procRepo.listSourceUnitsByAsset(assetId)
   return units.map((unit) => ({
@@ -249,7 +249,7 @@ export async function getProcessingState(
 ): Promise<{ asset: MediaAssetView; jobStatus: JobStatus | null }> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
   const job = await jobRepo.findJobByAsset({ assetId, kind: 'ingest' })
   return { asset: await assetViewOf(row), jobStatus: job?.status ?? null }
 }

@@ -122,14 +122,14 @@ export async function getUnderstanding(assetId: string): Promise<MediaUnderstand
   return mediaUnderstandingResponse.parse(data).items
 }
 
+/** 建素材并拿直传凭据：素材独立上传入库，不再要求归属课程。 */
 export async function createAsset(
-  courseId: string,
   fileName: string,
   byteSize: number,
 ): Promise<{ asset: MediaAssetView; upload: MediaUploadTarget }> {
   const data = await apiRequest<unknown>('/v1/admin/content/media-assets', {
     method: 'POST',
-    body: JSON.stringify({ courseId, fileName, byteSize }),
+    body: JSON.stringify({ fileName, byteSize }),
   })
   return createMediaAssetResponse.parse(data)
 }

@@ -108,7 +108,7 @@ test('worker 认领课程任务并回写草案四件套，目录外章节与重�
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'a.mp4', expectedByteSize: 10 })
   await query(
     `UPDATE media_assets SET status = 'ready', source_path = '/tmp/a.mp4' WHERE id = $1`,
     [assetId],
@@ -219,7 +219,7 @@ test('沿用人工目录：匹配度由出处推导、课时标题取教师原�
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: '讲义.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: '讲义.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/x.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -348,7 +348,7 @@ test('模型漏写 matchScore：不算结构错误，草案照常落库（缺省
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'a.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/a.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -447,7 +447,7 @@ async function courseWithUnits(
   const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
   const course = await createCourseFor(teacher.id)
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'f.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'f.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/f.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -670,7 +670,7 @@ test('智能规划：目录按要点重排、教师原文保留，出处绑进�
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'c.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'c.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/c.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -774,7 +774,7 @@ test('智能规划：课时数超出素材推导的上限时裁掉并留痕', { 
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'e.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'e.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/e.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -868,7 +868,7 @@ test('智能规划：所选素材没有理解结果时任务明确失败，让�
   })
   const course = await createCourseFor(teacher.id)
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'd.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'd.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/d.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -915,7 +915,7 @@ test('教师留空目录时 Agent 代拟一版目录先验并回写，随后按�
   const course = await createCourseFor(teacher.id)
 
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'b.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'b.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/b.mp4' WHERE id = $1`, [
     assetId,
   ])
@@ -1002,7 +1002,7 @@ test('目录代拟被 max_tokens 截断：任务回到队列可重试，失败�
   })
   const course = await createCourseFor(teacher.id)
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'a.mp4', expectedByteSize: 10 })
   await query(`UPDATE media_assets SET status = 'ready', source_path = '/tmp/a.mp4' WHERE id = $1`, [
     assetId,
   ])
