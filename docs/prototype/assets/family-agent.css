@@ -38,6 +38,22 @@
   .ops-app.chat-center > .wb-col { display: none; }
 }
 
+/* chat-center 右栏 = Codex / WorkBuddy 式通栏全高面板：
+   贴住视口上下右三边，无圆角无外圈留白，与对话流之间只有一根 hairline；
+   工作区头部页签即面板头。窄屏单栏时回退为普通卡片。 */
+.ops-app.chat-center .ops-main { padding: 0; max-width: none; }
+.ops-app.chat-center .ws {
+  top: 0; max-height: 100vh;
+  border: none; border-left: 1px solid var(--p-line);
+  border-radius: 0; box-shadow: none;
+}
+@media (max-width: 1000px) {
+  .ops-app.chat-center .ops-main { padding: 16px 16px 40px; }
+  .ops-app.chat-center .ws {
+    border: 1px solid var(--p-line); border-radius: 12px; box-shadow: var(--p-sh-sm);
+  }
+}
+
 /* ---------------- 右栏工作区（WorkBuddy 式页签） ----------------
    右栏是一整个工作区页面：头部页签切换产物（大纲 / 术语 / 分节…），
    正文区滚动；内容即产物，微调即生效。 */

@@ -75,6 +75,18 @@ export function findCourseById(id: string): Promise<CourseRow | null> {
   return queryOne<CourseRow>(`SELECT ${COURSE_COLUMNS} FROM courses WHERE id = $1`, [id])
 }
 
+export async function updateCourseTitle(id: string, title: string): Promise<CourseRow | null> {
+  return queryOne<CourseRow>(
+    `UPDATE courses SET title = $2, updated_at = now() WHERE id = $1 RETURNING ${COURSE_COLUMNS}`,
+    [id, title],
+  )
+}
+
+/** 删除课程：素材 / 方案 / 生产 / 会话线程全部级联（各表外键 ON DELETE CASCADE）。 */
+export function deleteCourseById(id: string): Promise<void> {
+  return query(`DELETE FROM courses WHERE id = $1`, [id]).then(() => undefined)
+}
+
 /** 课程摘要行：素材、方案、生产三处的进度合一行（教师端课程卡与侧栏要显示）。 */
 export type CourseSummaryRow = {
   id: string

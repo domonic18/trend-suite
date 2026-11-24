@@ -2,19 +2,27 @@ import 'server-only'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod/v4'
 import { tweakPlanRequest } from '@trend-suite/contracts'
-import { enqueueJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
+import { findJobByCourse } from '@/server/pipeline/jobs/repo'
+import { listAssetsByCourse } from '@/server/pipeline/repo'
+import { listUnitCountsByAssets } from '@/server/pipeline/processing/repo'
 import {
   CURRICULUM_JOB_KIND,
   rejectPlanInternal,
+  savePlanInputInternal,
   tweakPlanInternal,
 } from '@/server/content/plans/service'
 import * as plansRepo from '@/server/content/plans/repo'
 import { insertMessage, type AgentThreadRow } from './repo'
 
 /**
- * 方案阶段的工具白名单（arch/08 §4）：get_plan / draft_plan / revise_plan /
- * apply_tweak / ask_question / todo_write。明确不在白名单：approve_plan——
- * 批准只由服务端答案处理器按教师所选选项确定性执行，模型没有对应工具（红线）。
+ * 方案阶段的工具白名单（arch/08 §4）：get_plan / get_materials / draft_plan /
+ * revise_plan / apply_tweak / ask_question / todo_write。明确不在白名单：
+ * approve_plan——批准只由服务端答案处理器按教师所选选项确定性执行，模型没有
+ * 对应工具（红线）。
+ *
+ * 起草的交互口径（主流 AskQuestion）：目标与目录由教师在对话里给出（自由文本），
+ * 规划方式等结构化选择由模型用 ask_question 确认卡提问、教师点选；收集齐后
+ * draft_plan 带参落库并触发起草（内部走 savePlanInputInternal，门禁全保留）。
  *
  * 所有工具都在线程授权语境下运行（sendMessage/answer 时已校验属主与角色），
  * 因此底层复用 plans service 的 internal 变体，不再重复权限校验。
@@ -96,21 +104,58 @@ export function planTools(thread: AgentThreadRow) {
       }),
   })
 
-  const draftPlan = new DynamicStructuredTool({
-    name: 'draft_plan',
-    description: '提交方案起草任务（素材理解 → 生成方案草案）。起草完成后系统会在对话里通知。',
+  const getMaterials = new DynamicStructuredTool({
+    name: 'get_materials',
+    description:
+      '列出课程可选的素材（id、文件名、就绪状态、要点数）。教师要求只用部分素材起草时，用它把素材名对应到 assetIds。',
     schema: z.object({}) as never,
     func: async () =>
       guard(async () => {
-        const input = await plansRepo.findCoursePlanInput(courseId)
-        if (!input?.goal) {
-          return 'ERROR:课程目标还没提交——请教师在右栏先提交课程目标与目录，再触发起草。'
-        }
+        const assets = await listAssetsByCourse(courseId)
+        const counts = new Map(
+          (await listUnitCountsByAssets(assets.map((asset) => asset.id))).map((row) => [row.asset_id, row]),
+        )
+        return text(
+          assets.map((asset) => ({
+            id: asset.id,
+            fileName: asset.original_name ?? '素材',
+            status: asset.status,
+            durationS: asset.duration_s === null ? null : Number(asset.duration_s),
+            pointCount: counts.get(asset.id)?.point_count ?? 0,
+          })),
+        )
+      }),
+  })
+
+  const draftPlanSchema = z.object({
+    goal: z.string().min(1).max(2000).optional().describe('课程目标（教师原话，来自对话）'),
+    outlineText: z.string().max(20000).optional().describe('人工目录原文（可留空由 Agent 代拟）'),
+    mode: z.enum(['smart', 'follow_manual']).optional().describe('规划方式：智能重新规划目录 / 沿用人工目录骨架'),
+    assetIds: z.array(z.string().min(1)).optional().describe('参与规划的素材 id（缺省 = 全部素材）'),
+  })
+  const draftPlan = new DynamicStructuredTool({
+    name: 'draft_plan',
+    description:
+      '落库起草输入并提交方案起草任务（素材理解 → 生成方案草案）。起草前先把对话里收集到的 goal / outlineText / mode / assetIds 原样带上——没问过的字段不要编；未提供的字段沿用课程已保存的值。目标从未提交过时先在对话里收集。',
+    schema: draftPlanSchema as never,
+    func: async (input: { goal?: string; outlineText?: string; mode?: 'smart' | 'follow_manual'; assetIds?: string[] }) =>
+      guard(async () => {
         const inflight = await findJobByCourse({ courseId, kind: CURRICULUM_JOB_KIND })
         if (inflight && (inflight.status === 'queued' || inflight.status === 'running')) {
           return '起草任务已在进行中，完成后会在对话里通知，无需重复提交。'
         }
-        await enqueueJob({ courseId, kind: CURRICULUM_JOB_KIND })
+        const existing = await plansRepo.findCoursePlanInput(courseId)
+        const goal = input.goal ?? existing?.goal ?? ''
+        if (!goal.trim()) {
+          return 'ERROR:课程目标还没拿到——先在对话里向教师收集目标（可用确认卡问规划方式），再带参调用 draft_plan。'
+        }
+        await savePlanInputInternal(courseId, thread.created_by, {
+          goal,
+          outlineText: input.outlineText ?? existing?.outline_text ?? '',
+          allowPartial: false,
+          ...(input.mode != null ? { mode: input.mode } : {}),
+          ...(input.assetIds != null ? { assetIds: input.assetIds } : {}),
+        })
         return '已提交起草任务。完成后系统会在对话里通知，期间教师可以在右栏查看素材与目录。'
       }),
   })
@@ -199,5 +244,5 @@ export function planTools(thread: AgentThreadRow) {
       }),
   })
 
-  return [getPlan, draftPlan, revisePlan, applyTweak, askQuestion, todoWrite]
+  return [getPlan, getMaterials, draftPlan, revisePlan, applyTweak, askQuestion, todoWrite]
 }

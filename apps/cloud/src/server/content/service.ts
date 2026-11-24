@@ -134,3 +134,17 @@ export async function getCourseForUser(user: SessionUser, courseId: string): Pro
   }
   return toCourseView(row)
 }
+
+/** 改名（教师只能改自己的课；运营与管理员不限）。 */
+export async function renameCourse(user: SessionUser, courseId: string, title: string): Promise<CourseView> {
+  await getCourseForUser(user, courseId)
+  const row = await repo.updateCourseTitle(courseId, title.trim())
+  if (!row) throw notFound('课程不存在')
+  return toCourseView(row)
+}
+
+/** 删除课程：挂在其下的素材、方案、生产与对话线程一并级联删除，不可恢复。 */
+export async function deleteCourse(user: SessionUser, courseId: string): Promise<void> {
+  await getCourseForUser(user, courseId)
+  await repo.deleteCourseById(courseId)
+}

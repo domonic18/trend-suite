@@ -41,6 +41,19 @@ export async function createCourse(input: {
   return createCourseResponse.parse(data).course
 }
 
+/** 课程改名。 */
+export async function renameCourse(courseId: string, title: string): Promise<void> {
+  await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ title }),
+  })
+}
+
+/** 删除课程：素材、方案、生产与对话线程一并删除，不可恢复。 */
+export async function deleteCourse(courseId: string): Promise<void> {
+  await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}`, { method: 'DELETE' })
+}
+
 // ---------------------------------------------------------------- 课程方案（迭代 3）
 
 /** 当前方案 + 起草任务 + 已提交的目标与目录（轮询用）。 */

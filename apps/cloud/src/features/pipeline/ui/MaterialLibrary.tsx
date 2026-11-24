@@ -13,7 +13,7 @@ import { readinessOf } from './processing'
  * 素材库（教师端需求 T4）：所有课程的视频收在一处。
  *
  * 这里是「全局视角」——教师名下所有课程的素材都能看到，
- * 每份素材标出归属课程；课程内视图（MaterialPanel）是它的子集。
+ * 每份素材标出归属课程；素材上传与转写只收口在这里。
  */
 export function MaterialLibrary() {
   const { courses } = useCourses()

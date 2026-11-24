@@ -9,6 +9,29 @@
 .vtrail .vt:last-child{border-bottom:none}
 .vtrail .vt .v{font:600 10.5px var(--font-mono);color:var(--p-pri);flex:none}
 .vtrail .vt .src{font:500 10px var(--font-mono);color:#9aa3b8;flex:none}
+/* 全新课程空态（对话区还没有任何消息时的图式化入口） */
+.agent-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:36px 18px 30px;text-align:center;font-size:12.5px;color:#9aa3b8;line-height:1.8}
+.agent-empty-card{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(400px,100%);margin-bottom:10px;padding:24px 18px 20px;border:1.5px dashed #d9e1ee;border-radius:14px;background:#fff;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,background .15s,transform .15s,box-shadow .15s}
+.agent-empty-card:hover{border-color:var(--p-pri);background:var(--p-pri-soft);transform:translateY(-1px);box-shadow:var(--p-sh-sm)}
+.agent-empty-art{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:var(--p-pri-soft);color:var(--p-pri)}
+.agent-empty-art svg{width:26px;height:26px}
+.agent-empty-title{font-size:14px;font-weight:700;color:var(--p-ink)}
+.agent-empty-sub{font-size:12px;color:#5a6785}
+/* 选素材弹窗：视频方格墙（封面 + 时长角标 + 悬停预览；没跑理解的整卡置灰） */
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px;max-height:340px;overflow:auto;margin-top:6px}
+.asset-card{position:relative;display:flex;flex-direction:column;overflow:hidden;border:1px solid #e4e9f2;border-radius:10px;background:#fff;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s}
+.asset-card:hover{transform:translateY(-1px);box-shadow:var(--p-sh-sm)}
+.asset-card.on{border-color:var(--p-pri);box-shadow:0 0 0 2px var(--p-pri-soft)}
+.asset-card.off{opacity:.55;cursor:not-allowed;background:var(--p-soft)}
+.asset-poster{position:relative;aspect-ratio:16/9;overflow:hidden}
+.asset-poster .ph-play{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.9)}
+.asset-poster .ph-play svg{width:26px;height:26px}
+.asset-dur{position:absolute;right:6px;bottom:6px;padding:1px 6px;border-radius:6px;background:rgba(22,32,58,.72);color:#fff;font-size:10.5px;font-family:var(--font-mono)}
+.asset-check{position:absolute;top:6px;right:6px;display:none;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--p-pri);color:#fff;font-size:12px;font-weight:700}
+.asset-card.on .asset-check{display:grid}
+.asset-off-tag{position:absolute;left:0;right:0;bottom:0;padding:3px 0;background:rgba(22,32,58,.62);color:#fff;font-size:11px;text-align:center}
+.asset-name{padding:8px 10px 2px;font-size:12.5px;font-weight:600;color:var(--p-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asset-sub{padding:0 10px 9px;font-size:11px;color:#9aa3b8}
 </style></head><body><svg style="display:none" xmlns="http://www.w3.org/2000/svg">
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 17H6.5A2.5 2.5 0 0 0 4 19.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
@@ -18,12 +41,12 @@
 <symbol id="i-run" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h7l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
 <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-4.5 16-4-6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 13.5L20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
-<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M9 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-8.1 8.1a4.5 4.5 0 0 1-6.4-6.4l7.6-7.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
 <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
 <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L22 20H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v5M12 17.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 7.6v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.5h8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 4.5v15M17 4.5v15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2.4"/><path d="M10.6 9.6l3.6 2.4-3.6 2.4z" fill="currentColor"/></symbol>
 </svg>
 <div class="ops-app chat-center">
 
@@ -71,6 +94,18 @@
  </div>
 
  <div class="agent-body">
+
+  <!-- 空态示意：全新课程（还没有大纲、Agent 未工作）时对话区只有这一块——
+       图式化入口卡（行业空态样式：虚线卡 + 影片图标 + 主行动），点开即选素材弹窗；
+       真实页面里它取代下方整段消息流，选择确认后进入起草对话。 -->
+  <div class="agent-empty">
+   <button class="agent-empty-card" type="button" onclick="document.getElementById('pick-dialog').showModal()">
+    <span class="agent-empty-art"><svg><use href="#i-film"/></svg></span>
+    <span class="agent-empty-title">选择素材，开始制作</span>
+    <span class="agent-empty-sub">从素材库勾选课程视频（可跨课、可多选），确认后自动起草方案</span>
+   </button>
+   <p>也可以直接把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟）。</p>
+  </div>
 
   <div class="ev ok">素材已读取 · 2 份 / 128 units / 42 frames</div>
 
@@ -148,11 +183,12 @@
 
  <div class="agent-foot">
   <div class="agent-context"><span>上下文</span><span class="meter"><i style="width:34%"></i></span><span>34% · 12.4k / 36k</span></div>
+  <!-- 对话区内只有三种交互：自由文本（composer）、AskQuestion 确认卡（点选即答）、
+       快捷指令（一点即发）。起草目标/目录在对话里给，规划方式等选择由 Agent 发确认卡。 -->
   <div class="quick"><button onclick="focusPlan('依据当前素材重新梳理一版大纲，保留已有章节编号。')">重新梳理</button><button onclick="focusPlan('合并第 2、3 章，避免过细。')">合并章节</button><button onclick="focusPlan('把分节粒度调粗一点，每章不超过 3 节。')">调整分节粒度</button><button onclick="focusPlan('解释这一版大纲的取舍依据。')">解释这一版</button></div>
   <div class="composer">
    <textarea id="plan-input" placeholder="和 Agent 对话：提修改意见、问依据，或让它重新梳理…"></textarea>
    <div class="cr">
-    <button class="ic-btn" title="附加素材"><svg><use href="#i-paperclip"/></svg></button>
     <span class="grow"></span><span class="kbd">⌘↵</span>
     <button class="send" title="发送"><svg><use href="#i-send"/></svg></button>
    </div>
@@ -178,7 +214,6 @@
     <button class="on" type="button" data-pane="p-outline">大纲</button>
     <button type="button" data-pane="p-terms">术语<span class="n">26</span></button>
     <button type="button" data-pane="p-sections">分节<span class="n">21</span></button>
-    <button type="button" data-pane="p-params">参数</button>
     <button type="button" data-pane="p-trail">轨迹<span class="n">3</span></button>
    </div>
   </div>
@@ -266,20 +301,6 @@
     </table>
    </div>
 
-   <!-- 起草参数：改完找 Agent 重新梳理 -->
-   <div class="ctpane" id="p-params">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-     <label class="note">学时目标</label><input class="fi" style="width:86px" value="90 分钟">
-     <label class="note">风格</label>
-     <span class="filter"><span class="on">口语 + 图解</span><span>严谨</span></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
-     <label class="note">术语口径</label><span class="tag gray">A 股</span>
-     <span class="tag ok">素材 2 份 · 128 units</span>
-     <button class="btn sm" onclick="focusPlan('参数改了：学时目标 90 分钟不变，风格改严谨。请重新梳理一版大纲。')">按新参数重新梳理</button>
-    </div>
-   </div>
-
    <!-- 版本轨迹 -->
    <div class="ctpane" id="p-trail">
     <div class="vtrail">
@@ -296,6 +317,39 @@
 </div>
 
 </div>
+
+<!-- 选素材弹窗：首次打开课程（还没有大纲、Agent 未工作）时，对话区空态提供「选择素材，开始制作」入口；
+     素材来自素材库全局视角（跨课可选），方格墙带封面与悬停视频预览，没跑理解的整卡置灰；
+     确认制作 = 往对话流发一条带素材 id 的消息，Agent 收齐后 draft_plan 带参触发起草（目标缺失时它会向教师要）。 -->
+<dialog id="pick-dialog" style="width:640px;max-width:92vw">
+ <div class="dialog-head"><b>选择素材，开始制作</b><button class="x" type="button" onclick="this.closest('dialog').close()">×</button></div>
+ <div class="dialog-body">
+  <p class="note" style="margin:0 0 6px">从素材库勾选要用于本课制作的视频（可多选、可跨课），悬停卡片可预览。确认后 Agent 以这些素材起草课程方案。</p>
+  <div class="asset-grid">
+   <div class="asset-card on">
+    <div class="asset-poster" style="background:linear-gradient(135deg,#3b5ea8,#6f8fd0)"><span class="ph-play"><svg><use href="#i-film"/></svg></span><span class="asset-dur">42:18</span><span class="asset-check">✓</span></div>
+    <span class="asset-name">总论卷-第1讲.mp4</span><span class="asset-sub">总论卷 · 64 要点</span>
+   </div>
+   <div class="asset-card">
+    <div class="asset-poster" style="background:linear-gradient(135deg,#2b7a68,#5aa893)"><span class="ph-play"><svg><use href="#i-film"/></svg></span><span class="asset-dur">38:04</span><span class="asset-check">✓</span></div>
+    <span class="asset-name">总论卷-第2讲.mp4</span><span class="asset-sub">总论卷 · 51 要点</span>
+   </div>
+   <div class="asset-card off">
+    <div class="asset-poster" style="background:linear-gradient(135deg,#8d93a3,#aab2c2)"><span class="ph-play"><svg><use href="#i-film"/></svg></span><span class="asset-dur">12:36</span><span class="asset-off-tag">需重跑理解</span></div>
+    <span class="asset-name">筹码分布-导论.mp4</span><span class="asset-sub">筹码分布卷 · 理解未完成</span>
+   </div>
+   <div class="asset-card">
+    <div class="asset-poster" style="background:linear-gradient(135deg,#8a5aa8,#b48ac9)"><span class="ph-play"><svg><use href="#i-film"/></svg></span><span class="asset-dur">25:41</span><span class="asset-check">✓</span></div>
+    <span class="asset-name">级别专题-案例.mp4</span><span class="asset-sub">趋势交易基础 · 33 要点</span>
+   </div>
+  </div>
+ </div>
+ <div class="dialog-foot">
+  <button class="btn" type="button" onclick="this.closest('dialog').close()">取消</button>
+  <button class="btn primary" type="button" onclick="pickConfirm(this)">确认制作（已选 1 份）</button>
+ </div>
+</dialog>
+
 <script>
 function focusPlan(text){
   var rail=document.querySelector('.agent-rail');
@@ -303,6 +357,28 @@ function focusPlan(text){
   if(text) c.value=text;
   c.focus();
   rail.scrollIntoView({block:'end'});
+}
+/* 方格墙点选：整卡点击切换选中态，底部按钮同步份数 */
+document.querySelectorAll('#pick-dialog .asset-card:not(.off)').forEach(function(card){
+ card.addEventListener('click', function(){
+  card.classList.toggle('on');
+  var n=document.querySelectorAll('#pick-dialog .asset-card.on').length;
+  var btn=document.querySelector('#pick-dialog .dialog-foot .btn.primary');
+  btn.textContent='确认制作（已选 '+n+' 份）';
+  btn.disabled=n===0;
+ });
+});
+/* 选素材确认：关弹窗 + 往对话流落一条用户消息（真实实现里消息带素材 id，Agent 依此 draft_plan） */
+function pickConfirm(btn){
+ var names=[].map.call(document.querySelectorAll('#pick-dialog .asset-card.on .asset-name'),function(el){return el.textContent});
+ if(!names.length) return;
+ btn.closest('dialog').close();
+ var body=document.querySelector('.agent-body');
+ var row=document.createElement('div');
+ row.className='msg user';
+ row.innerHTML='<span class="m-av">周</span><div class="m-body"><div class="m-meta">你 · 刚刚</div><div class="m-text"><p>已从素材库选择 '+names.length+' 份素材开始制作：'+names.join('、')+'。请用这些素材起草课程方案。</p></div></div>';
+ body.appendChild(row);
+ body.scrollTop=body.scrollHeight;
 }
 /* AskQuestion：点选即回答（原型只演示选择态；真实实现里选择会回传服务端确定性执行） */
 document.querySelectorAll('.ask:not(.locked) .opt').forEach(function(b){

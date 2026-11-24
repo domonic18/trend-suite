@@ -219,6 +219,18 @@ export async function savePlanInput(
   input: SubmitPlanInputRequest,
 ): Promise<PlanJobView> {
   await requireOwnedCourse(actor, courseId)
+  return savePlanInputInternal(courseId, actor.id, input)
+}
+
+/**
+ * 线程语境的内部变体（agent 工具复用）：调用方已在线程授权语境校验过属主与
+ * 角色，这里不再重复权限检查；门禁（素材就绪度、素材归属）全部保留。
+ */
+export async function savePlanInputInternal(
+  courseId: string,
+  actorId: string,
+  input: SubmitPlanInputRequest,
+): Promise<PlanJobView> {
   const body = submitPlanInputRequest.parse(input)
   // 目录先验可留空（原型口径）：留空则由 Agent 依据目标与素材代拟一版并回写。
   const outlineText = body.outlineText.trim()
@@ -228,7 +240,7 @@ export async function savePlanInput(
   // 参与本次规划的是教师勾选的那几份（可跨课）；不勾就是本课素材。
   let assets = await listAssetsByCourse(courseId)
   if (body.assetIds && body.assetIds.length > 0) {
-    const owned = await listOwnedAssetIds(actor.id, body.assetIds)
+    const owned = await listOwnedAssetIds(actorId, body.assetIds)
     if (owned.length !== body.assetIds.length) {
       throw badRequest('素材不存在或不属于你', { path: 'assetIds', message: '请重新选择素材' })
     }

@@ -18,6 +18,10 @@ export const createCourseRequest = z.object({
   assetIds: z.array(z.string().min(1)).max(50, '单次最多选 50 份素材').optional(),
 })
 
+export const updateCourseRequest = z.object({
+  title: z.string().min(1, '课程名称必填').max(120, '课程名称最长 120 个字符'),
+})
+
 export const courseView = z.object({
   id: z.string().regex(idShape.course),
   title: z.string(),
@@ -48,6 +52,7 @@ export const createCourseResponse = z.object({ course: courseView })
 export const courseListResponse = z.object({ items: z.array(courseSummaryView) })
 
 export type CreateCourseRequest = z.infer<typeof createCourseRequest>
+export type UpdateCourseRequest = z.infer<typeof updateCourseRequest>
 export type CourseView = z.infer<typeof courseView>
 export type CourseSummaryView = z.infer<typeof courseSummaryView>
 export type CreateCourseResponse = z.infer<typeof createCourseResponse>

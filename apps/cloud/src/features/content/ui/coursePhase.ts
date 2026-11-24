@@ -43,35 +43,21 @@ export const PHASE_LABELS: Record<CoursePhaseKey, string> = {
   readiness: '发布就绪度',
 }
 
-/** 阶段路由：素材是课程首页，方案与生产是它的下两级；就绪度本轮不开放。 */
-export function phasePathOf(courseId: string, phase: CoursePhaseKey): string | null {
-  const base = `/workbench/courses/${courseId}`
-  if (phase === 'material') return base
-  if (phase === 'plan') return `${base}/plan`
-  if (phase === 'production') return `${base}/production`
-  return null
-}
-
-/** 从路由反推当前阶段（深链保持可用：老 URL 直接落到对应阶段）。 */
-export function phaseOfPath(pathname: string): CoursePhaseKey {
-  if (pathname.includes('/plan')) return 'plan'
+/** 从路由反推当前阶段（深链保持可用；课程根路径会立即重定向，不标阶段）。 */
+export function phaseOfPath(pathname: string): CoursePhaseKey | null {
+  if (pathname.endsWith('/plan')) return 'plan'
   if (pathname.includes('/production')) return 'production'
+  if (/\/courses\/[^/]+$/.test(pathname)) return null
   return 'material'
 }
 
 /**
- * 四个阶段的状态与提示。
+ * 阶段状态与提示（素材 / 方案 / 生产三段）。
  *
  * 阶段是有先后的：素材没就绪就没方案，方案没批准就没生产——
  * 下游阶段在上游没到位时一律 todo，不显示成「进行中」骗人。
+ * 素材阶段没有独立页面（收口在素材库），只参与状态推导与课程卡提示。
  */
-export function coursePhases(input: CoursePhaseInput): CoursePhase[] {
-  const material = materialPhase(input)
-  const plan = planPhase(input, material.state === 'done')
-  const production = productionPhase(input, plan.state === 'done')
-  return [material, plan, production, readinessPhase()]
-}
-
 function materialPhase(input: CoursePhaseInput): CoursePhase {
   let state: PhaseState
   let hint: string
@@ -146,17 +132,6 @@ function productionPhase(input: CoursePhaseInput, planApproved: boolean): Course
   }
 }
 
-function readinessPhase(): CoursePhase {
-  return {
-    key: 'readiness',
-    label: PHASE_LABELS.readiness,
-    title: '发布就绪度',
-    desc: '五道门禁自动判定是否可以交付运营——后续迭代开放，本轮只留位置。',
-    state: 'soon',
-    hint: '后续迭代开放',
-  }
-}
-
 /**
  * 下一步：任何时刻只有一个答案。
  *
@@ -171,7 +146,7 @@ export function nextActionOf(input: CoursePhaseInput): NextAction {
   if (material.state !== 'done') {
     return {
       phase: 'material',
-      label: material.state === 'todo' ? '上传课程视频' : '等待素材就绪',
+      label: material.state === 'todo' ? '去素材库上传' : '等待素材就绪',
       hint: material.hint,
     }
   }

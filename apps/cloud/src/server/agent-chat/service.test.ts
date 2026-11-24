@@ -13,6 +13,7 @@ import { glossaryOf, validateConceptMap } from '@/server/content/plans/concepts'
 import * as plansRepo from '@/server/content/plans/repo'
 import { runWorkerOnce } from '@/server/pipeline/jobs/worker'
 import { cancelJob, findJobByCourse } from '@/server/pipeline/jobs/repo'
+import { insertAsset } from '@/server/pipeline/repo'
 import { createModelEntry } from '@/server/models/service'
 import { HttpError } from '@/server/lib/http'
 import { approvePlan } from '@/server/content/plans/service'
@@ -317,6 +318,85 @@ test('run 失败：落 err event、任务按成功收口、线程回到 idle', {
 
   const job = await findJobByCourse({ courseId, kind: 'agent_chat' })
   assert.ok(job && job.status === 'succeeded', '失败会话任务按成功收口（不重试）')
+})
+
+test('对话式起草：目标与目录进对话、规划方式走确认卡、draft_plan 带参落库触发起草', { skip }, async () => {
+  const username = `laoshi-chat-d-${randomBytes(4).toString('hex')}`
+  const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
+  const course = await createCourse(teacher.id, '会话起草课')
+  const assetId = newId('mediaAsset')
+  await insertAsset({ id: assetId, courseId: course.id, fileName: 'lecture.mp4', expectedByteSize: 1024 })
+  await query(`UPDATE media_assets SET status = 'ready' WHERE id = $1`, [assetId])
+
+  // 1) 教师把目标与目录整段发进对话（无表单）；Agent 以确认卡问规划方式（主流 AskQuestion）
+  script.push(
+    {
+      toolCalls: [
+        {
+          name: 'ask_question',
+          args: {
+            text: '目录沿用你粘贴的骨架，还是让我重新规划？',
+            options: [
+              { label: '沿用人工目录骨架', description: '你粘贴的目录为下界' },
+              { label: '智能重新规划目录', description: '依据素材讲解要点重排' },
+            ],
+          },
+        },
+      ],
+    },
+    { text: '已发出确认卡，点选即可。' },
+  )
+  await sendMessage(teacher, course.id, 'plan', { text: `目标是学会看趋势，目录：\n${OUTLINE_TEXT}` })
+  assert.equal(await runWorkerOnce(), true)
+
+  let feed = await stream(teacher, course.id, 'plan', 0)
+  const question = feed.messages.find((message) => message.role === 'question')
+  assert.ok(question && question.role === 'question')
+  assert.equal(feed.pendingQuestionId, question.id)
+
+  // 2) 教师点选确认卡 → Agent 收齐信息后 draft_plan 带参触发起草（素材选自素材库入口）
+  script.push(
+    {
+      toolCalls: [
+        {
+          name: 'draft_plan',
+          args: { goal: '学会看趋势', outlineText: OUTLINE_TEXT, mode: 'follow_manual', assetIds: [assetId] },
+        },
+      ],
+    },
+    { text: '已提交起草任务，完成后在对话里通知。' },
+  )
+  await answerQuestion(teacher, course.id, question.id, { optionIndex: 0 })
+  assert.equal(await runWorkerOnce(), true)
+
+  // wire 口径：第一轮问询有 ask_question，第二轮有 draft_plan / get_materials，且永不出现批准类
+  const recent = wireBodies.slice(-4).map((body) => (body.tools ?? []).map((tool) => tool.function?.name ?? ''))
+  assert.ok(recent.slice(0, 2).every((names) => names.includes('ask_question')), '问询轮应带 ask_question')
+  assert.ok(
+    recent.slice(2).every((names) => names.includes('draft_plan') && names.includes('get_materials')),
+    '起草轮应带 draft_plan 与 get_materials',
+  )
+  for (const names of recent) {
+    assert.ok(names.every((name) => !/approve/i.test(name)), `wire 出现批准类工具：${names.join(',')}`)
+  }
+
+  // 3) 起草输入落库：goal 来自对话、目录原样、规划模式与所选素材写入课程
+  const input = await plansRepo.findCoursePlanInput(course.id)
+  assert.ok(input, 'draft_plan 应保存起草输入')
+  assert.equal(input.goal, '学会看趋势')
+  assert.equal(input.outline_text, OUTLINE_TEXT)
+  assert.equal(input.plan_mode, 'follow_manual')
+  assert.deepEqual(input.plan_asset_ids, [assetId])
+
+  // 4) 确认卡锁定、答案回显、curriculum_draft 已入队（收尾取消防污染）
+  feed = await stream(teacher, course.id, 'plan', 0)
+  const answeredCard = feed.messages.find((message) => message.id === question.id)
+  assert.ok(answeredCard && answeredCard.role === 'question' && answeredCard.question.answeredIndex === 0)
+  const answer = feed.messages.find((message) => message.role === 'answer')
+  assert.ok(answer && answer.role === 'answer' && answer.label === '沿用人工目录骨架')
+  const job = await findJobByCourse({ courseId: course.id, kind: 'curriculum_draft' })
+  assert.ok(job && (job.status === 'queued' || job.status === 'running'), 'draft_plan 应触发起草任务')
+  await cancelJob(job.id)
 })
 
 test('制作台对话：production 期 sendMessage 放开、工具白名单切换、工具事实落流', { skip }, async () => {
