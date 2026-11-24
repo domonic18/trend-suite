@@ -5,7 +5,6 @@ import type {
   AgentMessageView,
   PlanCoverageView,
   PlanJobView,
-  PlanMaterialView,
   PlanReviewView,
   PlanView,
   TweakPlanRequest,
@@ -13,13 +12,13 @@ import type {
 import { NextActionBanner } from './NextActionBanner'
 import { classifyDraftFailure } from './draftFailure'
 import { OutlineTree } from './OutlineTree'
-import { PlanDraftForm } from './PlanDraftForm'
 import { ToolCards } from './ToolCards'
 
 /**
- * 右栏产物工作区（arch/08 §2，WorkBuddy 式页签）：大纲 / 术语 / 分节 / 参数 / 轨迹。
- * 内容即产物，微调即时生效、不进对话；需要确认的事以确认卡呈现在中栏对话流。
- * 每个状态在「大纲」页签顶部回答「现在该干什么」（下一步横幅）。
+ * 右栏纯产物工作区（arch/08 §2，WorkBuddy 式页签）：大纲 / 术语 / 分节 / 轨迹。
+ * 只呈现产物与微调（微调即时生效、不进对话）——所有工作交互都在中栏对话区
+ * （自由文本 + AskQuestion 确认卡），这里出现「现在该干什么」时只做状态呈现
+ * 或定位到对话区。每个状态在「大纲」页签顶部回答「现在该干什么」（下一步横幅）。
  */
 
 type MaterialsReady = { ready: number; total: number }
@@ -28,7 +27,6 @@ const TABS = [
   { key: 'outline', label: '大纲' },
   { key: 'glossary', label: '术语' },
   { key: 'lessons', label: '分节' },
-  { key: 'params', label: '参数' },
   { key: 'trace', label: '轨迹' },
 ] as const
 
@@ -38,8 +36,6 @@ export function PlanWorkspace({
   courseId,
   plan,
   job,
-  input,
-  courseMaterials,
   materials,
   review,
   busy,
@@ -47,14 +43,11 @@ export function PlanWorkspace({
   notice,
   events,
   onTweak,
-  onRefresh,
   onGoChat,
 }: {
   courseId: string
   plan: PlanView | null
   job: PlanJobView | null
-  input: { goal: string; outlineText: string } | null
-  courseMaterials: PlanMaterialView[]
   materials: MaterialsReady | null
   review: PlanReviewView | null
   busy: boolean
@@ -63,7 +56,6 @@ export function PlanWorkspace({
   /** 对话线程内的系统事件（轨迹页签的事实流）。 */
   events: AgentMessageView[]
   onTweak: (op: TweakPlanRequest) => void
-  onRefresh: () => void
   onGoChat: () => void
 }) {
   const [tab, setTab] = useState<TabKey>('outline')
@@ -95,7 +87,6 @@ export function PlanWorkspace({
     outline: plan ? String(plan.skeleton.nodes.length) : null,
     glossary: plan ? String(glossaryCount) : null,
     lessons: plan ? String(lessons.length) : null,
-    params: null,
     trace: events.length > 0 ? String(events.length) : null,
   }
 
@@ -138,15 +129,12 @@ export function PlanWorkspace({
             </NextActionBanner>
           ) : null}
           {failure ? (
-            <NextActionBanner
-              tone="warn"
-              action={{ label: failure.action?.label ?? '去修改重提', onClick: () => setTab('params') }}
-            >
+            <NextActionBanner tone="warn" action={{ label: '去对话修改重提', onClick: onGoChat }}>
               {failure.text}
             </NextActionBanner>
           ) : null}
           {review && review.status === 'manual' ? (
-            <NextActionBanner tone="warn" action={{ label: '去修改重提', onClick: () => setTab('params') }}>
+            <NextActionBanner tone="warn" action={{ label: '去对话修改重提', onClick: onGoChat }}>
               规划自检连续 {review.attempts} 次未通过，方案没有呈现给你——修掉下面的问题后可重新提交。
             </NextActionBanner>
           ) : null}
@@ -169,8 +157,8 @@ export function PlanWorkspace({
             </NextActionBanner>
           ) : null}
           {!plan && !running && !jobFailed ? (
-            <NextActionBanner tone="info" action={{ label: '去提交目标与目录', onClick: () => setTab('params') }}>
-              第 1 步：提交课程目标（人工目录可留空，由 Agent 代拟）——Agent 依据目标与已就绪素材起草方案。
+            <NextActionBanner tone="info">
+              还没有方案——在中栏对话把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它确认规划方式后开始起草。
             </NextActionBanner>
           ) : null}
 
@@ -232,7 +220,7 @@ export function PlanWorkspace({
               />
             </>
           ) : (
-            <p className="note">还没有方案——在「参数」页签提交课程目标与目录后，Agent 开始起草。</p>
+            <p className="note">还没有方案——在中栏对话提交课程目标与目录后，Agent 开始起草，这里呈现草案。</p>
           )}
         </div>
 
@@ -275,21 +263,6 @@ export function PlanWorkspace({
             <p className="note">分节计划随方案起草生成。</p>
           )}
           {plan?.coverage ? <CoverageNote coverage={plan.coverage} /> : null}        </div>
-
-        <div className={`ctpane${tab === 'params' ? ' on' : ''}`}>
-          <PlanDraftForm
-            courseId={courseId}
-            initial={input}
-            materials={materials}
-            courseMaterials={courseMaterials}
-            onSubmitted={onRefresh}
-          />
-          {plan ? (
-            <p className="note">
-              提交新目标会触发重新起草（当前草案被打回）；只想小改请直接在大纲页签微调，或在中栏告诉 Agent。
-            </p>
-          ) : null}
-        </div>
 
         <div className={`ctpane${tab === 'trace' ? ' on' : ''}`}>
           {events.length === 0 ? (

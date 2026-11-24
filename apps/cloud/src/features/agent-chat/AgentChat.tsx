@@ -9,9 +9,12 @@ import type { AgentStream } from './useAgentStream'
 /**
  * 中置对话流（arch/08 §2，原型 teacher-plan.html 的 chat-center）：
  * 面包屑 + 头部（状态灯）+ 消息流（user/assistant/question/answer/todo/event）
- * + 底部快捷指令与 composer。流状态由调用方持有（useAgentStream）——
- * 同页的产物工作区可共享同一份轮询。课程级任务（如起草 job）在途时以
- * draftingLabel 呈现「正在起草」态；agent run 在途以 typing 态呈现。
+ * + 底部快捷指令与 composer。对话区内只有三种交互：自由文本（composer）、
+ * AskQuestion 确认卡（点选即答）、快捷指令（一点即发，不回填 composer）。
+ * 流状态由调用方持有（useAgentStream）——同页的产物工作区可共享同一份轮询。
+ * 课程级任务（如起草 job）在途时以 draftingLabel 呈现「正在起草」态；
+ * agent run 在途以 typing 态呈现。结构化输入与确认一律走对话流的确认卡，
+ * 右栏产物工作区保持纯呈现与微调。
  */
 export function AgentChat({
   id,
@@ -22,6 +25,7 @@ export function AgentChat({
   draftingLabel = null,
   liveLabel = '正在起草',
   emptyHint,
+  emptyAction = null,
   quickChips = [],
 }: {
   id?: string
@@ -34,6 +38,8 @@ export function AgentChat({
   /** draftingLabel 在途时状态灯的短文案（方案页「正在起草」/ 制作台「制作中」）。 */
   liveLabel?: string
   emptyHint: string
+  /** 空态主行动（如方案页首次打开的「选择素材，开始制作」）；null = 无。 */
+  emptyAction?: { label: string; description?: string; onClick: () => void } | null
   quickChips?: string[]
 }) {
   const { messages, agentBusy, pendingQuestionId, error, send, answer } = stream
@@ -114,7 +120,26 @@ export function AgentChat({
 
       <div className="agent-body" ref={bodyRef}>
         {error ? <div className="notice err">对话流加载失败：{error}</div> : null}
-        {messages.length === 0 && !busy ? <p className="agent-empty">{emptyHint}</p> : null}
+        {messages.length === 0 && !busy ? (
+          <div className="agent-empty">
+            {emptyAction ? (
+              <button type="button" className="agent-empty-card" onClick={emptyAction.onClick}>
+                <span className="agent-empty-art" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+                    <path d="M7 4.5v15M17 4.5v15" strokeWidth="1.3" strokeDasharray="2 2.4" />
+                    <path d="M10.6 9.6l3.6 2.4-3.6 2.4z" fill="currentColor" stroke="none" />
+                  </svg>
+                </span>
+                <span className="agent-empty-title">{emptyAction.label}</span>
+                {emptyAction.description ? (
+                  <span className="agent-empty-sub">{emptyAction.description}</span>
+                ) : null}
+              </button>
+            ) : null}
+            <p>{emptyHint}</p>
+          </div>
+        ) : null}
         {messages.map((message) => (
           <MessageRow
             key={message.id}
@@ -145,7 +170,7 @@ export function AgentChat({
         {quickChips.length > 0 ? (
           <div className="quick">
             {quickChips.map((chip) => (
-              <button key={chip} type="button" onClick={() => setText(chip)}>
+              <button key={chip} type="button" onClick={() => void submit(chip)}>
                 {chip}
               </button>
             ))}
@@ -154,7 +179,7 @@ export function AgentChat({
         <div className="composer">
           <textarea
             value={text}
-            maxLength={2000}
+            maxLength={20000}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -162,7 +187,7 @@ export function AgentChat({
                 void submit(text.trim())
               }
             }}
-            placeholder="与 Agent 对话：改方案、问进度、提需求…"
+            placeholder="与 Agent 对话：给目标与目录、改方案、问进度…"
           />
           <div className="cr">
             <span className="grow" />

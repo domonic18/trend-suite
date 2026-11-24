@@ -83,7 +83,8 @@ export const agentMessageView = z.discriminatedUnion('role', [
 ])
 
 export const sendMessageRequest = z.object({
-  text: z.string().min(1).max(2000),
+  /** 上限 20000：目录先验可整段粘贴进对话（与旧起草表单同量级）。 */
+  text: z.string().min(1).max(20000),
 })
 
 export const sendMessageResponse = z.object({
