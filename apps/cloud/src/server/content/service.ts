@@ -143,8 +143,15 @@ export async function renameCourse(user: SessionUser, courseId: string, title: s
   return toCourseView(row)
 }
 
-/** 删除课程：挂在其下的素材、方案、生产与对话线程一并级联删除，不可恢复。 */
+/**
+ * 删除课程：挂在其下的素材、方案、生产与对话线程一并级联删除，不可恢复。
+ * 幂等：课程不存在（已删过 / 列表 stale）视为删除成功——前端二次点击不再报 404。
+ */
 export async function deleteCourse(user: SessionUser, courseId: string): Promise<void> {
-  await getCourseForUser(user, courseId)
+  const row = await repo.findCourseById(courseId)
+  if (!row) return
+  if (user.role === 'producer' && row.owner_id !== user.id) {
+    throw forbidden('该课程不属于你')
+  }
   await repo.deleteCourseById(courseId)
 }

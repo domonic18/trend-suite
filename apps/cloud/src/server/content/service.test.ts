@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { resetTestDatabase, testDatabaseUrl } from '@/server/lib/test-db'
 import { query } from '@/server/lib/db'
 import { createAccount } from '@/server/accounts/service'
-import { createCourse, listCoursesFor, listCourseSummariesFor } from './service'
+import { HttpError } from '@/server/lib/http'
+import { createCourse, deleteCourse, listCoursesFor, listCourseSummariesFor } from './service'
 
 const url = testDatabaseUrl()
 if (url) process.env.DATABASE_URL = url
@@ -223,4 +224,36 @@ test('建课可带目标与素材：素材可跨课选用，归属课程不变',
   )
   assert.equal(outlineRow?.plan_mode, 'follow_manual')
   assert.equal(outlineRow?.outline_text, '第一篇 总论')
+})
+
+test('删除课程幂等：二次删除不抛错（不存在视为已删除）', { skip }, async () => {
+  const teacher = await createAccount({
+    username: 'laoshi-del-idem',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourse(teacher.id, '待删课')
+  await deleteCourse(teacher, course.id)
+  await assert.doesNotReject(() => deleteCourse(teacher, course.id))
+})
+
+test('删除课程：归属校验仍在——别人的课 403；已删的课任何人删都幂等', { skip }, async () => {
+  const owner = await createAccount({
+    username: 'laoshi-del-owner',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const other = await createAccount({
+    username: 'laoshi-del-other',
+    password: 'correct-horse',
+    role: 'producer',
+  })
+  const course = await createCourse(owner.id, '有主课')
+
+  await assert.rejects(
+    () => deleteCourse(other, course.id),
+    (err: unknown) => err instanceof HttpError && err.status === 403,
+  )
+  await deleteCourse(owner, course.id)
+  await assert.doesNotReject(() => deleteCourse(other, course.id))
 })

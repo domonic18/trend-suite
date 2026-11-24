@@ -3,6 +3,7 @@
 import {
   hlsPlaybackResponse,
   productionBoardResponse,
+  resyncQuotesResponse,
   retryProductionSectionResponse,
   sectionContentResponse,
   sectionQuotesResponse,
@@ -34,6 +35,15 @@ export async function getSectionQuotes(courseId: string, sectionId: string): Pro
     `/v1/admin/content/courses/${courseId}/production/sections/${sectionId}/quotes`,
   )
   return sectionQuotesResponse.parse(data).quotes
+}
+
+/** 重新同步节行情：只重置行情步（2/3）再重投，案例股不重跑。 */
+export async function resyncSectionQuotes(courseId: string, sectionId: string): Promise<void> {
+  const data = await apiRequest<unknown>(
+    `/v1/admin/content/courses/${courseId}/production/sections/${sectionId}/quotes/resync`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+  resyncQuotesResponse.parse(data)
 }
 
 /** 节教材内容预览（正文 DSL 原文 + 三路图示 + 内联 source units）。 */
