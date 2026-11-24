@@ -27,9 +27,9 @@ before(async () => {
   if (url) await resetTestDatabase()
 })
 
-async function seedReadyAsset(courseId: string): Promise<string> {
+async function seedReadyAsset(courseId: string, createdBy: string): Promise<string> {
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId, fileName: 'lecture.mp4', expectedByteSize: 1024 })
+  await insertAsset({ id: assetId, courseId, createdBy, fileName: 'lecture.mp4', expectedByteSize: 1024 })
   await query(
     `UPDATE media_assets SET status = 'ready', source_path = '/tmp/x.mp4', duration_s = 600 WHERE id = $1`,
     [assetId],
@@ -114,14 +114,14 @@ test('提交目标与目录：素材未就绪不可起草，就绪后入队并�
 
   // 素材未就绪 → 仍不可起草
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'a.mp4', expectedByteSize: 10 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'a.mp4', expectedByteSize: 10 })
   await assert.rejects(
     () => savePlanInput(teacher, course.id, { goal: '学会看盘', outlineText: OUTLINE_TEXT, allowPartial: false }),
     (err: unknown) =>
       err instanceof HttpError && err.status === 409 && err.code === 'plan_not_draftable',
   )
 
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
   await query(`UPDATE media_assets SET status = 'ready' WHERE course_id = $1`, [course.id])
   const job = await savePlanInput(teacher, course.id, { goal: '学会看盘', outlineText: OUTLINE_TEXT, allowPartial: false })
   assert.equal(job.status, 'queued')
@@ -140,7 +140,7 @@ test('目录留空也接受：目标照常回填，目录待 Agent 代拟', { sk
     role: 'producer',
   })
   const course = await createCourse(teacher.id, '方案课-空目录')
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
 
   const job = await savePlanInput(teacher, course.id, {
     goal: '学会看盘',
@@ -242,7 +242,7 @@ test('微调：结构化即时生效，版本 +1 且不调模型', { skip }, asy
     role: 'producer',
   })
   const course = await createCourse(teacher.id, '方案课五')
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
   // 目录来自教师提交的目标与目录（微调要同步目录树）
   await savePlanInput(teacher, course.id, { goal: '学会看盘', outlineText: OUTLINE_TEXT, allowPartial: false })
   await insertDraft(course.id, teacher.id)
@@ -288,7 +288,7 @@ test('微调：移动章节换父节点，目录树与骨架同步落库', { ski
     role: 'producer',
   })
   const course = await createCourse(teacher.id, '方案课移动')
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
   await savePlanInput(teacher, course.id, {
     goal: '学会看盘',
     outlineText: MOVE_OUTLINE_TEXT,
@@ -343,7 +343,7 @@ test('自检结论：getPlanFor 带回最近一次自检结果，没有则为空
     role: 'producer',
   })
   const course = await createCourse(teacher.id, '方案课自检')
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
   await savePlanInput(teacher, course.id, {
     goal: '学会看盘',
     outlineText: OUTLINE_TEXT,
@@ -440,7 +440,7 @@ test('权限：admin 兼具 producer 权限，可提交与批准他人课程方�
     role: 'admin',
   })
   const course = await createCourse(teacher.id, '方案课八')
-  await seedReadyAsset(course.id)
+  await seedReadyAsset(course.id, teacher.id)
 
   // admin 非归属人，但兼具 producer 权限：提交与批准都放行
   const job = await savePlanInput(admin, course.id, {

@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import type {
   MediaAssetView,
@@ -56,10 +55,8 @@ export function MaterialCard(props: {
   onChanged: (asset: MediaAssetView) => void
   onRemoved: (assetId: string) => void
   onError: (message: string) => void
-  /** 全局素材库里显示归属课程；课程内视图不用重复显示。 */
-  showCourse?: boolean
 }) {
-  const { asset, onChanged, onRemoved, onError, showCourse = false } = props
+  const { asset, onChanged, onRemoved, onError } = props
   const [openStage, setOpenStage] = useState<MediaStage | null>(null)
   const [detail, setDetail] = useState<Detail>(EMPTY_DETAIL)
   const [loadingDetail, setLoadingDetail] = useState(false)
@@ -147,9 +144,6 @@ export function MaterialCard(props: {
           <b>{asset.fileName}</b>
           <span className="mh-id">{asset.id}</span>
         </div>
-        {showCourse && asset.courseTitle ? (
-          <span className="mh-course">{asset.courseTitle}</span>
-        ) : null}
         <div className="mh-st">
           <span className={`st st-${readiness}`}>
             <i />
@@ -297,9 +291,6 @@ export function MaterialCard(props: {
       ) : null}
 
       <div className="matcard-f">
-        <Link className="btn primary" href={`/workbench/courses/${asset.courseId}/plan`}>
-          用这份素材做课
-        </Link>
         {readiness === 'queued' || readiness === 'running' ? (
           <button
             type="button"

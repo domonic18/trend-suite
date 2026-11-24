@@ -50,11 +50,11 @@ export async function assetViewOf(
 ): Promise<MediaAssetView> {
   const [stages, titles] = await Promise.all([
     stageViewsOf([row]),
-    repo.listCourseTitles([row.course_id]),
+    repo.listCourseTitles(row.course_id ? [row.course_id] : []),
   ])
   return buildAssetView(row, {
     jobStatus,
-    courseTitle: titles.get(row.course_id) ?? null,
+    courseTitle: row.course_id ? (titles.get(row.course_id) ?? null) : null,
     stages: stages.get(row.id) ?? [],
   })
 }
@@ -64,14 +64,12 @@ export async function assetViewsOf(
   rows: repo.MediaAssetRow[],
   jobs: Map<string, { status: JobStatus }>,
 ): Promise<MediaAssetView[]> {
-  const [stages, titles] = await Promise.all([
-    stageViewsOf(rows),
-    repo.listCourseTitles([...new Set(rows.map((row) => row.course_id))]),
-  ])
+  const courseIds = [...new Set(rows.map((row) => row.course_id).filter((id) => id !== null))]
+  const [stages, titles] = await Promise.all([stageViewsOf(rows), repo.listCourseTitles(courseIds)])
   return rows.map((row) =>
     buildAssetView(row, {
       jobStatus: jobs.get(row.id)?.status ?? null,
-      courseTitle: titles.get(row.course_id) ?? null,
+      courseTitle: row.course_id ? (titles.get(row.course_id) ?? null) : null,
       stages: stages.get(row.id) ?? [],
     }),
   )

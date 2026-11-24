@@ -11,6 +11,7 @@ import { queryOne } from '@/server/lib/db'
 import { newId } from '@/server/lib/ids'
 import { getEnv } from '@/env'
 import { ProbeUnavailableError } from './probe'
+import { assertAssetAccess } from './access'
 import * as repo from './repo'
 import { assetViewOf, assetViewsOf } from './asset-view'
 import { cancelJob, findJobByAsset, listLatestJobs } from './jobs/repo'
@@ -26,16 +27,26 @@ const UPLOAD_CONTENT_TYPE = 'application/octet-stream'
 
 /**
  * 建素材并签发直传凭据（arch/05 §3.1）。
- * 同课程、同名、同大小的待上传素材直接复用——重试不产生重复素材。
+ * 素材独立上传入库（教师端需求 T4 改写）：courseId 可空，归属关系在建课勾选时建立；
+ * 归属跟着上传者走（created_by）。同上传者、同名、同大小的待上传素材直接复用——
+ * 重试不产生重复素材。
  */
 export async function createAsset(
   user: SessionUser,
-  input: { courseId: string; fileName: string; byteSize: number; sha256?: string | undefined },
+  input: {
+    courseId?: string | undefined
+    fileName: string
+    byteSize: number
+    sha256?: string | undefined
+  },
 ): Promise<{ asset: MediaAssetView; upload: MediaUploadTarget }> {
-  await getCourseForUser(user, input.courseId)
+  if (input.courseId !== undefined) {
+    await getCourseForUser(user, input.courseId)
+  }
 
   const reusable = await repo.findReusableAsset({
-    courseId: input.courseId,
+    courseId: input.courseId ?? null,
+    createdBy: user.id,
     fileName: input.fileName,
     expectedByteSize: input.byteSize,
   })
@@ -48,7 +59,8 @@ export async function createAsset(
       ? reusable
       : await repo.insertAsset({
           id: newId('mediaAsset'),
-          courseId: input.courseId,
+          ...(input.courseId !== undefined ? { courseId: input.courseId } : {}),
+          createdBy: user.id,
           fileName: input.fileName,
           expectedByteSize: input.byteSize,
           expectedSha256: input.sha256,
@@ -91,7 +103,7 @@ export async function receiveUpload(
 ): Promise<MediaAssetView> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   const contentType = (req.headers.get('content-type') ?? '').split(';')[0]?.trim()
   if (contentType !== UPLOAD_CONTENT_TYPE) {
@@ -178,7 +190,7 @@ export async function receiveUpload(
 export async function deleteMaterial(user: SessionUser, assetId: string): Promise<void> {
   const row = await repo.findAssetById(assetId)
   if (!row) throw notFound('素材不存在')
-  await getCourseForUser(user, row.course_id)
+  await assertAssetAccess(user, row)
 
   if (await hasSourceUnits(assetId)) {
     throw new HttpError(409, 'material_referenced', '素材已产出理解成果，先处置方案引用再删除')

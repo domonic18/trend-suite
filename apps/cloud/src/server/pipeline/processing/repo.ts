@@ -371,7 +371,7 @@ export async function completedUnderstandChunkIndexes(assetId: string): Promise<
  * 同事务把落在单元时间窗内的转写段落回填 unit_id。
  */
 export async function insertSourceUnits(input: {
-  courseId: string
+  courseId: string | null
   assetId: string
   chunkIndex: number
   modelId: string | null

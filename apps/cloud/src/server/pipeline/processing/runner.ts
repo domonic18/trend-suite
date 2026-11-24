@@ -28,8 +28,8 @@ const SEQ_STRIDE = 100_000
 
 export type ProcessingContext = {
   assetId: string
-  /** 所属课程（理解阶段落 source_units 需要课程维度）。 */
-  courseId: string
+  /** 所属课程（理解阶段落 source_units 用）；独立上传的素材可能还没有课程 → null。 */
+  courseId: string | null
   /** 素材原片的可读路径。 */
   sourcePath: string
   durationS: number

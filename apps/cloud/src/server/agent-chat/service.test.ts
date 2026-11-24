@@ -325,7 +325,7 @@ test('对话式起草：目标与目录进对话、规划方式走确认卡、dr
   const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
   const course = await createCourse(teacher.id, '会话起草课')
   const assetId = newId('mediaAsset')
-  await insertAsset({ id: assetId, courseId: course.id, fileName: 'lecture.mp4', expectedByteSize: 1024 })
+  await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'lecture.mp4', expectedByteSize: 1024 })
   await query(`UPDATE media_assets SET status = 'ready' WHERE id = $1`, [assetId])
 
   // 1) 教师把目标与目录整段发进对话（无表单）；Agent 以确认卡问规划方式（主流 AskQuestion）
