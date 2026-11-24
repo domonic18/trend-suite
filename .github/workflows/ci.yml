@@ -158,7 +158,8 @@ jobs:
   test:
     name: Test / 单元与契约测试
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 60 分钟：慢 apt 曾把 30 分钟预算吃光导致测试被掐断（测试本身 ~15 分钟）
+    timeout-minutes: 60
     services:
       postgres:
         # 必须与生产同款：检索依赖 pgvector 扩展与 pg_trgm
@@ -198,11 +199,27 @@ jobs:
 
       # 媒体管线测试需要 ffmpeg 现场转出夹具（arch/05 §3）；runner 镜像不带，
       # 缺了会静默失败在夹具构建上，报错还看不出缺的是什么。
+      # apt 下载曾间歇性拖到 17 分钟吃光 job 预算：deb 包走 actions/cache，
+      # 命中即本地安装（ffmpeg + ffprobe 同源同版），未命中才下载并回存。
+      - name: Cache ffmpeg debs / 缓存 ffmpeg 安装包
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-debs
+          key: apt-ffmpeg-${{ runner.os }}-ubuntu-latest
+
       - name: Install ffmpeg / 安装 ffmpeg
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg
+          if ls ~/apt-debs/*.deb >/dev/null 2>&1; then
+            sudo apt-get install -y -qq ~/apt-debs/*.deb \
+              || sudo apt-get install -y -qq -o Acquire::Retries=5 ffmpeg
+          else
+            sudo apt-get install -y -qq -o Acquire::Retries=5 -o APT::Keep-Downloaded-Packages=true ffmpeg
+            mkdir -p ~/apt-debs
+            sudo cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null || true
+          fi
           ffmpeg -version | head -1
+          ffprobe -version | head -1
 
       # 跳过开关挂在步骤级而非 job 级：build job needs 整组检查线，
       # job 级跳过会把 build 一起跳掉（needs 链上 skipped 即级联跳过）
