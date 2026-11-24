@@ -7,6 +7,7 @@ import type {
   ProductionBoardView,
   ProductionSectionRow,
   SectionContentView,
+  SectionQuotesView,
   SourceUnitView,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -19,7 +20,8 @@ import { DslRenderer } from '@/features/content/ui/DslRenderer'
 import { FigureCard } from '@/features/content/ui/FigureCard'
 import { WidgetHost } from '@/features/content/ui/widgets/WidgetHost'
 import type { FigureView } from '@trend-suite/contracts'
-import { getProductionBoard, getSectionContent, retryProductionSection } from '../api'
+import { getProductionBoard, getSectionContent, getSectionQuotes, resyncSectionQuotes, retryProductionSection } from '../api'
+import { KlineChart } from './KlineChart'
 
 /**
  * 课件制作台（迭代 11，arch/08 chat-center，教师端需求 T21）：与方案页同一形态——
@@ -84,6 +86,8 @@ export function ProductionStudio({
   const [board, setBoard] = useState<ProductionBoardView | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [content, setContent] = useState<SectionContentView | null>(null)
+  const [quotes, setQuotes] = useState<SectionQuotesView | null>(null)
+  const [syncing, setSyncing] = useState(false)
   const [assetNames, setAssetNames] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -177,6 +181,45 @@ export function ProductionStudio({
     [courseId, refreshBoard],
   )
 
+  // 行情随节切换重取：K线页签直接画案例股的 K 线（不等课件步产出）。
+  useEffect(() => {
+    if (!currentId) {
+      setQuotes(null)
+      return
+    }
+    let stale = false
+    void getSectionQuotes(courseId, currentId)
+      .then((value) => {
+        if (!stale) setQuotes(value)
+      })
+      .catch(() => undefined)
+    return () => {
+      stale = true
+    }
+  }, [courseId, currentId])
+
+  /** 同步行情：重置该节行情步重投，然后轮询补数（bars 到齐或 60 秒超时即停）。 */
+  const syncQuotes = useCallback(async () => {
+    if (!currentId || syncing) return
+    setSyncing(true)
+    setError(null)
+    try {
+      await resyncSectionQuotes(courseId, currentId)
+      const deadline = Date.now() + 60_000
+      for (;;) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000))
+        const value = await getSectionQuotes(courseId, currentId)
+        setQuotes(value)
+        if (value.stocks.length > 0 && value.stocks.every((stock) => stock.bars.length > 0)) break
+        if (Date.now() >= deadline) break
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '同步行情失败，请稍后再试')
+    } finally {
+      setSyncing(false)
+    }
+  }, [courseId, currentId, syncing])
+
   const doneSteps = sections.reduce((sum, section) => sum + section.products, 0)
   const totalSteps = sections.length * 9
   const progressPct = totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0
@@ -237,7 +280,12 @@ export function ProductionStudio({
     figures:
       content && content.figures.length > 0 ? String(content.figures.length) : null,
     video: content && content.units.length > 0 ? String(content.units.length) : null,
-    kline: klineWidgets.length > 0 ? String(klineWidgets.length) : null,
+    kline:
+      quotes && quotes.stocks.length > 0
+        ? String(quotes.stocks.length)
+        : klineWidgets.length > 0
+          ? String(klineWidgets.length)
+          : null,
     quiz: quizWidgets.length > 0 ? String(quizWidgets.length) : null,
     interactive: interactiveWidgets.length > 0 ? String(interactiveWidgets.length) : null,
   }
@@ -417,26 +465,52 @@ export function ProductionStudio({
             </div>
 
             <div className={`ctpane${tab === 'kline' ? ' on' : ''}`}>
-              {content && klineWidgets.length > 0 ? (
+              {current ? (
                 <>
-                  {content.caseStocks.length > 0 ? (
-                    <div className="th">
-                      案例股 <span className="grow" />
-                      <span className="tag gray">
-                        {content.caseStocks.map((stock) => `${stock.name} ${stock.code}`).join(' · ')}
-                      </span>
-                    </div>
+                  <div className="th">
+                    案例股行情 <span className="grow" />
+                    {syncing ? (
+                      <span className="tag run">同步中…</span>
+                    ) : (
+                      <button type="button" className="btn link" onClick={() => void syncQuotes()}>
+                        同步行情
+                      </button>
+                    )}
+                  </div>
+                  {quotes && quotes.stocks.length > 0 ? (
+                    quotes.stocks.map((stock) => (
+                      <div key={stock.id} style={{ marginBottom: 14 }}>
+                        <div className="th">
+                          <b>
+                            {stock.name} {stock.code}
+                          </b>
+                          <span className="grow" />
+                          <span className="tag gray">
+                            {stock.period === '1w' ? '周线' : '日线'} · {stock.windowStart} ~ {stock.windowEnd}
+                          </span>
+                        </div>
+                        <KlineChart stock={stock} />
+                      </div>
+                    ))
+                  ) : (
+                    <p className="note">
+                      本节还没有案例股行情——点「同步行情」拉取 K 线数据；若该节尚未选案例股，可在左栏「重试该节」重新选股。
+                    </p>
+                  )}
+                  {content && klineWidgets.length > 0 ? (
+                    <>
+                      <div className="th">
+                        K 线课件 <span className="grow" />
+                        <span className="tag gray">{klineWidgets.length}</span>
+                      </div>
+                      {klineWidgets.map((widget) => (
+                        <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
+                      ))}
+                    </>
                   ) : null}
-                  {klineWidgets.map((widget) => (
-                    <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
-                  ))}
                 </>
               ) : (
-                <p className="note">
-                  {current
-                    ? '本节还没有 K 线类课件——行情同步 / 逐根回放步完成后这里列出 K 线标注与回放练习。'
-                    : '选一节后查看它的 K 线课件。'}
-                </p>
+                <p className="note">选一节后查看它的 K 线行情与课件。</p>
               )}
             </div>
 
