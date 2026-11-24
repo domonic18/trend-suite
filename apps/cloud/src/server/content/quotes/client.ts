@@ -2,6 +2,7 @@ import 'server-only'
 import type { FetchLike } from '@/server/content/agents/llm'
 import { getEnv } from '@/env'
 import type { KlineBar, MarketPeriod } from '@trend-suite/contracts'
+import { findDefaultQuotesSource } from './sources/repo'
 
 /**
  * 腾讯前复权 K 线客户端（arch/06 §5 口径权威）：
@@ -10,12 +11,34 @@ import type { KlineBar, MarketPeriod } from '@trend-suite/contracts'
  * - 单页 ≤640 根；窗口受复检约束（1d 不早于 2024-03）时一页即覆盖；
  * - volume 单位手，amount 恒缺省不建模；
  * - 单源无备用：失败抛 retryable 的 MarketSourceError，由上层退避后降级占位。
+ *
+ * 来源可配（迁移 020）：显式 env > 运营台默认源（≤60s 缓存）> env 默认值；
+ * 查库失败回退环境变量，绝不抛——worker 不因配置缺失挂死。
  */
-
-export const TENCENT_QUOTES_BASE_URL = 'https://web.ifzq.gtimg.cn'
 
 const PAGE_SIZE = 640
 const TIMEOUT_MS = 20_000
+const SOURCE_CACHE_TTL_MS = 60_000
+
+let cachedSource: { value: string; at: number } | null = null
+
+/** 显式设置 env 时优先（本地开发与测试口径）；未设置时以运营台默认源为准。 */
+export async function resolveQuotesBaseUrl(): Promise<string> {
+  const explicit = process.env.MARKET_QUOTES_BASE_URL
+  if (explicit) return explicit
+  const fallback = getEnv().MARKET_QUOTES_BASE_URL
+  if (cachedSource && Date.now() - cachedSource.at < SOURCE_CACHE_TTL_MS) {
+    return cachedSource.value
+  }
+  try {
+    const row = await findDefaultQuotesSource()
+    const value = row?.base_url ?? fallback
+    cachedSource = { value, at: Date.now() }
+    return value
+  } catch {
+    return fallback
+  }
+}
 
 /** 行情源不可达/非 0 返回：retryable，上层退避重试后仍败则降级占位。 */
 export class MarketSourceError extends Error {
@@ -61,7 +84,7 @@ export async function fetchQuotes(
   windowEnd: string,
   options: FetchQuotesOptions = {},
 ): Promise<KlineBar[]> {
-  const base = options.baseUrl ?? getEnv().MARKET_QUOTES_BASE_URL
+  const base = options.baseUrl ?? (await resolveQuotesBaseUrl())
   const fetchImpl = options.fetchImpl ?? fetch
   const sym = tencentSymbol(symbol)
   const url = `${base}/appstock/app/fqkline/get?param=${sym},${periodParam(period)},${windowStart},${windowEnd},${PAGE_SIZE},qfq`
