@@ -17,10 +17,12 @@ export function chatStatusOf(input: {
   pendingQuestionId: string | null
   messages: AgentMessageView[]
 }): ChatStatus {
-  const lastEvent = [...input.messages].reverse().find((m) => m.role === 'event')
-  if (lastEvent && lastEvent.role === 'event') {
-    if (lastEvent.kind === 'run_failed') return 'failed'
-    if (lastEvent.kind === 'chat_stopped') return 'stopped'
+  // 终态事件只在它是「最后一条消息」时呈现——停止/失败后教师重新发起并得到
+  // 回复，状态应回到在线，而不是被旧事件一直压住。
+  const last = input.messages[input.messages.length - 1]
+  if (last && last.role === 'event') {
+    if (last.kind === 'run_failed') return 'failed'
+    if (last.kind === 'chat_stopped') return 'stopped'
   }
   if (input.agentBusy || input.drafting) return 'running'
   if (input.pendingQuestionId) return 'waiting'

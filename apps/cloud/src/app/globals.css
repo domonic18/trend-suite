@@ -1250,6 +1250,54 @@ dialog::backdrop {
   font-weight: 600;
 }
 
+/* 面包屑（对齐 Sasan：链接带弱下划线 hover 主色、skew 细线分隔、当前页实文） */
+.ops-crumb {
+  display: flex;
+  min-width: 0;
+  gap: 0;
+  align-items: center;
+  font-size: 13px;
+}
+
+.ops-crumb > * {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.ops-crumb a {
+  flex: none;
+  color: var(--p-mut);
+  padding-block: 4px;
+  text-decoration: underline;
+  text-decoration-color: var(--p-line);
+  text-underline-offset: 3px;
+}
+
+.ops-crumb .course-crumb {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.ops-crumb a:hover {
+  color: var(--p-pri);
+}
+
+.ops-crumb [aria-current] {
+  flex: none;
+  color: var(--p-ink);
+  font-weight: 550;
+}
+
+.ops-crumb .sep {
+  flex: none;
+  width: 1px;
+  height: 0.9em;
+  background: var(--p-faint);
+  transform: skew(-16deg);
+  margin: 0 10px 0 6px;
+}
+
 .ops-top .sep {
   color: var(--p-faint);
 }
@@ -2689,9 +2737,21 @@ dialog::backdrop {
   color: var(--p-pri);
 }
 
+.msg.user {
+  flex-direction: row-reverse; /* 头像在右（主流：机器人左、用户右） */
+}
+
+.msg.user .m-body {
+  flex: 0 1 auto;
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .msg.user .m-av {
-  background: var(--p-line);
-  color: var(--p-mut);
+  background: var(--p-pri);
+  color: #fff;
 }
 
 .msg .m-body {
@@ -2719,9 +2779,14 @@ dialog::backdrop {
 }
 
 .msg.user .m-text {
-  background: var(--p-soft);
-  border-radius: 10px;
-  padding: 8px 10px;
+  /* 用户气泡：主色专有底 + 白字（对齐 Sasan 的用户气泡形态：右对齐、
+     右下角小半径），深浅主题下都醒目 */
+  background: var(--p-pri);
+  color: #fff;
+  border-radius: 12px 12px 3px 12px;
+  padding: 8px 12px;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .streaming::after {

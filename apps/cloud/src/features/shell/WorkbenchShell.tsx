@@ -94,29 +94,38 @@ export function WorkbenchShell(props: { children: ReactNode }) {
 
       <div className="wb-col">
         <header className="ops-top">
-          <span>生产工作台</span>
-          {current ? (
-            <>
-              <span className="sep">/</span>
-              <b>{current.title}</b>
-              {phase ? (
-                <>
-                  <span className="sep">/</span>
-                  <span>{PHASE_LABELS[phase]}</span>
-                </>
-              ) : null}
-            </>
-          ) : onLibrary ? (
-            <>
-              <span className="sep">/</span>
-              <b>素材库</b>
-            </>
-          ) : (
-            <>
-              <span className="sep">/</span>
-              <b>所有课程</b>
-            </>
-          )}
+          {/* 面包屑（对齐 Sasan：可点击链接 + skew 分隔线 + 当前页 aria-current） */}
+          <nav className="ops-crumb" aria-label="面包屑">
+            <Link href="/workbench">生产工作台</Link>
+            {current ? (
+              <>
+                <i className="sep" aria-hidden="true" />
+                <Link
+                  className="course-crumb"
+                  title={current.title}
+                  href={`/workbench/courses/${current.id}`}
+                >
+                  {current.title}
+                </Link>
+                {phase ? (
+                  <>
+                    <i className="sep" aria-hidden="true" />
+                    <span aria-current="page">{PHASE_LABELS[phase]}</span>
+                  </>
+                ) : null}
+              </>
+            ) : onLibrary ? (
+              <>
+                <i className="sep" aria-hidden="true" />
+                <span aria-current="page">素材库</span>
+              </>
+            ) : (
+              <>
+                <i className="sep" aria-hidden="true" />
+                <span aria-current="page">所有课程</span>
+              </>
+            )}
+          </nav>
           {/* header 右侧控件（行业惯例）：主题切换 + 用户菜单，两形态页面同位 */}
           <div className="ops-corner">
             <ThemeIconButton theme={theme} onToggle={toggle} />

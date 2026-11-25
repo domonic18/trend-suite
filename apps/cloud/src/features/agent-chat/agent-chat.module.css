@@ -583,14 +583,54 @@ legend.askBadgeLive {
   resize: none;
   overflow-y: auto;
 }
-.sendBtn {
-  flex: none;
-}
+/* 发送/停止：主流 Agent 圆形图标钮（发送=主色实底箭头；停止=中性实底方块） */
+.sendBtn,
 .stopBtn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.12s ease, background 0.12s ease;
+}
+
+.sendBtn {
+  color: #fff;
+  background: var(--p-pri);
+  box-shadow: var(--p-sh-sm);
+}
+
+.sendBtn:not(:disabled):hover {
+  background: var(--p-pri-deep);
+  transform: translateY(-1px);
+}
+
+.sendBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sendBtn:focus-visible,
+.stopBtn:focus-visible {
+  outline: 2px solid var(--p-pri);
+  outline-offset: 2px;
+}
+
+.stopBtn {
+  color: #fff;
+  background: var(--p-ink);
+}
+
+.stopBtn:not(:disabled):hover {
   background: var(--p-err);
 }
-.stopBtn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--p-err) 85%, #000);
+
+.stopBtn:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 /* ---------------------------------------------------------------- 回到底部 */

@@ -255,22 +255,35 @@ export function AgentChat({
             {stopMode ? (
               <button
                 type="button"
-                className={`${styles.sendBtn} ${styles.stopBtn}`}
+                className={styles.stopBtn}
                 title="停止本轮回复"
+                aria-label="停止本轮回复"
                 onClick={() => void stopRun()}
                 disabled={stopping}
               >
-                {stopping ? '…' : '■'}
+                <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                  <rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" />
+                </svg>
               </button>
             ) : (
               <button
                 type="button"
-                className={`send ${styles.sendBtn}`}
+                className={styles.sendBtn}
                 title="发送（当前任务结束后处理）"
+                aria-label="发送"
                 onClick={() => void submit(text.trim())}
                 disabled={!text.trim() || sending}
               >
-                ↑
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path
+                    d="M12 19V6M6.5 11.5L12 6l5.5 5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             )}
           </div>
