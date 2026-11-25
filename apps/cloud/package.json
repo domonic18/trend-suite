@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --port 3940 --hostname 127.0.0.1",
+    "dev:all": "node --run dev & APP_ROLE=worker node --run worker & wait",
     "worker": "node --env-file-if-exists=.env --conditions=react-server --import tsx src/worker.ts",
     "check": "tsc --noEmit",
     "build": "next build",

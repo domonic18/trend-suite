@@ -12,7 +12,7 @@
     "test": "turbo run test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "dev:cloud": "pnpm --filter @trend-suite/cloud dev"
+    "dev:cloud": "pnpm --filter @trend-suite/cloud dev:all"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
