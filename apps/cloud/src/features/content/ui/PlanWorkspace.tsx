@@ -9,7 +9,6 @@ import type {
   PlanView,
   TweakPlanRequest,
 } from '@trend-suite/contracts'
-import { NextActionBanner } from './NextActionBanner'
 import { classifyDraftFailure } from './draftFailure'
 import { OutlineTree } from './OutlineTree'
 import { ToolCards } from './ToolCards'
@@ -17,8 +16,8 @@ import { ToolCards } from './ToolCards'
 /**
  * 右栏纯产物工作区（arch/08 §2，WorkBuddy 式页签）：大纲 / 术语 / 分节 / 轨迹。
  * 只呈现产物与微调（微调即时生效、不进对话）——所有工作交互都在中栏对话区
- * （自由文本 + AskQuestion 确认卡），这里出现「现在该干什么」时只做状态呈现
- * 或定位到对话区。每个状态在「大纲」页签顶部回答「现在该干什么」（下一步横幅）。
+ * （自由文本 + AskQuestion 确认卡）。不放状态横幅与「现在该干什么」的引导：
+ * 起草进度、批准卡、失败原因都由对话流承载；这里只回答「产物长什么样」。
  */
 
 type MaterialsReady = { ready: number; total: number }
@@ -43,7 +42,6 @@ export function PlanWorkspace({
   notice,
   events,
   onTweak,
-  onGoChat,
 }: {
   courseId: string
   plan: PlanView | null
@@ -56,18 +54,13 @@ export function PlanWorkspace({
   /** 对话线程内的系统事件（轨迹页签的事实流）。 */
   events: AgentMessageView[]
   onTweak: (op: TweakPlanRequest) => void
-  onGoChat: () => void
 }) {
   const [tab, setTab] = useState<TabKey>('outline')
 
   const running = job?.status === 'queued' || job?.status === 'running'
   const approved = plan?.status === 'approved'
-  const lowMatchCount = plan ? plan.skeleton.nodes.filter((n) => n.matchStatus === 'low_match').length : 0
-  const violationCount = plan ? plan.violations.filter((v) => !v.resolved).length : 0
-  const blocked = lowMatchCount > 0 || violationCount > 0
   const jobFailed = !plan && job?.status === 'failed'
   const failure = jobFailed ? classifyDraftFailure(job) : null
-  const matText = materials ? `基于 ${materials.ready}/${materials.total} 份就绪素材` : ''
 
   const nodeTitleById = new Map((plan?.skeleton.nodes ?? []).map((node) => [node.id, node.title]))
   const lessons = plan?.sectionPlan.lessons ?? []
@@ -78,9 +71,7 @@ export function PlanWorkspace({
     : running
       ? { cls: 'run', text: '起草中' }
       : plan
-        ? blocked
-          ? { cls: 'warn', text: '待裁决' }
-          : { cls: 'warn', text: '待批准' }
+        ? { cls: 'warn', text: '待批准' }
         : { cls: 'mut', text: '未起草' }
 
   const counts: Record<TabKey, string | null> = {
@@ -96,12 +87,6 @@ export function PlanWorkspace({
         <div className="ws-title">
           方案工作区
           <span className={`tag ${tag.cls}`}>{tag.text}</span>
-          <span className="grow" />
-          {plan ? (
-            <span className="ws-meta">
-              v{plan.version} · {plan.skeleton.nodes.length} 章 · {lessons.length} 节
-            </span>
-          ) : null}
         </div>
         <div className="ctabs" role="tablist">
           {TABS.map((item) => (
@@ -122,46 +107,6 @@ export function PlanWorkspace({
 
       <div className="ws-body">
         <div className={`ctpane${tab === 'outline' ? ' on' : ''}`}>
-          {running ? (
-            <NextActionBanner tone="info">
-              Agent 正在起草方案{matText ? `（${matText}）` : ''}…草案四件套产出后自动呈现，
-              进度见中栏对话流。
-            </NextActionBanner>
-          ) : null}
-          {failure ? (
-            <NextActionBanner tone="warn" action={{ label: '去对话修改重提', onClick: onGoChat }}>
-              {failure.text}
-            </NextActionBanner>
-          ) : null}
-          {review && review.status === 'manual' ? (
-            <NextActionBanner tone="warn" action={{ label: '去对话修改重提', onClick: onGoChat }}>
-              规划自检连续 {review.attempts} 次未通过，方案没有呈现给你——修掉下面的问题后可重新提交。
-            </NextActionBanner>
-          ) : null}
-          {plan && approved ? (
-            <NextActionBanner
-              tone="ok"
-              action={{ label: '打开九步生产', href: `/workbench/courses/${courseId}/production` }}
-            >
-              方案 v{plan.version} 已锁定为基准版，逐节生产已解锁。
-            </NextActionBanner>
-          ) : null}
-          {plan && !approved && blocked ? (
-            <NextActionBanner tone="warn">
-              {lowMatchCount} 章证据不足、{violationCount} 条拒绝记录——在大纲里改名或删掉这些章节后才能批准。
-            </NextActionBanner>
-          ) : null}
-          {plan && !approved && !blocked ? (
-            <NextActionBanner tone="ok" action={{ label: '去对话批准', onClick: onGoChat }}>
-              方案四件套齐全（v{plan.version}），批准卡已发到对话流，点选即可锁定基准版。
-            </NextActionBanner>
-          ) : null}
-          {!plan && !running && !jobFailed ? (
-            <NextActionBanner tone="info">
-              还没有方案——在中栏对话把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它确认规划方式后开始起草。
-            </NextActionBanner>
-          ) : null}
-
           {error ? <div className="notice err">{error}</div> : null}
           {notice ? <div className="notice warn">{notice}</div> : null}
 
@@ -219,8 +164,10 @@ export function PlanWorkspace({
                 }
               />
             </>
+          ) : failure ? (
+            <p className="note">{failure.text}</p>
           ) : (
-            <p className="note">还没有方案——在中栏对话提交课程目标与目录后，Agent 开始起草，这里呈现草案。</p>
+            <p className="note">还没有方案。</p>
           )}
         </div>
 
@@ -233,7 +180,7 @@ export function PlanWorkspace({
               onAddAlias={(conceptId, alias) => onTweak({ op: 'add_alias', conceptId, alias })}
             />
           ) : (
-            <p className="note">概念图与术语表随方案起草生成。</p>
+            <p className="note">还没有方案。</p>
           )}
         </div>
 
@@ -260,13 +207,13 @@ export function PlanWorkspace({
               </tbody>
             </table>
           ) : (
-            <p className="note">分节计划随方案起草生成。</p>
+            <p className="note">还没有方案。</p>
           )}
           {plan?.coverage ? <CoverageNote coverage={plan.coverage} /> : null}        </div>
 
         <div className={`ctpane${tab === 'trace' ? ' on' : ''}`}>
           {events.length === 0 ? (
-            <p className="note">系统事件（起草完成 / 失败 / 批准结果）会按时间列在这里。</p>
+            <p className="note">还没有事件。</p>
           ) : (
             events.map((event) =>
               event.role === 'todo' ? (
@@ -292,3 +239,4 @@ function CoverageNote({ coverage }: { coverage: PlanCoverageView }) {
     </p>
   )
 }
+

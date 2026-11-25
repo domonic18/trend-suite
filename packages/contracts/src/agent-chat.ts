@@ -8,7 +8,8 @@ import { idShape } from './ids.js'
  * 确定性调用既有端点，模型侧没有对应工具。
  *
  * 消息按 role 判别，只追加不更新（唯一例外：question 的 answeredIndex
- * 由答案处理器回写一次）；流式读取按 seq 增量游标，2.5s 轮询。
+ * 由答案处理器回写一次）；流式读取按 seq 增量游标，SSE 事件流优先、
+ * 断线降级增量轮询。
  */
 
 export const agentPhase = z.enum(['plan', 'production'])
@@ -48,6 +49,8 @@ export const agentMessageView = z.discriminatedUnion('role', [
   agentMessageBase.extend({
     role: z.literal('assistant'),
     text: z.string(),
+    /** 思考过程（通道解析的 reasoning_content / thinking 块）；前端折叠展示，可空。 */
+    thinking: z.string().nullish(),
     tools: z.array(agentToolEventView).max(20),
   }),
   agentMessageBase.extend({
@@ -58,6 +61,12 @@ export const agentMessageView = z.discriminatedUnion('role', [
       /** 已回答时回写所选下标（前端据此锁定并高亮）；未回答为 null。 */
       answeredIndex: z.number().int().min(0).nullable(),
     }),
+    /**
+     * 发起方分流键：'agent' = 模型经 ask_question 工具中断发起（真中断，
+     * 引擎以 Command(resume) 续跑，防过期回答 409）；'server' = 服务端补发
+     * （批准卡/停止接续卡，选项可绑确定性动作）。存量数据无此字段按 server。
+     */
+    source: z.enum(['agent', 'server']).nullish(),
   }),
   agentMessageBase.extend({
     role: z.literal('answer'),
@@ -65,6 +74,8 @@ export const agentMessageView = z.discriminatedUnion('role', [
     questionMessageId: z.string().regex(idShape.agentMessage),
     optionIndex: z.number().int().min(0),
     label: z.string().min(1),
+    /** 教师点选时附带的自由文本说明（「填写其他想法」），可空。 */
+    note: z.string().max(1000).nullish(),
   }),
   agentMessageBase.extend({
     role: z.literal('todo'),
@@ -94,11 +105,18 @@ export const sendMessageResponse = z.object({
 
 export const answerQuestionRequest = z.object({
   optionIndex: z.number().int().min(0),
+  /** 附带的自由文本说明；与所选选项一起回显并进入模型上下文。 */
+  note: z.string().max(1000).optional(),
 })
 
 export const answerQuestionResponse = z.object({
   /** 回显落库后的 answer 消息；确定性动作结果以 event 消息经流端点到达。 */
   message: agentMessageView,
+})
+
+export const stopAgentRunResponse = z.object({
+  /** true = 已对在途对话任务发出取消请求（引擎在轮边界安全中止并落事件）。 */
+  stopped: z.boolean(),
 })
 
 export const agentStreamResponse = z.object({
@@ -122,3 +140,4 @@ export type SendMessageResponse = z.infer<typeof sendMessageResponse>
 export type AnswerQuestionRequest = z.infer<typeof answerQuestionRequest>
 export type AnswerQuestionResponse = z.infer<typeof answerQuestionResponse>
 export type AgentStreamResponse = z.infer<typeof agentStreamResponse>
+export type StopAgentRunResponse = z.infer<typeof stopAgentRunResponse>

@@ -60,27 +60,11 @@ export function MaterialLibrary() {
     return assets.filter((asset) => asset.fileName.toLowerCase().includes(keyword))
   }, [assets, query])
 
-  const stats = useMemo(() => {
-    let ready = 0
-    let running = 0
-    let failed = 0
-    for (const asset of assets) {
-      const readiness = readinessOf(asset)
-      if (readiness === 'ready') ready += 1
-      else if (readiness === 'failed') failed += 1
-      else running += 1
-    }
-    return { ready, running, failed }
-  }, [assets])
-
   return (
     <section>
       <div className="ops-ph">
         <div>
           <div className="t">素材库</div>
-          <div className="s">
-            视频素材独立上传、收在这里。每一份素材都拆成三段可单独重跑的分析：逐字稿 · 关键帧 · 视频理解。
-          </div>
         </div>
       </div>
 
@@ -90,15 +74,6 @@ export function MaterialLibrary() {
       <MaterialUploader onDone={refresh} />
 
       <div className="page-head" style={{ marginTop: 26 }}>
-        <div>
-          <h2>
-            素材 · {assets.length}
-            <span className="meta" style={{ marginLeft: 10 }}>
-              就绪 {stats.ready} · 处理中 {stats.running} · 失败 {stats.failed}
-            </span>
-          </h2>
-          <p className="sub">每一份素材的三段分析各自可看、可重跑、可单独删除。</p>
-        </div>
         <div className="actions">
           <input
             className="input"
@@ -114,8 +89,8 @@ export function MaterialLibrary() {
       ) : visible.length === 0 ? (
         <div className="empty">
           {assets.length === 0
-            ? '还没有素材。把课程录像拖到上面的上传区试试。'
-            : '没有匹配的素材。换个搜索词看看。'}
+            ? '还没有素材。'
+            : '没有匹配的素材。'}
         </div>
       ) : (
         <div className="matcards">

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import type { CourseSummaryView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { deleteCourse, renameCourse } from '../api'
@@ -15,10 +16,18 @@ import {
 } from './coursePhase'
 
 function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(iso))
+  const date = new Date(iso)
+  const sameYear = date.getFullYear() === new Date().getFullYear()
+  const md = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  return sameYear ? `${md} ${hm}` : `${date.getFullYear()}-${md} ${hm}`
+}
+
+/** 封面色相（借鉴 SasanImmersive 课程卡）：课程 id 哈希出稳定 hue，无封面图也有视觉锚点。 */
+function coverHueOf(id: string): number {
+  let hash = 0
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) % 360
+  return hash
 }
 
 export function CourseList() {
@@ -34,52 +43,58 @@ export function CourseList() {
       {loading ? (
         <div className="empty">课程加载中…</div>
       ) : courses.length === 0 ? (
-        <div className="empty">
-          还没有课程。新建课程后即可上传素材、生成教材。
-          <br />
-          上传的视频属于这门课——一门课可以上传多个视频，默认全部参与规划（起草时可勾选）。
-        </div>
+        <div className="empty">还没有课程。</div>
       ) : (
         <div className="cards">
           {courses.map((course) => {
             const tag = courseStatusTagOf(course)
             const next = nextActionOf(course)
+            const progress = Math.round(progressOf(course) * 100)
             return (
-              <article className="card clickable" key={course.id}>
+              <article
+                className="card clickable"
+                key={course.id}
+                style={{ '--cover-hue': coverHueOf(course.id) } as CSSProperties}
+              >
                 <Link className="card-go" href={`/workbench/courses/${course.id}`} aria-label={`进入课程 ${course.title}`} />
-                <div className="card-top">
-                  <b>{course.title}</b>
-                  <span className={`tag ${tag.tone}`}>{tag.text}</span>
-                  <span className="card-acts">
-                    <button
-                      type="button"
-                      className="btn link"
-                      title="改名"
-                      aria-label={`改名 ${course.title}`}
-                      onClick={() => setRenaming(course)}
-                    >
-                      ✎
-                    </button>
-                    <button
-                      type="button"
-                      className="btn link danger"
-                      title="删除"
-                      aria-label={`删除 ${course.title}`}
-                      onClick={() => setDeleting(course)}
-                    >
-                      ✕
-                    </button>
-                  </span>
+                <div className="card-cover" aria-hidden="true">
+                  <span className="card-mono">{Array.from(course.title)[0] ?? '课'}</span>
                 </div>
-                <div className="meta">{courseScaleOf(course)}</div>
-                <div className="prog">
-                  <i style={{ width: `${Math.round(progressOf(course) * 100)}%` }} />
+                <div className="card-body">
+                  <div className="card-top">
+                    <b>{course.title}</b>
+                    <span className={`tag ${tag.tone}`}>{tag.text}</span>
+                  </div>
+                  <div className="meta">{courseScaleOf(course)}</div>
+                  <div className="prog" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="制作进度">
+                    <i style={{ width: `${progress}%` }} />
+                  </div>
+                  <div className="meta card-hint" title={next.hint}>{next.hint}</div>
+                  <div className="foot">
+                    <span>创建于 {formatTime(course.createdAt)}</span>
+                    <span className="btn link">进入课程 →</span>
+                  </div>
                 </div>
-                <div className="meta">{next.hint}</div>
-                <div className="foot">
-                  <span>创建于 {formatTime(course.createdAt)}</span>
-                  <span className="btn link">进入课程 →</span>
-                </div>
+                <span className="card-acts">
+                  <button
+                    type="button"
+                    className="btn link"
+                    title="改名"
+                    aria-label={`改名 ${course.title}`}
+                    onClick={() => setRenaming(course)}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    className="btn link danger"
+                    title="删除"
+                    aria-label={`删除 ${course.title}`}
+                    onClick={() => setDeleting(course)}
+                  >
+                    ✕
+                  </button>
+                </span>
               </article>
             )
           })}

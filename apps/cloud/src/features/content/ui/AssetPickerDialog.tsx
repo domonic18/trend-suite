@@ -216,16 +216,10 @@ export function AssetPickerDialog({
       </div>
       <div className="dialog-body">
         {error ? <div className="notice err">{error}</div> : null}
-        <p className="form-note" style={{ marginTop: 0 }}>
-          从素材库勾选要用于本课制作的视频（可多选、可跨课），悬停卡片可预览。确认后 Agent
-          以这些素材起草课程方案，目标与目录随后可在对话里补充或调整。
-        </p>
         {loading ? (
           <div className="empty">素材加载中…</div>
         ) : assets.length === 0 ? (
-          <p className="form-note">
-            素材库里还没有视频。先到「素材库」上传并跑完理解，再回这里勾选。
-          </p>
+          <p className="form-note">素材库里还没有可用的视频。</p>
         ) : (
           <div className="asset-grid">
             {assets.map((asset) => (

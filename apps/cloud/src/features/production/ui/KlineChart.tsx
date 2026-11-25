@@ -5,7 +5,9 @@ import type { StockQuotesView } from '@trend-suite/contracts'
 import {
   CHART_DOWN,
   CHART_UP,
+  DEFAULT_PALETTE,
   MA_PERIODS,
+  type ChartPalette,
   chartScale,
   drawChart,
   sma,
@@ -18,12 +20,26 @@ import {
  *
  * 绘制内核走 chartDraw——与课件里的合成 K 线**同一份画法**（迭代 6 的教训：
  * 同一个常量在两处各写一遍，迟早对不上）。留白、均线色、命中换算只此一份。
+ * 网格与轴标签色从 CSS token 取（--k-grid/--k-label），工作台切主题时重绘。
  */
 
 const CHART_HEIGHT = 320
 
 function fmt(n: number): string {
   return n.toFixed(2)
+}
+
+/** 主题色：canvas 读不了 var()，经 getComputedStyle 取 token，缺省回退默认。 */
+function paletteOf(): ChartPalette {
+  if (typeof window === 'undefined') return DEFAULT_PALETTE
+  const style = getComputedStyle(document.documentElement)
+  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback
+  return {
+    up: read('--k-up', CHART_UP),
+    down: read('--k-down', CHART_DOWN),
+    grid: read('--k-grid', DEFAULT_PALETTE.grid),
+    label: read('--k-label', DEFAULT_PALETTE.label),
+  }
 }
 
 export function KlineChart({ stock }: { stock: StockQuotesView }) {
@@ -73,13 +89,21 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
         anchors: anchorIndex
           .filter((item) => item.idx >= 0)
           .map((item) => ({ idx: item.idx, label: item.anchor.label })),
+        palette: paletteOf(),
       })
     }
 
     draw()
     const observer = new ResizeObserver(() => draw())
     observer.observe(wrap)
-    return () => observer.disconnect()
+    // 工作台切换主题（data-wb-theme 变化）时按新 token 重绘。
+    const themed = wrap.closest('[data-wb-theme]')
+    const themeObserver = new MutationObserver(() => draw())
+    if (themed) themeObserver.observe(themed, { attributes: true, attributeFilter: ['data-wb-theme'] })
+    return () => {
+      observer.disconnect()
+      themeObserver.disconnect()
+    }
   }, [bars, ma, anchorIndex])
 
   if (stock.marketStatus === 'unavailable') {
@@ -97,7 +121,7 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
       ? { 5: ma[5]?.[hover] ?? null, 10: ma[10]?.[hover] ?? null, 60: ma[60]?.[hover] ?? null }
       : null
 
-  let readout = '悬停查看单根数值'
+  let readout = ''
   if (hoverBar) {
     readout = `${hoverBar.d}  开 ${fmt(hoverBar.o)}  高 ${fmt(hoverBar.h)}  低 ${fmt(hoverBar.l)}  收 ${fmt(hoverBar.c)}  量 ${hoverBar.v} 手`
     const m5 = hoverMa?.[5]

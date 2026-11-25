@@ -1,0 +1,28 @@
+/* 工作台深色 token（arch/08 §6）：原型 docs/prototype/assets/tokens.css 的
+   --a-* 族落地。data-wb-theme 挂在 <html> 上（workbench layout 的 inline
+   脚本首帧设好、WorkbenchShell 管理切换并在卸载时移除）——body 的根作用域
+   var() 与全子树一起按工作台主题解析。选择器带 :root 前缀提高特异性：
+   本文件经 @import 内联在 globals.css 的 :root 之前，同特异性会被源顺序
+   压掉。门户与登录不挂该属性，天然保持浅色。 */
+
+:root[data-wb-theme='dark'] {
+  --p-bg: #0c0e12;
+  --p-soft: #151821;
+  --p-line: #23262f;
+  --p-ink: #e6e8ee;
+  --p-mut: #8b93a7;
+  --p-faint: #5b6274;
+  --p-pri: #7c8cf8;
+  --p-pri-deep: #5e6ad2;
+  --p-pri-soft: rgba(94, 106, 210, 0.16);
+  --p-acc: #4ade80;
+  --p-acc-soft: rgba(74, 222, 128, 0.13);
+  --p-warn: #e8b64c;
+  --p-warn-soft: rgba(232, 182, 76, 0.13);
+  --p-err: #ef5b5b;
+  --p-err-soft: rgba(239, 91, 91, 0.13);
+  --p-sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* K 线画布：网格与轴标签用深底可读色 */
+  --k-grid: rgba(230, 232, 238, 0.16);
+  --k-label: #8b93a7;
+}

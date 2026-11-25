@@ -219,6 +219,7 @@ export async function stopProductionInternal(courseId: string): Promise<Producti
     const thread = await ensureCourseThread(courseId, 'production')
     if (thread) {
       await insertMessage(thread.id, 'question', {
+        source: 'server',
         question: {
           text: `已停在「${point.sectionTitle ?? ''}」第 ${point.step ?? '?'} 步「${point.stepLabel ?? ''}」。接下来怎么处理？`,
           options: [
