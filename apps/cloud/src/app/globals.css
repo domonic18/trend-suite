@@ -1095,24 +1095,13 @@ dialog::backdrop {
   cursor: not-allowed;
 }
 
-/* 右上角常驻控件组（arch/08 §6，行业惯例：主题切换 + 用户菜单）：
-   sticky 零高度覆盖层——普通页随滚动吸顶压在顶栏右端，chat-center 页
-   （顶栏隐藏）悬浮在工作区头部右上，两种形态都在场且不占布局空间。 */
+/* header 右侧控件组（arch/08 §6，行业惯例：主题切换 + 用户菜单）：
+   在 ops-top 内流布局，两种页面形态同位同源，不与工作区重叠。 */
 .ops-corner {
-  position: sticky;
-  top: 10px;
-  z-index: 40;
-  height: 0;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
   gap: 6px;
-  padding: 0 16px;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.ops-corner > * {
-  pointer-events: auto;
+  margin-left: auto;
 }
 
 .ops-iconbtn {
@@ -1249,7 +1238,7 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 104px 0 24px; /* 右侧给悬浮的用户/主题控件组让位 */
+  padding: 0 16px;
   background: color-mix(in srgb, var(--p-bg) 90%, transparent);
   border-bottom: 1px solid var(--p-line);
   font-size: 13px;
@@ -1277,7 +1266,7 @@ dialog::backdrop {
 }
 
 /* chat-center 两页（方案 / 制作台）对齐原型 family-agent.css：对话流是页面主轴，
-   通栏贴顶全高；外壳的顶栏 / 课程阶段栏 / 页头 / 下一步横幅 / 版本脚注都不出现。
+   通栏贴顶全高；header 保留（面包屑 + 右侧主题/用户控件），版本脚注不出现。
    chat-center 由 WorkbenchShell 按路由挂在根节点（组件树语义，非 :has 反穿）。 */
 .chat-center .ops-main {
   max-width: none;
@@ -1285,10 +1274,6 @@ dialog::backdrop {
 }
 
 .chat-center .ops-main .build-info {
-  display: none;
-}
-
-.chat-center > .wb-col > .ops-top {
   display: none;
 }
 
@@ -2209,8 +2194,9 @@ dialog::backdrop {
 }
 
 /* chat-center 语境（方案 / 制作台，原型同款几何）：对话与右栏工作区都是
-   Codex / WorkBuddy 式通栏全高面板——贴住视口上下、无圆角无外圈留白，
-   相互之间只有一根 hairline；工作区头部页签即面板头。 */
+   Codex / WorkBuddy 式通栏面板——贴住 header 下沿到视口底部、无圆角无外圈
+   留白，相互之间只有一根 hairline；工作区头部页签即面板头。
+   高度 = 视口 − header（52px + 1px 边线）。 */
 .chat-center .ops-main .plan-split {
   gap: 0;
 }
@@ -2221,7 +2207,7 @@ dialog::backdrop {
 
 .chat-center .ops-main .agent-rail {
   top: 0;
-  height: 100vh;
+  height: calc(100vh - 53px);
   min-height: 0;
   border: none;
   border-right: 1px solid var(--p-line);
@@ -2230,7 +2216,7 @@ dialog::backdrop {
 
 .chat-center .ops-main .ws {
   top: 0;
-  max-height: 100vh;
+  max-height: calc(100vh - 53px);
   border: none;
   border-left: 1px solid var(--p-line);
   border-radius: 0;

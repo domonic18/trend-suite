@@ -93,19 +93,6 @@ export function WorkbenchShell(props: { children: ReactNode }) {
       </aside>
 
       <div className="wb-col">
-        {/* 右上角常驻控件（行业惯例）：主题切换 + 用户菜单。sticky 零高度
-            覆盖层——普通页随顶栏滚动吸顶，chat-center 页（顶栏隐藏）悬浮在
-            工作区头部右上，两种形态都在场。 */}
-        <div className="ops-corner">
-          <ThemeIconButton theme={theme} onToggle={toggle} />
-          <UserMenu
-            name={name}
-            role={user?.role ?? ''}
-            onLogout={() => {
-              void session.logout().then(() => router.replace('/login'))
-            }}
-          />
-        </div>
         <header className="ops-top">
           <span>生产工作台</span>
           {current ? (
@@ -130,6 +117,17 @@ export function WorkbenchShell(props: { children: ReactNode }) {
               <b>所有课程</b>
             </>
           )}
+          {/* header 右侧控件（行业惯例）：主题切换 + 用户菜单，两形态页面同位 */}
+          <div className="ops-corner">
+            <ThemeIconButton theme={theme} onToggle={toggle} />
+            <UserMenu
+              name={name}
+              role={user?.role ?? ''}
+              onLogout={() => {
+                void session.logout().then(() => router.replace('/login'))
+              }}
+            />
+          </div>
         </header>
         <main className="ops-main">
           {props.children}
