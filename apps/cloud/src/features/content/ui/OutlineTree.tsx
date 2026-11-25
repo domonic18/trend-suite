@@ -293,7 +293,6 @@ export function OutlineTree({
             ? ` · 素材覆盖 ${Math.round(coverage.ratio * 100)}%（${coverage.coveredPoints}/${coverage.totalPoints} 要点）`
             : ''}
         </span>
-        <span className="meta">改名 / 挪位 / 删节都在这里做，改完立刻生效</span>
       </div>
 
       <div className="ol">

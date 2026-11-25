@@ -1,13 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
 import type { AgentMessageView, MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
-import { useWsDrag } from '@/features/agent-chat/useWsDrag'
+import { usePanelWidth } from '@/features/shell/PanelDivider'
 import { takeDraftNotice } from './draftNotice'
 import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
@@ -17,11 +16,12 @@ export type MaterialsReady = { ready: number; total: number }
 /**
  * 方案页（迭代 11，arch/08 chat-center）：中栏 = 与 Agent 的真多轮对话，
  * 交互只有三种——自由文本（composer，目标与目录在这里给）、AskQuestion
- * 确认卡（规划方式等选择，点选即答）、快捷指令（一点即发）；首次打开课程
- * （还没有方案）时空态另有「选择素材，开始制作」入口——弹窗多选素材库视频，
- * 确认即发一条带素材 id 的对话消息，Agent 依此触发起草。右栏 = 纯产物工作区
- * （大纲/术语/分节/轨迹，微调即时生效、不进对话）。批准由服务端在方案就绪时
- * 发确认卡，教师点选后确定性执行；右栏 340–680px 可拖拽。
+ * 确认卡（规划方式等选择，点选即答、可附言）、快捷指令（一点即发）；首次打开
+ * 课程（还没有方案）时空态另有「选择素材，开始制作」入口——弹窗多选素材库
+ * 视频，确认即发一条带素材 id 的对话消息，Agent 依此触发起草。右栏 = 纯产物
+ * 工作区（大纲/术语/分节/轨迹，微调即时生效、不进对话）。批准由服务端在方案
+ * 就绪时发确认卡，教师点选后确定性执行；右栏宽度可拖拽/键盘调整并持久化，
+ * 对话事件驱动右栏重取（refreshKey），轮询仅作兜底。
  */
 export function PlanPanel({
   courseId,
@@ -40,7 +40,7 @@ export function PlanPanel({
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const ws = useWsDrag()
+  const ws = usePanelWidth('wb.ws.w.plan')
   const stream = useAgentStream(courseId, 'plan')
 
   // 建课后触发起草失败的原因：课程已建好，提示带到这一页，别让教师再建一门课。
@@ -71,6 +71,12 @@ export function PlanPanel({
     return () => clearInterval(timer)
   }, [running, refresh])
 
+  // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：起草完成等事实落流即刷新。
+  const lastSeq = stream.lastSeq
+  useEffect(() => {
+    if (lastSeq > 0) void refresh()
+  }, [lastSeq, refresh])
+
   const act = useCallback(
     async (fn: () => Promise<unknown>) => {
       setBusy(true)
@@ -91,10 +97,6 @@ export function PlanPanel({
 
   function tweak(op: TweakPlanRequest) {
     void act(() => tweakPlan(courseId, op))
-  }
-
-  function goChat() {
-    document.getElementById('agent-chat')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const events: AgentMessageView[] = stream.messages.filter(
@@ -122,10 +124,7 @@ export function PlanPanel({
       : ['开始起草方案']
 
   return (
-    <div
-      className="plan-split"
-      {...(ws.width != null ? { style: { '--ws-w': `${ws.width}px` } as CSSProperties } : {})}
-    >
+    <div className="plan-split" style={ws.style}>
       <AgentChat
         id="agent-chat"
         stream={stream}
@@ -150,8 +149,8 @@ export function PlanPanel({
         onClose={() => setPickerOpen(false)}
         onConfirm={confirmAssets}
       />
-      <div className="wb-col" ref={ws.ref}>
-        <div className="ws-drag" onPointerDown={ws.onPointerDown} aria-hidden="true" />
+      <div className="wb-col" ref={ws.railRef}>
+        <div {...ws.handleProps} />
         <PlanWorkspace
           courseId={courseId}
           plan={plan}
@@ -163,7 +162,6 @@ export function PlanPanel({
           notice={notice}
           events={events}
           onTweak={tweak}
-          onGoChat={goChat}
         />
       </div>
     </div>

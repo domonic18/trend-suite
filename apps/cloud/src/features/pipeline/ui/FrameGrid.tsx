@@ -6,7 +6,7 @@ import { formatTimestamp } from './processing'
 /** 关键帧网格（原型 teacher-material 的 .kfgrid）。 */
 export function FrameGrid(props: { frames: MediaFrameView[] }) {
   if (props.frames.length === 0) {
-    return <div className="empty">还没有关键帧。抽帧阶段完成后会出现在这里。</div>
+    return <div className="empty">还没有关键帧。</div>
   }
   return (
     <div className="kfgrid">

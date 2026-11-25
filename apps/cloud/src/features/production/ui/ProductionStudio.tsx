@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
 import type {
   ProductionBoardView,
   ProductionSectionRow,
@@ -14,7 +13,7 @@ import { ApiError } from '@/features/lib/http'
 import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
-import { useWsDrag } from '@/features/agent-chat/useWsDrag'
+import { usePanelWidth } from '@/features/shell/PanelDivider'
 import { ClipCard } from '@/features/content/ui/ClipCard'
 import { DslRenderer } from '@/features/content/ui/DslRenderer'
 import { FigureCard } from '@/features/content/ui/FigureCard'
@@ -91,9 +90,19 @@ export function ProductionStudio({
   const [assetNames, setAssetNames] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<TabKey>('artifact')
+  const [tab, setTabState] = useState<TabKey>('artifact')
   const stream = useAgentStream(courseId, 'production')
-  const ws = useWsDrag()
+  const ws = usePanelWidth('wb.ws.w.production')
+
+  // 页签与宽度一样持久化：刷新后还在教师上次看的位置。
+  useEffect(() => {
+    const saved = window.localStorage.getItem('wb.ws.tab.production')
+    if (saved && TABS.some((item) => item.key === saved)) setTabState(saved as TabKey)
+  }, [])
+  const setTab = useCallback((next: TabKey) => {
+    setTabState(next)
+    window.localStorage.setItem('wb.ws.tab.production', next)
+  }, [])
 
   const refreshBoard = useCallback(async () => {
     try {
@@ -128,6 +137,13 @@ export function ProductionStudio({
     const timer = setInterval(() => void refreshBoard(), 3_000)
     return () => clearInterval(timer)
   }, [refreshBoard])
+
+  // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：九步事实落流即刷新看板，
+  // 3s 轮询降为兜底——对话与右栏不再各自为政。
+  const lastSeq = stream.lastSeq
+  useEffect(() => {
+    if (lastSeq > 0) void refreshBoard()
+  }, [lastSeq, refreshBoard])
 
   /** 当前展示的节：默认跟随正在跑的那节，教师点选后钉住。 */
   const activeSectionId = useMemo(() => {
@@ -303,29 +319,24 @@ export function ProductionStudio({
     return (
       <section>
         {error ? <div className="notice err">{error}</div> : null}
-        <div className="empty">还没有节——批准课程方案后按目录播种。</div>
+        <div className="empty">还没有节。</div>
       </section>
     )
   }
 
   return (
-    <div
-      className="plan-split"
-      aria-label="课件制作台"
-      {...(ws.width != null ? { style: { '--ws-w': `${ws.width}px` } as CSSProperties } : {})}
-    >
+    <div className="plan-split" aria-label="课件制作台" style={ws.style}>
       <AgentChat
         stream={stream}
         crumb={`${courseTitle ?? '课程'} / 制作台`}
         subtitle="制作阶段 · 九步生产 / 停止继续"
         userName={userName}
         draftingLabel={inFlight ? `正在逐节制作（已完成 ${doneSteps}/${totalSteps} 步）…` : null}
-        liveLabel="制作中"
         emptyHint="还没有对话——九步生产的每一步事实会自动留在这里；也可以直接吩咐 Agent 停止、继续或重试。"
         quickChips={['看看现在做到哪了', '停止制作', '继续制作', '重试挂起的节']}
       />
-      <div className="wb-col" ref={ws.ref}>
-        <div className="ws-drag" onPointerDown={ws.onPointerDown} aria-hidden="true" />
+      <div className="wb-col" ref={ws.railRef}>
+        <div {...ws.handleProps} />
         <div className="ws" aria-label="制作工作区">
           <div className="ws-head">
             <div className="ws-title">
@@ -398,11 +409,11 @@ export function ProductionStudio({
                       ) : null}
                     </>
                   ) : (
-                    <div className="empty">本节还没产出——正文步完成后这里会实时显示。</div>
+                    <div className="empty">本节还没产出。</div>
                   )}
                 </>
               ) : (
-                <p className="note">还没有节——批准课程方案后按目录播种。</p>
+                <p className="note">还没有节。</p>
               )}
             </div>
 
@@ -426,8 +437,8 @@ export function ProductionStudio({
               ) : (
                 <p className="note">
                   {current
-                    ? '本节还没有配图——图示步完成后这里按 关键帧 / 示意图 / 装饰图 分类列出。'
-                    : '选一节后查看它的配图。'}
+                    ? '本节还没有配图。'
+                    : '还没有选中节。'}
                 </p>
               )}
             </div>
@@ -456,11 +467,11 @@ export function ProductionStudio({
                   ))
                 ) : (
                   <p className="note">
-                    本节还没有引用素材片段——出处步完成后这里按素材列出可回放的视频片段。
+                    本节还没有引用素材片段。
                   </p>
                 )
               ) : (
-                <p className="note">选一节后查看并回放它引用的视频片段。</p>
+                <p className="note">还没有选中节。</p>
               )}
             </div>
 
@@ -494,7 +505,7 @@ export function ProductionStudio({
                     ))
                   ) : (
                     <p className="note">
-                      本节还没有案例股行情——点「同步行情」拉取 K 线数据；若该节尚未选案例股，可在左栏「重试该节」重新选股。
+                      本节还没有案例股行情。
                     </p>
                   )}
                   {content && klineWidgets.length > 0 ? (
@@ -510,7 +521,7 @@ export function ProductionStudio({
                   ) : null}
                 </>
               ) : (
-                <p className="note">选一节后查看它的 K 线行情与课件。</p>
+                <p className="note">还没有选中节。</p>
               )}
             </div>
 
@@ -522,8 +533,8 @@ export function ProductionStudio({
               ) : (
                 <p className="note">
                   {current
-                    ? '本节还没有练习题——课件步完成后这里列出选择 / 形态 / 计算练习。'
-                    : '选一节后查看它的练习题。'}
+                    ? '本节还没有练习题。'
+                    : '还没有选中节。'}
                 </p>
               )}
             </div>
@@ -536,8 +547,8 @@ export function ProductionStudio({
               ) : (
                 <p className="note">
                   {current
-                    ? '本节还没有其他互动课件——分步解盘 / 检查清单 / 决策情景等会出现在这里。'
-                    : '选一节后查看它的互动课件。'}
+                    ? '本节还没有其他互动课件。'
+                    : '还没有选中节。'}
                 </p>
               )}
             </div>

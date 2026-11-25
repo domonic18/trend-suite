@@ -12,7 +12,7 @@ export function TranscriptView(props: {
 }) {
   const { segments, complete } = props.transcript
   if (segments.length === 0) {
-    return <div className="empty">还没有转写内容。加工开始后可读段落会实时出现在这里。</div>
+    return <div className="empty">还没有转写内容。</div>
   }
   const partialCount = segments.filter((s) => s.partial).length
 
