@@ -5,6 +5,7 @@ import type { AgentMessageView } from '@trend-suite/contracts'
 import { ChatMarkdown } from './ChatMarkdown'
 import { QuestionCard } from './QuestionCard'
 import { TodoPanel } from './TodoPanel'
+import { ToolRows } from './ToolRows'
 import { foldChatItems, latestTodo } from './foldMessages'
 import { STATUS_TEXT, chatStatusOf, heartbeatText } from './status'
 import { useChatScroll } from './useChatScroll'
@@ -351,32 +352,20 @@ function MessageRow({
           <span className="m-av">A</span>
           <div className="m-body">
             <div className="m-meta">制作 Agent · {clockOf(message.createdAt)}</div>
+            {message.thinking ? (
+              <details className={styles.think}>
+                <summary className={styles.thinkSummary}>思考过程</summary>
+                <div className={styles.thinkBody}>
+                  <ChatMarkdown text={message.thinking} />
+                </div>
+              </details>
+            ) : null}
             {message.text ? (
               <div className="m-text">
                 <ChatMarkdown text={message.text} />
               </div>
             ) : null}
-            {message.tools.length > 0 ? (
-              <div className="tool-group">
-                <div className="tg-h">本轮工具 {message.tools.length} 次</div>
-                {message.tools.map((tool, index) => (
-                  <details key={index} className="tool">
-                    <summary>
-                      <span className="tn">{tool.name}</span>
-                      <span className="ta">{tool.argsSummary}</span>
-                      <span className="ts">
-                        {tool.status === 'err'
-                          ? '失败'
-                          : tool.latencyMs != null
-                            ? `${(tool.latencyMs / 1000).toFixed(1)}s`
-                            : '完成'}
-                      </span>
-                    </summary>
-                    <div className="tbody">{tool.argsSummary}</div>
-                  </details>
-                ))}
-              </div>
-            ) : null}
+            <ToolRows tools={message.tools} />
           </div>
         </div>
       )

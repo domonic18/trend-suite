@@ -309,6 +309,120 @@ legend.askBadgeLive {
   color: var(--p-mut);
 }
 
+/* ---------------------------------------------------------------- 工具行（对齐 Sasan ToolRow） */
+.toolRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+.toolRow {
+  min-width: 0;
+}
+.toolHead {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  max-width: 100%;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: start;
+  color: var(--p-mut);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.toolHead:hover {
+  background: var(--p-soft);
+  color: var(--p-ink);
+}
+.toolHead:focus-visible {
+  outline: 2px solid var(--p-pri);
+}
+.toolIcon {
+  width: 14px;
+  height: 14px;
+  align-self: center;
+  flex: none;
+}
+.toolSummary {
+  color: var(--p-faint);
+}
+.chevron {
+  color: var(--p-faint);
+}
+.toolRow .toolDetail {
+  margin: 4px 0 4px 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--p-line);
+  font-size: 12px;
+  color: var(--p-faint);
+}
+.toolDetail summary {
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.toolStatus {
+  margin-left: auto;
+}
+.toolBody {
+  margin: 6px 0;
+  padding: 8px 12px;
+  background: var(--p-soft);
+  border: 1px solid var(--p-line);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+/* ---------------------------------------------------------------- 思考过程（折叠块） */
+.think {
+  border-left: 2px solid var(--p-line);
+  margin: 0 0 8px;
+}
+.thinkSummary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--p-faint);
+  padding: 2px 8px;
+  border-radius: 6px;
+  user-select: none;
+}
+.thinkSummary::-webkit-details-marker {
+  display: none;
+}
+.thinkSummary::before {
+  content: '✻';
+  font-size: 11px;
+}
+.thinkSummary:hover {
+  color: var(--p-mut);
+  background: var(--p-soft);
+}
+.thinkBody {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--p-mut);
+}
+.thinkBody .markdown {
+  font-size: 13px;
+  color: var(--p-mut);
+}
+
 /* ---------------------------------------------------------------- 事件组 */
 .evGroup {
   border: 1px dashed var(--p-line);
