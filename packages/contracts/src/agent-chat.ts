@@ -49,6 +49,8 @@ export const agentMessageView = z.discriminatedUnion('role', [
   agentMessageBase.extend({
     role: z.literal('assistant'),
     text: z.string(),
+    /** 思考过程（通道解析的 reasoning_content / thinking 块）；前端折叠展示，可空。 */
+    thinking: z.string().nullish(),
     tools: z.array(agentToolEventView).max(20),
   }),
   agentMessageBase.extend({

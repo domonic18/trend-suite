@@ -49,7 +49,7 @@
 ```ts
 agentMessageView = { id, threadId, seq, createdAt, aiRunId } & (
   | { role: 'user'; text }
-  | { role: 'assistant'; text; tools: toolEventView[] }        // latencyMs 实测
+  | { role: 'assistant'; text; thinking?; tools: toolEventView[] }     // thinking=模型思考过程（折叠展示）
   | { role: 'question'; question: { text, options, answeredIndex }; source?: 'agent'|'server' }
   | { role: 'answer'; questionMessageId; optionIndex; label; note? }
   | { role: 'todo'; title?; items }

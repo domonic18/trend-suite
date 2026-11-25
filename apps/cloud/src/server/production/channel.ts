@@ -138,6 +138,7 @@ type OpenAiMessage = {
 
 type AnthropicBlock =
   | { type: 'text'; text: string }
+  | { type: 'thinking'; thinking: string }
   | { type: 'tool_use'; id: string; name: string; input: unknown }
   | { type: 'tool_result'; tool_use_id: string; content: string }
 
@@ -145,6 +146,8 @@ type WireToolCall = { id: string; name: string; args: Record<string, unknown> }
 
 type WireCompletion = {
   text: string
+  /** 思考过程（DeepSeek reasoning_content / Anthropic thinking 块）；无则 null。 */
+  reasoning: string | null
   toolCalls: WireToolCall[]
   tokensIn: number | null
   tokensOut: number | null
@@ -368,7 +371,11 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
         args: tc.args,
         type: 'tool_call',
       }))
-      const message = new AIMessage({ content: completion.text, tool_calls: toolCalls })
+      const message = new AIMessage({
+        content: completion.text,
+        tool_calls: toolCalls,
+        ...(completion.reasoning ? { additional_kwargs: { reasoning_content: completion.reasoning } } : {}),
+      })
       const generation: ChatGeneration = { text: completion.text, message }
       return {
         generations: [generation],
@@ -430,6 +437,9 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
       choices?: {
         message?: {
           content?: string | null
+          /** DeepSeek R1 系兼容端的思考过程（部分端叫 reasoning）。 */
+          reasoning_content?: string | null
+          reasoning?: string | null
           tool_calls?: { id?: string; function?: { name?: string; arguments?: string } }[]
         }
       }[]
@@ -437,6 +447,12 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
     }>(text)
     const message = payload.choices?.[0]?.message
     const content = typeof message?.content === 'string' ? message.content : ''
+    const reasoning =
+      typeof message?.reasoning_content === 'string' && message.reasoning_content.trim().length > 0
+        ? message.reasoning_content
+        : typeof message?.reasoning === 'string' && message.reasoning.trim().length > 0
+          ? message.reasoning
+          : null
     const toolCalls: WireToolCall[] = []
     for (const [index, raw] of (message?.tool_calls ?? []).entries()) {
       const name = raw.function?.name ?? ''
@@ -459,6 +475,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
     }
     return {
       text: content,
+      reasoning,
       toolCalls,
       tokensIn: payload.usage?.prompt_tokens ?? null,
       tokensOut: payload.usage?.completion_tokens ?? null,
@@ -504,7 +521,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
     const text = await res.text()
     throwForStatus(res.status, text)
     const payload = parseJsonPayload<{
-      content?: { type?: string; text?: string; id?: string; name?: string; input?: unknown }[]
+      content?: { type?: string; text?: string; thinking?: string; id?: string; name?: string; input?: unknown }[]
       stop_reason?: string
       usage?: { input_tokens?: number; output_tokens?: number }
     }>(text)
@@ -512,11 +529,14 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
       throw new LlmError('模型输出因 max_tokens 截断', { retryable: false, code: 'llm_truncated' })
     }
     const textParts: string[] = []
+    const thinkingParts: string[] = []
     const toolCalls: WireToolCall[] = []
     let synthetic = 0
     for (const block of payload.content ?? []) {
       if (block.type === 'text' && typeof block.text === 'string') {
         textParts.push(block.text)
+      } else if (block.type === 'thinking' && typeof block.thinking === 'string') {
+        thinkingParts.push(block.thinking)
       } else if (block.type === 'tool_use') {
         const name = block.name ?? ''
         if (!name) {
@@ -535,6 +555,7 @@ export class TrendChatModel extends BaseChatModel<TrendCallOptions> {
     }
     return {
       text: content,
+      reasoning: thinkingParts.length > 0 ? thinkingParts.join('\n') : null,
       toolCalls,
       tokensIn: payload.usage?.input_tokens ?? null,
       tokensOut: payload.usage?.output_tokens ?? null,

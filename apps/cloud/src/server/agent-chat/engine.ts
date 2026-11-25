@@ -104,6 +104,12 @@ function textOf(message: BaseMessage): string {
   return ''
 }
 
+/** 模型思考过程（通道解析的 reasoning_content / thinking 块）；无则 null。 */
+function reasoningOf(message: BaseMessage): string | null {
+  const reasoning = (message as AIMessage).additional_kwargs?.['reasoning_content']
+  return typeof reasoning === 'string' && reasoning.trim().length > 0 ? reasoning : null
+}
+
 /** 工具行的紧凑参数摘要（原型 .ta：短小可读，不甩原始 JSON）。 */
 function clip(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max)}…` : text
@@ -321,10 +327,11 @@ async function runTurn(
   if (options.persistAssistant) {
     const final = [...newMessages].reverse().find((message) => message instanceof AIMessage)
     const text = final ? textOf(final) : ''
+    const thinking = final ? reasoningOf(final) : null
     const tools = summarizeTools(newMessages, nameTimings)
-    if (text.length > 0 || tools.length > 0) {
+    if (text.length > 0 || tools.length > 0 || thinking !== null) {
       const aiRunId = await latestAiRunId(thread.id, turnStart).catch(() => null)
-      await insertMessage(thread.id, 'assistant', { text, tools }, aiRunId)
+      await insertMessage(thread.id, 'assistant', { text, ...(thinking ? { thinking } : {}), tools }, aiRunId)
     }
   }
   const interrupts = extractAskInterrupts(after.tasks ?? [])
