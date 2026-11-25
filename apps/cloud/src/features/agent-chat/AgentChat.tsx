@@ -1,20 +1,22 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { AgentMessageView } from '@trend-suite/contracts'
+import { ChatMarkdown } from './ChatMarkdown'
 import { QuestionCard } from './QuestionCard'
-import { TodoCard } from './TodoCard'
+import { TodoPanel } from './TodoPanel'
+import { foldChatItems, latestTodo } from './foldMessages'
+import { STATUS_TEXT, chatStatusOf, heartbeatText } from './status'
+import { useChatScroll } from './useChatScroll'
+import styles from './agent-chat.module.css'
 import type { AgentStream } from './useAgentStream'
 
 /**
- * 中置对话流（arch/08 §2，原型 teacher-plan.html 的 chat-center）：
- * 面包屑 + 头部（状态灯）+ 消息流（user/assistant/question/answer/todo/event）
- * + 底部快捷指令与 composer。对话区内只有三种交互：自由文本（composer）、
- * AskQuestion 确认卡（点选即答）、快捷指令（一点即发，不回填 composer）。
- * 流状态由调用方持有（useAgentStream）——同页的产物工作区可共享同一份轮询。
- * 课程级任务（如起草 job）在途时以 draftingLabel 呈现「正在起草」态；
- * agent run 在途以 typing 态呈现。结构化输入与确认一律走对话流的确认卡，
- * 右栏产物工作区保持纯呈现与微调。
+ * 中置对话流（arch/08 §6，对齐 SasanImmersive RunWorkspace/transcript）：
+ * 面包屑 + 状态徽章 + 页首 TODO 面板 + 消息流（markdown、事件折叠、确认卡）
+ * + 快捷指令 + composer（Enter 发送、IME 保护、发送/停止合一）。
+ * 滚动跟随三件套：贴底才跟随、上翻不抢、待答卡定向滚动。
+ * 数据层由调用方持有（useAgentStream）——右栏以 lastSeq 联动重取。
  */
 export function AgentChat({
   id,
@@ -23,7 +25,6 @@ export function AgentChat({
   subtitle,
   userName,
   draftingLabel = null,
-  liveLabel = '正在起草',
   emptyHint,
   emptyAction = null,
   quickChips = [],
@@ -35,47 +36,56 @@ export function AgentChat({
   userName: string
   /** 课程级队列任务在途时的文案（如「正在起草方案…」）；null = 无。 */
   draftingLabel?: string | null
-  /** draftingLabel 在途时状态灯的短文案（方案页「正在起草」/ 制作台「制作中」）。 */
-  liveLabel?: string
   emptyHint: string
   /** 空态主行动（如方案页首次打开的「选择素材，开始制作」）；null = 无。 */
   emptyAction?: { label: string; description?: string; onClick: () => void } | null
   quickChips?: string[]
 }) {
-  const { messages, agentBusy, pendingQuestionId, error, send, answer } = stream
+  const { messages, agentBusy, pendingQuestionId, error, degraded, lastSeq, send, answer, stop } =
+    stream
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [stopping, setStopping] = useState(false)
   const [answeringId, setAnsweringId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const bodyRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const busy = agentBusy || draftingLabel != null
-  const live = draftingLabel
-    ? { text: liveLabel, dot: 'dot-run' }
-    : agentBusy
-      ? { text: '正在处理', dot: 'dot-run' }
-      : pendingQuestionId
-        ? { text: '等你确认', dot: 'dot-wait' }
-        : { text: '在线', dot: 'dot-ok' }
+  const status = chatStatusOf({
+    agentBusy,
+    drafting: draftingLabel != null,
+    pendingQuestionId,
+    messages,
+  })
+  const items = useMemo(() => foldChatItems(messages), [messages])
+  const todo = useMemo(() => latestTodo(messages), [messages])
 
-  // 确认卡锁定依据：卡自身 answeredIndex，或线程里已有指向它的 answer 行。
+  const { contentRef, showToBottom, scrollToBottom } = useChatScroll([
+    lastSeq,
+    agentBusy,
+    pendingQuestionId,
+  ])
+
+  // 确认卡锁定与附言依据：answer 行回指
   const answeredBy = useMemo(() => {
-    const map = new Map<string, number>()
+    const index = new Map<string, { optionIndex: number; note: string | null }>()
     for (const message of messages) {
-      if (message.role === 'answer') map.set(message.questionMessageId, message.optionIndex)
+      if (message.role === 'answer') {
+        index.set(message.questionMessageId, {
+          optionIndex: message.optionIndex,
+          note: message.note ?? null,
+        })
+      }
     }
-    return map
+    return index
   }, [messages])
-  const lastTodoSeq = useMemo(
-    () =>
-      messages.reduce((max, m) => (m.role === 'todo' ? Math.max(max, m.seq) : max), -1),
-    [messages],
-  )
 
-  useEffect(() => {
-    const body = bodyRef.current
-    if (body) body.scrollTop = body.scrollHeight
-  }, [messages.length, agentBusy, draftingLabel])
+  function autoGrow() {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }
 
   async function submit(value: string) {
     if (!value || sending) return
@@ -84,6 +94,7 @@ export function AgentChat({
     try {
       await send(value)
       setText('')
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
     } catch (err) {
       setActionError((err as Error).message)
     } finally {
@@ -91,17 +102,32 @@ export function AgentChat({
     }
   }
 
-  async function choose(messageId: string, optionIndex: number) {
+  async function stopRun() {
+    setStopping(true)
+    setActionError(null)
+    try {
+      await stop()
+    } catch (err) {
+      setActionError((err as Error).message)
+    } finally {
+      setStopping(false)
+    }
+  }
+
+  async function choose(messageId: string, optionIndex: number, note: string) {
     setAnsweringId(messageId)
     setActionError(null)
     try {
-      await answer(messageId, optionIndex)
+      await answer(messageId, optionIndex, note || undefined)
     } catch (err) {
       setActionError((err as Error).message)
     } finally {
       setAnsweringId(null)
     }
   }
+
+  // 发送/停止二合一：agent 在途且输入为空 → 停止；否则发送
+  const stopMode = busy && !text.trim()
 
   return (
     <aside className="agent-rail" id={id} aria-label="制作 Agent 对话">
@@ -112,59 +138,82 @@ export function AgentChat({
           <b>制作 Agent</b>
           <small>{subtitle}</small>
         </div>
-        <span className="agent-live">
-          <i className={live.dot} />
-          {live.text}
+        <span className={`${styles.badge} ${styles[`badge_${status}`]}`}>
+          <i className="dot-run" aria-hidden="true" />
+          {STATUS_TEXT[status]}
         </span>
       </div>
 
-      <div className="agent-body" ref={bodyRef}>
-        {error ? <div className="notice err">对话流加载失败：{error}</div> : null}
-        {messages.length === 0 && !busy ? (
-          <div className="agent-empty">
-            {emptyAction ? (
-              <button type="button" className="agent-empty-card" onClick={emptyAction.onClick}>
-                <span className="agent-empty-art" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
-                    <path d="M7 4.5v15M17 4.5v15" strokeWidth="1.3" strokeDasharray="2 2.4" />
-                    <path d="M10.6 9.6l3.6 2.4-3.6 2.4z" fill="currentColor" stroke="none" />
-                  </svg>
-                </span>
-                <span className="agent-empty-title">{emptyAction.label}</span>
-                {emptyAction.description ? (
-                  <span className="agent-empty-sub">{emptyAction.description}</span>
-                ) : null}
-              </button>
-            ) : null}
-            <p>{emptyHint}</p>
-          </div>
-        ) : null}
-        {messages.map((message) => (
-          <MessageRow
-            key={message.id}
-            message={message}
-            userName={userName}
-            isLatestTodo={message.role === 'todo' && message.seq === lastTodoSeq}
-            answeredIndex={message.role === 'question'
-              ? (message.question.answeredIndex ?? answeredBy.get(message.id) ?? null)
-              : null}
-            answering={answeringId === message.id}
-            onAnswer={choose}
-          />
-        ))}
-        {busy ? (
-          <div className="msg">
-            <span className="m-av">A</span>
-            <div className="m-body">
-              <div className="m-text">
-                <p className="streaming">{draftingLabel ?? '正在思考…'}</p>
+      <TodoPanel todo={todo} />
+
+      <div className="agent-body">
+        <div className={styles.content} ref={contentRef}>
+          {error ? (
+            <div className={`notice err ${degraded ? '' : styles.streamLost}`}>
+              对话流{degraded ? '已降级为轮询' : '连接中断'}：{error}
+            </div>
+          ) : null}
+          {messages.length === 0 && !busy ? (
+            <div className="agent-empty">
+              {emptyAction ? (
+                <button type="button" className="agent-empty-card" onClick={emptyAction.onClick}>
+                  <span className="agent-empty-art" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+                      <path d="M7 4.5v15M17 4.5v15" strokeWidth="1.3" strokeDasharray="2 2.4" />
+                      <path d="M10.6 9.6l3.6 2.4-3.6 2.4z" fill="currentColor" stroke="none" />
+                    </svg>
+                  </span>
+                  <span className="agent-empty-title">{emptyAction.label}</span>
+                  {emptyAction.description ? (
+                    <span className="agent-empty-sub">{emptyAction.description}</span>
+                  ) : null}
+                </button>
+              ) : null}
+              <p>{emptyHint}</p>
+            </div>
+          ) : null}
+
+          {items.map((item, index) =>
+            item.kind === 'events' ? (
+              <EventGroup key={`ev-${index}`} events={item.events} hasErr={item.hasErr} />
+            ) : (
+              <MessageRow
+                key={item.message.id}
+                message={item.message}
+                userName={userName}
+                answeredBy={answeredBy}
+                pendingQuestionId={pendingQuestionId}
+                answering={answeringId === item.message.id}
+                onAnswer={choose}
+              />
+            ),
+          )}
+
+          {busy ? (
+            <div className="msg">
+              <span className="m-av">A</span>
+              <div className="m-body">
+                <div className="m-text">
+                  <p className="streaming">{heartbeatText(draftingLabel)}</p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-        {actionError ? <div className="notice err">{actionError}</div> : null}
+          ) : null}
+          {actionError ? <div className="notice err">{actionError}</div> : null}
+        </div>
       </div>
+
+      {showToBottom ? (
+        <button
+          type="button"
+          className={styles.toBottom}
+          onClick={scrollToBottom}
+          aria-label="回到底部"
+        >
+          ↓ 回到底部
+        </button>
+      ) : null}
 
       <div className="agent-foot">
         {quickChips.length > 0 ? (
@@ -176,35 +225,89 @@ export function AgentChat({
             ))}
           </div>
         ) : null}
-        <div className="composer">
+        <div className={`composer ${styles.composerBox}`}>
           <textarea
+            ref={textareaRef}
             value={text}
             maxLength={20000}
-            onChange={(event) => setText(event.target.value)}
+            rows={1}
+            className={styles.composerInput}
+            placeholder="与 Agent 对话：给目标与目录、改方案、问进度…（Enter 发送，Shift+Enter 换行）"
+            onChange={(event) => {
+              setText(event.target.value)
+              autoGrow()
+            }}
             onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                event.nativeEvent.keyCode !== 229
+              ) {
                 event.preventDefault()
                 void submit(text.trim())
               }
             }}
-            placeholder="与 Agent 对话：给目标与目录、改方案、问进度…"
           />
           <div className="cr">
             <span className="grow" />
-            <span className="kbd">⌘↵</span>
-            <button
-              type="button"
-              className="send"
-              title="发送"
-              onClick={() => void submit(text.trim())}
-              disabled={!text.trim() || sending}
-            >
-              ↑
-            </button>
+            {stopMode ? (
+              <button
+                type="button"
+                className={`${styles.sendBtn} ${styles.stopBtn}`}
+                title="停止本轮回复"
+                onClick={() => void stopRun()}
+                disabled={stopping}
+              >
+                {stopping ? '…' : '■'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={`send ${styles.sendBtn}`}
+                title="发送（当前任务结束后处理）"
+                onClick={() => void submit(text.trim())}
+                disabled={!text.trim() || sending}
+              >
+                ↑
+              </button>
+            )}
           </div>
         </div>
       </div>
     </aside>
+  )
+}
+
+function EventGroup({
+  events,
+  hasErr,
+}: {
+  events: AgentMessageView[]
+  hasErr: boolean
+}) {
+  if (events.length === 1) {
+    const event = events[0]!
+    return (
+      <div className={`ev ${event.role === 'event' ? event.level : 'info'}`}>
+        {event.role === 'event' ? (event.detail ?? event.kind) : ''}
+      </div>
+    )
+  }
+  return (
+    <details className={`${styles.evGroup} ${hasErr ? styles.evGroupOpen : ''}`} open={hasErr}>
+      <summary className={styles.evSummary}>
+        <span className={styles.evCount}>{events.length} 条系统事件</span>
+        {hasErr ? <span className={styles.evErrTag}>含失败</span> : null}
+      </summary>
+      {events.map((event) =>
+        event.role === 'event' ? (
+          <div key={event.id} className={`ev ${event.level}`}>
+            {event.detail ?? event.kind}
+          </div>
+        ) : null,
+      )}
+    </details>
   )
 }
 
@@ -217,17 +320,17 @@ function clockOf(iso: string): string {
 function MessageRow({
   message,
   userName,
-  isLatestTodo,
-  answeredIndex,
+  answeredBy,
+  pendingQuestionId,
   answering,
   onAnswer,
 }: {
   message: AgentMessageView
   userName: string
-  isLatestTodo: boolean
-  answeredIndex: number | null
+  answeredBy: Map<string, { optionIndex: number; note: string | null }>
+  pendingQuestionId: string | null
   answering: boolean
-  onAnswer: (messageId: string, optionIndex: number) => void
+  onAnswer: (messageId: string, optionIndex: number, note: string) => void
 }) {
   switch (message.role) {
     case 'user':
@@ -250,9 +353,7 @@ function MessageRow({
             <div className="m-meta">制作 Agent · {clockOf(message.createdAt)}</div>
             {message.text ? (
               <div className="m-text">
-                {message.text.split('\n').map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))}
+                <ChatMarkdown text={message.text} />
               </div>
             ) : null}
             {message.tools.length > 0 ? (
@@ -279,7 +380,9 @@ function MessageRow({
           </div>
         </div>
       )
-    case 'question':
+    case 'question': {
+      const known = answeredBy.get(message.id)
+      const answeredIndex = message.question.answeredIndex ?? known?.optionIndex ?? null
       return (
         <div className="msg">
           <span className="m-av">A</span>
@@ -289,32 +392,27 @@ function MessageRow({
               options={message.question.options}
               locked={answeredIndex !== null}
               selectedIndex={answeredIndex}
+              selectedNote={answeredIndex !== null ? (known?.note ?? null) : null}
               answering={answering}
-              onAnswer={(index) => onAnswer(message.id, index)}
+              superseded={answeredIndex === null && pendingQuestionId !== message.id}
+              onAnswer={(optionIndex, note) => onAnswer(message.id, optionIndex, note)}
             />
           </div>
         </div>
       )
+    }
     case 'answer':
       return (
         <div className="ans">
           已选：<b>{message.label}</b>
+          {message.note ? <span className={styles.ansNote}>（附言：{message.note}）</span> : null}
         </div>
       )
     case 'todo':
-      return isLatestTodo ? (
-        <div className="msg">
-          <span className="m-av">A</span>
-          <div className="m-body">
-            <TodoCard items={message.items} title={message.title ?? null} />
-          </div>
-        </div>
-      ) : null
+      return null // TodoPanel 渲染最新一份
     case 'event':
       return (
-        <div className={`ev ${message.level}`}>
-          {message.detail ?? message.kind}
-        </div>
+        <div className={`ev ${message.level}`}>{message.detail ?? message.kind}</div>
       )
   }
 }
