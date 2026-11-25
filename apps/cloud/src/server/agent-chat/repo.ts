@@ -106,12 +106,25 @@ export async function pendingInputMessages(threadId: string): Promise<AgentMessa
   return rows.filter((row) => row.role === 'user' || row.role === 'answer' || row.role === 'event')
 }
 
-/** 线程内最新一份未回答的确认卡（驱动 pendingQuestionId）。 */
+/** 线程内最新一份未回答的确认卡（驱动 pendingQuestionId 与 answer 防过期）。 */
 export function unansweredQuestion(threadId: string): Promise<AgentMessageRow | null> {
   return queryOne<AgentMessageRow>(
     `SELECT ${MESSAGE_COLUMNS} FROM agent_messages
      WHERE thread_id = $1 AND role = 'question'
        AND (payload->'question'->>'answeredIndex') IS NULL
+     ORDER BY seq DESC LIMIT 1`,
+    [threadId],
+  )
+}
+
+/**
+ * 线程内最新一条模型中断卡（source='agent'，无论是否已答）——引擎 resume 时
+ * 定位挂起 interrupt 的对应消息与其后新输入。存量线程无 source 行 → null。
+ */
+export function latestAgentQuestion(threadId: string): Promise<AgentMessageRow | null> {
+  return queryOne<AgentMessageRow>(
+    `SELECT ${MESSAGE_COLUMNS} FROM agent_messages
+     WHERE thread_id = $1 AND role = 'question' AND payload->>'source' = 'agent'
      ORDER BY seq DESC LIMIT 1`,
     [threadId],
   )
@@ -130,13 +143,27 @@ export async function writebackAnsweredIndex(messageId: string, optionIndex: num
   return rows.length > 0
 }
 
-/** 本课程是否有在途 agent_chat 任务（queued/running）——驱动对话流 typing 态。 */
-export async function hasBusyAgentJob(courseId: string): Promise<boolean> {
+/**
+ * 本线程是否有在途 agent_chat 任务（arch/08 §3，线程级 typing 态）：
+ * 引擎认领线程时把线程 id 写进 job 的 step 列——running 且 step 命中，
+ * 或 job 仍在队列且本线程已有待处理输入（即将被认领）即视为忙。
+ */
+export async function hasBusyAgentJob(threadId: string): Promise<boolean> {
   const row = await queryOne<{ id: string }>(
-    `SELECT id FROM pipeline_jobs
-     WHERE course_id = $1 AND kind = 'agent_chat' AND status IN ('queued','running')
+    `SELECT j.id FROM pipeline_jobs j
+     JOIN agent_threads t ON t.course_id = j.course_id
+     WHERE t.id = $1 AND j.kind = 'agent_chat' AND j.status IN ('queued','running')
+       AND (
+         j.step = $1
+         OR (j.status = 'queued' AND EXISTS (
+           SELECT 1 FROM agent_messages m
+           WHERE m.thread_id = t.id AND m.seq > COALESCE((
+             SELECT MAX(seq) FROM agent_messages WHERE thread_id = t.id AND role = 'assistant'
+           ), 0) AND m.role IN ('user','answer')
+         ))
+       )
      LIMIT 1`,
-    [courseId],
+    [threadId],
   )
   return row !== null
 }

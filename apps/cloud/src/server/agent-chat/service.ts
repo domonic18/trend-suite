@@ -7,6 +7,7 @@ import {
   type AnswerQuestionResponse,
   type SendMessageResponse,
   type SessionUser,
+  type StopAgentRunResponse,
   type AgentStreamResponse,
   agentStreamResponse,
 } from '@trend-suite/contracts'
@@ -15,10 +16,12 @@ import { queryOne } from '@/server/lib/db'
 import { getCourseForUser } from '@/server/content/service'
 import { approvePlan, rejectPlanInternal } from '@/server/content/plans/service'
 import { resumeProductionInternal, retryProductionSectionInternal } from '@/server/production/service'
-import { enqueueJob } from '@/server/pipeline/jobs/repo'
+import { cancelJob, enqueueJob, findJobByCourse, requestCancel } from '@/server/pipeline/jobs/repo'
 import { AGENT_CHAT_JOB_KIND } from './steps'
 import {
   findOpenThread,
+  findPendingThread,
+  findPendingThreadOtherThan,
   findThreadById,
   hasBusyAgentJob,
   ensureOpenThread,
@@ -89,6 +92,14 @@ export async function answerQuestion(
   const option = question.options?.[body.optionIndex]
   if (!option) throw badRequest('选项不存在')
 
+  // 双轨分流（arch/08 §4）：模型中断卡先验「仍是最新未答卡」——被后续提问/输入
+  // 取代的卡不可补答（对应 interrupt 已按新输入 resume，409 防过期）。
+  const source = (row.payload as { source?: 'agent' | 'server' }).source ?? 'server'
+  if (source === 'agent') {
+    const latest = await unansweredQuestion(thread.id)
+    if (latest?.id !== messageId) throw conflict('该提问已被后续提问取代')
+  }
+
   // 先原子抢占 answeredIndex（只允许一次），抢到才落 answer 行——并发双击在这里兜底。
   const wrote = await writebackAnsweredIndex(messageId, body.optionIndex)
   if (!wrote) throw conflict('该确认卡已回答')
@@ -96,10 +107,14 @@ export async function answerQuestion(
     questionMessageId: messageId,
     optionIndex: body.optionIndex,
     label: option.label,
+    note: body.note?.trim() ? body.note.trim() : null,
   })
 
-  // 选项绑定的确定性动作：服务端直接执行，不经模型（红线）。结果落 event 消息。
-  await runBoundAction(actor, courseId, thread, option)
+  // server 卡：选项绑定的确定性动作由服务端直接执行，不经模型（红线）。
+  // 结果落 event 消息。agent 卡选项无动作，续跑交给引擎 Command(resume)。
+  if (source === 'server') {
+    await runBoundAction(actor, courseId, thread, option)
+  }
 
   await enqueueJob({ courseId, kind: AGENT_CHAT_JOB_KIND })
   return { message: rowView(answer) }
@@ -167,7 +182,7 @@ export async function stream(
   }
   const [rows, busy, pending] = await Promise.all([
     listMessagesFrom(thread.id, cursor),
-    hasBusyAgentJob(courseId),
+    hasBusyAgentJob(thread.id),
     unansweredQuestion(thread.id),
   ])
   const nextCursor = rows.length > 0 ? Number(rows[rows.length - 1]!.seq) : cursor
@@ -177,6 +192,48 @@ export async function stream(
     agentBusy: busy,
     pendingQuestionId: pending?.id ?? null,
   })
+}
+
+/**
+ * 停止本阶段的在途对话回复（arch/08 §3）：对课程的在途 agent_chat job 请求
+ * 协作取消——running 的任务由引擎在轮边界安全中止并落 chat_stopped 事件；
+ * 还在队列里的任务直接取消并代为落事件。要处理的是其它阶段线程、或没有
+ * 在途任务时不动（幂等返回 stopped=false）。
+ */
+export async function stopAgentRun(
+  actor: SessionUser,
+  courseId: string,
+  phase: AgentPhase,
+): Promise<StopAgentRunResponse> {
+  await requireChatActor(actor, courseId)
+  const job = await findJobByCourse({ courseId, kind: AGENT_CHAT_JOB_KIND })
+  if (!job || (job.status !== 'queued' && job.status !== 'running')) {
+    return { stopped: false }
+  }
+  if (job.status === 'running') {
+    // 引擎把正在处理的线程 id 写在 step 列：不是本阶段的线程就不动它。
+    const runningThread = job.step ? await findThreadById(job.step) : null
+    if (runningThread && runningThread.phase !== phase) return { stopped: false }
+    await requestCancel(job.id)
+    return { stopped: true }
+  }
+  // 队列态：确认接下来要处理的正是本阶段的线程才取消（requestCancel 只对
+  // running 生效）；取消后代落 chat_stopped 事件（引擎不会再跑），其它阶段
+  // 的待处理输入续投不断供。
+  const next = await findPendingThread(courseId)
+  if (!next || next.phase !== phase) return { stopped: false }
+  await cancelJob(job.id)
+  const thread = await findOpenThread(courseId, phase)
+  if (thread) {
+    await insertMessage(thread.id, 'event', {
+      kind: 'chat_stopped',
+      detail: '你停止了本轮回复；已发送的消息不会丢，可以重新发起。',
+      level: 'info',
+    })
+  }
+  const other = await findPendingThreadOtherThan(courseId, next.id)
+  if (other) await enqueueJob({ courseId, kind: AGENT_CHAT_JOB_KIND })
+  return { stopped: true }
 }
 
 // ---------------------------------------------------------------- 内部形状

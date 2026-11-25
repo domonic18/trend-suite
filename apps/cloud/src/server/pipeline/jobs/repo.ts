@@ -177,6 +177,19 @@ export async function updateJobProgress(input: {
   )
 }
 
+/**
+ * 会话任务标记正在处理的线程（arch/08 §3）：step 列承载 agent 线程 id
+ * （progress 是 numeric 存不了 id），stream 据此推导线程级 agentBusy；
+ * 收口路径（complete/cancel）的状态过滤会排除终态行，标记无需清理。
+ */
+export async function setAgentChatThread(jobId: string, threadId: string): Promise<void> {
+  await query(
+    `UPDATE pipeline_jobs SET step = $2, updated_at = now()
+     WHERE id = $1 AND kind = 'agent_chat' AND status IN ('queued','running')`,
+    [jobId, threadId],
+  )
+}
+
 export async function completeJob(jobId: string, step = 'done'): Promise<void> {
   await query(
     `UPDATE pipeline_jobs

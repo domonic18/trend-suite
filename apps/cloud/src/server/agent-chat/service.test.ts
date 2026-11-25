@@ -18,7 +18,7 @@ import { createModelEntry } from '@/server/models/service'
 import { HttpError } from '@/server/lib/http'
 import { approvePlan } from '@/server/content/plans/service'
 import { PRODUCTION_RUN_JOB_KIND } from '@/server/production/steps'
-import { sendMessage, answerQuestion, stream } from './service'
+import { sendMessage, answerQuestion, stream, stopAgentRun } from './service'
 
 /**
  * Agent 会话全流程（arch/08 §9.1，mock LLM）：
@@ -221,9 +221,14 @@ test('全流程：发消息 → 工具事件随回复落流 → 服务端补发�
     assistant.tools.map((tool) => `${tool.name}:${tool.status}`),
     ['todo_write:ok', 'get_plan:ok'],
   )
+  // 工具耗时实测（streamEvents 计时，不再恒 null）
+  for (const tool of assistant.tools) {
+    assert.ok(typeof tool.latencyMs === 'number' && tool.latencyMs !== null, 'latencyMs 应为实测值')
+  }
   assert.equal(feed.pendingQuestionId, feed.messages[3]!.id)
   const question = feed.messages[3]
   assert.ok(question && question.role === 'question')
+  assert.equal(question.source, 'server', '服务端补发批准确认卡 source=server')
   assert.equal(question.question.answeredIndex, null)
   assert.equal(question.question.options[0]!.label, '批准并解锁制作')
   assert.equal(feed.agentBusy, false)
@@ -320,7 +325,7 @@ test('run 失败：落 err event、任务按成功收口、线程回到 idle', {
   assert.ok(job && job.status === 'succeeded', '失败会话任务按成功收口（不重试）')
 })
 
-test('对话式起草：目标与目录进对话、规划方式走确认卡、draft_plan 带参落库触发起草', { skip }, async () => {
+test('对话式起草：确认卡真中断（source=agent）、点选附言、resume 续跑 draft_plan 带参落库', { skip }, async () => {
   const username = `laoshi-chat-d-${randomBytes(4).toString('hex')}`
   const teacher = await createAccount({ username, password: 'correct-horse', role: 'producer' })
   const course = await createCourse(teacher.id, '会话起草课')
@@ -328,33 +333,37 @@ test('对话式起草：目标与目录进对话、规划方式走确认卡、dr
   await insertAsset({ id: assetId, courseId: course.id, createdBy: teacher.id, fileName: 'lecture.mp4', expectedByteSize: 1024 })
   await query(`UPDATE media_assets SET status = 'ready' WHERE id = $1`, [assetId])
 
-  // 1) 教师把目标与目录整段发进对话（无表单）；Agent 以确认卡问规划方式（主流 AskQuestion）
-  script.push(
-    {
-      toolCalls: [
-        {
-          name: 'ask_question',
-          args: {
-            text: '目录沿用你粘贴的骨架，还是让我重新规划？',
-            options: [
-              { label: '沿用人工目录骨架', description: '你粘贴的目录为下界' },
-              { label: '智能重新规划目录', description: '依据素材讲解要点重排' },
-            ],
-          },
+  // 1) 教师把目标与目录整段发进对话（无表单）；Agent 以确认卡问规划方式。
+  //    ask_question 挂 interruptOn：模型一调用图即暂停（真中断），本轮不再
+  //    消耗后续脚本、不落 assistant——question 由引擎从 interrupt 载荷落库。
+  const wireMark = wireBodies.length
+  script.push({
+    toolCalls: [
+      {
+        name: 'ask_question',
+        args: {
+          text: '目录沿用你粘贴的骨架，还是让我重新规划？',
+          options: [
+            { label: '沿用人工目录骨架', description: '你粘贴的目录为下界' },
+            { label: '智能重新规划目录', description: '依据素材讲解要点重排' },
+          ],
         },
-      ],
-    },
-    { text: '已发出确认卡，点选即可。' },
-  )
+      },
+    ],
+  })
   await sendMessage(teacher, course.id, 'plan', { text: `目标是学会看趋势，目录：\n${OUTLINE_TEXT}` })
   assert.equal(await runWorkerOnce(), true)
 
   let feed = await stream(teacher, course.id, 'plan', 0)
-  const question = feed.messages.find((message) => message.role === 'question')
+  assert.deepEqual(feed.messages.map((message) => message.role), ['user', 'question'])
+  const question = feed.messages[1]
   assert.ok(question && question.role === 'question')
+  assert.equal(question.source, 'agent', '模型中断卡 source=agent')
+  assert.equal(question.question.options[0]!.label, '沿用人工目录骨架')
   assert.equal(feed.pendingQuestionId, question.id)
+  assert.equal(feed.agentBusy, false, '发卡即停，无在途任务')
 
-  // 2) 教师点选确认卡 → Agent 收齐信息后 draft_plan 带参触发起草（素材选自素材库入口）
+  // 2) 教师点选确认卡并附言 → 引擎 Command(resume) 续跑 → draft_plan 带参触发起草
   script.push(
     {
       toolCalls: [
@@ -366,19 +375,32 @@ test('对话式起草：目标与目录进对话、规划方式走确认卡、dr
     },
     { text: '已提交起草任务，完成后在对话里通知。' },
   )
-  await answerQuestion(teacher, course.id, question.id, { optionIndex: 0 })
+  const answered = await answerQuestion(teacher, course.id, question.id, {
+    optionIndex: 0,
+    note: '大纲就按我粘贴的来',
+  })
+  assert.equal(answered.message.role, 'answer')
+  if (answered.message.role === 'answer') {
+    assert.equal(answered.message.label, '沿用人工目录骨架')
+    assert.equal(answered.message.note, '大纲就按我粘贴的来')
+  }
   assert.equal(await runWorkerOnce(), true)
 
-  // wire 口径：第一轮问询有 ask_question，第二轮有 draft_plan / get_materials，且永不出现批准类
-  const recent = wireBodies.slice(-4).map((body) => (body.tools ?? []).map((tool) => tool.function?.name ?? ''))
-  assert.ok(recent.slice(0, 2).every((names) => names.includes('ask_question')), '问询轮应带 ask_question')
+  // wire 口径：resume 后的模型调用应看到教师的选择与附言（respond 决定文本），
+  // 起草轮带 draft_plan / get_materials，且永不出现批准类工具。
+  const rounds = wireBodies.slice(wireMark).map((body) => (body.tools ?? []).map((tool) => tool.function?.name ?? ''))
+  assert.equal(rounds.length, 3, '中断一轮 + resume 两轮（draft_plan 与收尾文本）')
+  assert.ok(rounds[0]!.includes('ask_question'), '问询轮应带 ask_question')
   assert.ok(
-    recent.slice(2).every((names) => names.includes('draft_plan') && names.includes('get_materials')),
+    rounds.slice(1).every((names) => names.includes('draft_plan') && names.includes('get_materials')),
     '起草轮应带 draft_plan 与 get_materials',
   )
-  for (const names of recent) {
+  for (const names of rounds) {
     assert.ok(names.every((name) => !/approve/i.test(name)), `wire 出现批准类工具：${names.join(',')}`)
   }
+  const resumeWire = JSON.stringify(wireBodies[wireBodies.length - 2])
+  assert.ok(resumeWire.includes('选择了「沿用人工目录骨架」'), 'respond 决定应带所选选项')
+  assert.ok(resumeWire.includes('大纲就按我粘贴的来'), 'respond 决定应带附言（note 全链路）')
 
   // 3) 起草输入落库：goal 来自对话、目录原样、规划模式与所选素材写入课程
   const input = await plansRepo.findCoursePlanInput(course.id)
@@ -388,12 +410,15 @@ test('对话式起草：目标与目录进对话、规划方式走确认卡、dr
   assert.equal(input.plan_mode, 'follow_manual')
   assert.deepEqual(input.plan_asset_ids, [assetId])
 
-  // 4) 确认卡锁定、答案回显、curriculum_draft 已入队（收尾取消防污染）
+  // 4) 确认卡锁定、答案回显（含附言）、curriculum_draft 已入队（收尾取消防污染）
   feed = await stream(teacher, course.id, 'plan', 0)
   const answeredCard = feed.messages.find((message) => message.id === question.id)
   assert.ok(answeredCard && answeredCard.role === 'question' && answeredCard.question.answeredIndex === 0)
   const answer = feed.messages.find((message) => message.role === 'answer')
   assert.ok(answer && answer.role === 'answer' && answer.label === '沿用人工目录骨架')
+  assert.equal(answer.note, '大纲就按我粘贴的来')
+  const finalReply = feed.messages.find((message) => message.role === 'assistant')
+  assert.ok(finalReply && finalReply.role === 'assistant' && finalReply.text.includes('已提交起草任务'))
   const job = await findJobByCourse({ courseId: course.id, kind: 'curriculum_draft' })
   assert.ok(job && (job.status === 'queued' || job.status === 'running'), 'draft_plan 应触发起草任务')
   await cancelJob(job.id)
@@ -433,4 +458,120 @@ test('制作台对话：production 期 sendMessage 放开、工具白名单切�
     ['get_production_status:ok'],
   )
   assert.equal(feed.agentBusy, false)
+})
+
+test('跳过未答卡直接发消息可续跑；被取代的旧卡补答 409、新卡可答', { skip }, async () => {
+  const { teacher, courseId } = await seedCourse('会话课五')
+
+  const askScript = {
+    toolCalls: [
+      {
+        name: 'ask_question',
+        args: {
+          text: '先确认素材范围？',
+          options: [
+            { label: '全部素材', description: '' },
+            { label: '只用部分', description: '我再指定' },
+          ],
+        },
+      },
+    ],
+  }
+
+  // 卡 A：发卡即停
+  script.push(askScript)
+  await sendMessage(teacher, courseId, 'plan', { text: '开始' })
+  assert.equal(await runWorkerOnce(), true)
+  let feed = await stream(teacher, courseId, 'plan', 0)
+  const cardA = feed.messages.find((message) => message.role === 'question' && message.source === 'agent')
+  assert.ok(cardA && cardA.role === 'question', '应有模型中断卡 A')
+
+  // 教师跳过卡 A 直接发消息 → 引擎以教师原文 respond 续跑 → 模型再发卡 B
+  script.push(askScript)
+  await sendMessage(teacher, courseId, 'plan', { text: '就用全部素材，继续' })
+  assert.equal(await runWorkerOnce(), true)
+  feed = await stream(teacher, courseId, 'plan', 0)
+  const agentCards = feed.messages.filter((message) => message.role === 'question' && message.source === 'agent')
+  assert.equal(agentCards.length, 2, '跳卡直答后应出现第二张卡')
+  const cardB = agentCards[1]!
+  // 旧卡 A 未答但不再是最新未答卡（显示层按「已被取代」折叠）
+  assert.equal(cardA.question.answeredIndex, null)
+
+  // 补答被取代的卡 A → 409
+  await assert.rejects(
+    () => answerQuestion(teacher, courseId, cardA.id, { optionIndex: 0 }),
+    (err: unknown) => err instanceof HttpError && err.status === 409,
+  )
+
+  // 回答最新卡 B → resume 续跑出最终回复
+  script.push({ text: '好的，按全部素材继续。' })
+  await answerQuestion(teacher, courseId, cardB.id, { optionIndex: 0, note: '' })
+  assert.equal(await runWorkerOnce(), true)
+  feed = await stream(teacher, courseId, 'plan', 0)
+  const reply = feed.messages.filter((message) => message.role === 'assistant').at(-1)
+  assert.ok(reply && reply.role === 'assistant' && reply.text.includes('全部素材'))
+})
+
+test('stopAgentRun（队列态）：取消在途任务、落 chat_stopped 事件、消息不丢可再发起', { skip }, async () => {
+  const { teacher, courseId } = await seedCourse('会话课六')
+
+  // 不压脚本直接发消息：任务入队但未跑（worker 只在 runWorkerOnce 时认领）
+  await sendMessage(teacher, courseId, 'plan', { text: '帮我总结一下方案' })
+
+  const stopped = await stopAgentRun(teacher, courseId, 'plan')
+  assert.deepEqual(stopped, { stopped: true })
+
+  const job = await findJobByCourse({ courseId, kind: 'agent_chat' })
+  assert.ok(job && job.status === 'canceled', '队列态任务应被直接取消')
+
+  const feed = await stream(teacher, courseId, 'plan', 0)
+  const stopEvent = feed.messages.find((message) => message.role === 'event' && message.kind === 'chat_stopped')
+  assert.ok(stopEvent && stopEvent.role === 'event')
+  assert.ok(feed.messages.some((message) => message.role === 'user'), '用户消息不丢')
+  assert.equal(feed.agentBusy, false)
+
+  // 停止后可重新发起：脚本补一条文本回复，新任务正常收口
+  assert.equal(await runWorkerOnce(), false, '取消后的任务不应再被认领')
+  script.push({ text: '方案 v1 结构清晰，可以进入批准。' })
+  await sendMessage(teacher, courseId, 'plan', { text: '再试一次' })
+  assert.equal(await runWorkerOnce(), true)
+  const feed2 = await stream(teacher, courseId, 'plan', 0)
+  assert.ok(feed2.messages.some((message) => message.role === 'assistant'))
+})
+
+test('降级兜底：interrupt 对应卡丢失（漂移）时占位 respond 清中断、新输入正常回', { skip }, async () => {
+  const { teacher, courseId } = await seedCourse('会话课七')
+
+  script.push({
+    toolCalls: [
+      {
+        name: 'ask_question',
+        args: {
+          text: '要继续吗？',
+          options: [
+            { label: '继续', description: '' },
+            { label: '先停', description: '' },
+          ],
+        },
+      },
+    ],
+  })
+  await sendMessage(teacher, courseId, 'plan', { text: '开始' })
+  assert.equal(await runWorkerOnce(), true)
+  let feed = await stream(teacher, courseId, 'plan', 0)
+  const card = feed.messages.find((message) => message.role === 'question' && message.source === 'agent')
+  assert.ok(card)
+
+  // 模拟漂移：删除卡消息（checkpointer 里的 interrupt 仍在）
+  await query(`DELETE FROM agent_messages WHERE id = $1`, [card.id])
+
+  // 教师再发消息：引擎先占位 respond 清中断（该轮回复弃置），下一轮正常回
+  script.push({ text: '（弃置轮）' }, { text: '收到你的新消息，继续处理。' })
+  await sendMessage(teacher, courseId, 'plan', { text: '继续' })
+  assert.equal(await runWorkerOnce(), true)
+
+  feed = await stream(teacher, courseId, 'plan', 0)
+  const replies = feed.messages.filter((message) => message.role === 'assistant')
+  assert.equal(replies.length, 1, '只保留正常路径的回复')
+  assert.equal(replies[0]!.text, '收到你的新消息，继续处理。')
 })
