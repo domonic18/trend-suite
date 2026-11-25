@@ -1,7 +1,10 @@
 /* ============================================================
    云端全局样式——设计 token 沿用原型（docs/prototype/assets/tokens.css），
-   只取工作台与登录页用到的部分。
+   只取工作台与登录页用到的部分。工作台深色族见 console-tokens.css
+   （data-wb-theme 覆写同名 --p-*，arch/08 §6）。
    ============================================================ */
+
+@import './console-tokens.css';
 
 :root {
   --p-bg: #ffffff;
@@ -25,6 +28,12 @@
     "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --p-sh-sm: 0 1px 2px rgba(22, 32, 58, 0.06);
+  /* K 线画布取色（chartDraw palette 经 getComputedStyle 读，arch/08 §6）：
+     涨跌固定红涨绿跌，网格与轴标签随主题。 */
+  --k-up: #d9483f;
+  --k-down: #0f9d76;
+  --k-grid: rgba(22, 32, 58, 0.14);
+  --k-label: #8b94a9;
 }
 
 * {
@@ -246,8 +255,34 @@ a {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 14px;
+}
+
+/* 课程卡封面（借鉴 SasanImmersive 课程卡）：课程 id 哈希出稳定 hue，
+   渐变 + 首字 monogram——没有封面图也有视觉锚点；深浅主题各一套浓度。 */
+.card .card-cover {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2.6;
+  margin: -16px -16px 12px;
+  background: linear-gradient(115deg, hsl(var(--cover-hue) 45% 91%), hsl(var(--cover-hue) 52% 82%));
+  border-bottom: 1px solid var(--p-line);
+}
+
+:root[data-wb-theme='dark'] .card .card-cover {
+  background: linear-gradient(115deg, hsl(var(--cover-hue) 23% 17%), hsl(var(--cover-hue) 30% 31%));
+}
+
+.card .card-mono {
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 600;
+  line-height: 1;
+  color: hsl(var(--cover-hue) 42% 38%);
+}
+
+:root[data-wb-theme='dark'] .card .card-mono {
+  color: hsl(var(--cover-hue) 30% 85%);
 }
 
 /* 素材列表：整宽一行一个（原型 teacher-material 的 #list 形态）。
@@ -267,22 +302,41 @@ a {
   flex-direction: column;
   gap: 10px;
   min-height: 132px;
+  overflow: hidden; /* 封面负边距出血由圆角裁切 */
 }
 
 .card .card-top {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  padding-right: 56px; /* 给悬浮右上角的操作钮让位，标题不与它折行 */
 }
 
 .card .card-top b {
   font-size: 14.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card .card-top .tag {
+  flex: none;
 }
 
 .card .meta {
   font-size: 12px;
   color: var(--p-mut);
   line-height: 1.7;
+}
+
+/* 阶段提示句单行省略（悬停看全文），不占多行 */
+.card .card-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card .foot {
@@ -294,11 +348,15 @@ a {
   align-items: center;
 }
 
+.card .foot > span {
+  white-space: nowrap;
+}
+
 .card.add {
   align-items: center;
   justify-content: center;
   border-style: dashed;
-  background: #fafbfd;
+  background: var(--p-soft);
   color: var(--p-mut);
   font-size: 13px;
   cursor: pointer;
@@ -328,11 +386,24 @@ a {
 }
 
 .card-acts {
-  position: relative;
+  position: absolute;
+  top: 10px;
+  right: 10px;
   z-index: 2;
   display: inline-flex;
   gap: 2px;
-  margin-left: 6px;
+  padding: 2px 4px;
+  border-radius: var(--r-ctrl);
+  background: color-mix(in srgb, var(--p-bg) 88%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.card:hover .card-acts,
+.card:focus-within .card-acts {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .card-acts .btn.link {
@@ -394,7 +465,7 @@ a {
 }
 
 .btn:hover:not(:disabled) {
-  border-color: #b9c6dd;
+  border-color: var(--p-faint);
 }
 
 .btn:disabled {
@@ -421,7 +492,7 @@ a {
 }
 
 .btn.danger:hover:not(:disabled) {
-  background: #b42318;
+  background: color-mix(in srgb, var(--p-err) 85%, #000);
 }
 
 .btn.danger.link,
@@ -547,9 +618,9 @@ a.btn.link {
 }
 
 .dropzone {
-  border: 1px dashed #c3cddf;
+  border: 1px dashed var(--p-line);
   border-radius: var(--r-panel);
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 30px 20px;
   text-align: center;
   display: flex;
@@ -650,7 +721,7 @@ dialog::backdrop {
   gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
 }
 
 /* ---------------- 加工面板（步进条 / 逐字稿 / 关键帧） ---------------- */
@@ -792,7 +863,7 @@ dialog::backdrop {
   border: 1px solid var(--p-line);
   border-radius: 8px;
   padding: 8px 10px;
-  background: #fff;
+  background: var(--p-bg);
   font-size: 11.5px;
   color: var(--p-mut);
 }
@@ -806,7 +877,7 @@ dialog::backdrop {
 
 .pipe .p.done {
   background: var(--p-acc-soft);
-  border-color: #cfe9df;
+  border-color: color-mix(in srgb, var(--p-acc) 35%, var(--p-line));
 }
 
 .pipe .p.done b {
@@ -815,18 +886,18 @@ dialog::backdrop {
 
 .pipe .p.cur {
   background: var(--p-warn-soft);
-  border-color: #f0e2bd;
+  border-color: color-mix(in srgb, var(--p-warn) 40%, var(--p-line));
 }
 
 .pipe .p.cur b {
-  color: #8a5a00;
+  color: var(--p-warn);
 }
 
 .asr {
   border: 1px solid var(--p-line);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: var(--p-bg);
 }
 
 .asr .ah {
@@ -835,7 +906,7 @@ dialog::backdrop {
   gap: 8px;
   padding: 8px 11px;
   border-bottom: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
   font-size: 11.5px;
   color: var(--p-mut);
 }
@@ -849,7 +920,7 @@ dialog::backdrop {
   grid-template-columns: 62px 46px minmax(0, 1fr);
   gap: 8px;
   padding: 7px 11px;
-  border-bottom: 1px solid #f1f4f8;
+  border-bottom: 1px solid var(--p-line);
   font-size: 12.5px;
   line-height: 1.7;
 }
@@ -873,15 +944,15 @@ dialog::backdrop {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 999px;
-  border: 1px solid #f0e2bd;
+  border: 1px solid color-mix(in srgb, var(--p-warn) 40%, var(--p-line));
   background: var(--p-warn-soft);
-  color: #8a5a00;
+  color: var(--p-warn);
   font-size: 10px;
 }
 
 .partial {
   margin-top: 8px;
-  color: #8a5a00;
+  color: var(--p-warn);
   font-size: 11.5px;
 }
 
@@ -965,7 +1036,7 @@ dialog::backdrop {
   height: 32px;
   border-radius: 9px;
   flex: none;
-  background: linear-gradient(135deg, #2563eb, #1e4fd8);
+  background: linear-gradient(135deg, var(--p-pri), var(--p-pri-deep));
   color: #fff;
   display: grid;
   place-items: center;
@@ -1024,64 +1095,119 @@ dialog::backdrop {
   cursor: not-allowed;
 }
 
-.ops-user {
-  border-top: 1px solid var(--p-line);
-  padding: 12px;
+/* 右上角常驻控件组（arch/08 §6，行业惯例：主题切换 + 用户菜单）：
+   sticky 零高度覆盖层——普通页随滚动吸顶压在顶栏右端，chat-center 页
+   （顶栏隐藏）悬浮在工作区头部右上，两种形态都在场且不占布局空间。 */
+.ops-corner {
+  position: sticky;
+  top: 10px;
+  z-index: 40;
+  height: 0;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 16px;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.ops-user .ava {
+.ops-corner > * {
+  pointer-events: auto;
+}
+
+.ops-iconbtn {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  flex: none;
-  background: var(--p-pri-soft);
-  color: var(--p-pri);
   display: grid;
   place-items: center;
+  flex: none;
+  font: inherit;
+  color: var(--p-mut);
+  background: color-mix(in srgb, var(--p-bg) 82%, transparent);
+  border: 1px solid var(--p-line);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.ops-iconbtn:hover {
+  color: var(--p-pri);
+  border-color: var(--p-pri);
+}
+
+.ops-usermenu {
+  position: relative;
+}
+
+.ops-ava {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font: inherit;
   font-size: 13px;
   font-weight: 700;
-}
-
-.ops-user .un {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.ops-user .ur {
-  font-size: 11px;
-  color: var(--p-mut);
-}
-
-.ops-user .bk {
-  margin-left: auto;
-  font-size: 11.5px;
-  color: var(--p-faint);
-  text-decoration: none;
-}
-
-.ops-user .bk:hover {
   color: var(--p-pri);
-}
-
-.ops-user .bk + .out {
-  margin-left: 0;
-}
-
-.ops-user .out {
-  margin-left: auto;
-  font-size: 11.5px;
-  color: var(--p-faint);
-  background: none;
-  border: none;
+  background: var(--p-pri-soft);
+  border: 1px solid color-mix(in srgb, var(--p-pri) 30%, transparent);
   cursor: pointer;
 }
 
-.ops-user .out:hover {
+.ops-ava:hover,
+.ops-ava[aria-expanded='true'] {
+  border-color: var(--p-pri);
+}
+
+.ops-usermenu-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  border-radius: var(--r-ctrl);
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.18), 0 2px 6px rgba(16, 24, 40, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ops-usermenu-info {
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--p-line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ops-usermenu-info b {
+  font-size: 13px;
+  color: var(--p-ink);
+}
+
+.ops-usermenu-info small {
+  font-size: 11px;
+  color: var(--p-faint);
+}
+
+.ops-usermenu-out {
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--r-ctrl);
+  background: none;
+  color: var(--p-mut);
+  cursor: pointer;
+}
+
+.ops-usermenu-out:hover {
   color: var(--p-err);
+  background: var(--p-err-soft);
 }
 
 .build-info {
@@ -1123,8 +1249,8 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 24px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0 104px 0 24px; /* 右侧给悬浮的用户/主题控件组让位 */
+  background: color-mix(in srgb, var(--p-bg) 90%, transparent);
   border-bottom: 1px solid var(--p-line);
   font-size: 13px;
   color: var(--p-mut);
@@ -1151,17 +1277,18 @@ dialog::backdrop {
 }
 
 /* chat-center 两页（方案 / 制作台）对齐原型 family-agent.css：对话流是页面主轴，
-   通栏贴顶全高；外壳的顶栏 / 课程阶段栏 / 页头 / 下一步横幅 / 版本脚注都不出现。 */
-.ops-main:has(.plan-split) {
+   通栏贴顶全高；外壳的顶栏 / 课程阶段栏 / 页头 / 下一步横幅 / 版本脚注都不出现。
+   chat-center 由 WorkbenchShell 按路由挂在根节点（组件树语义，非 :has 反穿）。 */
+.chat-center .ops-main {
   max-width: none;
   padding: 0;
 }
 
-.ops-main:has(.plan-split) .build-info {
+.chat-center .ops-main .build-info {
   display: none;
 }
 
-.wb-col:has(.plan-split) > .ops-top {
+.chat-center > .wb-col > .ops-top {
   display: none;
 }
 
@@ -1402,7 +1529,7 @@ dialog::backdrop {
 }
 
 .olrow:hover {
-  background: #f6f8fb;
+  background: var(--p-soft);
 }
 
 .olrow.lv1 {
@@ -1451,7 +1578,7 @@ dialog::backdrop {
 .olrow.lv3 .gh {
   border: 1px solid var(--p-line);
   color: var(--p-mut);
-  background: #fff;
+  background: var(--p-bg);
 }
 
 .caret {
@@ -1537,7 +1664,7 @@ dialog::backdrop {
 }
 
 .olrow .acts .btn:hover:not(:disabled) {
-  background: #e8eef5;
+  background: var(--p-soft);
   color: var(--p-ink);
 }
 
@@ -2084,15 +2211,15 @@ dialog::backdrop {
 /* chat-center 语境（方案 / 制作台，原型同款几何）：对话与右栏工作区都是
    Codex / WorkBuddy 式通栏全高面板——贴住视口上下、无圆角无外圈留白，
    相互之间只有一根 hairline；工作区头部页签即面板头。 */
-.ops-main:has(.plan-split) .plan-split {
+.chat-center .ops-main .plan-split {
   gap: 0;
 }
 
-.ops-main:has(.plan-split) .plan-split > .wb-col {
+.chat-center .ops-main .plan-split > .wb-col {
   padding: 0;
 }
 
-.ops-main:has(.plan-split) .agent-rail {
+.chat-center .ops-main .agent-rail {
   top: 0;
   height: 100vh;
   min-height: 0;
@@ -2101,7 +2228,7 @@ dialog::backdrop {
   border-radius: 0;
 }
 
-.ops-main:has(.plan-split) .ws {
+.chat-center .ops-main .ws {
   top: 0;
   max-height: 100vh;
   border: none;
@@ -2111,10 +2238,10 @@ dialog::backdrop {
 }
 
 @media (max-width: 1280px) {
-  .ops-main:has(.plan-split) .plan-split > .wb-col {
+  .chat-center .ops-main .plan-split > .wb-col {
     padding: 16px 16px 40px;
   }
-  .ops-main:has(.plan-split) .ws {
+  .chat-center .ops-main .ws {
     border: 1px solid var(--p-line);
     border-radius: var(--r-panel);
     max-height: none;
@@ -2128,7 +2255,7 @@ dialog::backdrop {
   max-height: calc(100vh - 150px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--p-bg);
   border: 1px solid var(--p-line);
   border-radius: var(--r-panel);
   overflow: hidden;
@@ -2137,7 +2264,7 @@ dialog::backdrop {
 .ws-head {
   flex: none;
   border-bottom: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 8px 10px 0;
 }
 
@@ -2158,7 +2285,7 @@ dialog::backdrop {
 
 .ws-title .ws-meta {
   font: 500 10.5px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
   font-weight: 500;
 }
 
@@ -2166,7 +2293,7 @@ dialog::backdrop {
 .ws-prog {
   margin: 0 2px 8px;
   height: 5px;
-  background: #e6eaf2;
+  background: var(--p-line);
 }
 
 .ws-body {
@@ -2209,7 +2336,7 @@ dialog::backdrop {
   flex: none;
   padding: 8px 14px;
   border-bottom: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
   font-size: 11.5px;
   color: var(--p-mut);
   line-height: 1.5;
@@ -2223,7 +2350,7 @@ dialog::backdrop {
   min-height: 420px;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--p-bg);
   border: 1px solid var(--p-line);
   border-radius: var(--r-panel);
   overflow: hidden;
@@ -2245,7 +2372,7 @@ dialog::backdrop {
   flex: none;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #2563eb, #1e4fd8);
+  background: linear-gradient(135deg, var(--p-pri), var(--p-pri-deep));
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -2292,25 +2419,25 @@ dialog::backdrop {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--p-pri);
   box-shadow: 0 0 0 3px var(--p-pri-soft);
   animation: agent-pulse 1.8s ease-in-out infinite;
 }
 
 .dot-wait {
-  background: #d48806;
-  box-shadow: 0 0 0 3px #fff6e5;
+  background: var(--p-warn);
+  box-shadow: 0 0 0 3px var(--p-warn-soft);
   animation: none;
 }
 
 .dot-ok {
-  background: #0f9d76;
+  background: var(--p-acc);
   box-shadow: 0 0 0 3px var(--p-acc-soft);
   animation: none;
 }
 
 .dot-err {
-  background: #d9483f;
+  background: var(--p-err);
   box-shadow: 0 0 0 3px var(--p-err-soft);
   animation: none;
 }
@@ -2352,7 +2479,7 @@ dialog::backdrop {
 .agent-tabs .n {
   margin-left: 5px;
   font: 600 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .agent-tabs button.on .n {
@@ -2480,7 +2607,7 @@ dialog::backdrop {
 .asset-poster {
   position: relative;
   aspect-ratio: 16 / 9;
-  background: linear-gradient(135deg, var(--p-soft), #e3eaf6);
+  background: linear-gradient(135deg, var(--p-soft), color-mix(in srgb, var(--p-line) 50%, var(--p-soft)));
   overflow: hidden;
 }
 
@@ -2577,7 +2704,7 @@ dialog::backdrop {
 }
 
 .msg.user .m-av {
-  background: #eef1f6;
+  background: var(--p-line);
   color: var(--p-mut);
 }
 
@@ -2591,7 +2718,7 @@ dialog::backdrop {
   align-items: center;
   gap: 6px;
   font-size: 10.5px;
-  color: #9aa3b8;
+  color: var(--p-faint);
   margin-bottom: 3px;
 }
 
@@ -2627,7 +2754,7 @@ dialog::backdrop {
 .atodo {
   border: 1px solid var(--p-line);
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--p-soft);
   margin: 8px 0 12px;
   padding: 8px 10px 4px;
 }
@@ -2647,13 +2774,13 @@ dialog::backdrop {
 
 .atodo-n {
   font: 600 10.5px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .atodo-bar {
   height: 4px;
   border-radius: 2px;
-  background: #e9edf4;
+  background: var(--p-line);
   margin: 6px 0 8px;
   overflow: hidden;
 }
@@ -2694,7 +2821,7 @@ dialog::backdrop {
   flex: none;
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--p-bg);
   color: #fff;
 }
 
@@ -2704,8 +2831,8 @@ dialog::backdrop {
 }
 
 .atodo-i.done .atodo-box {
-  background: #0f9d76;
-  border-color: #0f9d76;
+  background: var(--p-acc);
+  border-color: var(--p-acc);
 }
 
 .atodo-i.doing .atodo-box {
@@ -2726,9 +2853,9 @@ dialog::backdrop {
 }
 
 .atodo-i.done .atodo-txt {
-  color: #9aa3b8;
+  color: var(--p-faint);
   text-decoration: line-through;
-  text-decoration-color: #c3cad9;
+  text-decoration-color: var(--p-faint);
 }
 
 .atodo-i.doing {
@@ -2751,7 +2878,7 @@ dialog::backdrop {
 .run-head {
   border: 1px solid var(--p-line);
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 10px 11px;
   margin-bottom: 10px;
 }
@@ -2774,7 +2901,7 @@ dialog::backdrop {
   flex-wrap: wrap;
   margin-top: 5px;
   font: 500 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .agent-rail .tag {
@@ -2812,7 +2939,7 @@ dialog::backdrop {
 
 .tool-group .tg-h {
   font-size: 10.5px;
-  color: #9aa3b8;
+  color: var(--p-faint);
   font-family: var(--font-mono);
   margin: 0 0 4px 2px;
 }
@@ -2820,7 +2947,7 @@ dialog::backdrop {
 .tool {
   border: 1px solid var(--p-line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--p-bg);
   overflow: hidden;
   margin-bottom: 4px;
 }
@@ -2841,7 +2968,7 @@ dialog::backdrop {
 
 .tool summary::before {
   content: "▸";
-  color: #9aa3b8;
+  color: var(--p-faint);
   font-size: 9px;
 }
 
@@ -2856,7 +2983,7 @@ dialog::backdrop {
 
 .tool .ta {
   font: 10.5px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2866,12 +2993,12 @@ dialog::backdrop {
   margin-left: auto;
   flex: none;
   font: 500 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .tool .tbody {
   border-top: 1px dashed var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 7px 9px;
   font: 10.5px/1.65 var(--font-mono);
   color: var(--p-mut);
@@ -2882,14 +3009,14 @@ dialog::backdrop {
 .filetree {
   border: 1px solid var(--p-line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--p-bg);
   overflow: hidden;
 }
 
 .filetree .fh {
   padding: 7px 10px;
   border-bottom: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
   font-size: 11px;
   font-weight: 700;
   color: var(--p-mut);
@@ -2901,7 +3028,7 @@ dialog::backdrop {
 .filetree .fh .n {
   margin-left: auto;
   font: 500 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .file {
@@ -2909,7 +3036,7 @@ dialog::backdrop {
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
-  border-bottom: 1px solid #eef1f6;
+  border-bottom: 1px solid var(--p-line);
   font-size: 12px;
 }
 
@@ -2918,7 +3045,7 @@ dialog::backdrop {
 }
 
 .file.folder {
-  background: #fafbfd;
+  background: var(--p-soft);
   font-weight: 600;
 }
 
@@ -2934,14 +3061,14 @@ dialog::backdrop {
   margin-left: auto;
   flex: none;
   font: 500 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .file-preview {
   margin-top: 10px;
   border: 1px solid var(--p-line);
   border-radius: 9px;
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 9px 10px;
   font: 10.5px/1.7 var(--font-mono);
   color: var(--p-mut);
@@ -2952,7 +3079,7 @@ dialog::backdrop {
   flex: none;
   padding: 10px 12px 12px;
   border-top: 1px solid var(--p-line);
-  background: #fff;
+  background: var(--p-bg);
 }
 
 .quick {
@@ -2964,7 +3091,7 @@ dialog::backdrop {
 
 .quick button {
   border: 1px solid var(--p-line);
-  background: #fff;
+  background: var(--p-bg);
   color: var(--p-mut);
   border-radius: 999px;
   padding: 3px 9px;
@@ -2985,7 +3112,7 @@ dialog::backdrop {
 .composer {
   border: 1px solid var(--p-line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--p-bg);
   padding: 8px 9px;
 }
 
@@ -3007,7 +3134,7 @@ dialog::backdrop {
 }
 
 .composer textarea::placeholder {
-  color: #9aa3b8;
+  color: var(--p-faint);
 }
 
 .composer .cr {
@@ -3036,119 +3163,12 @@ dialog::backdrop {
 }
 
 .composer .send:disabled {
-  background: #c9d3e2;
+  background: var(--p-line);
   cursor: not-allowed;
 }
 
-/* ---------------- AskQuestion 确认卡（对话流内提问） ----------------
-   Agent 在对话流内发起提问：问题 + 选项 + 说明，点选即回答；
-   「批准」这类确认动作由服务端按所选答案确定性执行，不经 LLM（红线）。 */
-.ask {
-  border: 1px solid #d4e3ff;
-  background: #f5f9ff;
-  border-radius: 12px;
-  padding: 11px 12px;
-  margin: 8px 0 12px;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, .06);
-}
-
-.ask .qh {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .03em;
-  color: var(--p-pri);
-  flex-wrap: wrap;
-}
-
-.ask .qt {
-  font-size: 13px;
-  font-weight: 650;
-  margin: 5px 0 8px;
-  color: var(--p-ink);
-  line-height: 1.7;
-}
-
-.ask .opts {
-  display: grid;
-  gap: 6px;
-}
-
-.ask .opt {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  text-align: left;
-  width: 100%;
-  border: 1px solid var(--p-line);
-  background: #fff;
-  border-radius: 9px;
-  padding: 8px 10px;
-  font: inherit;
-  cursor: pointer;
-}
-
-.ask .opt:hover:not(:disabled) {
-  border-color: var(--p-pri);
-  box-shadow: 0 0 0 2px var(--p-pri-soft);
-}
-
-.ask .opt:disabled {
-  cursor: default;
-}
-
-.ask .opt .ot {
-  flex: 1;
-  min-width: 0;
-}
-
-.ask .opt .ot b {
-  display: block;
-  font-size: 12.5px;
-  color: var(--p-ink);
-}
-
-.ask .opt .ot small {
-  display: block;
-  font-size: 11px;
-  color: var(--p-mut);
-  line-height: 1.6;
-  margin-top: 1px;
-}
-
-.ask .opt .ok {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--p-pri);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  flex: none;
-  margin-top: 2px;
-  opacity: 0;
-}
-
-.ask .opt.on {
-  border-color: var(--p-pri);
-  background: var(--p-pri-soft);
-}
-
-.ask .opt.on .ok {
-  opacity: 1;
-}
-
-.ask.locked .opt {
-  pointer-events: none;
-  opacity: .72;
-}
-
-.ask.locked .opt.on {
-  opacity: 1;
-}
+/* ---------------- AskQuestion 确认卡 ----------------
+   样式迁至 features/agent-chat/agent-chat.module.css（token 化，随双主题换肤）。 */
 
 /* ---------------- 答案回显 / 系统事件行 ----------------
    answer：用户所选选项的回显；event：系统事实（任务起止 / 失败原因 / 确定性动作结果）。 */
@@ -3174,7 +3194,7 @@ dialog::backdrop {
   gap: 7px;
   margin: 0 0 12px;
   font-size: 11px;
-  color: #9aa3b8;
+  color: var(--p-faint);
   font-family: var(--font-mono);
 }
 
@@ -3183,16 +3203,16 @@ dialog::backdrop {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #c4ccdb;
+  background: var(--p-line);
   flex: none;
 }
 
 .ev.ok::before {
-  background: #0f9d76;
+  background: var(--p-acc);
 }
 
 .ev.err::before {
-  background: #d9483f;
+  background: var(--p-err);
 }
 
 /* ---------------- 工作区页签（大纲 / 术语 / 分节 / 参数 / 轨迹） ---------------- */
@@ -3224,7 +3244,7 @@ dialog::backdrop {
 
 .ctabs .n {
   font: 500 10px var(--font-mono);
-  color: #9aa3b8;
+  color: var(--p-faint);
   margin-left: 4px;
 }
 
@@ -3246,7 +3266,7 @@ dialog::backdrop {
   text-align: left;
   color: var(--p-mut);
   font-weight: 600;
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 6px 8px;
   border-bottom: 1px solid var(--p-line);
   font-size: 11px;
@@ -3254,7 +3274,7 @@ dialog::backdrop {
 
 .mini-tbl td {
   padding: 6px 8px;
-  border-bottom: 1px solid #eef1f6;
+  border-bottom: 1px solid var(--p-line);
   color: var(--p-ink);
 }
 
@@ -3268,8 +3288,8 @@ dialog::backdrop {
   border-bottom-width: 2px;
   border-radius: 4px;
   padding: 1px 4px;
-  color: #9aa3b8;
-  background: #fff;
+  color: var(--p-faint);
+  background: var(--p-bg);
 }
 
 .note {
@@ -3409,8 +3429,8 @@ dialog::backdrop {
 }
 
 .stock-chip {
-  border: 1px solid #d9e2f5;
-  background: #f4f8ff;
+  border: 1px solid var(--p-line);
+  background: var(--p-soft);
   border-radius: 7px;
   padding: 1px 7px;
   font-size: 12px;
@@ -3428,7 +3448,7 @@ dialog::backdrop {
   display: block;
   border: 1px solid var(--p-line);
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 10px 12px;
   margin: 8px 0 14px;
   font-size: 12px;
@@ -3442,7 +3462,7 @@ dialog::backdrop {
 .clip-card {
   border: 1px solid var(--p-line);
   border-radius: 9px;
-  background: #fafbfd;
+  background: var(--p-soft);
   padding: 8px 10px;
   margin: 0 0 16px;
 }
@@ -4234,7 +4254,7 @@ dialog::backdrop {
   padding: 7px 9px;
   border: 1px solid var(--p-line);
   border-radius: 9px;
-  background: #fff;
+  background: var(--p-bg);
   color: var(--p-ink);
   font: inherit;
   cursor: pointer;
@@ -4242,8 +4262,8 @@ dialog::backdrop {
 }
 
 .sbc-btn:hover {
-  background: #f8faff;
-  border-color: #cddcf7;
+  background: var(--p-soft);
+  border-color: color-mix(in srgb, var(--p-pri) 35%, var(--p-line));
 }
 
 .sbc-btn[aria-expanded='true'] {
@@ -4284,7 +4304,7 @@ dialog::backdrop {
   width: 13px;
   height: 13px;
   flex: none;
-  color: #7b869c;
+  color: var(--p-faint);
   transition: transform 0.15s;
 }
 
@@ -4298,8 +4318,8 @@ dialog::backdrop {
   display: none;
   width: 252px;
   padding: 6px;
-  background: #fff;
-  border: 1px solid #dde3ee;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
   border-radius: 11px;
   box-shadow: 0 16px 40px rgba(22, 32, 58, 0.16), 0 2px 6px rgba(22, 32, 58, 0.06);
 }
@@ -4312,7 +4332,7 @@ dialog::backdrop {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #9aa3b8;
+  color: var(--p-faint);
   padding: 5px 8px 6px;
 }
 
@@ -4386,8 +4406,8 @@ dialog::backdrop {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #b3bccd;
-  box-shadow: 0 0 0 3px #f0f2f7;
+  background: var(--p-faint);
+  box-shadow: 0 0 0 3px var(--p-soft);
   animation: none;
 }
 
@@ -4400,7 +4420,7 @@ dialog::backdrop {
 
 .sk {
   border-radius: 10px;
-  background: linear-gradient(90deg, #eef1f7 25%, #f7f9fc 37%, #eef1f7 63%);
+  background: linear-gradient(90deg, var(--p-soft) 25%, color-mix(in srgb, var(--p-soft) 55%, var(--p-bg)) 37%, var(--p-soft) 63%);
   background-size: 400% 100%;
   animation: sk-shine 1.4s ease infinite;
 }
@@ -4432,25 +4452,25 @@ dialog::backdrop {
 .tag.run {
   color: var(--p-pri-deep);
   background: var(--p-pri-soft);
-  border-color: #c7d7f5;
+  border-color: color-mix(in srgb, var(--p-pri) 30%, var(--p-line));
 }
 
 .tag.warn {
   color: var(--p-warn);
   background: var(--p-warn-soft);
-  border-color: #f0dcb4;
+  border-color: color-mix(in srgb, var(--p-warn) 35%, var(--p-line));
 }
 
 .tag.ok {
   color: var(--p-acc);
   background: var(--p-acc-soft);
-  border-color: #bfe6d8;
+  border-color: color-mix(in srgb, var(--p-acc) 35%, var(--p-line));
 }
 
 .tag.err {
   color: var(--p-err);
   background: var(--p-err-soft);
-  border-color: #f5c6c0;
+  border-color: color-mix(in srgb, var(--p-err) 35%, var(--p-line));
 }
 
 /* ---------------- 素材卡（教师端需求 T4b：三段独立） ---------------- */
@@ -4462,7 +4482,7 @@ dialog::backdrop {
 .matcard {
   border: 1px solid var(--p-line);
   border-radius: var(--r-panel);
-  background: #fff;
+  background: var(--p-bg);
   box-shadow: var(--p-sh-sm);
   overflow: hidden;
 }
@@ -4542,7 +4562,7 @@ dialog::backdrop {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #b3bccd;
+  background: var(--p-faint);
   flex: none;
 }
 
@@ -4592,7 +4612,7 @@ dialog::backdrop {
 .matcard-detail {
   border-top: 1px dashed var(--p-line);
   padding: 12px 16px;
-  background: #fcfdff;
+  background: var(--p-soft);
 }
 
 .matcard-detail h4 {
@@ -4648,7 +4668,7 @@ dialog::backdrop {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
-  background: #fff;
+  background: var(--p-bg);
 }
 
 .matcard-f .grow {
@@ -4696,7 +4716,7 @@ dialog::backdrop {
   border: 1px solid var(--p-line);
   border-bottom: none;
   border-radius: var(--r-panel) var(--r-panel) 0 0;
-  background: #fafbfd;
+  background: var(--p-soft);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--p-ink);
@@ -4770,7 +4790,7 @@ dialog::backdrop {
   align-items: center;
   gap: 9px;
   padding: 9px 14px;
-  background: #fff;
+  background: var(--p-bg);
   border: 1px solid var(--p-line);
   border-radius: var(--r-panel);
   margin-bottom: 12px;
@@ -4813,7 +4833,7 @@ dialog::backdrop {
   border: 1px solid var(--p-line);
   border-bottom: none;
   border-radius: var(--r-panel) var(--r-panel) 0 0;
-  background: #fafbfd;
+  background: var(--p-soft);
 }
 
 .dh b {
@@ -4840,7 +4860,7 @@ dialog::backdrop {
   border: 1px solid var(--p-line);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: var(--p-bg);
 }
 
 .mcard .mh {
@@ -4873,7 +4893,7 @@ dialog::backdrop {
 
 /* 本节引用的素材 */
 .ops-card {
-  background: #fff;
+  background: var(--p-bg);
   border: 1px solid var(--p-line);
   border-radius: var(--r-panel);
   overflow: hidden;
@@ -4885,7 +4905,7 @@ dialog::backdrop {
   gap: 10px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--p-line);
-  background: #fafbfd;
+  background: var(--p-soft);
 }
 
 .ops-card .h b {

@@ -157,6 +157,23 @@ export type ChartDrawOptions = {
   maskFrom?: number
   /** 画布底色（回放遮罩用）。 */
   background?: string
+  /** 主题色（涨跌/网格/轴标签）：双主题下由调用方从 CSS token 取（arch/08 §6）。 */
+  palette?: ChartPalette
+}
+
+/** 画布配色：涨跌用固定红涨绿跌，网格与轴标签随工作台主题取 token。 */
+export type ChartPalette = {
+  up: string
+  down: string
+  grid: string
+  label: string
+}
+
+export const DEFAULT_PALETTE: ChartPalette = {
+  up: CHART_UP,
+  down: CHART_DOWN,
+  grid: 'rgba(22, 32, 58, 0.14)',
+  label: '#8b94a9',
 }
 
 export function drawChart(ctx: CanvasRenderingContext2D, opts: ChartDrawOptions): void {
@@ -164,6 +181,7 @@ export function drawChart(ctx: CanvasRenderingContext2D, opts: ChartDrawOptions)
   const all = opts.bars
   const visible = opts.visibleUpTo ?? all.length
   const bars = all.slice(0, visible)
+  const palette = { ...DEFAULT_PALETTE, ...opts.palette }
   ctx.clearRect(0, 0, width, height)
   if (bars.length === 0) return
 
@@ -191,8 +209,8 @@ export function drawChart(ctx: CanvasRenderingContext2D, opts: ChartDrawOptions)
   }
 
   // 网格 + 价格轴（标签密度随价格区高度收敛——迷你图上挤成一团反而读不出数）
-  ctx.strokeStyle = 'rgba(228,233,242,0.7)'
-  ctx.fillStyle = '#8b94a9'
+  ctx.strokeStyle = palette.grid
+  ctx.fillStyle = palette.label
   ctx.textAlign = 'left'
   const gridSteps = scale.priceH >= 140 ? 4 : scale.priceH >= 70 ? 2 : scale.priceH >= 30 ? 1 : 0
   for (let g = 0; gridSteps > 0 && g <= gridSteps; g += 1) {
@@ -207,7 +225,7 @@ export function drawChart(ctx: CanvasRenderingContext2D, opts: ChartDrawOptions)
 
   // 蜡烛 + 成交量
   bars.forEach((bar, i) => {
-    const color = bar.c >= bar.o ? CHART_UP : CHART_DOWN
+    const color = bar.c >= bar.o ? palette.up : palette.down
     const x = xMid(i)
     ctx.strokeStyle = color
     ctx.fillStyle = color

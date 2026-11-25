@@ -8,6 +8,7 @@ import { useCourses } from '@/features/content/ui/CoursesProvider'
 import { CourseSwitcher } from '@/features/content/ui/CourseSwitcher'
 import { phaseOfPath, PHASE_LABELS } from '@/features/content/ui/coursePhase'
 import { BuildInfo } from './BuildInfo'
+import { ThemeIconButton, UserMenu, useWorkbenchTheme } from './ThemeToggle'
 
 /**
  * 工作台外壳：左侧导航 + 顶栏 + 内容区。
@@ -37,6 +38,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
   const router = useRouter()
   const session = useSession()
   const { courses } = useCourses()
+  const { theme, toggle } = useWorkbenchTheme()
 
   const courseId = courseIdOfPath(pathname)
   const onLibrary = pathname.startsWith('/workbench/library')
@@ -44,9 +46,12 @@ export function WorkbenchShell(props: { children: ReactNode }) {
   const phase = courseId ? phaseOfPath(pathname) : null
   const user = session.user
   const name = user?.displayName ?? user?.username ?? ''
+  // chat-center 语义进组件树（arch/08 §6）：方案页与制作台对话流是页面主轴，
+  // 外壳收起顶栏与主区内边距——不再用 CSS :has() 从内容反穿外壳。
+  const chatCenter = /^\/workbench\/courses\/[^/]+\/(plan|production)(\/|$)/.test(pathname)
 
   return (
-    <div className="ops-app">
+    <div className={chatCenter ? 'ops-app chat-center' : 'ops-app'}>
       <aside className="ops-sb">
         <div className="ops-brand">
           <span className="mk">趋</span>
@@ -85,26 +90,22 @@ export function WorkbenchShell(props: { children: ReactNode }) {
             </>
           ) : null}
         </nav>
-        <div className="ops-user">
-          <span className="ava">{name.slice(0, 1)}</span>
-          <span>
-            <span className="un">{name}</span>
-            <br />
-            <span className="ur">{user?.role ?? ''}</span>
-          </span>
-          <button
-            type="button"
-            className="out"
-            onClick={() => {
-              void session.logout().then(() => router.replace('/login'))
-            }}
-          >
-            退出
-          </button>
-        </div>
       </aside>
 
       <div className="wb-col">
+        {/* 右上角常驻控件（行业惯例）：主题切换 + 用户菜单。sticky 零高度
+            覆盖层——普通页随顶栏滚动吸顶，chat-center 页（顶栏隐藏）悬浮在
+            工作区头部右上，两种形态都在场。 */}
+        <div className="ops-corner">
+          <ThemeIconButton theme={theme} onToggle={toggle} />
+          <UserMenu
+            name={name}
+            role={user?.role ?? ''}
+            onLogout={() => {
+              void session.logout().then(() => router.replace('/login'))
+            }}
+          />
+        </div>
         <header className="ops-top">
           <span>生产工作台</span>
           {current ? (
