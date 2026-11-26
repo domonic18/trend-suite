@@ -12,6 +12,11 @@
   gap: 22px;
 }
 
+.plan-split--narrow .agent-rail {
+  height: auto;
+  min-height: calc(100vh - 160px);
+}
+
 .plan-split > .wb-col {
   position: relative;
   min-width: 0;
@@ -278,10 +283,13 @@
   min-height: 0;
   overflow-y: auto;
   padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 空态（对话区还没有消息时）：图式化主行动入口（虚线卡 + 影片图标 + 主行动） */
 .agent-empty {
+  margin: auto; /* 空态时垂直居中于对话区 */
   display: flex;
   flex-direction: column;
   align-items: center;
