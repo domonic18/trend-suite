@@ -38,6 +38,9 @@ importers:
       '@trend-suite/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@trend-suite/dsl':
+        specifier: workspace:*
+        version: link:../../packages/dsl
       deepagents:
         specifier: 1.17.0
         version: 1.17.0(@langchain/core@1.4.1)(@langchain/langgraph-checkpoint@1.2.3(@langchain/core@1.4.1))(@langchain/langgraph-sdk@1.17.0(@langchain/core@1.4.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@langchain/langgraph@1.7.5(@langchain/core@1.4.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@3.25.76))(langchain@1.6.6(@langchain/core@1.4.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(langsmith@0.11.8)
@@ -111,6 +114,22 @@ importers:
       zod:
         specifier: ^3.25.0
         version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      tsx:
+        specifier: ^4.0.0
+        version: 4.23.15
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+
+  packages/dsl:
+    dependencies:
+      '@trend-suite/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { DslIssue } from '@trend-suite/contracts'
-import { parseDsl } from './dsl-parser'
+import { parseDsl } from '@trend-suite/dsl'
 import { validateDsl, type ValidatorDeps } from './validator'
 
 /**

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DSL_VERSION, type SectionContentView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { getSectionContent } from '@/features/production/api'
-import { parseDsl } from '@/server/content/textbook/dsl-parser'
+import { parseDsl } from '@trend-suite/dsl'
 import { DslRenderer } from './DslRenderer'
 import { WidgetHost } from './widgets/WidgetHost'
 

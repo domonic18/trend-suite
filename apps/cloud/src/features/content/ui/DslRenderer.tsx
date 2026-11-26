@@ -11,7 +11,7 @@ import {
   type SourceUnitView,
   type WidgetView,
 } from '@trend-suite/contracts'
-import { parseDsl } from '@/server/content/textbook/dsl-parser'
+import { parseDsl } from '@trend-suite/dsl'
 import { bignumView, cardsView, cmpView, timelineView } from './blockView'
 import { AnnotationCard } from './AnnotationCard'
 import { ClipCard } from './ClipCard'

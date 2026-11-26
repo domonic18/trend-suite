@@ -20,7 +20,13 @@ export const agentTodoItem = z.object({
   status: z.enum(['pending', 'doing', 'done']),
 })
 
-/** AskQuestion 确认卡的选项：标签 + 一句说明。 */
+/**
+ * AskQuestion 确认卡的选项：标签 + 一句说明。
+ *
+ * 注意：server 卡（批准/停止接续）的选项在 DB payload 里另带 action/planId/
+ * sectionId 等绑定字段，但**刻意不进入本契约**——契约只暴露给浏览器的形状，
+ * zod parse 会 strip 掉多余键（arch/08 §4 双轨分流的依据）。
+ */
 export const agentQuestionOption = z.object({
   label: z.string().min(1).max(60),
   description: z.string().max(300).nullable(),
@@ -67,8 +73,7 @@ export const agentMessageView = z.discriminatedUnion('role', [
      * （批准卡/停止接续卡，选项可绑确定性动作）。存量数据无此字段按 server。
      */
     source: z.enum(['agent', 'server']).nullish(),
-  }),
-  agentMessageBase.extend({
+  }),  agentMessageBase.extend({
     role: z.literal('answer'),
     /** 被回答的确认卡消息。 */
     questionMessageId: z.string().regex(idShape.agentMessage),
