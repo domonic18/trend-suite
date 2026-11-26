@@ -1,57 +1,66 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { dispose, init, type Chart, type KLineData, type Nullable } from 'klinecharts'
 import type { StockQuotesView } from '@trend-suite/contracts'
-import {
-  CHART_DOWN,
-  CHART_UP,
-  DEFAULT_PALETTE,
-  MA_PERIODS,
-  type ChartPalette,
-  chartScale,
-  drawChart,
-  sma,
-} from '@/features/lib/chartDraw'
 
 /**
- * 教学 K 线（教师预览版，移植原型 student-course.html 的 #kchart 形态）：
- * 蜡烛 + 成交量 + MA5/10/60（白名单内）+ 事件锚点竖线；行情不可用画占位框，
- * 绝不编造数值。悬停读数用于「数值可核」（验收①）。
- *
- * 绘制内核走 chartDraw——与课件里的合成 K 线**同一份画法**（迭代 6 的教训：
- * 同一个常量在两处各写一遍，迟早对不上）。留白、均线色、命中换算只此一份。
- * 网格与轴标签色从 CSS token 取（--k-grid/--k-label），工作台切主题时重绘。
+ * 教学 K 线（教师预览版）：klinecharts 引擎——蜡烛 + 成交量 + MA5/10/60 +
+ * 事件锚点竖线（verticalStraightLine overlay）；行情不可用画占位框，绝不编造
+ * 数值。悬停读数走引擎内置 crosshair tooltip（OHLCV + MA 值），「数值可核」。
+ * 网格与轴标签色从 CSS token 取（--k-grid/--k-label），切主题时 setStyles 重设。
  */
 
-const CHART_HEIGHT = 320
-
-function fmt(n: number): string {
-  return n.toFixed(2)
+function readToken(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 }
 
-/** 主题色：canvas 读不了 var()，经 getComputedStyle 取 token，缺省回退默认。 */
-function paletteOf(): ChartPalette {
-  if (typeof window === 'undefined') return DEFAULT_PALETTE
-  const style = getComputedStyle(document.documentElement)
-  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback
+function tokenStyles(): Record<string, unknown> {
+  const read = readToken
+  const up = read('--k-up', '#d9483f')
+  const down = read('--k-down', '#0f9d76')
+  const grid = read('--k-grid', 'rgba(22, 32, 58, 0.14)')
+  const label = read('--k-label', '#8b94a9')
   return {
-    up: read('--k-up', CHART_UP),
-    down: read('--k-down', CHART_DOWN),
-    grid: read('--k-grid', DEFAULT_PALETTE.grid),
-    label: read('--k-label', DEFAULT_PALETTE.label),
+    candle: {
+      bar: {
+        upColor: up,
+        downColor: down,
+        noChangeColor: label,
+        upBorderColor: up,
+        downBorderColor: down,
+        upWickColor: up,
+        downWickColor: down,
+      },
+      priceMark: { show: false },
+      tooltip: { showRule: 'follow_cross', rect: { padding: 4, margin: 6, borderRadius: 6 } },
+    },
+    indicator: { tooltip: { showRule: 'follow_cross' } },
+    grid: {
+      horizontal: { show: true, color: grid, size: 1 },
+      vertical: { show: false },
+    },
+    xAxis: { axisLine: { show: false }, tickLine: { show: false }, tickText: { color: label } },
+    yAxis: {
+      position: 'right',
+      axisLine: { show: false },
+      tickLine: { show: false },
+      tickText: { color: label },
+    },
+    separator: { size: 1, color: grid, activeBackgroundColor: 'transparent' },
+    crosshair: {
+      show: true,
+      horizontal: { line: { show: true, color: label } },
+      vertical: { line: { show: true, color: label } },
+    },
   }
 }
 
 export function KlineChart({ stock }: { stock: StockQuotesView }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const [hover, setHover] = useState<number | null>(null)
 
   const bars = stock.bars
-  const ma = useMemo<Record<number, (number | null)[]>>(
-    () => ({ 5: sma(bars, 5), 10: sma(bars, 10), 60: sma(bars, 60) }),
-    [bars],
-  )
   /** 事件锚点 → 柱下标（归一交易日；无对应柱则最近一根）。 */
   const anchorIndex = useMemo(() => {
     return stock.eventAnchors.map((anchor) => {
@@ -66,45 +75,57 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
   }, [stock.eventAnchors, bars])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    const wrap = wrapRef.current
-    if (!canvas || !wrap || bars.length === 0) return
+    const el = wrapRef.current
+    if (!el || bars.length === 0) return
 
-    const draw = () => {
-      const width = wrap.clientWidth
-      if (width === 0) return
-      const height = CHART_HEIGHT
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = width * dpr
-      canvas.height = height * dpr
-      canvas.style.height = `${height}px`
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      drawChart(ctx, {
-        width,
-        height,
-        bars,
-        ma,
-        anchors: anchorIndex
-          .filter((item) => item.idx >= 0)
-          .map((item) => ({ idx: item.idx, label: item.anchor.label })),
-        palette: paletteOf(),
+    const chart = init(el, {
+      locale: 'zh-CN',
+      styles: tokenStyles() as never,
+    })
+    if (!chart) return
+    chart.setSymbol({ ticker: stock.code, pricePrecision: 2, volumePrecision: 0 })
+    chart.setPeriod({ type: stock.period === '1d' ? 'day' : 'week', span: 1 })
+    chart.setDataLoader({
+      getBars: ({ callback }) =>
+        callback(
+          bars.map((bar, index): KLineData => {
+            const parsed = Date.parse(bar.d)
+            return {
+              timestamp: Number.isNaN(parsed) ? index : parsed,
+              open: bar.o,
+              high: bar.h,
+              low: bar.l,
+              close: bar.c,
+              volume: bar.v,
+            }
+          }),
+        ),
+    })
+    chart.createIndicator({ name: 'MA', calcParams: [5, 10, 60], paneId: 'candle_pane' }, false)
+
+    // 事件锚点竖线（overlay：只画有对应柱的）
+    for (const { anchor, idx } of anchorIndex) {
+      if (idx < 0) continue
+      chart.createOverlay({
+        name: 'verticalStraightLine',
+        points: [{ dataIndex: idx }],
+        extendData: anchor.label,
+        styles: {
+          verticalStraightLine: { line: { show: true, color: readToken('--k-label', '#8b94a9'), style: 'dashed', size: 1 }, text: { show: true, style: 'fill', color: '#fff', backgroundColor: readToken('--k-label', '#8b94a9') } },
+        },
       })
     }
 
-    draw()
-    const observer = new ResizeObserver(() => draw())
-    observer.observe(wrap)
-    // 工作台切换主题（data-wb-theme 变化）时按新 token 重绘。
-    const themed = wrap.closest('[data-wb-theme]')
-    const themeObserver = new MutationObserver(() => draw())
+    // 工作台切换主题（data-wb-theme 变化）时按新 token 重设样式
+    const themed = el.closest('[data-wb-theme]')
+    const themeObserver = new MutationObserver(() => chart.setStyles(tokenStyles() as never))
     if (themed) themeObserver.observe(themed, { attributes: true, attributeFilter: ['data-wb-theme'] })
+
     return () => {
-      observer.disconnect()
       themeObserver.disconnect()
+      dispose(el)
     }
-  }, [bars, ma, anchorIndex])
+  }, [bars, anchorIndex, stock.code, stock.period])
 
   if (stock.marketStatus === 'unavailable') {
     return (
@@ -115,53 +136,12 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
     )
   }
 
-  const hoverBar = hover !== null ? (bars[hover] ?? null) : null
-  const hoverMa =
-    hover !== null
-      ? { 5: ma[5]?.[hover] ?? null, 10: ma[10]?.[hover] ?? null, 60: ma[60]?.[hover] ?? null }
-      : null
-
-  let readout = ''
-  if (hoverBar) {
-    readout = `${hoverBar.d}  开 ${fmt(hoverBar.o)}  高 ${fmt(hoverBar.h)}  低 ${fmt(hoverBar.l)}  收 ${fmt(hoverBar.c)}  量 ${hoverBar.v} 手`
-    const m5 = hoverMa?.[5]
-    const m10 = hoverMa?.[10]
-    if (m5 != null) readout += `  MA5 ${fmt(m5)}`
-    if (m10 != null) readout += `  MA10 ${fmt(m10)}`
-  }
-
   return (
     <div className="kline-preview">
       <div className="kline-legend">
-        {MA_PERIODS.map(({ n, color }) => (
-          <span key={n}>
-            <i style={{ background: color }} />
-            MA{n}
-          </span>
-        ))}
-        <span>
-          <i style={{ background: CHART_UP }} />
-          涨
-        </span>
-        <span>
-          <i style={{ background: CHART_DOWN }} />
-          跌
-        </span>
-        <span className="kline-readout">{readout}</span>
+        <span className="kline-readout">{stock.code} · {stock.period === '1d' ? '日线' : '周线'} · {stock.windowStart} ~ {stock.windowEnd}</span>
       </div>
-      <div
-        ref={wrapRef}
-        onMouseLeave={() => setHover(null)}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          // 命中换算走 chartScale（留白只此一份，不在事件处再写一遍 8/60）。
-          const scale = chartScale({ width: rect.width, height: CHART_HEIGHT, bars })
-          const idx = scale.indexAt(e.clientX - rect.left)
-          setHover(idx >= 0 ? idx : null)
-        }}
-      >
-        <canvas ref={canvasRef} />
-      </div>
+      <div ref={wrapRef} style={{ width: '100%', height: 320 }} />
     </div>
   )
 }

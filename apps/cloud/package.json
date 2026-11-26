@@ -33,6 +33,7 @@
     "cn": "^0.5.2",
     "deepagents": "1.17.0",
     "hls.js": "^1.7.4",
+    "klinecharts": "^10.1.0",
     "langchain": "^1.6.4",
     "langsmith": "^0.11.0",
     "lucide-react": "^1.80.0",

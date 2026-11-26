@@ -56,6 +56,9 @@ importers:
       hls.js:
         specifier: ^1.7.4
         version: 1.7.4
+      klinecharts:
+        specifier: ^10.1.0
+        version: 10.1.0
       langchain:
         specifier: ^1.6.4
         version: 1.6.6(@langchain/core@1.4.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -2029,6 +2032,9 @@ packages:
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
+
+  klinecharts@10.1.0:
+    resolution: {integrity: sha512-sExME3Tv1Ey1zHzTjEc203xd5/B8e6WI6sEB2wg6SQjYwuQRB/sGDIZ6IKEfKEDhaBUXVgVXXO1OX5Giasrbew==}
 
   langchain@1.6.6:
     resolution: {integrity: sha512-/BWplLnjxDxbffyosRCYShCYOqVLusao/syOuHgdEnngg0yAhAH4rfkX3AzqFjCbZyG+0xwF2IwCg1la2FQjgg==}
@@ -4630,6 +4636,8 @@ snapshots:
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
+
+  klinecharts@10.1.0: {}
 
   langchain@1.6.6(@langchain/core@1.4.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
