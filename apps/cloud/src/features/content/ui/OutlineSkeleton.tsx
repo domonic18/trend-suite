@@ -27,3 +27,37 @@ export function OutlineSkeleton() {
     </div>
   )
 }
+
+/**
+ * 课程工作区加载骨架（对话流 + 产物工作区双栏形态）：方案页 / 制作台 /
+ * 课程入口的加载期共用——加载期就呈现目标页的样子，不闪矮内容页。
+ */
+export function CourseWorkspaceSkeleton() {
+  return (
+    <div className="grid h-full gap-4 lg:grid-cols-[minmax(0,1fr)_360px]" aria-busy="true">
+      <div className="grid content-start gap-4 rounded-xl border border-line bg-bg p-4">
+        <Skeleton className="h-[14px] w-[30%]" />
+        {[80, 65, 92].map((w, i) => (
+          <div className="flex items-start gap-2.5" key={i}>
+            <Skeleton className="size-7 shrink-0 rounded-full" />
+            <div className="grid flex-1 gap-1.5">
+              <Skeleton className="h-[13px]" style={{ width: `${w}%` }} />
+              <Skeleton className="h-[13px]" style={{ width: `${Math.max(30, w - 25)}%` }} />
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-end">
+          <Skeleton className="h-[13px] w-[46%]" />
+        </div>
+      </div>
+      <div className="grid content-start gap-3.5 rounded-xl border border-line bg-bg p-4">
+        <div className="flex gap-3 border-b border-line pb-2.5">
+          {['大纲', '课件', '配图'].map((label) => (
+            <Skeleton className="h-[13px] w-10" key={label} />
+          ))}
+        </div>
+        <OutlineSkeleton />
+      </div>
+    </div>
+  )
+}

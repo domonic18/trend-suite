@@ -8,6 +8,7 @@ import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
+import { CourseWorkspaceSkeleton } from './OutlineSkeleton'
 import { takeDraftNotice } from './draftNotice'
 import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
@@ -125,7 +126,7 @@ export function PlanPanel({
   }
 
   if (loading) {
-    return <div className="empty">方案加载中…</div>
+    return <CourseWorkspaceSkeleton />
   }
 
   // 快捷指令一点即发（主流 AskQuestion 口径）：未起草课一键进入起草对话。

@@ -3,8 +3,7 @@
 import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCourses } from '@/features/content/ui/CoursesProvider'
-import { OutlineSkeleton } from '@/features/content/ui/OutlineSkeleton'
-import { Skeleton } from '@/components/ui/skeleton'
+import { CourseWorkspaceSkeleton } from '@/features/content/ui/OutlineSkeleton'
 
 /**
  * 课程根路径不再单独成页：进入课程即 Agent 对话工作流。
@@ -30,33 +29,5 @@ export default function CourseEntryPage() {
     )
   }, [loading, course, router])
 
-  return (
-    <div className="grid gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_360px]" aria-busy="true">
-      {/* 中栏：Agent 对话流骨架 */}
-      <div className="grid content-start gap-4 rounded-xl border border-line bg-bg p-4">
-        <Skeleton className="h-[14px] w-[30%]" />
-        {[80, 65, 92].map((w, i) => (
-          <div className="flex items-start gap-2.5" key={i}>
-            <Skeleton className="size-7 shrink-0 rounded-full" />
-            <div className="grid flex-1 gap-1.5">
-              <Skeleton className="h-[13px]" style={{ width: `${w}%` }} />
-              <Skeleton className="h-[13px]" style={{ width: `${Math.max(30, w - 25)}%` }} />
-            </div>
-          </div>
-        ))}
-        <div className="flex justify-end">
-          <Skeleton className="h-[13px] w-[46%]" />
-        </div>
-      </div>
-      {/* 右栏：产物工作区骨架（页签条 + 大纲） */}
-      <div className="grid content-start gap-3.5 rounded-xl border border-line bg-bg p-4">
-        <div className="flex gap-3 border-b border-line pb-2.5">
-          {['大纲', '课件', '配图'].map((label) => (
-            <Skeleton className="h-[13px] w-10" key={label} />
-          ))}
-        </div>
-        <OutlineSkeleton />
-      </div>
-    </div>
-  )
+  return <CourseWorkspaceSkeleton />
 }
