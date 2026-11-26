@@ -25,7 +25,6 @@ export function AgentChat({
   id,
   stream,
   crumb,
-  subtitle,
   userName,
   draftingLabel = null,
   emptyHint,
@@ -35,7 +34,6 @@ export function AgentChat({
   id?: string
   stream: AgentStream
   crumb: string
-  subtitle: string
   userName: string
   /** 课程级队列任务在途时的文案（如「正在起草方案…」）；null = 无。 */
   draftingLabel?: string | null
@@ -152,7 +150,6 @@ export function AgentChat({
         <span className="agent-ava">制</span>
         <div className="agent-id">
           <b>制作 Agent</b>
-          <small>{subtitle}</small>
         </div>
         <span className={`${styles.badge} ${styles[`badge_${status}`]}`}>
           <i className="dot-run" aria-hidden="true" />

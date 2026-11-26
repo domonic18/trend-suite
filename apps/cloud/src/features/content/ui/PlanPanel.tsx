@@ -132,7 +132,6 @@ export function PlanPanel({
             id="agent-chat"
             stream={stream}
             crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
-            subtitle="方案阶段 · 起草 / 打磨 / 批准"
             userName={userName}
             draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
             emptyHint="还没有对话——把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它会用确认卡和你对齐规划方式后开始起草。"

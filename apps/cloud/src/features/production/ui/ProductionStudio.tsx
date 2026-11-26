@@ -178,7 +178,6 @@ export function ProductionStudio({
         <AgentChat
         stream={stream}
         crumb={`${courseTitle ?? '课程'} / 制作台`}
-        subtitle="制作阶段 · 九步生产 / 停止继续"
         userName={userName}
         draftingLabel={inFlight ? `正在逐节制作（已完成 ${doneSteps}/${totalSteps} 步）…` : null}
         emptyHint="还没有对话——九步生产的每一步事实会自动留在这里；也可以直接吩咐 Agent 停止、继续或重试。"
