@@ -28,10 +28,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   })
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as {
-      error?: { code?: string; message?: string }
+      error?: { code?: string; message?: string; firstIssue?: { path?: string; message?: string } }
     } | null
+    // 参数校验失败时把具体字段错误透传给用户（只给首个问题，arch/01 §2.4），
+    // 不再只显示笼统的「参数不合法」。
+    const detail = body?.error?.firstIssue?.message
     throw new ApiError(
-      body?.error?.message ?? `请求失败（${res.status}）`,
+      detail ? `${body?.error?.message}：${detail}` : (body?.error?.message ?? `请求失败（${res.status}）`),
       res.status,
       body?.error?.code,
     )

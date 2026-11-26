@@ -21,8 +21,15 @@ export function LoginForm() {
     event.preventDefault()
     setBusy(true)
     setError(null)
+    // 提交时从 DOM 读实际值：浏览器密码管理器的自动填充只写 DOM、不触发
+    // React onChange——受控 state 可能还是空串，直接提交会被服务端判
+    // 「参数不合法」。FormData 以用户看到的为准。
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const name = String(data.get('username') ?? username).trim()
+    const pass = String(data.get('password') ?? password)
     try {
-      const user = await login(username.trim(), password)
+      const user = await login(name, pass)
       // setToken 已发布会话变更：Provider 重新校验后放行，SPA 直达。
       router.replace(isOpsRole(user) ? '/ops/models' : '/workbench')
     } catch (err) {
@@ -46,6 +53,7 @@ export function LoginForm() {
         <Label htmlFor="username">用户名</Label>
         <Input
           id="username"
+          name="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
@@ -58,6 +66,7 @@ export function LoginForm() {
         <Label htmlFor="password">密码</Label>
         <Input
           id="password"
+          name="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
