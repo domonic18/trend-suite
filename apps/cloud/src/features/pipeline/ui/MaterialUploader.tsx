@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useRef, useState } from 'react'
 import { MAX_MEDIA_BYTES } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -65,9 +67,9 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
         <div className="notice err">
           {uploadError}
           {retryFile ? (
-            <button type="button" className="btn link" onClick={() => void start(retryFile)}>
+            <Button variant="link" size="sm" onClick={() => void start(retryFile)}>
               重试
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -83,14 +85,9 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
       >
         <b>把视频拖到这里</b>
         <p>或</p>
-        <button
-          type="button"
-          className="btn primary"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading !== null}
-        >
+        <Button onClick={() => inputRef.current?.click()} disabled={uploading !== null}>
           选择视频文件
-        </button>
+        </Button>
         <small>
           上传后自动转写、抽取关键帧并做视频理解；转写中的内容可以边转边读。做课时再勾选素材。
         </small>

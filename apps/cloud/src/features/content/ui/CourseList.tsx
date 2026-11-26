@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import type { CourseSummaryView } from '@trend-suite/contracts'
+import { Pencil, X } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import { deleteCourse, renameCourse } from '../api'
 import { useCourses } from './CoursesProvider'
@@ -14,6 +15,29 @@ import {
   nextActionOf,
   progressOf,
 } from './coursePhase'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
 
 function formatTime(iso: string): string {
   const date = new Date(iso)
@@ -38,7 +62,11 @@ export function CourseList() {
 
   return (
     <section>
-      {error ? <div className="notice err">{error}</div> : null}
+      {error ? (
+        <Alert variant="destructive" className="mb-3.5">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
       {loading ? (
         <div className="empty">课程加载中…</div>
@@ -63,37 +91,36 @@ export function CourseList() {
                 <div className="card-body">
                   <div className="card-top">
                     <b>{course.title}</b>
-                    <span className={`tag ${tag.tone}`}>{tag.text}</span>
+                    <Badge className={`tag ${tag.tone}`}>{tag.text}</Badge>
                   </div>
                   <div className="meta">{courseScaleOf(course)}</div>
-                  <div className="prog" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="制作进度">
-                    <i style={{ width: `${progress}%` }} />
-                  </div>
+                  <Progress value={progress} aria-label="制作进度" />
                   <div className="meta card-hint" title={next.hint}>{next.hint}</div>
                   <div className="foot">
                     <span>创建于 {formatTime(course.createdAt)}</span>
-                    <span className="btn link">进入课程 →</span>
+                    <span className="text-[13.5px] text-primary">进入课程 →</span>
                   </div>
                 </div>
                 <span className="card-acts">
-                  <button
-                    type="button"
-                    className="btn link"
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
                     title="改名"
                     aria-label={`改名 ${course.title}`}
                     onClick={() => setRenaming(course)}
                   >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    className="btn link danger"
+                    <Pencil />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="text-destructive hover:text-destructive"
                     title="删除"
                     aria-label={`删除 ${course.title}`}
                     onClick={() => setDeleting(course)}
                   >
-                    ✕
-                  </button>
+                    <X />
+                  </Button>
                 </span>
               </article>
             )
@@ -101,7 +128,7 @@ export function CourseList() {
         </div>
       )}
 
-      <div className="cards" style={{ marginTop: 14 }}>
+      <div className="cards mt-3.5">
         <button type="button" className="card add" onClick={() => setCreating(true)}>
           ＋ 新建课程
         </button>
@@ -128,22 +155,16 @@ function RenameDialog({
   onClose: () => void
   onDone: () => void
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const [title, setTitle] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // 打开（course 到位）即填入当前课程名；受控 open 变化不触发 onOpenChange
   useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (course && !el.open) {
+    if (course) {
       setTitle(course.title)
       setError(null)
-      el.showModal()
-      inputRef.current?.focus()
     }
-    if (!course && el.open) el.close()
   }, [course])
 
   async function submit() {
@@ -152,7 +173,7 @@ function RenameDialog({
     setError(null)
     try {
       await renameCourse(course.id, title.trim())
-      el_close()
+      onClose()
       onDone()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '改名失败，请稍后再试')
@@ -161,48 +182,43 @@ function RenameDialog({
     }
   }
 
-  function el_close() {
-    dialogRef.current?.close()
-    onClose()
-  }
-
   return (
-    <dialog ref={dialogRef} onClose={onClose} onClick={(e) => e.target === dialogRef.current && el_close()}>
-      <div className="dialog-head">
-        <b>课程改名</b>
-        <button type="button" className="x" aria-label="关闭" onClick={el_close}>
-          ×
-        </button>
-      </div>
-      <div className="dialog-body">
-        <div className="field">
-          <label htmlFor="rename-title">课程名称</label>
-          <input
-            id="rename-title"
-            ref={inputRef}
-            className="input"
-            value={title}
-            maxLength={120}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void submit()}
-          />
+    <Dialog open={course !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>课程改名</DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-1">
+          <div className="mb-3.5 grid gap-1.5">
+            <Label htmlFor="rename-title">课程名称</Label>
+            <Input
+              id="rename-title"
+              value={title}
+              maxLength={120}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void submit()}
+              autoFocus
+            />
+          </div>
+          {error ? (
+            <Alert variant="destructive" className="mb-3.5">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
         </div>
-        {error ? <div className="notice err">{error}</div> : null}
-      </div>
-      <div className="dialog-foot">
-        <button type="button" className="btn" onClick={el_close}>
-          取消
-        </button>
-        <button
-          type="button"
-          className="btn primary"
-          disabled={busy || !title.trim() || title.trim() === course?.title}
-          onClick={() => void submit()}
-        >
-          保存
-        </button>
-      </div>
-    </dialog>
+        <DialogFooter className="gap-2 border-t border-line px-4 py-3 sm:justify-end">
+          <Button variant="outline" onClick={onClose}>
+            取消
+          </Button>
+          <Button
+            disabled={busy || !title.trim() || title.trim() === course?.title}
+            onClick={() => void submit()}
+          >
+            保存
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -216,19 +232,8 @@ function DeleteDialog({
   onClose: () => void
   onDone: () => void
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (course && !el.open) {
-      setError(null)
-      el.showModal()
-    }
-    if (!course && el.open) el.close()
-  }, [course])
 
   async function submit() {
     if (!course || busy) return
@@ -236,7 +241,6 @@ function DeleteDialog({
     setError(null)
     try {
       await deleteCourse(course.id)
-      dialogRef.current?.close()
       onClose()
       onDone()
     } catch (err) {
@@ -245,34 +249,32 @@ function DeleteDialog({
     }
   }
 
-  function el_close() {
-    dialogRef.current?.close()
-    onClose()
-  }
-
   return (
-    <dialog ref={dialogRef} onClose={onClose} onClick={(e) => e.target === dialogRef.current && el_close()}>
-      <div className="dialog-head">
-        <b>删除课程</b>
-        <button type="button" className="x" aria-label="关闭" onClick={el_close}>
-          ×
-        </button>
-      </div>
-      <div className="dialog-body">
-        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.8 }}>
-          将删除课程<b>{course ? `「${course.title}」` : ''}</b>
-          ，连同它的全部素材、方案、生产产物与 Agent 对话记录，<b>不可恢复</b>。
-        </p>
-        {error ? <div className="notice err">{error}</div> : null}
-      </div>
-      <div className="dialog-foot">
-        <button type="button" className="btn" onClick={el_close}>
-          取消
-        </button>
-        <button type="button" className="btn danger" disabled={busy} onClick={() => void submit()}>
-          确认删除
-        </button>
-      </div>
-    </dialog>
+    <Dialog open={course !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>删除课程</DialogTitle>
+        </DialogHeader>
+        <div className="px-4 pb-1">
+          <p className="text-[13.5px] leading-[1.8]">
+            将删除课程<b>{course ? `「${course.title}」` : ''}</b>
+            ，连同它的全部素材、方案、生产产物与 Agent 对话记录，<b>不可恢复</b>。
+          </p>
+          {error ? (
+            <Alert variant="destructive" className="mt-3.5">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+        <DialogFooter className="gap-2 border-t border-line px-4 py-3 sm:justify-end">
+          <Button variant="outline" onClick={onClose}>
+            取消
+          </Button>
+          <Button variant="destructive" disabled={busy} onClick={() => void submit()}>
+            确认删除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
