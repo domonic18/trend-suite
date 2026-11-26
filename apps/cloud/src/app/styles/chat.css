@@ -37,11 +37,16 @@
 .chat-center .ops-main .plan-split > .wb-col {
   padding: 0;
   overflow: hidden;
+  /* panel 变 flex 列容器：rail 用 flex 拉伸撑满，不依赖 height:100%
+     对父级显式高度的依赖（更稳的撑满路径） */
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-center .ops-main .agent-rail {
   position: static;
-  height: 100%;
+  flex: 1;
+  height: auto;
   min-height: 0;
   border: none;
   border-radius: 0;
@@ -49,7 +54,8 @@
 
 .chat-center .ops-main .ws {
   position: static;
-  height: 100%;
+  flex: 1;
+  height: auto;
   max-height: none;
   border: none;
   border-radius: 0;
