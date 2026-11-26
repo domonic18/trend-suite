@@ -8,7 +8,7 @@ import { Pencil, X } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import { deleteCourse, renameCourse } from '../api'
 import { useCourses } from './CoursesProvider'
-import { NewCourseDialog } from './NewCourseDialog'
+import { NewCoursePanel } from './NewCoursePanel'
 import {
   courseScaleOf,
   courseStatusTagOf,
@@ -56,9 +56,31 @@ function coverHueOf(id: string): number {
 
 export function CourseList() {
   const { courses, loading, error, refresh } = useCourses()
-  const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<CourseSummaryView | null>(null)
   const [deleting, setDeleting] = useState<CourseSummaryView | null>(null)
+  // 新建课程是页面内嵌面板（Sasan 式）：#create 锚点驱动，无弹窗无路由跳转。
+  const [creating, setCreating] = useState(false)
+  useEffect(() => {
+    const sync = () => setCreating(window.location.hash === '#create')
+    sync()
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+  const closeCreate = () => {
+    window.location.hash = ''
+  }
+
+  if (creating) {
+    return (
+      <NewCoursePanel
+        onCancel={closeCreate}
+        onCreated={() => {
+          closeCreate()
+          void refresh()
+        }}
+      />
+    )
+  }
 
   return (
     <section>
@@ -129,16 +151,11 @@ export function CourseList() {
       )}
 
       <div className="cards mt-3.5">
-        <button type="button" className="card add" onClick={() => setCreating(true)}>
+        <a className="card add" href="#create">
           ＋ 新建课程
-        </button>
+        </a>
       </div>
 
-      <NewCourseDialog
-        open={creating}
-        onClose={() => setCreating(false)}
-        onCreated={() => void refresh()}
-      />
       <RenameDialog course={renaming} onClose={() => setRenaming(null)} onDone={() => void refresh()} />
       <DeleteDialog course={deleting} onClose={() => setDeleting(null)} onDone={() => void refresh()} />
     </section>

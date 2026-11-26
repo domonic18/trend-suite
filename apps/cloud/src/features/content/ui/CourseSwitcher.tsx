@@ -1,12 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CourseSummaryView } from '@trend-suite/contracts'
 import { Check, Plus } from 'lucide-react'
 import { courseScaleOf, courseStatusTagOf } from './coursePhase'
 import { useCourses } from './CoursesProvider'
-import { NewCourseDialog } from './NewCourseDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,9 +28,8 @@ function dotClassOf(course: CourseSummaryView): string {
 }
 
 export function CourseSwitcher({ current }: { current: CourseSummaryView }) {
-  const { courses, refresh } = useCourses()
+  const { courses } = useCourses()
   const router = useRouter()
-  const [creating, setCreating] = useState(false)
 
   const tag = courseStatusTagOf(current)
   const progress =
@@ -83,12 +80,14 @@ export function CourseSwitcher({ current }: { current: CourseSummaryView }) {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setCreating(true)} className="sbc-f">
+          <DropdownMenuItem
+            onSelect={() => router.push('/workbench#create')}
+            className="sbc-f"
+          >
             <Plus className="size-3.5" aria-hidden="true" /> 新建课程
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <NewCourseDialog open={creating} onClose={() => setCreating(false)} onCreated={() => void refresh()} />
     </div>
   )
 }

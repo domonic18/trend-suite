@@ -11,14 +11,6 @@ import { setDraftNotice } from './draftNotice'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -28,13 +20,11 @@ import { Textarea } from '@/components/ui/textarea'
  * 手填——大纲由 Agent 代拟，生成后在方案页编辑、确认即进制作。
  * 没跑理解的素材置灰：没有教学要点可比，选了也规划不出东西。
  */
-export function NewCourseDialog({
-  open,
-  onClose,
+export function NewCoursePanel({
+  onCancel,
   onCreated,
 }: {
-  open: boolean
-  onClose: () => void
+  onCancel: () => void
   /** 课程建好后回调（课程 id）。 */
   onCreated: (courseId: string) => void
 }) {
@@ -47,7 +37,6 @@ export function NewCourseDialog({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!open) return
     setTopic('')
     setPicked([])
     setError(null)
@@ -58,7 +47,7 @@ export function NewCourseDialog({
         setError(err instanceof ApiError ? err.message : '素材列表加载失败'),
       )
       .finally(() => setLoadingAssets(false))
-  }, [open])
+  }, [])
 
   const pickedAssets = assets.filter((asset) => picked.includes(asset.id))
   // 勾了但没理解的素材：起草会被服务端挡下（素材未全部就绪），别让教师白等。
@@ -92,7 +81,6 @@ export function NewCourseDialog({
         // 课程已经建好（不回滚）：起草失败的原因带到方案页显示，别让教师再建一门课。
         setDraftNotice(err instanceof ApiError ? err.message : '起草未启动，请到方案页重提')
       }
-      onClose()
       onCreated(course.id)
       router.push(`/workbench/courses/${course.id}/plan`)
     } catch (err) {
@@ -102,16 +90,13 @@ export function NewCourseDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>新建课程</DialogTitle>
-          <DialogDescription className="sr-only">
-            输入课程主题并选择素材，Agent 生成大纲
-          </DialogDescription>
-        </DialogHeader>
+    <section className="mx-auto w-full max-w-[560px] py-6" aria-label="新建课程">
+      <div className="rounded-xl border border-line bg-bg shadow-sm">
+        <div className="border-b border-line px-5 py-4">
+          <h2 className="text-[15px] font-semibold">新建课程</h2>
+        </div>
 
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-5 pt-4 pb-1">
           {error ? (
             <Alert variant="destructive" className="mb-3.5">
               <AlertDescription>{error}</AlertDescription>
@@ -176,15 +161,15 @@ export function NewCourseDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t border-line px-4 py-3 sm:justify-end">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-2 border-t border-line px-5 py-3.5">
+          <Button variant="outline" onClick={onCancel}>
             取消
           </Button>
           <Button disabled={!canSubmit || busy} onClick={() => void submit()}>
             {busy ? '正在创建…' : '生成大纲'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </section>
   )
 }
