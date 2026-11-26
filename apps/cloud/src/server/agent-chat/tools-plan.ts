@@ -12,7 +12,8 @@ import {
   tweakPlanInternal,
 } from '@/server/content/plans/service'
 import * as plansRepo from '@/server/content/plans/repo'
-import { insertMessage, type AgentThreadRow } from './repo'
+import { type AgentThreadRow } from './repo'
+import { askQuestionTool, todoWriteTool } from './tools-shared'
 
 /**
  * 方案阶段的工具白名单（arch/08 §4）：get_plan / get_materials / draft_plan /
@@ -188,61 +189,13 @@ export function planTools(thread: AgentThreadRow) {
       }),
   })
 
-  const askSchema = z.object({
-    text: z.string().min(1).max(500).describe('问题正文'),
-    options: z
-      .array(
-        z.object({
-          label: z.string().min(1).max(60).describe('选项标签'),
-          description: z.string().max(300).optional().describe('一句说明，可省略'),
-        }),
-      )
-      .min(2)
-      .max(4)
-      .describe('选项列表'),
-  })
-  const askQuestion = new DynamicStructuredTool({
-    name: 'ask_question',
-    description:
-      '向教师发起确认卡提问（问题 + 2~4 个选项 + 一句说明）。调用后本轮结束、等待教师点选，不要再调用其它工具。',
-    schema: askSchema as never,
-    func: async (input: { text: string; options: { label: string; description?: string }[] }) =>
-      guard(async () => {
-        await insertMessage(thread.id, 'question', {
-          question: {
-            text: input.text,
-            options: input.options.map((option) => ({
-              label: option.label,
-              description: option.description ?? null,
-            })),
-            answeredIndex: null,
-          },
-        })
-        return '已向教师发出确认卡。本轮到此为止，等待教师回答。'
-      }),
-  })
-
-  const todoSchema = z.object({
-    items: z
-      .array(
-        z.object({
-          content: z.string().min(1).max(200).describe('任务内容'),
-          status: z.enum(['pending', 'doing', 'done']).describe('状态'),
-        }),
-      )
-      .min(1)
-      .max(12),
-  })
-  const todoWrite = new DynamicStructuredTool({
-    name: 'todo_write',
-    description: '更新任务清单卡（会展示在对话里，始终显示最新一份）。开工前列出计划，做完逐步勾掉。',
-    schema: todoSchema as never,
-    func: async (input: { items: { content: string; status: 'pending' | 'doing' | 'done' }[] }) =>
-      guard(async () => {
-        await insertMessage(thread.id, 'todo', { items: input.items })
-        return 'TODO 已更新并展示给教师。'
-      }),
-  })
-
-  return [getPlan, getMaterials, draftPlan, revisePlan, applyTweak, askQuestion, todoWrite]
+  return [
+    getPlan,
+    getMaterials,
+    draftPlan,
+    revisePlan,
+    applyTweak,
+    askQuestionTool(thread, guard),
+    todoWriteTool(thread, guard),
+  ]
 }
