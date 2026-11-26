@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { NARROW_QUERY } from '@/lib/breakpoints'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -16,7 +17,7 @@ import {
 function useNarrowViewport(): boolean {
   const [narrow, setNarrow] = useState(false)
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1280px)')
+    const mq = window.matchMedia(NARROW_QUERY)
     const apply = () => setNarrow(mq.matches)
     apply()
     mq.addEventListener('change', apply)

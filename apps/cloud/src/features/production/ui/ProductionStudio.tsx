@@ -7,6 +7,7 @@ import type {
   SectionQuotesView,
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { usePolling } from '@/features/lib/usePolling'
 import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
@@ -72,10 +73,7 @@ export function ProductionStudio({
   const stopped = board?.stop != null
   const inFlight = running && !stopped
 
-  useEffect(() => {
-    const timer = setInterval(() => void refreshBoard(), 3_000)
-    return () => clearInterval(timer)
-  }, [refreshBoard])
+  usePolling(refreshBoard, 3_000)
 
   /** 当前展示的节：默认跟随正在跑的那节，教师点选后钉住。 */
   const currentId = useMemo(() => {

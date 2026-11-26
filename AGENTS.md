@@ -40,7 +40,8 @@ trend-suite/
 5. **文档随仓库走**：apps/* 只放代码与运行资产，项目文档一律在根 `docs/`，并在 docs/README.md 登记。**临时性 / 过渡性文档不进仓库**——评审清单、还债路线、阶段小结、过程稿等过程产物不进 `docs/`，需要留档就放应用 `workspace/`（gitignore）或留在会话里；进仓的文档必须是长期有效的需求 / 架构 / 规范正文。
 6. **提交**：Conventional Commits；未经用户批准不提交 git。
 7. **生产 Agent 纪律**：九步顺序由云端状态机强制（跑错序被挡）；模型调用统一经我们的 provider adapter（密钥不入环境明文、用量入账本）；产物必过三层校验，绝不部分落库；学员作答只在本机。
-8. **文档脱敏**（开源仓库）：文档与注释**不得写入**真实主机/IP、域名、账号、部署路径、镜像仓库地址、密钥或本地绝对路径。一律用占位符（`<deploy-host>`、`<prod-domain>`、`<deploy-path>`、`<registry>`…）或环境变量名；真实值走内部渠道单独下发，只在 GitHub secrets / 服务器配置里落地。工具生成的收据文件（如 archify 回执）提交前也要清理本地路径。
+8. **前端样式纪律**：第三方组件自带的 inline 样式压过一切 CSS 类——需要覆盖时给父级定高/定宽或用组件 prop，别指望 CSS 类压 inline；同一真相只允许一个来源（断点值在 `src/lib/breakpoints.ts` 与 chat.css 的 @media 互指同步、shell 度量用 `--shell-header-h` token、K 线主题色映射在 `features/lib/klineTheme.ts`）；新增 `--p-*` 语义色必须同步写深色覆写（`test/token-parity.test.ts` 在 CI 挡漏）。
+9. **文档脱敏**（开源仓库）：文档与注释**不得写入**真实主机/IP、域名、账号、部署路径、镜像仓库地址、密钥或本地绝对路径。一律用占位符（`<deploy-host>`、`<prod-domain>`、`<deploy-path>`、`<registry>`…）或环境变量名；真实值走内部渠道单独下发，只在 GitHub secrets / 服务器配置里落地。工具生成的收据文件（如 archify 回执）提交前也要清理本地路径。
 
 ## 4. 常用命令
 

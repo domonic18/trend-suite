@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { dispose, init, type Chart, type KLineData, type Nullable } from 'klinecharts'
 import type { KlineBar } from '@trend-suite/contracts'
+import { klineTokenStyles } from '@/features/lib/klineTheme'
 
 /** 覆盖线：教学答案趋势线、用户画的线。 */
 export type ChartLine = {
@@ -37,45 +38,6 @@ export type ChartHighlight = {
  * K 线数组，未揭示的后市绝不进图表实例（遮罩不是盖在图上，是根本不给）。
  * 主题色从 --k-* token 取（canvas 读不了 var()），工作台切主题时 setStyles。
  */
-
-/** 主题 token → klinecharts Styles。 */
-function tokenStyles(): Record<string, unknown> {
-  const style = typeof window === 'undefined' ? null : getComputedStyle(document.documentElement)
-  const read = (name: string, fallback: string) => style?.getPropertyValue(name).trim() || fallback
-  const up = read('--k-up', '#d9483f')
-  const down = read('--k-down', '#0f9d76')
-  const grid = read('--k-grid', 'rgba(22, 32, 58, 0.14)')
-  const label = read('--k-label', '#8b94a9')
-  return {
-    candle: {
-      bar: {
-        upColor: up,
-        downColor: down,
-        noChangeColor: label,
-        upBorderColor: up,
-        downBorderColor: down,
-        upWickColor: up,
-        downWickColor: down,
-      },
-      priceMark: { show: false },
-      tooltip: { showRule: 'follow_cross' },
-    },
-    indicator: { tooltip: { showRule: 'follow_cross' } },
-    grid: {
-      horizontal: { show: true, color: grid, size: 1 },
-      vertical: { show: false },
-    },
-    xAxis: { axisLine: { show: false }, tickLine: { show: false }, tickText: { color: label } },
-    yAxis: {
-      position: 'right',
-      axisLine: { show: false },
-      tickLine: { show: false },
-      tickText: { color: label },
-    },
-    separator: { size: 1, color: grid, activeBackgroundColor: 'transparent' },
-    crosshair: { show: false, horizontal: { show: false }, vertical: { show: false } },
-  }
-}
 
 function toKLineData(bar: KlineBar, index: number): KLineData {
   const parsed = Date.parse(bar.d)
@@ -129,7 +91,7 @@ export function MiniChart({
 
     const chart = init(el, {
       locale: 'zh-CN',
-      styles: tokenStyles() as never,
+      styles: klineTokenStyles() as never,
     })
     if (!chart) return
     chartRef.current = chart
@@ -180,7 +142,7 @@ export function MiniChart({
 
     // 工作台切主题时按新 token 重设样式
     const themed = el.closest('[data-wb-theme]')
-    const themeObserver = new MutationObserver(() => chart.setStyles(tokenStyles() as never))
+    const themeObserver = new MutationObserver(() => chart.setStyles(klineTokenStyles() as never))
     if (themed) themeObserver.observe(themed, { attributes: true, attributeFilter: ['data-wb-theme'] })
 
     return () => {

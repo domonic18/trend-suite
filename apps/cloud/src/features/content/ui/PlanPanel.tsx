@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { usePolling } from '@/features/lib/usePolling'
 import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
@@ -83,11 +84,7 @@ export function PlanPanel({
 
   const job = data?.job ?? null
   const running = job?.status === 'queued' || job?.status === 'running'
-  useEffect(() => {
-    if (!running) return
-    const timer = setInterval(() => void refresh(), 3_000)
-    return () => clearInterval(timer)
-  }, [running, refresh])
+  usePolling(refresh, running ? 3_000 : 60_000) // 起草中 3s；空闲降到 60s 兜底
 
   // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：起草完成等事实落流即刷新。
   const lastSeq = stream.lastSeq
@@ -148,7 +145,6 @@ export function PlanPanel({
         storageKey="wb.ws.w.plan"
         main={
           <AgentChat
-            id="agent-chat"
             stream={stream}
             crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
             userName={userName}

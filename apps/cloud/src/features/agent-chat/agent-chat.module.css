@@ -2,6 +2,8 @@
    覆写同名变量整域换肤），不再写死 hex。 */
 
 /* ---------------------------------------------------------------- 展开更早 */
+@layer components {
+
 .moreHistory {
   align-self: center;
   font: inherit;
@@ -609,4 +611,5 @@ legend.askBadgeLive {
 .toBottom:hover {
   color: var(--p-pri);
   border-color: var(--p-pri);
+}
 }

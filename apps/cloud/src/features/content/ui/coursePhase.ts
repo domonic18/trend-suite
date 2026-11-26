@@ -46,7 +46,7 @@ export const PHASE_LABELS: Record<CoursePhaseKey, string> = {
 /** 从路由反推当前阶段（深链保持可用；课程根路径会立即重定向，不标阶段）。 */
 export function phaseOfPath(pathname: string): CoursePhaseKey | null {
   if (pathname.endsWith('/plan')) return 'plan'
-  if (pathname.includes('/production')) return 'production'
+  if (/\/production(\/|$)/.test(pathname)) return 'production'
   if (/\/courses\/[^/]+$/.test(pathname)) return null
   return 'material'
 }
