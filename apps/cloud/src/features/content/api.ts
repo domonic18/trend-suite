@@ -88,6 +88,14 @@ export async function tweakPlan(courseId: string, op: TweakPlanRequest): Promise
   return planView.parse((data as { plan: unknown }).plan)
 }
 
+/** 确认大纲：批准方案并解锁制作（确定性端点，不经 LLM；成功后服务端自动排队生产）。 */
+export async function approvePlan(courseId: string): Promise<void> {
+  await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/plan/approve`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
 /** 批准后落库的概念与依赖（只读）。 */
 export async function listConcepts(courseId: string): Promise<ConceptsResponse> {
   const data = await apiRequest<unknown>(`/v1/admin/content/courses/${courseId}/concepts`)

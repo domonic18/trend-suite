@@ -384,12 +384,6 @@
   gap: 12px;
 }
 
-.plan-form .form-note {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--p-mut);
-  line-height: 1.65;
-}
 
 .plan-form .outline-issues {
   margin: 6px 0 0;

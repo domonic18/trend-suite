@@ -5,8 +5,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useState } from 'react'
 import type { PlanJobView, PlanReviewView, PlanView, TweakPlanRequest } from '@trend-suite/contracts'
 import { classifyDraftFailure } from './draftFailure'
+import { OutlineSkeleton } from './OutlineSkeleton'
 import { OutlineTree } from './OutlineTree'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
@@ -46,6 +48,9 @@ export function PlanWorkspace({
   error,
   notice,
   onTweak,
+  onApprove,
+  approving = false,
+  approveError = null,
 }: {
   plan: PlanView | null
   job: PlanJobView | null
@@ -54,6 +59,10 @@ export function PlanWorkspace({
   error: string | null
   notice: string | null
   onTweak: (op: TweakPlanRequest) => void
+  /** 确认大纲并开始制作（确定性批准端点，不经 LLM）。 */
+  onApprove?: (() => void) | undefined
+  approving?: boolean
+  approveError?: string | null
 }) {
   const [tab, setTab] = useState<TabKey>('outline')
 
@@ -91,7 +100,22 @@ export function PlanWorkspace({
         <div className="ws-title">
           课件工作区
           <Badge className={`tag ${tag.cls}`}>{tag.text}</Badge>
+          {plan && !approved && onApprove ? (
+            <Button
+              size="sm"
+              className="ml-auto"
+              disabled={approving}
+              onClick={onApprove}
+            >
+              {approving ? '正在解锁制作…' : '确认大纲，开始制作'}
+            </Button>
+          ) : null}
         </div>
+        {approveError ? (
+          <Alert variant="destructive" className="mx-2 mt-2">
+            <AlertDescription>{approveError}</AlertDescription>
+          </Alert>
+        ) : null}
         <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
           {TABS.map((item) => (
             <TabsTrigger
@@ -169,6 +193,8 @@ export function PlanWorkspace({
                 }
               />
             </>
+          ) : running ? (
+            <OutlineSkeleton />
           ) : failure ? (
             <p className="note">{failure.text}</p>
           ) : (

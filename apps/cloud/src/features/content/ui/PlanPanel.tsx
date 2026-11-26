@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { getPlan, tweakPlan } from '../api'
+import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
@@ -40,7 +41,23 @@ export function PlanPanel({
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState<string | null>(null)
   const stream = useAgentStream(courseId, 'plan')
+  const router = useRouter()
+
+  /** 确认大纲：批准（确定性端点）→ 直接进制作台（生产由服务端自动排队开跑）。 */
+  const confirmAndProduce = useCallback(async () => {
+    setApproving(true)
+    setApproveError(null)
+    try {
+      await approvePlan(courseId)
+      router.push(`/workbench/courses/${courseId}/production`)
+    } catch (err) {
+      setApproveError(err instanceof ApiError ? err.message : '批准失败，请稍后再试')
+      setApproving(false)
+    }
+  }, [courseId, router])
 
   // 建课后触发起草失败的原因：课程已建好，提示带到这一页，别让教师再建一门课。
   useEffect(() => {
@@ -134,7 +151,7 @@ export function PlanPanel({
             crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
             userName={userName}
             draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
-            emptyHint="还没有对话——把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它会用确认卡和你对齐规划方式后开始起草。"
+            emptyHint="还没有对话——把课程主题发给 Agent，它会起草大纲并和你对齐。"
             emptyAction={
               fresh
                 ? {
@@ -156,6 +173,9 @@ export function PlanPanel({
             error={error}
             notice={notice}
             onTweak={tweak}
+            onApprove={() => void confirmAndProduce()}
+            approving={approving}
+            approveError={approveError}
           />
         }
       />
