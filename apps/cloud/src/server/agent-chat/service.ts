@@ -48,6 +48,12 @@ async function requireChatActor(actor: SessionUser, courseId: string): Promise<v
   }
 }
 
+/** SSE 节奏：忙时 1s、空闲 2.5s；心跳 15s；单连接最长 10 分钟。 */
+const BUSY_TICK_MS = 1_000
+const IDLE_TICK_MS = 2_500
+const HEARTBEAT_MS = 15_000
+const MAX_LIFETIME_MS = 10 * 60_000
+
 export async function sendMessage(
   actor: SessionUser,
   courseId: string,
@@ -177,13 +183,18 @@ export async function stream(
 ): Promise<AgentStreamResponse> {
   await getCourseForUser(actor, courseId)
   const thread = await findOpenThread(courseId, phase)
-  if (!thread) {
+  return snapshotOf(thread?.id ?? null, cursor)
+}
+
+/** 线程快照（增量消息 + 忙闲 + 待答卡）——鉴权已在调用方完成。 */
+async function snapshotOf(threadId: string | null, cursor: number): Promise<AgentStreamResponse> {
+  if (!threadId) {
     return agentStreamResponse.parse({ messages: [], cursor, agentBusy: false, pendingQuestionId: null })
   }
   const [rows, busy, pending] = await Promise.all([
-    listMessagesFrom(thread.id, cursor),
-    hasBusyAgentJob(thread.id),
-    unansweredQuestion(thread.id),
+    listMessagesFrom(threadId, cursor),
+    hasBusyAgentJob(threadId),
+    unansweredQuestion(threadId),
   ])
   const nextCursor = rows.length > 0 ? Number(rows[rows.length - 1]!.seq) : cursor
   return agentStreamResponse.parse({
@@ -191,6 +202,66 @@ export async function stream(
     cursor: nextCursor,
     agentBusy: busy,
     pendingQuestionId: pending?.id ?? null,
+  })
+}
+
+/** 读取权限校验（事件流在建立连接前调用一次——流内再抛错无法回传 HTTP 状态）。 */
+export async function assertChatReadable(actor: SessionUser, courseId: string): Promise<void> {
+  await getCourseForUser(actor, courseId)
+}
+
+/** SSE 事件流（arch/08 §3）：忙时 1s tick、空闲 2.5s，消息或元态变化才出帧；
+ *  ~15s 心跳；10 分钟主动收口由客户端重连。鉴权由调用方在建流前完成。 */
+export function agentEventsStream(
+  courseId: string,
+  phase: AgentPhase,
+  cursor0: number,
+  signal: AbortSignal,
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  const startedAt = Date.now()
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let cursor = cursor0
+      let lastSignature = ''
+      let lastBeat = Date.now()
+      let closed = false
+      const close = () => {
+        if (closed) return
+        closed = true
+        try {
+          controller.close()
+        } catch {
+          // 客户端已断开
+        }
+      }
+      signal.addEventListener('abort', close)
+      try {
+        const thread = await findOpenThread(courseId, phase)
+        const threadId = thread?.id ?? null
+        while (!closed && !signal.aborted && Date.now() - startedAt < MAX_LIFETIME_MS) {
+          const snap = await snapshotOf(threadId, cursor)
+          const signature = `${snap.cursor}|${snap.agentBusy}|${snap.pendingQuestionId ?? ''}`
+          if (snap.messages.length > 0) {
+            cursor = snap.cursor
+            lastSignature = signature
+            controller.enqueue(encoder.encode(`id: ${cursor}\nevent: agent\ndata: ${JSON.stringify(snap)}\n\n`))
+            lastBeat = Date.now()
+          } else if (signature !== lastSignature) {
+            lastSignature = signature
+            controller.enqueue(encoder.encode(`id: ${cursor}\nevent: agent\ndata: ${JSON.stringify(snap)}\n\n`))
+            lastBeat = Date.now()
+          } else if (Date.now() - lastBeat >= HEARTBEAT_MS) {
+            controller.enqueue(encoder.encode(': hb\n\n'))
+            lastBeat = Date.now()
+          }
+          await new Promise((resolve) => setTimeout(resolve, snap.agentBusy ? BUSY_TICK_MS : IDLE_TICK_MS))
+        }
+      } catch {
+        // 查库异常：直接收口，客户端会带游标重连
+      }
+      close()
+    },
   })
 }
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { validateDsl } from './validator'
-import { parseDsl } from './dsl-parser'
+import { parseDsl } from '@trend-suite/dsl'
 import { bignumView, cardsView, cmpView, timelineView } from '@/features/content/ui/blockView'
 
 /**

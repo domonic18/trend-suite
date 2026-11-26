@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useEffect, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import type { SessionUser } from '@trend-suite/contracts'
@@ -31,9 +33,9 @@ function Denied(props: { user: SessionUser; area: 'ops' | 'workbench'; onLogout:
             ? '运营控制台仅对 operator / admin 开放。'
             : '生产工作台仅对 producer / operator / admin 开放，学员入口在官网门户。'}
         </p>
-        <button type="button" className="btn" onClick={props.onLogout}>
+        <Button variant="outline" size="sm" onClick={props.onLogout}>
           退出登录
-        </button>
+        </Button>
       </div>
     </main>
   )

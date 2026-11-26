@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useMemo, useState } from 'react'
 import type { WidgetView } from '@trend-suite/contracts'
 import { branchingNodes, pathMatchesOptimal } from '../widgetView'
@@ -26,9 +28,8 @@ export function Flashcards({ widget }: { widget: WidgetView }) {
         {flipped ? <span>{card?.back}</span> : <span className="meta">点击翻面</span>}
       </button>
       <div className="widget-actions">
-        <button
-          type="button"
-          className="btn"
+        <Button
+          variant="outline" size="sm"
           disabled={index === 0}
           onClick={() => {
             setIndex((i) => Math.max(0, i - 1))
@@ -36,10 +37,9 @@ export function Flashcards({ widget }: { widget: WidgetView }) {
           }}
         >
           上一张
-        </button>
-        <button
-          type="button"
-          className="btn"
+        </Button>
+        <Button
+          variant="outline" size="sm"
           disabled={index >= spec.cards.length - 1}
           onClick={() => {
             setIndex((i) => Math.min(spec.cards.length - 1, i + 1))
@@ -47,7 +47,7 @@ export function Flashcards({ widget }: { widget: WidgetView }) {
           }}
         >
           下一张
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -126,9 +126,8 @@ export function BranchingScenario({ widget }: { widget: WidgetView }) {
             <>
               <p className="widget-feedback">{option.feedback}</p>
               <div className="widget-actions">
-                <button
-                  type="button"
-                  className="btn"
+                <Button
+                  variant="outline" size="sm"
                   onClick={() => {
                     const next = option.next
                     setPath((current) => [...current, node.id])
@@ -137,10 +136,10 @@ export function BranchingScenario({ widget }: { widget: WidgetView }) {
                   }}
                 >
                   {option.next ? '继续' : '结束'}
-                </button>
-                <button type="button" className="btn link" onClick={() => { setNodeId(spec.entryId); setPath([]); setPicked(null) }}>
+                </Button>
+                <Button variant="link" size="sm" onClick={() => { setNodeId(spec.entryId); setPath([]); setPicked(null) }}>
                   重走
-                </button>
+                </Button>
               </div>
             </>
           ) : null}
@@ -154,9 +153,9 @@ export function BranchingScenario({ widget }: { widget: WidgetView }) {
           <p className={optimal ? 'ok' : 'bad'}>
             {optimal ? '✓ 与最优路径一致' : '✕ 与最优路径不一致'}（最优：{spec.optimalPath.join(' → ')}）
           </p>
-          <button type="button" className="btn link" onClick={() => { setNodeId(spec.entryId); setPath([]); setPicked(null) }}>
+          <Button variant="link" size="sm" onClick={() => { setNodeId(spec.entryId); setPath([]); setPicked(null) }}>
             重走
-          </button>
+          </Button>
         </div>
       )}
     </div>

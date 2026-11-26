@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useCallback, useState } from 'react'
 import type {
   MediaAssetView,
@@ -8,8 +12,19 @@ import type {
   MediaUnderstandingItem,
   TranscriptResponse,
 } from '@trend-suite/contracts'
+import { Trash2 } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
-import { IconTrash } from '@/features/lib/icons'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import {
   cancelMaterial,
   deleteMaterial,
@@ -61,6 +76,8 @@ export function MaterialCard(props: {
   const [detail, setDetail] = useState<Detail>(EMPTY_DETAIL)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [busy, setBusy] = useState<MediaStage | null>(null)
+  /** 待确认动作（AlertDialog 受控：删除结果 / 停止加工 / 删除素材）。 */
+  const [confirming, setConfirming] = useState<{ title: string; description: string; run: () => void } | null>(null)
 
   const readiness = readinessOf(asset)
 
@@ -162,12 +179,12 @@ export function MaterialCard(props: {
       </div>
 
       {readiness === 'failed' && asset.errorMessage ? (
-        <div className="notice err">
-          {asset.errorMessage}
-          <button type="button" className="btn link" onClick={() => void retry()}>
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{asset.errorMessage}
+          <Button variant="link" size="sm" onClick={() => void retry()}>
             重试（不重算已完成部分）
-          </button>
-        </div>
+          </Button></AlertDescription>
+    </Alert>
       ) : null}
 
       <div className="matcard-stages">
@@ -184,39 +201,37 @@ export function MaterialCard(props: {
               <div className="ms-c">{stageStatusText(stage, view)}</div>
               {view.errorMessage ? <div className="ms-err">{view.errorMessage}</div> : null}
               <div className="ms-a">
-                <button
-                  type="button"
-                  className="btn"
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => open(stage)}
                   title="查看这一段的产物"
                 >
                   {isOpen ? '收起' : '查看'}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={busy !== null}
                   title="只补缺口，不重复计费（要清空重来，先「删除结果」再「重新生成」）"
                   onClick={() => void runStage(stage, 'rerun')}
                 >
                   {busy === stage ? '处理中…' : '重新生成'}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={busy !== null}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `删除「${STAGE_LABELS[stage]}」的结果？只删这一段的产物，素材文件与另外两段不受影响。`,
-                      )
-                    ) {
-                      void runStage(stage, 'clear')
-                    }
-                  }}
+                  onClick={() =>
+                    setConfirming({
+                      title: `删除「${STAGE_LABELS[stage]}」的结果？`,
+                      description: '只删这一段的产物，素材文件与另外两段不受影响。',
+                      run: () => void runStage(stage, 'clear'),
+                    })
+                  }
                 >
                   删除结果
-                </button>
+                </Button>
               </div>
             </div>
           )
@@ -230,9 +245,9 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 ASR 逐字稿
-                <span className="tag gray">
+                <Badge className="tag gray">
                   {detail.transcript ? detail.transcript.segments.length : asset.segmentCount} 段
-                </span>
+                </Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">逐字稿加载中…</div>
@@ -247,7 +262,7 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 关键帧
-                <span className="tag gray">{asset.frameCount} 张</span>
+                <Badge className="tag gray">{asset.frameCount} 张</Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">关键帧加载中…</div>
@@ -260,7 +275,7 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 视频理解
-                <span className="tag gray">{detail.understanding.length} 条</span>
+                <Badge className="tag gray">{detail.understanding.length} 条</Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">理解结果加载中…</div>
@@ -292,46 +307,62 @@ export function MaterialCard(props: {
 
       <div className="matcard-f">
         {readiness === 'queued' || readiness === 'running' ? (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              if (
-                window.confirm(
-                  '停止加工？排队任务直接取消，运行中的在阶段边界安全中止，已产出的段落与关键帧会保留。',
-                )
-              ) {
-                void stop()
-              }
-            }}
+          <Button
+            variant="outline"
+            onClick={() =>
+              setConfirming({
+                title: '停止加工？',
+                description: '排队任务直接取消，运行中的在阶段边界安全中止，已产出的段落与关键帧会保留。',
+                run: () => void stop(),
+              })
+            }
           >
             停止加工
-          </button>
+          </Button>
         ) : null}
         {readiness === 'stopped' ? (
-          <button type="button" className="btn" onClick={() => void retry()}>
+          <Button variant="outline" onClick={() => void retry()}>
             重新加工
-          </button>
+          </Button>
         ) : null}
         <span className="grow" />
-        <button
-          type="button"
-          className="iconbtn danger"
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="text-destructive hover:text-destructive"
           title="删除素材"
           aria-label="删除素材"
-          onClick={() => {
-            if (
-              window.confirm(
-                `删除素材「${asset.fileName}」？段落、关键帧、理解结果与文件字节将一并清理，不可恢复。`,
-              )
-            ) {
-              void remove()
-            }
-          }}
+          onClick={() =>
+            setConfirming({
+              title: `删除素材「${asset.fileName}」？`,
+              description: '段落、关键帧、理解结果与文件字节将一并清理，不可恢复。',
+              run: () => void remove(),
+            })
+          }
         >
-          <IconTrash />
-        </button>
+          <Trash2 />
+        </Button>
       </div>
+
+      <AlertDialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirming?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirming?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                confirming?.run()
+                setConfirming(null)
+              }}
+            >
+              确认
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   )
 }

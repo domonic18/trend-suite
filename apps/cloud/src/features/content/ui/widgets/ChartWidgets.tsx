@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Button } from '@/components/ui/button'
+
 import { useMemo, useState } from 'react'
 import { generateBars, type FigureView, type WidgetView } from '@trend-suite/contracts'
 import { MiniChart } from '../MiniChart'
@@ -74,12 +78,12 @@ export function KlineAnnotator({ widget }: { widget: WidgetView }) {
         <span className="meta">
           {points.length === 0 ? '点第一个锚点' : points.length === 1 ? '点第二个锚点' : '画线完成'}
         </span>
-        <button type="button" className="btn link" onClick={() => setPoints([])}>
+        <Button variant="link" size="sm" onClick={() => setPoints([])}>
           重画
-        </button>
-        <button type="button" className="btn link" onClick={() => setShowAnswer((v) => !v)}>
+        </Button>
+        <Button variant="link" size="sm" onClick={() => setShowAnswer((v) => !v)}>
           {showAnswer ? '收起答案' : '看标准答案'}
-        </button>
+        </Button>
       </div>
       {verdict ? (
         <ul className="widget-checks">
@@ -94,7 +98,7 @@ export function KlineAnnotator({ widget }: { widget: WidgetView }) {
         <ul className="widget-notes">
           {spec.annotations.map((annotation) => (
             <li key={`${annotation.idx}-${annotation.label}`}>
-              <span className="tag gray">{annotation.kind ?? 'structure'}</span> {annotation.label}
+              <Badge className="tag gray">{annotation.kind ?? 'structure'}</Badge> {annotation.label}
             </li>
           ))}
         </ul>
@@ -133,17 +137,16 @@ export function StepReveal({ widget }: { widget: WidgetView }) {
       />
       {current ? <p className="widget-conclusion">{current.conclusion}</p> : null}
       <div className="widget-actions">
-        <button type="button" className="btn" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
+        <Button variant="outline" size="sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
           上一步
-        </button>
-        <button
-          type="button"
-          className="btn"
+        </Button>
+        <Button
+          variant="outline" size="sm"
           disabled={step >= spec.steps.length - 1}
           onClick={() => setStep((s) => Math.min(spec.steps.length - 1, s + 1))}
         >
           下一步
-        </button>
+        </Button>
         <span className="grow" />
         {step >= spec.steps.length - 1 ? <span className="widget-final">{spec.finalConclusion}</span> : null}
       </div>

@@ -64,7 +64,7 @@ export function StockAnchor({
           ) : (
             <span className="meta">该代码不在本节案例股清单内</span>
           )}
-          {error ? <span className="err-text">{error}</span> : null}
+          {error ? <span className="text-destructive">{error}</span> : null}
           {!error && !quotes ? <span className="meta">行情加载中…</span> : null}
           {matched ? <KlineChart stock={matched} /> : null}
           {quotes && !matched && !error ? <span className="meta">行情暂未覆盖该代码</span> : null}

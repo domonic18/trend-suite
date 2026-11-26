@@ -8,8 +8,8 @@ import type {
   ModelProtocol,
   TaskBindingView,
 } from '@trend-suite/contracts'
+import { Trash2 } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
-import { IconTrash } from '@/features/lib/icons'
 import {
   MODEL_PROVIDERS,
   OTHER_PROVIDER,
@@ -28,6 +28,31 @@ import {
   testModel,
   updateModel,
 } from '../api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 type Tab = 'entries' | 'bindings' | 'asr'
 
@@ -117,6 +142,8 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
   const [busy, setBusy] = useState(false)
   /** 正在连通性测试的条目 id：行内按钮变「测试中…」，列表徽章同步。 */
   const [testingIds, setTestingIds] = useState<ReadonlySet<string>>(new Set())
+  /** 待确认删除的条目（AlertDialog 受控；确认后才发起删除）。 */
+  const [pendingDelete, setPendingDelete] = useState<ModelEntryView | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -237,221 +264,244 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
 
   return (
     <section>
-      <div className="ops-tabs">
-        {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            className={tab === key ? 'ops-tab on' : 'ops-tab'}
-            onClick={() => {
-              setTab(key)
-              // 横幅是上一个 tab 的操作反馈，切走即清（避免挂在下一个 tab 顶部撑动布局）
-              setError(null)
-              setNotice(null)
-            }}
-          >
-            {TAB_LABELS[key]}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          setTab(value as Tab)
+          // 横幅是上一个 tab 的操作反馈，切走即清（避免挂在下一个 tab 顶部撑动布局）
+          setError(null)
+          setNotice(null)
+        }}
+      >
+        <TabsList className="mb-[18px] h-auto w-full justify-start gap-1 rounded-none border-b border-line bg-transparent p-0">
+          {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
+            <TabsTrigger
+              key={key}
+              value={key}
+              className="rounded-none border-b-2 border-transparent px-[18px] py-2.5 text-sm text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
+            >
+              {TAB_LABELS[key]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {error ? <div className="notice err">{error}</div> : null}
-      {notice ? <div className="notice ok">{notice}</div> : null}
+        <TabsContent value="entries">
+          <div className="card">
+            {canWrite ? (
+              <div className="mfoot mt-0 mb-2.5">
+                <Button onClick={() => setForm({ ...EMPTY_FORM })}>新增模型</Button>
+              </div>
+            ) : (
+              <p className="meta">当前角色只读：只有管理员可以维护模型配置。</p>
+            )}
 
-      {tab === 'entries' ? (
-        <div className="card">
-          {canWrite ? (
-            <div className="mfoot" style={{ marginTop: 0, marginBottom: 10 }}>
-              <button type="button" className="btn primary" onClick={() => setForm({ ...EMPTY_FORM })}>
-                新增模型
-              </button>
-            </div>
-          ) : (
-            <div className="meta">当前角色只读：只有管理员可以维护模型配置。</div>
-          )}
-
-          {form ? (
-            <EntryFormCard
-              form={form}
-              busy={busy}
-              setForm={setForm}
-              onSubmit={submit}
-              onCancel={() => setForm(null)}
-            />
-          ) : null}
-
-          <table className="data-tbl">
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th>用途</th>
-                <th>协议</th>
-                <th>模型</th>
-                <th>密钥</th>
-                <th>状态</th>
-                <th>上次测试</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {models.map((entry) => (
-                <tr key={entry.id}>
-                  <td>
-                    <b>{entry.name}</b>
-                    {entry.isDefault ? <span className="tag">默认</span> : null}
-                  </td>
-                  <td>{entry.purposes.map((p) => PURPOSE_LABELS[p]).join(' + ')}</td>
-                  <td>{PROTOCOL_LABELS[entry.protocol]}</td>
-                  <td>{entry.model}</td>
-                  <td>{entry.apiKeyMasked ?? '未配置'}</td>
-                  <td>{entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}</td>
-                  <td>
-                    <TestBadge
-                      testing={testingIds.has(entry.id)}
-                      result={entry.lastTestResult}
-                      latencyMs={entry.lastTestLatencyMs}
-                      error={entry.lastTestError}
-                      testedAt={entry.lastTestedAt}
-                    />
-                  </td>
-                  <td className="num">
-                    {canWrite ? (
-                      <>
-                        <button
-                          type="button"
-                          className="btn link"
-                          disabled={testingIds.has(entry.id)}
-                          onClick={() => void runTest(entry.id)}
-                        >
-                          {testingIds.has(entry.id) ? '测试中…' : '测试'}
-                        </button>
-                        <button type="button" className="btn link" onClick={() => edit(entry)}>
-                          编辑
-                        </button>
-                        <button
-                          type="button"
-                          className="iconbtn danger"
-                          title="删除条目"
-                          aria-label="删除条目"
-                          onClick={() => {
-                            if (window.confirm(`删除模型条目「${entry.name}」？已绑定的任务槽会失去该条目，操作不可恢复。`)) {
-                              void remove(entry.id)
-                            }
-                          }}
-                        >
-                          <IconTrash />
-                        </button>
-                      </>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="meta">
-            连通性测试会真实调用一次（需计费）。密钥加密存储，列表只回掩码。
-          </p>
-        </div>
-      ) : null}
-
-      {tab === 'bindings' ? (
-        <div className="card">
-          <p className="meta">
-            每槽位绑定主模型（必填）与可选备用；备用不可与主模型相同。下拉只列出与槽位用途匹配且启用的条目；「测试主模型」对当前选中的主模型发起连通性测试（真实调用一次，需计费）。
-          </p>
-          <div className="bind-grid">
-            {bindings.map((binding) => (
-              <BindingCard
-                key={binding.task}
-                binding={binding}
-                models={models}
-                canWrite={canWrite}
-                testingIds={testingIds}
-                onTest={runTest}
-                onChanged={refresh}
+            {form ? (
+              <EntryFormCard
+                form={form}
+                busy={busy}
+                setForm={setForm}
+                onSubmit={submit}
+                onCancel={() => setForm(null)}
               />
-            ))}
+            ) : null}
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>名称</TableHead>
+                  <TableHead>用途</TableHead>
+                  <TableHead>协议</TableHead>
+                  <TableHead>模型</TableHead>
+                  <TableHead>密钥</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>上次测试</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {models.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>
+                      <b>{entry.name}</b>
+                      {entry.isDefault ? <Badge className="ml-1.5">默认</Badge> : null}
+                    </TableCell>
+                    <TableCell>{entry.purposes.map((p) => PURPOSE_LABELS[p]).join(' + ')}</TableCell>
+                    <TableCell>{PROTOCOL_LABELS[entry.protocol]}</TableCell>
+                    <TableCell>{entry.model}</TableCell>
+                    <TableCell>{entry.apiKeyMasked ?? '未配置'}</TableCell>
+                    <TableCell>{entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}</TableCell>
+                    <TableCell>
+                      <TestBadge
+                        testing={testingIds.has(entry.id)}
+                        result={entry.lastTestResult}
+                        latencyMs={entry.lastTestLatencyMs}
+                        error={entry.lastTestError}
+                        testedAt={entry.lastTestedAt}
+                      />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-right">
+                      {canWrite ? (
+                        <>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            disabled={testingIds.has(entry.id)}
+                            onClick={() => void runTest(entry.id)}
+                          >
+                            {testingIds.has(entry.id) ? '测试中…' : '测试'}
+                          </Button>
+                          <Button variant="link" size="sm" onClick={() => edit(entry)}>
+                            编辑
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label="删除条目"
+                            onClick={() => setPendingDelete(entry)}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <p className="meta">连通性测试会真实调用一次（需计费）。密钥加密存储，列表只回掩码。</p>
           </div>
-        </div>
+        </TabsContent>
+
+        <TabsContent value="bindings">
+          <div className="card">
+            <p className="meta">
+              每槽位绑定主模型（必填）与可选备用；备用不可与主模型相同。下拉只列出与槽位用途匹配且启用的条目；「测试主模型」对当前选中的主模型发起连通性测试（真实调用一次，需计费）。
+            </p>
+            <div className="mt-3.5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
+              {bindings.map((binding) => (
+                <BindingCard
+                  key={binding.task}
+                  binding={binding}
+                  models={models}
+                  canWrite={canWrite}
+                  testingIds={testingIds}
+                  onTest={runTest}
+                  onChanged={refresh}
+                />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="asr">
+          <div className="card">
+            <p className="meta">素材入库即转写：partial 段落实时可读。保存即刻生效。</p>
+            {form && form.purposes.includes('asr') ? (
+              <EntryFormCard
+                form={form}
+                busy={busy}
+                setForm={setForm}
+                onSubmit={submit}
+                onCancel={() => setForm(null)}
+              />
+            ) : null}
+            {channel ? (
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableHead>供应商</TableHead>
+                    <TableCell>{channel.provider || '未配置'}</TableCell>
+                    <TableHead>调用协议</TableHead>
+                    <TableCell>{PROTOCOL_LABELS[channel.protocol]}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead>模型</TableHead>
+                    <TableCell>{channel.model || '未配置'}</TableCell>
+                    <TableHead>Base URL</TableHead>
+                    <TableCell>{channel.baseUrl || '未配置'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead>API Key</TableHead>
+                    <TableCell>{channel.apiKeyMasked ?? '未配置'}</TableCell>
+                    <TableHead>状态</TableHead>
+                    <TableCell>{channel.status === 'active' ? '启用' : channel.status === 'cooling' ? '冷却' : '禁用'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead>单条音频时长上限</TableHead>
+                    <TableCell>{channel.maxAudioSeconds} 秒</TableCell>
+                    <TableHead>热词</TableHead>
+                    <TableCell>
+                      {channel.hotwordSupported ? `${channel.hotwordCount} 个` : '该协议不支持热词注入'}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead>最后测试</TableHead>
+                    <TableCell colSpan={3}>
+                      <TestBadge
+                        testing={channel.modelId !== null && testingIds.has(channel.modelId)}
+                        result={channel.lastTestResult}
+                        latencyMs={channel.lastTestLatencyMs}
+                        error={channel.lastTestError}
+                        testedAt={channel.lastTestedAt}
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="empty">ASR 渠道加载中…</div>
+            )}
+            {canWrite ? (
+              <div className="mfoot">
+                <Button
+                  onClick={() => {
+                    const asr = findAsrEntry()
+                    if (asr) edit(asr)
+                    else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
+                  }}
+                >
+                  编辑配置
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {error ? (
+        <Alert variant="destructive" className="mb-3.5">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {notice ? (
+        <Alert className="mb-3.5 border-transparent bg-success-soft text-success">
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
       ) : null}
 
-      {tab === 'asr' ? (
-        <div className="card">
-          <p className="meta">素材入库即转写：partial 段落实时可读。保存即刻生效。</p>
-          {form && form.purposes.includes('asr') ? (
-            <EntryFormCard
-              form={form}
-              busy={busy}
-              setForm={setForm}
-              onSubmit={submit}
-              onCancel={() => setForm(null)}
-            />
-          ) : null}
-          {channel ? (
-            <table className="data-tbl desc">
-              <tbody>
-                <tr>
-                  <th>供应商</th>
-                  <td>{channel.provider || '未配置'}</td>
-                  <th>调用协议</th>
-                  <td>{PROTOCOL_LABELS[channel.protocol]}</td>
-                </tr>
-                <tr>
-                  <th>模型</th>
-                  <td>{channel.model || '未配置'}</td>
-                  <th>Base URL</th>
-                  <td>{channel.baseUrl || '未配置'}</td>
-                </tr>
-                <tr>
-                  <th>API Key</th>
-                  <td>{channel.apiKeyMasked ?? '未配置'}</td>
-                  <th>状态</th>
-                  <td>{channel.status === 'active' ? '启用' : channel.status === 'cooling' ? '冷却' : '禁用'}</td>
-                </tr>
-                <tr>
-                  <th>单条音频时长上限</th>
-                  <td>{channel.maxAudioSeconds} 秒</td>
-                  <th>热词</th>
-                  <td>
-                    {channel.hotwordSupported ? `${channel.hotwordCount} 个` : '该协议不支持热词注入'}
-                  </td>
-                </tr>
-                <tr>
-                  <th>最后测试</th>
-                  <td colSpan={3}>
-                    <TestBadge
-                      testing={channel.modelId !== null && testingIds.has(channel.modelId)}
-                      result={channel.lastTestResult}
-                      latencyMs={channel.lastTestLatencyMs}
-                      error={channel.lastTestError}
-                      testedAt={channel.lastTestedAt}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          ) : (
-            <div className="empty">ASR 渠道加载中…</div>
-          )}
-          {canWrite ? (
-            <div className="mfoot">
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => {
-                  const asr = findAsrEntry()
-                  if (asr) edit(asr)
-                  else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
-                }}
-              >
-                编辑配置
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除模型条目「{pendingDelete?.name}」？</AlertDialogTitle>
+            <AlertDialogDescription>
+              已绑定的任务槽会失去该条目，操作不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDelete) void remove(pendingDelete.id)
+                setPendingDelete(null)
+              }}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 }
@@ -524,27 +574,33 @@ function EntryFormCard(props: {
   }
 
   return (
-    <form className="entry-form" onSubmit={props.onSubmit}>
-      <h4>{form.id ? '编辑模型条目' : '新增模型条目'}</h4>
-      <div className="grid2">
-        <label className="field">
-          <span>名称</span>
-          <input
-            className="input"
+    <form
+      className="mb-3.5 rounded-xl border border-line bg-soft px-4 py-3.5"
+      onSubmit={props.onSubmit}
+    >
+      <h4 className="mb-3 text-[14.5px] font-bold">{form.id ? '编辑模型条目' : '新增模型条目'}</h4>
+      <div className="grid gap-x-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>名称</Label>
+          <Input
             value={form.name}
             onChange={(e) => props.setForm({ ...form, name: e.target.value })}
             required
           />
-        </label>
-        <div className="field">
-          <span>用途（可多选）</span>
-          <div className="purpose-toggles">
+        </div>
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>用途（可多选）</Label>
+          <div className="flex flex-wrap gap-1.5">
             {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
               <button
                 key={purpose}
                 type="button"
-                className={form.purposes.includes(purpose) ? 'ptg on' : 'ptg'}
                 aria-pressed={form.purposes.includes(purpose)}
+                className={
+                  form.purposes.includes(purpose)
+                    ? 'cursor-pointer rounded-[6px] border border-primary bg-pri-soft px-3 py-[5px] text-[12.5px] font-semibold text-primary'
+                    : 'cursor-pointer rounded-[6px] border border-line bg-none px-3 py-[5px] text-[12.5px] text-mut hover:text-ink'
+                }
                 onClick={() => togglePurpose(purpose)}
               >
                 {PURPOSE_LABELS[purpose]}
@@ -552,51 +608,53 @@ function EntryFormCard(props: {
             ))}
           </div>
         </div>
-        <label className="field">
-          <span>供应商（选预置自动填端点）</span>
-          <select
-            className="input"
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>供应商（选预置自动填端点）</Label>
+          <Select
             value={form.custom ? OTHER_PROVIDER : preset ? preset.value : ''}
-            onChange={(e) => pickProvider(e.target.value)}
+            onValueChange={pickProvider}
           >
-            <option value="">请选择</option>
-            {MODEL_PROVIDERS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-            <option value={OTHER_PROVIDER}>其他（手动填写）</option>
-          </select>
-        </label>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MODEL_PROVIDERS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
+              <SelectItem value={OTHER_PROVIDER}>其他（手动填写）</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {form.custom ? (
-          <label className="field">
-            <span>供应商名称</span>
-            <input
-              className="input"
+          <div className="mb-3.5 grid gap-1.5">
+            <Label>供应商名称</Label>
+            <Input
               value={form.provider}
               onChange={(e) => props.setForm({ ...form, provider: e.target.value })}
               required
             />
-          </label>
+          </div>
         ) : null}
-        <label className="field">
-          <span>调用协议</span>
-          <select
-            className="input"
-            value={form.protocol}
-            onChange={(e) => pickProtocol(e.target.value as ModelProtocol)}
-          >
-            {availableProtocols(form.purposes, preset).map((protocol) => (
-              <option key={protocol} value={protocol}>
-                {PROTOCOL_LABELS[protocol]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>模型名</span>
-          <input
-            className="input"
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>调用协议</Label>
+          <Select value={form.protocol} onValueChange={(v) => pickProtocol(v as ModelProtocol)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableProtocols(form.purposes, preset).map((protocol) => (
+                <SelectItem key={protocol} value={protocol}>
+                  {PROTOCOL_LABELS[protocol]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>模型名</Label>
+          <Input
             value={form.model}
             list="provider-model-examples"
             onChange={(e) => props.setForm({ ...form, model: e.target.value })}
@@ -607,42 +665,39 @@ function EntryFormCard(props: {
               <option key={m} value={m} />
             ))}
           </datalist>
-        </label>
-        <label className="field">
-          <span>Base URL（可修改）</span>
-          <input
-            className="input"
+        </div>
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>Base URL（可修改）</Label>
+          <Input
             value={form.baseUrl}
             placeholder="https://api.example.com"
             onChange={(e) => props.setForm({ ...form, baseUrl: e.target.value })}
           />
-        </label>
-        <label className="field">
-          <span>{form.id ? '密钥（留空保留原密钥）' : '密钥'}</span>
-          <input
-            className="input"
+        </div>
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>{form.id ? '密钥（留空保留原密钥）' : '密钥'}</Label>
+          <Input
             type="password"
             value={form.apiKey}
             placeholder={form.id ? '留空即保留原密钥' : ''}
             onChange={(e) => props.setForm({ ...form, apiKey: e.target.value })}
           />
-        </label>
-        <label className="field">
-          <span>默认条目</span>
-          <input
-            type="checkbox"
+        </div>
+        <div className="mb-3.5 grid gap-1.5">
+          <Label>默认条目</Label>
+          <Checkbox
             checked={form.isDefault}
-            onChange={(e) => props.setForm({ ...form, isDefault: e.target.checked })}
+            onCheckedChange={(v) => props.setForm({ ...form, isDefault: v === true })}
           />
-        </label>
+        </div>
       </div>
       <div className="mfoot">
-        <button type="submit" className="btn primary" disabled={props.busy}>
+        <Button type="submit" disabled={props.busy}>
           保存
-        </button>
-        <button type="button" className="btn" onClick={props.onCancel}>
+        </Button>
+        <Button type="button" variant="outline" onClick={props.onCancel}>
           取消
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -661,13 +716,16 @@ function TestBadge(props: {
   testedAt: string | null
 }) {
   const time = props.testedAt ? (
-    <span className="meta"> {props.testedAt.slice(0, 16).replace('T', ' ')}</span>
+    <span className="text-xs text-mut"> {props.testedAt.slice(0, 16).replace('T', ' ')}</span>
   ) : null
-  if (props.testing) return <span className="meta">测试中…</span>
+  if (props.testing) return <span className="text-xs text-mut">测试中…</span>
   if (props.result === 'ok') {
     return (
       <>
-        <span className="ok-text" title={props.latencyMs != null ? `${props.latencyMs}ms` : undefined}>
+        <span
+          className="text-success"
+          title={props.latencyMs != null ? `${props.latencyMs}ms` : undefined}
+        >
           ✓ {props.latencyMs ?? '?'}ms
         </span>
         {time}
@@ -678,9 +736,11 @@ function TestBadge(props: {
     const reason = (props.error ?? '').replace(/\s+/g, ' ').trim()
     return (
       <>
-        <span className="err-text" title={reason || undefined}>✗ 失败</span>
+        <span className="text-destructive" title={reason || undefined}>
+          ✗ 失败
+        </span>
         {reason ? (
-          <span className="meta" title={reason}>
+          <span className="text-xs text-mut" title={reason}>
             {' '}
             {reason.length > 48 ? `${reason.slice(0, 48)}…` : reason}
           </span>
@@ -743,53 +803,63 @@ function BindingCard(props: {
   const testing = primaryEntry !== null && props.testingIds.has(primaryEntry.id)
 
   return (
-    <div className="bind-card" role="group" aria-label={`${props.binding.taskLabel}绑定`}>
-      <div className="bind-head">
+    <div
+      className="rounded-xl border border-line bg-bg px-4 py-3.5"
+      role="group"
+      aria-label={`${props.binding.taskLabel}绑定`}
+    >
+      <div className="flex items-center gap-2 text-sm">
         <b>{props.binding.taskLabel}</b>
-        <span className="tag">{PURPOSE_LABELS[props.binding.purpose]}</span>
+        <Badge>{PURPOSE_LABELS[props.binding.purpose]}</Badge>
       </div>
-      <div className="meta">{props.binding.task}</div>
-      <label className="field">
-        <span>主模型（必填）</span>
-        <select
-          className="input"
+      <div className="mt-1 mb-3 text-xs text-mut">{props.binding.task}</div>
+      <div className="mb-2.5 grid gap-1.5">
+        <Label className="text-[12.5px] text-mut">主模型（必填）</Label>
+        <Select
           value={primary}
           disabled={!props.canWrite}
-          onChange={(e) => {
-            setPrimary(e.target.value)
+          onValueChange={(v) => {
+            setPrimary(v)
             setSaved(false)
           }}
         >
-          <option value="">请选择</option>
-          {usable.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}（{m.model}）
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="field">
-        <span>备用模型（可选）</span>
-        <select
-          className="input"
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="请选择" />
+          </SelectTrigger>
+          <SelectContent>
+            {usable.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.name}（{m.model}）
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="mb-2.5 grid gap-1.5">
+        <Label className="text-[12.5px] text-mut">备用模型（可选）</Label>
+        <Select
           value={backup}
           disabled={!props.canWrite}
-          onChange={(e) => {
-            setBackup(e.target.value)
+          onValueChange={(v) => {
+            setBackup(v)
             setSaved(false)
           }}
         >
-          <option value="">无备用</option>
-          {usable
-            .filter((m) => m.id !== primary)
-            .map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}（{m.model}）
-              </option>
-            ))}
-        </select>
-      </label>
-      <div className="bind-test">
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="无备用" />
+          </SelectTrigger>
+          <SelectContent>
+            {usable
+              .filter((m) => m.id !== primary)
+              .map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.name}（{m.model}）
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-baseline gap-1.5 text-[12.5px] text-mut">
         <span>主模型连通</span>
         {primaryEntry ? (
           <TestBadge
@@ -800,24 +870,23 @@ function BindingCard(props: {
             testedAt={primaryEntry.lastTestedAt}
           />
         ) : (
-          <span className="meta">未选择主模型</span>
+          <span>未选择主模型</span>
         )}
       </div>
-      {error ? <p className="err-text">{error}</p> : null}
-      {saved && !error ? <p className="meta">已保存，下一次任务即生效</p> : null}
+      {error ? <p className="mt-1.5 text-[12.5px] text-destructive">{error}</p> : null}
+      {saved && !error ? <p className="mt-1.5 text-[12.5px] text-mut">已保存，下一次任务即生效</p> : null}
       {props.canWrite ? (
-        <div className="bind-foot">
-          <button
-            type="button"
-            className="btn"
+        <div className="mt-3 flex justify-end gap-2">
+          <Button
+            variant="outline"
             disabled={!primary || testing}
             onClick={() => void props.onTest(primary)}
           >
             {testing ? '测试中…' : '测试主模型'}
-          </button>
-          <button type="button" className="btn primary" disabled={busy || !primary} onClick={() => void save()}>
+          </Button>
+          <Button disabled={busy || !primary} onClick={() => void save()}>
             {busy ? '保存中…' : '保存'}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

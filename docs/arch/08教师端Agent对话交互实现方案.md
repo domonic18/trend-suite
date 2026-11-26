@@ -68,7 +68,7 @@ agentStreamResponse   = { messages, cursor, agentBusy, pendingQuestionId }   // 
 | `.../agent/[phase]/messages` | POST | 追加 user 消息 → 入 `agent_chat` job → 回显消息视图 |
 | `.../agent/messages/[messageId]/answer` | POST | agent 卡先验「仍是最新未答卡」（否则 409 已被取代）→ 原子回写 → 落 answer（含 note）→ server 卡执行确定性动作 → 续跑 |
 | `.../agent/[phase]/stream?cursor=` | GET | 增量轮询（**降级通道**，SSE 失联时前端自动切换） |
-| `.../agent/[phase]/events?cursor=` | GET | **SSE 事件流（主通道）**：`text/event-stream`，帧 `id: <cursor>` + `event: agent` + data = `agentStreamResponse`；服务端 1s tick 查库，消息或元态（agentBusy/pendingQuestionId）变化才写帧，~15s 心跳注释行；接受 `Last-Event-ID` 续传；连接 10 分钟主动收口由客户端重连；`AbortSignal` 断开即停。鉴权只走 Authorization 头（无 Cookie），故客户端用 fetch 流式读取 + 手写 SSE 解析，不用 EventSource |
+| `.../agent/[phase]/events?cursor=` | GET | **SSE 事件流（主通道）**：`text/event-stream`，帧 `id: <cursor>` + `event: agent` + data = `agentStreamResponse`；忙时 1s tick、空闲 2.5s，消息或元态（agentBusy/pendingQuestionId）变化才写帧，~15s 心跳注释行；**连接建立时鉴权一次**（后续 tick 不再查权限）；接受 `Last-Event-ID` 续传；连接 10 分钟主动收口由客户端重连；`AbortSignal` 断开即停。节奏与心跳等业务逻辑在 `service.agentEventsStream`，**路由层只做鉴权与转发**（薄路由）。鉴权只走 Authorization 头（无 Cookie），故客户端用 fetch 流式读取 + 手写 SSE 解析，不用 EventSource |
 | `.../agent/[phase]/stop` | POST | 对本课程在途 `agent_chat` job 请求协作取消（引擎轮边界安全中止并落 `chat_stopped` 事件）；无可停任务返回 `{stopped:false}` |
 
 `agentBusy` 是**线程级**：引擎把正在处理的线程 id 写进 job 的 `progress` 列，stream 据此只报本线程的 typing 态（queued 未认领时按「本线程有待处理输入」推导）。
@@ -96,6 +96,8 @@ agentStreamResponse   = { messages, cursor, agentBusy, pendingQuestionId }   // 
 
 明确**不在白名单**：`approve_plan`、签批/发布、账号与模型配置、跨课程操作。
 
+`ask_question` 与 `todo_write` 两个 phase 共用的工具实现放在 `tools-shared.ts`（单一真相：schema 与行为只此一份），phase 文件只保留各自的差异工具与白名单数组。
+
 ## 5. 安全边界（红线）
 
 1. **确认类动作不经 LLM 执行**：批准只作为 server 卡选项的确定性副作用存在；提示注入无法通过对话文本诱导「批准」——模型没有对应工具。
@@ -109,13 +111,14 @@ agentStreamResponse   = { messages, cursor, agentBusy, pendingQuestionId }   // 
 - `useAgentStream.ts`：传输抽象——fetch-SSE 主通道（手写 SSE 解析，seq 游标 + id 去重合并），连续 3 次失败**永久降级** 2.5s 轮询；`send` / `answer(optionIndex, note?)` / `stop`。
 - `AgentChat.tsx`：中栏容器——状态徽章（running / waiting 待确认 / idle / stopped / failed）+ 空闲心跳提示、消息流、快捷指令、composer（Enter 发送含中文输入法 isComposing 保护、textarea 自动增高、**发送/停止二合一圆钮**：agentBusy 且输入为空时为停止）。
 - `ChatMarkdown.tsx`：react-markdown + remark-gfm 渲染 assistant 与 question 正文（表格横滚、代码块配色）。
-- `useChatScroll.ts`：滚动跟随三件套——ResizeObserver 观察内容增高 + 80px 贴底阈值（上翻看历史不抢滚动）+ 向上找真实滚动容器；有待答确认卡时定向滚到卡顶部（`data-pending-question`）而非底部；提供「回到底部」按钮。
+- `useChatScroll.ts`：滚动跟随三件套——ResizeObserver 观察内容增高 + 80px 贴底阈值（上翻看历史不抢滚动）+ 向上找真实滚动容器；有待答确认卡时定向滚到卡顶部（`data-pending-question`）而非底部；提供「回到底部」按钮。依赖以**显式参数**传入（`{lastSeq, busy, pending}`），不用「把依赖数组当参数」的写法——否则绕过 exhaustive-deps 保护。
 - `QuestionCard.tsx`：radio 选项卡（label + description）+「填写其他想法」textarea；已答折叠为「历史提问」可展开回看；非最新未答卡显示「已被后续提问取代」。
 - `TodoPanel.tsx`：页首常驻折叠面板（details），渲染线程内最新一份 todo，流内不再渲染 todo。
 - `foldMessages.ts`：渲染前折叠——连续 event 合并、工具组一行中文摘要。
-- 右栏：`WorkzoneHeader`（标题 + 状态徽章 + 进度）+ 页签（方案页：大纲/术语/分节/轨迹；制作台：大纲/课件/配图/视频/K线图/练习题/互动——K 线 canvas 自绘保留）；`PanelDivider` 替代旧拖拽 hook（键盘 16px/48px、双击复位、宽度与页签 localStorage 持久化）；**联动**：对话最新消息 seq 变化驱动右栏重取（refreshKey），既有 board 轮询降为兜底；对话↔右栏定位走组件引用，不走 DOM 全局查找。
+- **长线程**：对话流默认只渲染最近 120 条，更早的按「展开更早的 N 条」逐段放开（`agent_messages` 单次拉取上限 500 条，见 §2）——避免长线程整屏重渲染。
+- 右栏：**页签统一为课件元素类别**（大纲 / 课件 / 配图 / 视频 / K线图 / 练习题 / 互动，方案页与制作台同构）——教师从方案阶段起就按最终课件的元素维度看工作区；方案阶段只有大纲（骨架树 + 拒绝记录 + 自检卡），其余元素为待生成空态。`PanelDivider` 替代旧拖拽 hook（键盘 16px/48px、双击复位、宽度与页签 localStorage 持久化）；**联动**：对话最新消息 seq 变化驱动右栏重取（refreshKey），既有 board 轮询降为兜底；对话↔右栏定位走组件引用，不走 DOM 全局查找。右栏组件：方案页 `PlanWorkspace`、制作台 `ProductionWorkspace`（制作台组件只做取数与对话流，右栏呈现独立成组件）。
 - 布局：`chat-center` 由 WorkbenchShell 的 bleed 变体承载（组件树内表达，不用 CSS `:has()` 穿透）。
-- 主题：工作台双主题——`console-tokens.css` 定义工作台深色 token 族，WorkbenchShell 根节点 `data-wb-theme`（`dark` 默认 / `light`）下覆写同名 `--p-*` 变量实现整域换肤；切换开关在侧栏底部，localStorage 持久化；canvas 图表（K 线）经 `getComputedStyle` 取 token 色并随主题重绘。门户与运营台不受影响。
+- 主题：工作台双主题——`console-tokens.css` 定义工作台深色 token 族，`<html data-wb-theme>`（`dark` 默认 / `light`）下覆写同名 `--p-*` 变量实现整域换肤（挂 html 而非子树，body 根作用域 var() 与继承色才按主题解析）；主题与用户控件在 header 右侧（内流布局，不悬浮压工作区）；localStorage 持久化；canvas 图表（K 线）经 `getComputedStyle` 取 token 色并随主题重绘。组件底座为 shadcn/ui + Tailwind v4：`@theme inline` 把语义槽指向 `--p-*`（utility 跟随主题覆写），对话流视觉在 `agent-chat.module.css`（B 类域，markdown 动态 HTML 必须 scoped CSS）。门户与运营台不受影响。
 
 ## 7. 清理清单
 
@@ -126,6 +129,14 @@ agentStreamResponse   = { messages, cursor, agentBusy, pendingQuestionId }   // 
 | `useWsDrag.ts`（右栏拖拽 hook） | 删除，由 `PanelDivider` 取代 |
 | globals.css 的 `:has(.plan-split)` 穿透段与旧对话流样式段 | 删除，chat-center 进组件树、对话流样式迁 `agent-chat.module.css` |
 | `PlanPanel` 的 `document.getElementById('agent-chat')` 联动 | 删除，改组件引用 |
+| `features` 直采 `src/server`（`DslRenderer` / `SectionPreview` 引 `dsl-parser`） | 教材 DSL 解析器下沉为 `packages/dsl`（`@trend-suite/dsl`）——浏览器与服务端同源复用，`src/features` 不再穿透 `src/server` |
+| `tools-plan` / `tools-production` 逐字重复的 `ask_question` / `todo_write` | 提取 `tools-shared.ts` 单一真相，phase 只留差异工具 |
+| `ProductionStudio.tsx`（602 行，右栏七页签内联） | 拆出 `ProductionWorkspace.tsx`：父组件只做取数与对话流 |
+| 方案页右栏「术语 / 分节 / 轨迹」页签 | 页签统一为课件元素类别（大纲/课件/配图/视频/K线图/练习题/互动），与制作台同构 |
+| `useChatScroll` 把依赖数组当参数传入 | 改为显式依赖参数（`{lastSeq, busy, pending}`），恢复 exhaustive-deps 保护 |
+| 对话流全量渲染（首拉 500 条） | 默认只渲染最近 120 条，更早的按「展开更早」逐段放开 |
+| SSE 业务逻辑写在 route 层 | 下沉 `service.agentEventsStream`（忙 1s/闲 2.5s tick、鉴权一次），route 只做鉴权与转发 |
+| `globals.css` 5015 行单体（五域混装） | 改为**装配器 + 七个域文件**（`styles/{base,login,shell,plan,chat,content,workspace}.css`），**导入顺序 = 原源码顺序**，级联行为不变；文件地图写在装配器头部 |
 
 ## 8. 验证
 

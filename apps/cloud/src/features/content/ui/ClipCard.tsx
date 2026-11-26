@@ -1,5 +1,9 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+import { Button } from '@/components/ui/button'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type Hls from 'hls.js'
 import type { SourceUnitView } from '@trend-suite/contracts'
@@ -109,16 +113,18 @@ export function ClipCard({
           </small>
         </div>
         {open ? (
-          <button type="button" className="btn link" onClick={close}>
+          <Button variant="link" size="sm" onClick={close}>
             收起
-          </button>
+          </Button>
         ) : (
-          <button type="button" className="btn" onClick={() => void play()}>
+          <Button variant="outline" size="sm" onClick={() => void play()}>
             播放片段
-          </button>
+          </Button>
         )}
       </div>
-      {error ? <div className="notice err">{error}</div> : null}
+      {error ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert> : null}
       {open && src ? (
         <div className="clip-video">
           <video ref={videoRef} controls playsInline />

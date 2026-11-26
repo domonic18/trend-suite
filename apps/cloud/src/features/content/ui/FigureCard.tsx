@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
 import type { FigureView } from '@trend-suite/contracts'
 
 /**
@@ -25,7 +27,7 @@ export function FigureCard({ figure }: { figure: FigureView }) {
         <div className="fig-empty">该图示尚无可展示的图像</div>
       )}
       <figcaption>
-        <span className="tag gray">{KIND_LABEL[figure.kind]}</span>
+        <Badge className="tag gray">{KIND_LABEL[figure.kind]}</Badge>
         {figure.caption}
       </figcaption>
     </figure>

@@ -18,13 +18,17 @@ function scrollContainerOf(el: HTMLElement | null): HTMLElement | null {
  * - ResizeObserver 观察内容增高（流式追加、卡片状态变化、工具行展开）；
  * - 80px 贴底阈值：用户上翻看历史时不抢滚动；
  * - 只动真实滚动容器；有待答确认卡且比视口高时定向滚到卡顶部而非底部。
+ *
+ * 依赖显式传入（lastSeq / busy / pending），不用「把依赖数组当参数」的写法——
+ * 那样会绕过 exhaustive-deps 的保护。
  */
-export function useChatScroll(deps: unknown[]) {
+export function useChatScroll(deps: { lastSeq: number; busy: boolean; pending: boolean }) {
   const contentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLElement | null>(null)
   /** 用户是否贴着底部——贴着才自动跟随。 */
   const stickyRef = useRef(true)
   const [showToBottom, setShowToBottom] = useState(false)
+  const { lastSeq, busy, pending } = deps
 
   const scrollToBottom = useCallback(() => {
     const content = contentRef.current
@@ -62,10 +66,10 @@ export function useChatScroll(deps: unknown[]) {
     return () => container.removeEventListener('scroll', onScroll)
   }, [])
 
-  // 消息到达 / 状态变化时跟随（deps 由调用方给定：lastSeq / busy / pending）
+  // 消息到达 / 状态变化时跟随
   useEffect(() => {
     if (stickyRef.current) scrollToBottom()
-  }, deps)
+  }, [lastSeq, busy, pending, scrollToBottom])
 
   return { contentRef, showToBottom, scrollToBottom }
 }

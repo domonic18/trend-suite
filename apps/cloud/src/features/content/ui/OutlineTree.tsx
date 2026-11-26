@@ -1,9 +1,11 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useMemo, useState } from 'react'
 import type { PlanLessonView, PlanSectionNodeView } from '@trend-suite/contracts'
 import { countOutlineLevels } from '@trend-suite/contracts'
-import { IconCheck, IconClose } from '@/features/lib/icons'
+import { Check, X } from 'lucide-react'
 import { buildOutlineTree, descendantLessonCounts, siblingInfoOf } from './outlineGroup'
 import { evidenceDetailLinesOf, formatClock } from './planAudit'
 
@@ -95,9 +97,9 @@ export function OutlineTree({
                 aria-label="新标题"
                 onChange={(e) => setRenameTitle(e.target.value)}
               />
-              <button
-                type="button"
-                className="iconbtn"
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 title="保存"
                 aria-label="保存"
                 disabled={busy || renameTitle.trim().length === 0}
@@ -106,17 +108,17 @@ export function OutlineTree({
                   setRenaming(null)
                 }}
               >
-                <IconCheck />
-              </button>
-              <button
-                type="button"
-                className="iconbtn"
+                <Check className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 title="取消"
                 aria-label="取消"
                 onClick={() => setRenaming(null)}
               >
-                <IconClose />
-              </button>
+                <X className="size-3.5" />
+              </Button>
             </span>
           ) : (
             <b>{node.title}</b>
@@ -157,9 +159,8 @@ export function OutlineTree({
 
         <span className="acts">
           {renaming !== node.id ? (
-            <button
-              type="button"
-              className="btn link"
+            <Button
+              variant="link" size="sm"
               title="改名"
               aria-label="改名"
               disabled={busy}
@@ -169,36 +170,33 @@ export function OutlineTree({
               }}
             >
               ✎
-            </button>
+            </Button>
           ) : null}
           {sibling && sibling.count > 1 ? (
             <>
-              <button
-                type="button"
-                className="btn link"
+              <Button
+                variant="link" size="sm"
                 title="上移"
                 aria-label="上移"
                 disabled={busy || sibling.index <= 0}
                 onClick={() => onMove(node.id, sibling.parentId, sibling.index - 1)}
               >
                 ↑
-              </button>
-              <button
-                type="button"
-                className="btn link"
+              </Button>
+              <Button
+                variant="link" size="sm"
                 title="下移"
                 aria-label="下移"
                 disabled={busy || sibling.index >= sibling.count - 1}
                 onClick={() => onMove(node.id, sibling.parentId, sibling.index + 1)}
               >
                 ↓
-              </button>
+              </Button>
             </>
           ) : null}
           {level < 3 ? (
-            <button
-              type="button"
-              className="btn link"
+            <Button
+              variant="link" size="sm"
               title={level === 1 ? '在这一篇下加一章' : '在这一章下加一课时'}
               aria-label={level === 1 ? '加一章' : '加一课时'}
               disabled={busy}
@@ -208,19 +206,18 @@ export function OutlineTree({
               }}
             >
               ＋
-            </button>
+            </Button>
           ) : null}
           {!childIds.has(node.id) ? (
-            <button
-              type="button"
-              className="btn link danger"
+            <Button
+              variant="link" size="sm" className="text-destructive hover:text-destructive"
               title="删除"
               aria-label="删除"
               disabled={busy}
               onClick={() => onRemove(node.id)}
             >
               ✕
-            </button>
+            </Button>
           ) : null}
         </span>
 
@@ -254,9 +251,9 @@ export function OutlineTree({
               aria-label={level === 1 ? '新章标题' : '新课时标题'}
               onChange={(e) => setAddTitle(e.target.value)}
             />
-            <button
-              type="button"
-              className="iconbtn"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               title="保存"
               aria-label="保存"
               disabled={busy || addTitle.trim().length === 0}
@@ -266,17 +263,17 @@ export function OutlineTree({
                 setAddTitle('')
               }}
             >
-              <IconCheck />
-            </button>
-            <button
-              type="button"
-              className="iconbtn"
+              <Check className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               title="取消"
               aria-label="取消"
               onClick={() => setAdding(null)}
             >
-              <IconClose />
-            </button>
+              <X className="size-3.5" />
+            </Button>
           </span>
         ) : null}
       </div>

@@ -1,5 +1,11 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+import { Button } from '@/components/ui/button'
+
 import { useMemo, useState } from 'react'
 import type { WidgetView } from '@trend-suite/contracts'
 import { MiniChart } from '../MiniChart'
@@ -32,9 +38,9 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
   if (spec.type !== 'bar-replay-decision' || !plan) {
     return (
       <div className="widget-card">
-        <div className="notice err">
-          回放课件 {widget.code ?? ''} 暂无可用行情——行情源不可用时不编造 K 线。
-        </div>
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>回放课件 {widget.code ?? ''} 暂无可用行情——行情源不可用时不编造 K 线。</AlertDescription>
+    </Alert>
       </div>
     )
   }
@@ -66,12 +72,11 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
         }))}
       />
       <div className="widget-actions">
-        <button type="button" className="btn" onClick={revealMore} disabled={Boolean(pending) || finished}>
+        <Button variant="outline" size="sm" onClick={revealMore} disabled={Boolean(pending) || finished}>
           揭示下一根
-        </button>
-        <button
-          type="button"
-          className="btn link"
+        </Button>
+        <Button
+          variant="link" size="sm"
           onClick={() => {
             setRevealed(0)
             setAnswered(0)
@@ -80,7 +85,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
           }}
         >
           重来
-        </button>
+        </Button>
         <span className="grow" />
         <span className="meta">
           已答 {records.length} / {plan.points.length} 处 · 对 {correctCount} 处
@@ -106,16 +111,15 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
           </div>
           {selected === null ? (
             <div className="widget-actions">
-              <button type="button" className="btn" disabled>
+              <Button variant="outline" size="sm" disabled>
                 提交作答
-              </button>
+              </Button>
               <span className="meta">先选一个选项再提交——提交后不可回改。</span>
             </div>
           ) : (
             <div className="widget-actions">
-              <button
-                type="button"
-                className="btn"
+              <Button
+                variant="outline" size="sm"
                 onClick={() => {
                   const verdict = replayVerdict(pending.decision, selected)
                   setRecords((current) => [
@@ -132,7 +136,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
                 }}
               >
                 提交作答
-              </button>
+              </Button>
               <span className="meta">提交后不可回改。</span>
             </div>
           )}
@@ -152,7 +156,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
                 <p>{point?.decision.revealText}</p>
                 {mark ? (
                   <p className="widget-annotation">
-                    <span className="tag gray">{mark.annotation.kind}</span> {mark.annotation.label}
+                    <Badge className="tag gray">{mark.annotation.kind}</Badge> {mark.annotation.label}
                     <span className="meta">
                       （素材单元 {mark.annotation.unitId} · {Math.round(mark.annotation.atMs / 1000)}s）
                     </span>

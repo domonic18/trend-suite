@@ -2,9 +2,26 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { MarketQuoteSourceView } from '@trend-suite/contracts'
+import { Trash2 } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
-import { IconTrash } from '@/features/lib/icons'
 import { createMarketSource, deleteMarketSource, listMarketSources, testMarketSource, updateMarketSource } from '../api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type SourceForm = {
   id: string | null
@@ -33,6 +50,8 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
   const [busy, setBusy] = useState(false)
   /** 正在连通性测试的条目 id：行内按钮变「测试中…」，列表徽章同步。 */
   const [testingIds, setTestingIds] = useState<ReadonlySet<string>>(new Set())
+  /** 待确认删除的源（AlertDialog 受控；默认源只提示不可删）。 */
+  const [pendingDelete, setPendingDelete] = useState<MarketQuoteSourceView | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -126,127 +145,128 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
     <section>
       <div className="card">
         {canWrite ? (
-          <div className="mfoot" style={{ marginTop: 0, marginBottom: 10 }}>
-            <button type="button" className="btn primary" onClick={() => setForm({ ...EMPTY_FORM })}>
-              新增行情源
-            </button>
+          <div className="mfoot mt-0 mb-2.5">
+            <Button onClick={() => setForm({ ...EMPTY_FORM })}>新增行情源</Button>
           </div>
         ) : (
-          <div className="meta">当前角色只读：只有管理员可以维护行情源配置。</div>
+          <p className="meta">当前角色只读：只有管理员可以维护行情源配置。</p>
         )}
 
-        {error ? <div className="notice err">{error}</div> : null}
-        {notice ? <div className="notice ok">{notice}</div> : null}
+        {error ? (
+          <Alert variant="destructive" className="mb-3.5">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+        {notice ? (
+          <Alert className="mb-3.5 border-transparent bg-success-soft text-success">
+            <AlertDescription>{notice}</AlertDescription>
+          </Alert>
+        ) : null}
 
         {form ? (
           <form
-            className="entry-form"
+            className="mb-3.5 rounded-xl border border-line bg-soft px-4 py-3.5"
             onSubmit={(event) => {
               void submit(event)
             }}
           >
-            <h4>{form.id ? '编辑行情源' : '新增行情源'}</h4>
-            <div className="grid2">
-              <label className="field">
-                <span>名称</span>
-                <input
-                  className="input"
+            <h4 className="mb-3 text-[14.5px] font-bold">{form.id ? '编辑行情源' : '新增行情源'}</h4>
+            <div className="grid gap-x-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+              <div className="mb-3.5 grid gap-1.5">
+                <Label>名称</Label>
+                <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="如：腾讯 fqkline"
                   required
                 />
-              </label>
-              <label className="field">
-                <span>Base URL</span>
-                <input
-                  className="input"
+              </div>
+              <div className="mb-3.5 grid gap-1.5">
+                <Label>Base URL</Label>
+                <Input
                   value={form.baseUrl}
                   onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
                   placeholder="如：https://web.ifzq.gtimg.cn"
                   required
                 />
-              </label>
-              <label className="field">
-                <span>备注</span>
-                <input
-                  className="input"
+              </div>
+              <div className="mb-3.5 grid gap-1.5">
+                <Label>备注</Label>
+                <Input
                   value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
                   placeholder="选填"
                 />
-              </label>
-              <div className="field">
-                <span>选项</span>
-                <label>
-                  <input
-                    type="checkbox"
+              </div>
+              <div className="mb-3.5 grid gap-1.5">
+                <Label>选项</Label>
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                  <Checkbox
                     checked={form.enabled}
-                    onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+                    onCheckedChange={(v) => setForm({ ...form, enabled: v === true })}
                   />{' '}
                   启用
                 </label>
-                <label>
-                  <input
-                    type="checkbox"
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                  <Checkbox
                     checked={form.isDefault}
-                    onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
+                    onCheckedChange={(v) => setForm({ ...form, isDefault: v === true })}
                   />{' '}
                   设为默认源
                 </label>
               </div>
             </div>
             <div className="mfoot">
-              <button type="submit" className="btn primary" disabled={busy}>
+              <Button type="submit" disabled={busy}>
                 {busy ? '保存中…' : '保存'}
-              </button>
-              <button type="button" className="btn" onClick={() => setForm(null)}>
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setForm(null)}>
                 取消
-              </button>
+              </Button>
             </div>
           </form>
         ) : null}
 
-        <table className="data-tbl">
-          <thead>
-            <tr>
-              <th>名称</th>
-              <th>Base URL</th>
-              <th>状态</th>
-              <th>上次测试</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>名称</TableHead>
+              <TableHead>Base URL</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>上次测试</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sources.map((source) => (
-              <tr key={source.id}>
-                <td>
+              <TableRow key={source.id}>
+                <TableCell>
                   <b>{source.name}</b>
-                  {source.isDefault ? <span className="tag">默认</span> : null}
-                  {source.note ? <span className="meta"> {source.note}</span> : null}
-                </td>
-                <td>{source.baseUrl}</td>
-                <td>{source.enabled ? '启用' : '停用'}</td>
-                <td>
+                  {source.isDefault ? <Badge className="ml-1.5">默认</Badge> : null}
+                  {source.note ? <span className="text-xs text-mut"> {source.note}</span> : null}
+                </TableCell>
+                <TableCell>{source.baseUrl}</TableCell>
+                <TableCell>{source.enabled ? '启用' : '停用'}</TableCell>
+                <TableCell>
                   {testingIds.has(source.id) ? (
-                    <span className="meta">测试中…</span>
+                    <span className="text-xs text-mut">测试中…</span>
                   ) : source.lastTestResult === 'ok' ? (
                     <>
                       <span
-                        className="ok-text"
+                        className="text-success"
                         title={source.lastTestLatencyMs != null ? `${source.lastTestLatencyMs}ms` : undefined}
                       >
                         ✓ {source.lastTestLatencyMs ?? '?'}ms
                       </span>
                       {source.lastTestedAt ? (
-                        <span className="meta"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
+                        <span className="text-xs text-mut"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
                       ) : null}
                     </>
                   ) : source.lastTestResult === 'failed' ? (
                     <>
-                      <span className="err-text" title={source.lastTestError ?? undefined}>✗ 失败</span>
+                      <span className="text-destructive" title={source.lastTestError ?? undefined}>✗ 失败</span>
                       {source.lastTestError ? (
-                        <span className="meta" title={source.lastTestError}>
+                        <span className="text-xs text-mut" title={source.lastTestError}>
                           {' '}
                           {source.lastTestError.length > 48
                             ? `${source.lastTestError.slice(0, 48)}…`
@@ -254,59 +274,83 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
                         </span>
                       ) : null}
                       {source.lastTestedAt ? (
-                        <span className="meta"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
+                        <span className="text-xs text-mut"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
                       ) : null}
                     </>
                   ) : (
                     '未测试'
                   )}
-                </td>
-                <td className="num">
+                </TableCell>
+                <TableCell className="text-right">
                   {canWrite ? (
                     <>
-                      <button
-                        type="button"
-                        className="btn link"
+                      <Button
+                        variant="link"
+                        size="sm"
                         disabled={testingIds.has(source.id)}
                         onClick={() => void runTest(source.id)}
                       >
                         {testingIds.has(source.id) ? '测试中…' : '测试连接'}
-                      </button>
-                      <button type="button" className="btn link" onClick={() => edit(source)}>
+                      </Button>
+                      <Button variant="link" size="sm" onClick={() => edit(source)}>
                         编辑
-                      </button>
-                      <button
-                        type="button"
-                        className="iconbtn danger"
-                        title="删除条目"
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
                         aria-label="删除条目"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              source.isDefault
-                                ? '默认行情源不能删除，请先把其他源设为默认。'
-                                : `删除行情源「${source.name}」？删除后运行时回退环境变量默认地址，操作不可恢复。`,
-                            )
-                          ) {
-                            void remove(source.id)
-                          }
-                        }}
+                        onClick={() => setPendingDelete(source)}
                       >
-                        <IconTrash />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     </>
                   ) : (
                     '—'
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         <p className="meta">
           运行时取默认启用源（缓存 ≤60 秒）；显式设置环境变量 MARKET_QUOTES_BASE_URL 时该变量优先（本地开发口径）。测试连接会真实拉一次样本 K 线。
         </p>
       </div>
+
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            {pendingDelete?.isDefault ? (
+              <>
+                <AlertDialogTitle>默认行情源不能删除</AlertDialogTitle>
+                <AlertDialogDescription>请先把其他源设为默认。</AlertDialogDescription>
+              </>
+            ) : (
+              <>
+                <AlertDialogTitle>删除行情源「{pendingDelete?.name}」？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  删除后运行时回退环境变量默认地址，操作不可恢复。
+                </AlertDialogDescription>
+              </>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            {pendingDelete?.isDefault ? (
+              <AlertDialogAction>知道了</AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={() => {
+                  if (pendingDelete) void remove(pendingDelete.id)
+                  setPendingDelete(null)
+                }}
+              >
+                删除
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 }

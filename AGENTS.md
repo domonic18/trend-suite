@@ -6,7 +6,7 @@
 
 monorepo（pnpm workspaces + Turborepo）：**一个云端服务 + 一个学员端插件 + 跨端契约包**。
 
-- **云端**（`apps/cloud`）：**Next.js（App Router，React 19）** + PostgreSQL + pgvector——门户（SSG/ISR）、管理台、教师生产工作台、全部 `/v1/*` API（Route Handlers）、生产 Agent（deepagents TS 进程内）、媒体管线、额度计费。
+- **云端**（`apps/cloud`）：**Next.js（App Router，React 19）+ shadcn/ui + Tailwind CSS v4** + PostgreSQL + pgvector——门户（SSG/ISR）、管理台、教师生产工作台、全部 `/v1/*` API（Route Handlers）、生产 Agent（deepagents TS 进程内）、媒体管线、额度计费。
 - **学员端**（`apps/coach`）：DSH（DeepSeek Harness）框架上的 trend-coach 插件；推理上云，插件零密钥。
 - **教师端无独立应用**：浏览器工作台由云端提供（生产端服务端化）。
 
@@ -21,22 +21,23 @@ trend-suite/
 │   ├── flow/                # 端到端流程图（archify 交互 HTML）
 │   └── standard/             # 团队规范
 ├── apps/
-│   ├── cloud/               # 云端：src/{app,server,features,components} + skills/ + db/ + deploy/ + cicd/ + compose×3
+│   ├── cloud/               # 云端：src/{app,server,features,components,lib} + skills/ + db/ + deploy/ + cicd/ + compose×3（src/components/ui = shadcn vendored 组件）
 │   │   └── skills/          #   （随实现落位）deepagents 工艺包 SKILL.md，服务端版本化
 │   └── coach/               # 学员端插件（src/ host/client/shared 三分，见 docs/arch/04）
 ├── packages/
-│   └── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
+│   ├── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
+│   └── dsl/                 # @trend-suite/dsl：教材 DSL 解析器（纯函数，云端服务端与浏览器渲染同源复用）
 └── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 同时发 staging（自动）与 production（人工审批后），镜像 tag 统一 main-<sha>）
 ├── eslint.config.mjs       # 仓级 eslint 扁平配置（typescript-eslint recommended，pnpm lint 从根跑）
 ```
 
 ## 3. 硬约束
 
-1. **依赖纪律**：`apps/*` 之间禁止互相 import；`packages/*` 禁止依赖 `apps/*`；跨端共享的契约一律落 `packages/contracts`。
+1. **依赖纪律**：`apps/*` 之间禁止互相 import；`packages/*` 禁止依赖 `apps/*`；跨端共享的契约一律落 `packages/contracts`，跨端共享的纯算法（如教材 DSL 解析）落 `packages/dsl`。**`src/features` 不得 import `src/server`**（浏览器切片与服务端真相的边界；共享纯逻辑下沉到 `packages/`）。
 2. **契约先行**：接口字段/错误码变更先改 docs/requirement/ 需求与 contracts，再改实现与测试。
 3. **每个应用一个 `src/` 根**：cloud 采用 Next.js `src/app` 约定——`src/app` 薄路由层、`src/server/<域>` 服务端真相、`src/features/<域>` 浏览器切片（**同名成对**，目录名与 arch/02 §2 模块表一致，详见 arch/02 §2.1）；`public/` 固定在应用根。
 4. **持久化数据**：运行期数据一律落各应用 `workspace/`（gitignore），不写其他路径、不提交入库；密钥只走 `.env` 注入（云端模型密钥走 `ai_models` 加密列，见 docs/arch/07）。
-5. **文档随仓库走**：apps/* 只放代码与运行资产，项目文档一律在根 `docs/`，并在 docs/README.md 登记。
+5. **文档随仓库走**：apps/* 只放代码与运行资产，项目文档一律在根 `docs/`，并在 docs/README.md 登记。**临时性 / 过渡性文档不进仓库**——评审清单、还债路线、阶段小结、过程稿等过程产物不进 `docs/`，需要留档就放应用 `workspace/`（gitignore）或留在会话里；进仓的文档必须是长期有效的需求 / 架构 / 规范正文。
 6. **提交**：Conventional Commits；未经用户批准不提交 git。
 7. **生产 Agent 纪律**：九步顺序由云端状态机强制（跑错序被挡）；模型调用统一经我们的 provider adapter（密钥不入环境明文、用量入账本）；产物必过三层校验，绝不部分落库；学员作答只在本机。
 8. **文档脱敏**（开源仓库）：文档与注释**不得写入**真实主机/IP、域名、账号、部署路径、镜像仓库地址、密钥或本地绝对路径。一律用占位符（`<deploy-host>`、`<prod-domain>`、`<deploy-path>`、`<registry>`…）或环境变量名；真实值走内部渠道单独下发，只在 GitHub secrets / 服务器配置里落地。工具生成的收据文件（如 archify 回执）提交前也要清理本地路径。

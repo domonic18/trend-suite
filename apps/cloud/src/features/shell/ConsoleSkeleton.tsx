@@ -1,5 +1,7 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+
 /**
  * 载入骨架：会话校验期间占位。
  *
@@ -7,7 +9,8 @@
  * 现在换成「壳还在、内容区是骨架」——布局不动，只有内容在长出来。
  */
 
-/** 工作台骨架：侧栏 + 内容区，形状与 WorkbenchShell 一致。 */
+/** 工作台骨架：与 WorkbenchShell 同构（侧栏导航/顶栏面包屑与控件都有占位），
+ * 刷新时从骨架到真实壳视觉连续，不产生「换了个中间页」的感觉。 */
 export function WorkbenchSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="ops-app">
@@ -19,17 +22,43 @@ export function WorkbenchSkeleton({ rows = 3 }: { rows?: number }) {
             <small>生产工作台</small>
           </span>
         </div>
+        <nav className="ops-menu">
+          <div className="ops-g">工作台</div>
+          <div className="ops-i">
+            <span className="oi-ico" aria-hidden="true" />
+            <span className="oi-t" aria-hidden="true" />
+          </div>
+          <div className="ops-i">
+            <span className="oi-ico" aria-hidden="true" />
+            <span className="oi-t" aria-hidden="true" />
+          </div>
+        </nav>
+        <div className="sbc-btn" aria-hidden="true">
+          <span className="sb-dot dot-idle" />
+          <span className="sbc-t">
+            <b className="w-[60%]" />
+            <small />
+          </span>
+        </div>
       </aside>
       <div className="wb-col">
         <header className="ops-top">
-          <span>生产工作台</span>
+          <nav className="ops-crumb" aria-hidden="true">
+            <span className="crumb-sk" />
+            <i className="sep" />
+            <span className="crumb-sk w-[120px]" />
+          </nav>
+          <div className="ops-corner">
+            <span className="corner-dot" aria-hidden="true" />
+            <span className="corner-ava" aria-hidden="true" />
+          </div>
         </header>
         <main className="ops-main" aria-busy="true" aria-live="polite">
           <div className="skeleton-page">
-            <div className="sk sk-title" />
-            <div className="sk sk-sub" />
+            <Skeleton className="h-[22px] w-[32%]" />
+            <Skeleton className="h-[14px] w-[56%]" />
             {Array.from({ length: rows }, (_, index) => (
-              <div className="sk sk-card" key={index} />
+              <Skeleton className="h-[78px]" key={index} />
             ))}
           </div>
         </main>
@@ -57,13 +86,32 @@ export function OpsSkeleton() {
         </header>
         <main className="ops-main" aria-busy="true">
           <div className="skeleton-page">
-            <div className="sk sk-title" />
+            <Skeleton className="h-[22px] w-[32%]" />
             {Array.from({ length: 3 }, (_, index) => (
-              <div className="sk sk-card" key={index} />
+              <Skeleton className="h-[78px]" key={index} />
             ))}
           </div>
         </main>
       </div>
     </div>
+  )
+}
+
+/**
+ * 主区内容骨架（无壳）：路由级 loading.tsx 用。
+ * 流式加载期间 layout 的壳（侧栏/顶栏）已经流出——loading 只画主区，
+ * 再画完整壳会叠加出双壳中间页。
+ */
+export function ContentSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <main className="ops-main" aria-busy="true">
+      <div className="skeleton-page">
+        <Skeleton className="h-[22px] w-[32%]" />
+        <Skeleton className="h-[14px] w-[56%]" />
+        {Array.from({ length: rows }, (_, index) => (
+          <Skeleton className="h-[78px]" key={index} />
+        ))}
+      </div>
+    </main>
   )
 }

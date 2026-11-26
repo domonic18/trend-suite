@@ -16,7 +16,7 @@ import * as widgetsRepo from '@/server/content/widgets/repo'
 import { notFound } from '@/server/lib/http'
 import { signFrameUrl } from '@/server/pipeline/processing/frame-url'
 import { listSourceUnitsByCourse, type SourceUnitRow } from '@/server/pipeline/processing/repo'
-import { collectUnitRefs, parseDsl } from './dsl-parser'
+import { collectUnitRefs, parseDsl } from '@trend-suite/dsl'
 import { signFigureUrl } from './figure-url'
 import * as repo from './repo'
 

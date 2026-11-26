@@ -21,12 +21,12 @@ export function foldChatItems(messages: AgentMessageView[]): ChatItem[] {
     buffer = []
   }
   for (const message of messages) {
+    if (message.role === 'todo') continue // TodoPanel 渲染最新一份；不打断事件组（todo 与 event 交错是常态）
     if (message.role === 'event') {
       buffer.push(message)
       continue
     }
     flush()
-    if (message.role === 'todo') continue // TodoPanel 渲染最新一份
     items.push({ kind: 'message', message })
   }
   flush()

@@ -1,10 +1,16 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+import { Button } from '@/components/ui/button'
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DSL_VERSION, type SectionContentView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { getSectionContent } from '@/features/production/api'
-import { parseDsl } from '@/server/content/textbook/dsl-parser'
+import { parseDsl } from '@trend-suite/dsl'
 import { DslRenderer } from './DslRenderer'
 import { WidgetHost } from './widgets/WidgetHost'
 
@@ -54,7 +60,9 @@ export function SectionPreview({ courseId, sectionId }: { courseId: string; sect
     }
   }, [content])
 
-  if (error && !content) return <div className="notice err">{error}</div>
+  if (error && !content) return <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert>
   if (!content) return <div className="empty">正文加载中…</div>
 
   const listedWidgets = content.widgets.filter(
@@ -63,7 +71,9 @@ export function SectionPreview({ courseId, sectionId }: { courseId: string; sect
 
   return (
     <div className="doc-wrap">
-      {error ? <div className="notice err">{error}</div> : null}
+      {error ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert> : null}
       <div className="doc-top">
         <b>{content.title}</b>
         <span className="meta">
@@ -71,11 +81,11 @@ export function SectionPreview({ courseId, sectionId }: { courseId: string; sect
           {content.caseStocks.length} 案例股 · {content.widgets.length} 课件
         </span>
         <span className="grow" />
-        {content.bodyStatus === 'draft' ? <span className="tag ready">正文已产出</span> : null}
-        {content.bodyStatus === 'rejected' ? <span className="tag draft">正文曾被复检拒绝</span> : null}
-        <button type="button" className="btn" onClick={() => void load()}>
+        {content.bodyStatus === 'draft' ? <Badge className="tag ready">正文已产出</Badge> : null}
+        {content.bodyStatus === 'rejected' ? <Badge className="tag draft">正文曾被复检拒绝</Badge> : null}
+        <Button variant="outline" size="sm" onClick={() => void load()}>
           刷新
-        </button>
+        </Button>
       </div>
       <DslRenderer content={content} />
       {listedWidgets.length > 0 ? (

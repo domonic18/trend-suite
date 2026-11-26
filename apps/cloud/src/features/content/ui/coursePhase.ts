@@ -207,6 +207,6 @@ export function courseScaleOf(input: CoursePhaseInput): string {
   if (input.assetCount > 0) {
     parts.push(`${input.assetCount} 个素材`)
   }
-  if (parts.length === 0) return '还没有素材与目录'
+  if (parts.length === 0) return '还没有素材'
   return parts.join(' · ')
 }

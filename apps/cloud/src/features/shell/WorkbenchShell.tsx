@@ -77,16 +77,6 @@ export function WorkbenchShell(props: { children: ReactNode }) {
             <>
               <div className="ops-g">当前课程</div>
               <CourseSwitcher current={current} />
-              <Link
-                className={`ops-i ${phase === 'production' ? 'on' : ''}`}
-                href={`/workbench/courses/${current.id}/production`}
-              >
-                <NavIcon>
-                  <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                  <path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor" />
-                </NavIcon>
-                课件制作
-              </Link>
             </>
           ) : null}
         </nav>

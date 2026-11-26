@@ -1,5 +1,9 @@
 'use client'
 
+import { Input } from '@/components/ui/input'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MediaAssetView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -68,18 +72,22 @@ export function MaterialLibrary() {
         </div>
       </div>
 
-      {listError ? <div className="notice err">{listError}</div> : null}
-      {actionError ? <div className="notice err">{actionError}</div> : null}
+      {listError ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{listError}</AlertDescription>
+    </Alert> : null}
+      {actionError ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{actionError}</AlertDescription>
+    </Alert> : null}
 
       <MaterialUploader onDone={refresh} />
 
       <div className="page-head" style={{ marginTop: 26 }}>
         <div className="actions">
-          <input
-            className="input"
+          <Input
             placeholder="搜索文件名"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            className="max-w-[280px]"
           />
         </div>
       </div>

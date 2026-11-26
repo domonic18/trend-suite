@@ -1,5 +1,10 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+
 import { useRef, useState } from 'react'
 import { MAX_MEDIA_BYTES } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -62,14 +67,14 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
       </div>
 
       {uploadError ? (
-        <div className="notice err">
-          {uploadError}
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{uploadError}
           {retryFile ? (
-            <button type="button" className="btn link" onClick={() => void start(retryFile)}>
+            <Button variant="link" size="sm" onClick={() => void start(retryFile)}>
               重试
-            </button>
-          ) : null}
-        </div>
+            </Button>
+          ) : null}</AlertDescription>
+    </Alert>
       ) : null}
 
       <div
@@ -83,14 +88,9 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
       >
         <b>把视频拖到这里</b>
         <p>或</p>
-        <button
-          type="button"
-          className="btn primary"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading !== null}
-        >
+        <Button onClick={() => inputRef.current?.click()} disabled={uploading !== null}>
           选择视频文件
-        </button>
+        </Button>
         <small>
           上传后自动转写、抽取关键帧并做视频理解；转写中的内容可以边转边读。做课时再勾选素材。
         </small>
@@ -109,9 +109,7 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
 
       {uploading ? (
         <div className="upload-progress">
-          <div className="prog">
-            <i style={{ width: `${Math.min(100, Math.round((uploading.loaded / uploading.total) * 100))}%` }} />
-          </div>
+          <Progress value={Math.min(100, Math.round((uploading.loaded / uploading.total) * 100))} />
           <span className="meta">
             {uploading.name} · {Math.round((uploading.loaded / uploading.total) * 100)}% ·{' '}
             {formatSize(uploading.loaded)} / {formatSize(uploading.total)}

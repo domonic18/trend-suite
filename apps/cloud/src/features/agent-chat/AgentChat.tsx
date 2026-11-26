@@ -1,5 +1,7 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useMemo, useRef, useState } from 'react'
 import type { AgentMessageView } from '@trend-suite/contracts'
 import { ChatMarkdown } from './ChatMarkdown'
@@ -23,7 +25,6 @@ export function AgentChat({
   id,
   stream,
   crumb,
-  subtitle,
   userName,
   draftingLabel = null,
   emptyHint,
@@ -33,7 +34,6 @@ export function AgentChat({
   id?: string
   stream: AgentStream
   crumb: string
-  subtitle: string
   userName: string
   /** 课程级队列任务在途时的文案（如「正在起草方案…」）；null = 无。 */
   draftingLabel?: string | null
@@ -58,14 +58,27 @@ export function AgentChat({
     pendingQuestionId,
     messages,
   })
-  const items = useMemo(() => foldChatItems(messages), [messages])
+  // 长线程不整屏渲染：默认只渲染最近 120 条，更早的按需展开（arch/08 §6）。
+  const [visibleCount, setVisibleCount] = useState(120)
+  const visibleMessages = useMemo(
+    () => (messages.length > visibleCount ? messages.slice(-visibleCount) : messages),
+    [messages, visibleCount],
+  )
+  const hiddenCount = messages.length - visibleMessages.length
+  const items = useMemo(() => foldChatItems(visibleMessages), [visibleMessages])
+  // 线程里有没有「对话」（user/assistant/question）——自动触发的生产只写
+  // 系统事件，此时仍显示引导语，告诉教师可以吩咐 Agent（停止/继续/重试）。
+  const hasNoDialogue = useMemo(
+    () => !messages.some((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'question'),
+    [messages],
+  )
   const todo = useMemo(() => latestTodo(messages), [messages])
 
-  const { contentRef, showToBottom, scrollToBottom } = useChatScroll([
+  const { contentRef, showToBottom, scrollToBottom } = useChatScroll({
     lastSeq,
-    agentBusy,
-    pendingQuestionId,
-  ])
+    busy,
+    pending: pendingQuestionId !== null,
+  })
 
   // 确认卡锁定与附言依据：answer 行回指
   const answeredBy = useMemo(() => {
@@ -137,7 +150,6 @@ export function AgentChat({
         <span className="agent-ava">制</span>
         <div className="agent-id">
           <b>制作 Agent</b>
-          <small>{subtitle}</small>
         </div>
         <span className={`${styles.badge} ${styles[`badge_${status}`]}`}>
           <i className="dot-run" aria-hidden="true" />
@@ -150,11 +162,13 @@ export function AgentChat({
       <div className="agent-body">
         <div className={styles.content} ref={contentRef}>
           {error ? (
-            <div className={`notice err ${degraded ? '' : styles.streamLost}`}>
-              对话流{degraded ? '已降级为轮询' : '连接中断'}：{error}
-            </div>
+            <Alert variant="destructive" className={`mb-2 ${degraded ? '' : styles.streamLost}`}>
+              <AlertDescription>
+                对话流{degraded ? '已降级为轮询' : '连接中断'}：{error}
+              </AlertDescription>
+            </Alert>
           ) : null}
-          {messages.length === 0 && !busy ? (
+          {hasNoDialogue && !busy ? (
             <div className="agent-empty">
               {emptyAction ? (
                 <button type="button" className="agent-empty-card" onClick={emptyAction.onClick}>
@@ -173,6 +187,16 @@ export function AgentChat({
               ) : null}
               <p>{emptyHint}</p>
             </div>
+          ) : null}
+
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              className={styles.moreHistory}
+              onClick={() => setVisibleCount((prev) => prev + 200)}
+            >
+              展开更早的 {hiddenCount} 条
+            </button>
           ) : null}
 
           {items.map((item, index) =>
@@ -201,7 +225,11 @@ export function AgentChat({
               </div>
             </div>
           ) : null}
-          {actionError ? <div className="notice err">{actionError}</div> : null}
+          {actionError ? (
+            <Alert variant="destructive" className="mb-2">
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          ) : null}
         </div>
       </div>
 
@@ -308,8 +336,11 @@ function EventGroup({
       </div>
     )
   }
+  // 大组（重试循环可产生几十条）即使含失败也默认折叠——摘要行已标红，
+  // 展开是用户的选择；小组含失败仍默认展开（失败不静默）。
+  const openByDefault = hasErr && events.length <= 6
   return (
-    <details className={`${styles.evGroup} ${hasErr ? styles.evGroupOpen : ''}`} open={hasErr}>
+    <details className={`${styles.evGroup} ${hasErr ? styles.evGroupOpen : ''}`} open={openByDefault}>
       <summary className={styles.evSummary}>
         <span className={styles.evCount}>{events.length} 条系统事件</span>
         {hasErr ? <span className={styles.evErrTag}>含失败</span> : null}

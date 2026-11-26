@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Button } from '@/components/ui/button'
+
 import Link from 'next/link'
 import type { SourceUnitView } from '@trend-suite/contracts'
 
@@ -27,15 +31,15 @@ export function UnitAnchorCard({
   return (
     <div className="unit-card">
       <div className="unit-card-top">
-        <span className="tag gray">原片 {msToClock(unit.startMs)} ~ {msToClock(unit.endMs)}</span>
-        {unit.playable ? <span className="tag ready">可回放</span> : <span className="tag gray">HLS 未产出</span>}
+        <Badge className="tag gray">原片 {msToClock(unit.startMs)} ~ {msToClock(unit.endMs)}</Badge>
+        {unit.playable ? <Badge className="tag ready">可回放</Badge> : <Badge className="tag gray">HLS 未产出</Badge>}
         <span className="grow" />
-        <Link className="btn link" href={`/workbench/courses/${courseId}`}>
-          打开素材页
-        </Link>
-        <button type="button" className="btn link" onClick={onClose}>
+        <Button variant="link" size="sm" asChild>
+          <Link href={`/workbench/courses/${courseId}`}>打开素材页</Link>
+        </Button>
+        <Button variant="link" size="sm" onClick={onClose}>
           收起
-        </button>
+        </Button>
       </div>
       <blockquote className="unit-card-quote">{unit.text}</blockquote>
       {unit.visualDesc ? (
