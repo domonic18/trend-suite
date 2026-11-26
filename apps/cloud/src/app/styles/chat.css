@@ -30,10 +30,6 @@
    Codex / WorkBuddy 式通栏面板——贴住 header 下沿到视口底部、无圆角无外圈
    留白，相互之间只有 ResizableHandle 的一根 hairline；
    高度 = 视口 − header（52px + 1px 边线），面板内部滚动。 */
-.chat-center .ops-main .plan-split {
-  height: calc(100vh - 53px);
-}
-
 .chat-center .ops-main .plan-split > .wb-col {
   padding: 0;
   overflow: hidden;
