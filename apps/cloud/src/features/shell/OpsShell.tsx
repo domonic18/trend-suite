@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import type { SessionUser } from '@trend-suite/contracts'
+import { Button } from '@/components/ui/button'
 import { BuildInfo } from './BuildInfo'
 
 const MENU: { label: string; href: string | null }[] = [
@@ -61,9 +62,9 @@ export function OpsShell(props: {
           <a className="bk" href="/workbench">
             返回工作台
           </a>
-          <button type="button" className="out" onClick={props.onLogout}>
+          <Button variant="ghost" size="sm" onClick={props.onLogout}>
             退出
-          </button>
+          </Button>
         </div>
       </aside>
       <div>
