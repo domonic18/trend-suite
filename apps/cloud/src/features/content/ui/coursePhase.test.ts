@@ -132,7 +132,7 @@ test('进度：三段各占三分之一', () => {
 })
 
 test('规模说明：章·课时数与素材数', () => {
-  assert.equal(courseScaleOf(EMPTY), '还没有素材与目录')
+  assert.equal(courseScaleOf(EMPTY), '还没有素材')
   assert.equal(
     courseScaleOf(input({ assetCount: 3, chapterCount: 2, lessonCount: 6 })),
     '2 章 · 6 课时 · 3 个素材',
