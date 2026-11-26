@@ -182,11 +182,6 @@
   pointer-events: auto;
 }
 
-.card-acts .btn.link {
-  font-size: 14px;
-  padding: 2px 6px;
-}
-
 .tag {
   margin-left: auto;
   font-size: 11.5px;
@@ -229,110 +224,9 @@
 }
 
 /* ---------------- 控件 ---------------- */
-.btn {
-  font: inherit;
-  font-size: 13.5px;
-  border-radius: var(--r-ctrl);
-  border: 1px solid var(--p-line);
-  background: var(--p-bg);
-  color: var(--p-ink);
-  padding: 8px 16px;
-  cursor: pointer;
-}
-
-.btn:hover:not(:disabled) {
-  border-color: var(--p-faint);
-}
-
-.btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.btn.primary {
-  background: var(--p-pri);
-  border-color: var(--p-pri);
-  color: #fff;
-  font-weight: 600;
-}
-
-.btn.primary:hover:not(:disabled) {
-  background: var(--p-pri-deep);
-}
-
-.btn.danger {
-  background: var(--p-err);
-  border-color: var(--p-err);
-  color: #fff;
-  font-weight: 600;
-}
-
-.btn.danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--p-err) 85%, #000);
-}
-
-.btn.danger.link,
-.btn.link.danger {
-  background: none;
-  border: none;
-  color: var(--p-err);
-  font-weight: inherit;
-}
-
-.btn.link {
-  border: none;
-  background: none;
-  color: var(--p-pri);
-  padding: 4px 6px;
-}
 
 a.btn.link {
   text-decoration: none;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.field label {
-  font-size: 13px;
-  color: var(--p-mut);
-}
-
-.input {
-  font: inherit;
-  font-size: 14px;
-  padding: 9px 12px;
-  border-radius: var(--r-ctrl);
-  border: 1px solid var(--p-line);
-  background: var(--p-bg);
-  color: var(--p-ink);
-  width: 100%;
-}
-
-.input:focus {
-  outline: 2px solid var(--p-pri-soft);
-  border-color: var(--p-pri);
-}
-
-.notice {
-  border-radius: var(--r-ctrl);
-  padding: 9px 12px;
-  font-size: 13px;
-  margin-bottom: 14px;
-}
-
-.notice.err {
-  background: var(--p-err-soft);
-  color: var(--p-err);
-}
-
-.notice.ok {
-  background: var(--p-acc-soft);
-  color: var(--p-acc);
 }
 
 /* 下一步引导横幅（原型 nextaction）：任何状态回答「现在该干什么」 */
@@ -398,20 +292,6 @@ a.btn.link {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.prog {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--p-line);
-  overflow: hidden;
-}
-
-.prog i {
-  display: block;
-  height: 100%;
-  background: var(--p-pri);
-  transition: width 0.2s ease;
 }
 
 /* ---------------- 对话框 ---------------- */

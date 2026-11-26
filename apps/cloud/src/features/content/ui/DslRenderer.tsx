@@ -1,5 +1,7 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useState } from 'react'
 import {
   DSL_VERSION,
@@ -39,7 +41,9 @@ export function DslRenderer({ content }: { content: SectionContentView }) {
   try {
     ast = parseDsl(content.body, version)
   } catch (err) {
-    return <div className="notice err">正文解析失败：{(err as Error).message}</div>
+    return <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>正文解析失败：{(err as Error).message}</AlertDescription>
+    </Alert>
   }
   const unitsById = new Map(content.units.map((unit) => [unit.id, unit]))
   const stocksByCode = new Map(content.caseStocks.map((stock) => [stock.code, stock]))
@@ -156,7 +160,9 @@ function InlineParagraph(props: {
     <p className="doc-para">
       <InlineText {...props} onUnit={(id) => setUnitId((cur) => (cur === id ? null : id))} activeUnitId={unitId} />
       {unitId && unit ? <UnitAnchorCard unit={unit} courseId={props.courseId} onClose={() => setUnitId(null)} /> : null}
-      {unitId && !unit ? <div className="notice err">证据单元 {unitId} 不在本节引用清单内</div> : null}
+      {unitId && !unit ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>证据单元 {unitId} 不在本节引用清单内</AlertDescription>
+    </Alert> : null}
     </p>
   )
 }
@@ -339,7 +345,9 @@ function BlockView({
     case 'figure': {
       const figure = figuresById.get(block.attrs.figureId ?? '')
       if (!figure) {
-        return <div className="notice err">图示 {block.attrs.figureId} 不在本节图示集内</div>
+        return <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>图示 {block.attrs.figureId} 不在本节图示集内</AlertDescription>
+    </Alert>
       }
       return <FigureCard figure={figure} />
     }
@@ -375,9 +383,9 @@ function BlockView({
       const widget = widgetsByCode.get(code)
       if (!widget) {
         return (
-          <div className="notice err">
-            本节没有 code={code} 的回放课件（正文 :::replay 只认已落库的唯一课件）。
-          </div>
+          <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>本节没有 code={code} 的回放课件（正文 :::replay 只认已落库的唯一课件）。</AlertDescription>
+    </Alert>
         )
       }
       return <WidgetHost widget={widget} figures={figuresById} />
@@ -397,9 +405,11 @@ function parseJson(body: string): unknown {
 
 function UnknownBlock({ block }: { block: DslBlock }) {
   return (
-    <div className="notice">
-      未支持的容器块 {`:::${block.directive}`}（不在本版 DSL 白名单）——原文：
-      <pre>{block.body}</pre>
-    </div>
+    <Alert className="mb-3.5">
+      <AlertDescription>
+        未支持的容器块 {`:::${block.directive}`}（不在本版 DSL 白名单）——原文：
+        <pre>{block.body}</pre>
+      </AlertDescription>
+    </Alert>
   )
 }

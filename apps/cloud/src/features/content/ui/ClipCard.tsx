@@ -1,5 +1,7 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Button } from '@/components/ui/button'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -120,7 +122,9 @@ export function ClipCard({
           </Button>
         )}
       </div>
-      {error ? <div className="notice err">{error}</div> : null}
+      {error ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert> : null}
       {open && src ? (
         <div className="clip-video">
           <video ref={videoRef} controls playsInline />

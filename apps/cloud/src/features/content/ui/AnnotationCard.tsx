@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
 import type { DslAnnotationBody } from '@trend-suite/contracts'
 
 /**
@@ -30,7 +32,7 @@ export function AnnotationCard({
   return (
     <div className="doc-annotation">
       <div className="doc-annotation-head">
-        <span className="tag ready">{KIND_LABELS[kind] ?? '标注'}</span>
+        <Badge className="tag ready">{KIND_LABELS[kind] ?? '标注'}</Badge>
         <b>{body.label}</b>
         <span className="mono meta">{body.d}</span>
         <span className="grow" />

@@ -1,6 +1,7 @@
 'use client'
 
 import type { FigureView, WidgetView } from '@trend-suite/contracts'
+import { Badge } from '@/components/ui/badge'
 import { BarReplayWidget } from './BarReplayWidget'
 import { ImageJuxtaposition, KlineAnnotator, StepReveal } from './ChartWidgets'
 import { BranchingScenario, Flashcards, TimelineExplorer } from './InfoWidgets'
@@ -42,13 +43,13 @@ export function WidgetHost({
         <span className="grow" />
         <span className="widget-assertions">
           {widget.assertions.map((assertion) => (
-            <span
+            <Badge
               key={assertion.name}
               className={`tag ${assertion.status === 'pass' ? 'ready' : 'draft'}`}
               title={assertion.detail}
             >
               {assertion.name}
-            </span>
+            </Badge>
           ))}
         </span>
       </header>

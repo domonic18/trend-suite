@@ -97,9 +97,9 @@ export function OutlineTree({
                 aria-label="新标题"
                 onChange={(e) => setRenameTitle(e.target.value)}
               />
-              <button
-                type="button"
-                className="iconbtn"
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 title="保存"
                 aria-label="保存"
                 disabled={busy || renameTitle.trim().length === 0}
@@ -109,16 +109,16 @@ export function OutlineTree({
                 }}
               >
                 <Check className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                className="iconbtn"
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 title="取消"
                 aria-label="取消"
                 onClick={() => setRenaming(null)}
               >
                 <X className="size-3.5" />
-              </button>
+              </Button>
             </span>
           ) : (
             <b>{node.title}</b>
@@ -251,9 +251,9 @@ export function OutlineTree({
               aria-label={level === 1 ? '新章标题' : '新课时标题'}
               onChange={(e) => setAddTitle(e.target.value)}
             />
-            <button
-              type="button"
-              className="iconbtn"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               title="保存"
               aria-label="保存"
               disabled={busy || addTitle.trim().length === 0}
@@ -264,16 +264,16 @@ export function OutlineTree({
               }}
             >
               <Check className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              className="iconbtn"
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               title="取消"
               aria-label="取消"
               onClick={() => setAdding(null)}
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           </span>
         ) : null}
       </div>

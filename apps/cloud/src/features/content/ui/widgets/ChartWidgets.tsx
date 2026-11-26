@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
 import { Button } from '@/components/ui/button'
 
 import { useMemo, useState } from 'react'
@@ -96,7 +98,7 @@ export function KlineAnnotator({ widget }: { widget: WidgetView }) {
         <ul className="widget-notes">
           {spec.annotations.map((annotation) => (
             <li key={`${annotation.idx}-${annotation.label}`}>
-              <span className="tag gray">{annotation.kind ?? 'structure'}</span> {annotation.label}
+              <Badge className="tag gray">{annotation.kind ?? 'structure'}</Badge> {annotation.label}
             </li>
           ))}
         </ul>

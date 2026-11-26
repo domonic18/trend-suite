@@ -1,5 +1,7 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useMemo, useRef, useState } from 'react'
 import type { AgentMessageView } from '@trend-suite/contracts'
 import { ChatMarkdown } from './ChatMarkdown'
@@ -157,9 +159,11 @@ export function AgentChat({
       <div className="agent-body">
         <div className={styles.content} ref={contentRef}>
           {error ? (
-            <div className={`notice err ${degraded ? '' : styles.streamLost}`}>
-              对话流{degraded ? '已降级为轮询' : '连接中断'}：{error}
-            </div>
+            <Alert variant="destructive" className={`mb-2 ${degraded ? '' : styles.streamLost}`}>
+              <AlertDescription>
+                对话流{degraded ? '已降级为轮询' : '连接中断'}：{error}
+              </AlertDescription>
+            </Alert>
           ) : null}
           {messages.length === 0 && !busy ? (
             <div className="agent-empty">
@@ -218,7 +222,11 @@ export function AgentChat({
               </div>
             </div>
           ) : null}
-          {actionError ? <div className="notice err">{actionError}</div> : null}
+          {actionError ? (
+            <Alert variant="destructive" className="mb-2">
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          ) : null}
         </div>
       </div>
 

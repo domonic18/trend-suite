@@ -1,5 +1,7 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useState } from 'react'
 import type { PlanJobView, PlanReviewView, PlanView, TweakPlanRequest } from '@trend-suite/contracts'
 import { classifyDraftFailure } from './draftFailure'
@@ -106,8 +108,12 @@ export function PlanWorkspace({
 
       <div className="ws-body">
         <TabsContent value="outline" className="mt-0">
-          {error ? <div className="notice err">{error}</div> : null}
-          {notice ? <div className="notice warn">{notice}</div> : null}
+          {error ? <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{error}</AlertDescription>
+    </Alert> : null}
+          {notice ? <Alert className="mb-3.5 border-transparent bg-warn-soft text-warn">
+      <AlertDescription>{notice}</AlertDescription>
+    </Alert> : null}
 
           {review && review.status === 'manual' ? (
             <div className="card">
@@ -140,7 +146,7 @@ export function PlanWorkspace({
                         <li key={`${violation.kind}-${violation.subject}-${index}`}>
                           <b>{violation.subject}</b>
                           <span>{violation.reason}</span>
-                          {violation.resolved ? <span className="tag ok">已自动处理</span> : null}
+                          {violation.resolved ? <Badge className="tag ok">已自动处理</Badge> : null}
                         </li>
                       ))}
                     </ul>

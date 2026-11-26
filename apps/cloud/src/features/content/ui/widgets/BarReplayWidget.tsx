@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Button } from '@/components/ui/button'
 
 import { useMemo, useState } from 'react'
@@ -34,9 +38,9 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
   if (spec.type !== 'bar-replay-decision' || !plan) {
     return (
       <div className="widget-card">
-        <div className="notice err">
-          回放课件 {widget.code ?? ''} 暂无可用行情——行情源不可用时不编造 K 线。
-        </div>
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>回放课件 {widget.code ?? ''} 暂无可用行情——行情源不可用时不编造 K 线。</AlertDescription>
+    </Alert>
       </div>
     )
   }
@@ -152,7 +156,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
                 <p>{point?.decision.revealText}</p>
                 {mark ? (
                   <p className="widget-annotation">
-                    <span className="tag gray">{mark.annotation.kind}</span> {mark.annotation.label}
+                    <Badge className="tag gray">{mark.annotation.kind}</Badge> {mark.annotation.label}
                     <span className="meta">
                       （素材单元 {mark.annotation.unitId} · {Math.round(mark.annotation.atMs / 1000)}s）
                     </span>

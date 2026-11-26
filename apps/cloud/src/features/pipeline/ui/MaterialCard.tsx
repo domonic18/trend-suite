@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { useCallback, useState } from 'react'
 import type {
   MediaAssetView,
@@ -175,12 +179,12 @@ export function MaterialCard(props: {
       </div>
 
       {readiness === 'failed' && asset.errorMessage ? (
-        <div className="notice err">
-          {asset.errorMessage}
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{asset.errorMessage}
           <Button variant="link" size="sm" onClick={() => void retry()}>
             重试（不重算已完成部分）
-          </Button>
-        </div>
+          </Button></AlertDescription>
+    </Alert>
       ) : null}
 
       <div className="matcard-stages">
@@ -241,9 +245,9 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 ASR 逐字稿
-                <span className="tag gray">
+                <Badge className="tag gray">
                   {detail.transcript ? detail.transcript.segments.length : asset.segmentCount} 段
-                </span>
+                </Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">逐字稿加载中…</div>
@@ -258,7 +262,7 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 关键帧
-                <span className="tag gray">{asset.frameCount} 张</span>
+                <Badge className="tag gray">{asset.frameCount} 张</Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">关键帧加载中…</div>
@@ -271,7 +275,7 @@ export function MaterialCard(props: {
             <div>
               <h4>
                 视频理解
-                <span className="tag gray">{detail.understanding.length} 条</span>
+                <Badge className="tag gray">{detail.understanding.length} 条</Badge>
               </h4>
               {loadingDetail ? (
                 <div className="empty">理解结果加载中…</div>

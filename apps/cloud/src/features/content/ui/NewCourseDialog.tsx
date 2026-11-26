@@ -206,9 +206,9 @@ export function NewCourseDialog({
               已选 {picked.length} 份，其中 {readyCount} 份可直接规划。
             </p>
             {notReadyPicked.length > 0 ? (
-              <div className="notice warn">
-                {notReadyPicked.length} 份素材还没跑完理解，不能参与起草——先到素材库点「重新生成 · 视频理解」。
-              </div>
+              <Alert className="mb-3.5 border-transparent bg-warn-soft text-warn">
+      <AlertDescription>{notReadyPicked.length} 份素材还没跑完理解，不能参与起草——先到素材库点「重新生成 · 视频理解」。</AlertDescription>
+    </Alert>
             ) : null}
           </div>
 
@@ -226,16 +226,16 @@ export function NewCourseDialog({
               onChange={(e) => setOutlineText(e.target.value)}
             />
             {issues.length > 0 ? (
-              <div className="notice err">
-                有 {issues.length} 行认不出层级，改格式后再生成大纲：
+              <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>有 {issues.length} 行认不出层级，改格式后再生成大纲：
                 <ul className="outline-issues">
                   {issues.slice(0, 4).map((issue) => (
                     <li key={issue.line}>
                       第 {issue.line} 行：{issue.text.slice(0, 30)}
                     </li>
                   ))}
-                </ul>
-              </div>
+                </ul></AlertDescription>
+    </Alert>
             ) : null}
             <p className="form-note">
               有现成的三级目录就粘进来——目录是你说了算，Agent 只在它上面挂出处。留空则由 Agent 代拟。

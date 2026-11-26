@@ -8,6 +8,7 @@ import { getFrames, listAssets } from '@/features/pipeline/api'
 import { getHlsPlayback } from '@/features/production/api'
 import { planningReadyOf, understandingCountOf } from '@/features/pipeline/ui/processing'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -215,7 +216,11 @@ export function AssetPickerDialog({
           <DialogDescription className="sr-only">从素材库勾选用于本课制作的视频</DialogDescription>
         </DialogHeader>
         <div className="px-4 pb-1">
-        {error ? <div className="notice err">{error}</div> : null}
+        {error ? (
+          <Alert variant="destructive" className="mb-3.5">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
         {loading ? (
           <div className="empty">素材加载中…</div>
         ) : assets.length === 0 ? (

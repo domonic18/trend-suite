@@ -242,33 +242,6 @@
 }
 
 /* 行内图标按钮（改名 / 删除 / 存 / 取消） */
-.iconbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: var(--r-ctrl);
-  background: none;
-  color: var(--p-mut);
-  cursor: pointer;
-}
-
-.iconbtn:hover:not(:disabled) {
-  background: var(--p-soft);
-  color: var(--p-ink);
-}
-
-.iconbtn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.iconbtn.danger:hover:not(:disabled) {
-  color: var(--p-err);
-}
 
 .oe-inline {
   display: inline-flex;

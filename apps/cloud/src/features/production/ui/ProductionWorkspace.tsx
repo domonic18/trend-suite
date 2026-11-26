@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -211,7 +212,11 @@ export function ProductionWorkspace({
       </div>
 
       <div className="ws-body">
-        {error ? <div className="notice err">{error}</div> : null}
+        {error ? (
+          <Alert variant="destructive" className="mb-3.5">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
         {!board ? (
           <div className="empty">制作台加载中…</div>
         ) : !boardReady ? (
@@ -227,18 +232,17 @@ export function ProductionWorkspace({
                 <>
                   <div className="dh">
                     <b>{current.title}</b>
-                    <span className={`tag ${runningTask ? 'processing' : current.status === 'complete' ? 'ready' : 'gray'}`}>
+                    <Badge className={`tag ${runningTask ? 'processing' : current.status === 'complete' ? 'ready' : 'gray'}`}>
                       {runningTask
                         ? `生成中 · 第 ${runningTask.step}/9 步`
                         : sectionStateOf(current)}
-                    </span>
+                    </Badge>
                     <span className="right">
-                      <Link
-                        className="btn link"
-                        href={`/workbench/courses/${courseId}/production/sections/${current.sectionId}/preview`}
-                      >
+                      <Button variant="link" size="sm" asChild>
+                        <Link href={`/workbench/courses/${courseId}/production/sections/${current.sectionId}/preview`}>
                         本节预览
                       </Link>
+                      </Button>
                     </span>
                   </div>
                   {content ? (

@@ -1,6 +1,9 @@
 'use client'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 
 import { useRef, useState } from 'react'
 import { MAX_MEDIA_BYTES } from '@trend-suite/contracts'
@@ -64,14 +67,14 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
       </div>
 
       {uploadError ? (
-        <div className="notice err">
-          {uploadError}
+        <Alert variant="destructive" className="mb-3.5">
+      <AlertDescription>{uploadError}
           {retryFile ? (
             <Button variant="link" size="sm" onClick={() => void start(retryFile)}>
               重试
             </Button>
-          ) : null}
-        </div>
+          ) : null}</AlertDescription>
+    </Alert>
       ) : null}
 
       <div
@@ -106,9 +109,7 @@ export function MaterialUploader({ onDone }: { onDone: () => void }) {
 
       {uploading ? (
         <div className="upload-progress">
-          <div className="prog">
-            <i style={{ width: `${Math.min(100, Math.round((uploading.loaded / uploading.total) * 100))}%` }} />
-          </div>
+          <Progress value={Math.min(100, Math.round((uploading.loaded / uploading.total) * 100))} />
           <span className="meta">
             {uploading.name} · {Math.round((uploading.loaded / uploading.total) * 100)}% ·{' '}
             {formatSize(uploading.loaded)} / {formatSize(uploading.total)}
