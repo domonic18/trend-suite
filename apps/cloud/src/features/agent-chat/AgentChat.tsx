@@ -58,14 +58,21 @@ export function AgentChat({
     pendingQuestionId,
     messages,
   })
-  const items = useMemo(() => foldChatItems(messages), [messages])
+  // 长线程不整屏渲染：默认只渲染最近 120 条，更早的按需展开（arch/08 §6）。
+  const [visibleCount, setVisibleCount] = useState(120)
+  const visibleMessages = useMemo(
+    () => (messages.length > visibleCount ? messages.slice(-visibleCount) : messages),
+    [messages, visibleCount],
+  )
+  const hiddenCount = messages.length - visibleMessages.length
+  const items = useMemo(() => foldChatItems(visibleMessages), [visibleMessages])
   const todo = useMemo(() => latestTodo(messages), [messages])
 
-  const { contentRef, showToBottom, scrollToBottom } = useChatScroll([
+  const { contentRef, showToBottom, scrollToBottom } = useChatScroll({
     lastSeq,
-    agentBusy,
-    pendingQuestionId,
-  ])
+    busy,
+    pending: pendingQuestionId !== null,
+  })
 
   // 确认卡锁定与附言依据：answer 行回指
   const answeredBy = useMemo(() => {
@@ -173,6 +180,16 @@ export function AgentChat({
               ) : null}
               <p>{emptyHint}</p>
             </div>
+          ) : null}
+
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              className={styles.moreHistory}
+              onClick={() => setVisibleCount((prev) => prev + 200)}
+            >
+              展开更早的 {hiddenCount} 条
+            </button>
           ) : null}
 
           {items.map((item, index) =>

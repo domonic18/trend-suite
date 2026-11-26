@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import type { AgentMessageView, MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
+import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
@@ -99,10 +99,6 @@ export function PlanPanel({
     void act(() => tweakPlan(courseId, op))
   }
 
-  const events: AgentMessageView[] = stream.messages.filter(
-    (message) => message.role === 'event' || message.role === 'todo',
-  )
-
   // 首次打开课程（还没有方案、没有任务在途）：对话区空态给「选择素材」入口。
   const jobFailed = !plan && job?.status === 'failed'
   const fresh = !plan && !running && !jobFailed
@@ -152,15 +148,12 @@ export function PlanPanel({
       <div className="wb-col" ref={ws.railRef}>
         <div {...ws.handleProps} />
         <PlanWorkspace
-          courseId={courseId}
           plan={plan}
           job={job}
-          materials={materials}
           review={data?.review ?? null}
           busy={busy}
           error={error}
           notice={notice}
-          events={events}
           onTweak={tweak}
         />
       </div>

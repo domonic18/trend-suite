@@ -1,58 +1,54 @@
 'use client'
 
 import { useState } from 'react'
-import type {
-  AgentMessageView,
-  PlanCoverageView,
-  PlanJobView,
-  PlanReviewView,
-  PlanView,
-  TweakPlanRequest,
-} from '@trend-suite/contracts'
+import type { PlanJobView, PlanReviewView, PlanView, TweakPlanRequest } from '@trend-suite/contracts'
 import { classifyDraftFailure } from './draftFailure'
 import { OutlineTree } from './OutlineTree'
-import { ToolCards } from './ToolCards'
 
 /**
- * 右栏纯产物工作区（arch/08 §2，WorkBuddy 式页签）：大纲 / 术语 / 分节 / 轨迹。
- * 只呈现产物与微调（微调即时生效、不进对话）——所有工作交互都在中栏对话区
- * （自由文本 + AskQuestion 确认卡）。不放状态横幅与「现在该干什么」的引导：
- * 起草进度、批准卡、失败原因都由对话流承载；这里只回答「产物长什么样」。
+ * 方案页右栏课件工作区（arch/08 §6）：页签统一为**课件元素类别**（大纲 /
+ * 课件 / 配图 / 视频 / K线图 / 练习题 / 互动，与制作台同构）——教师从方案
+ * 阶段看到的就是最终课件的元素维度；方案阶段只有大纲（骨架树），其余元素
+ * 批准制作后逐节生成。微调即时生效、不进对话；不放横幅与动作按钮。
  */
-
-type MaterialsReady = { ready: number; total: number }
 
 const TABS = [
   { key: 'outline', label: '大纲' },
-  { key: 'glossary', label: '术语' },
-  { key: 'lessons', label: '分节' },
-  { key: 'trace', label: '轨迹' },
+  { key: 'artifact', label: '课件' },
+  { key: 'figures', label: '配图' },
+  { key: 'video', label: '视频' },
+  { key: 'kline', label: 'K线图' },
+  { key: 'quiz', label: '练习题' },
+  { key: 'interactive', label: '互动' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
 
+/** 课件元素在方案阶段的空态（最小状态句，无教学标注）。 */
+const PENDING_TEXT: Record<Exclude<TabKey, 'outline'>, string> = {
+  artifact: '还没有课件。',
+  figures: '还没有配图。',
+  video: '还没有视频。',
+  kline: '还没有 K 线图。',
+  quiz: '还没有练习题。',
+  interactive: '还没有互动课件。',
+}
+
 export function PlanWorkspace({
-  courseId,
   plan,
   job,
-  materials,
   review,
   busy,
   error,
   notice,
-  events,
   onTweak,
 }: {
-  courseId: string
   plan: PlanView | null
   job: PlanJobView | null
-  materials: MaterialsReady | null
   review: PlanReviewView | null
   busy: boolean
   error: string | null
   notice: string | null
-  /** 对话线程内的系统事件（轨迹页签的事实流）。 */
-  events: AgentMessageView[]
   onTweak: (op: TweakPlanRequest) => void
 }) {
   const [tab, setTab] = useState<TabKey>('outline')
@@ -61,10 +57,6 @@ export function PlanWorkspace({
   const approved = plan?.status === 'approved'
   const jobFailed = !plan && job?.status === 'failed'
   const failure = jobFailed ? classifyDraftFailure(job) : null
-
-  const nodeTitleById = new Map((plan?.skeleton.nodes ?? []).map((node) => [node.id, node.title]))
-  const lessons = plan?.sectionPlan.lessons ?? []
-  const glossaryCount = plan?.glossary.items.length ?? 0
 
   const tag = approved
     ? { cls: 'ok', text: '已锁定' }
@@ -76,16 +68,19 @@ export function PlanWorkspace({
 
   const counts: Record<TabKey, string | null> = {
     outline: plan ? String(plan.skeleton.nodes.length) : null,
-    glossary: plan ? String(glossaryCount) : null,
-    lessons: plan ? String(lessons.length) : null,
-    trace: events.length > 0 ? String(events.length) : null,
+    artifact: null,
+    figures: null,
+    video: null,
+    kline: null,
+    quiz: null,
+    interactive: null,
   }
 
   return (
-    <div className="ws" aria-label="方案工作区">
+    <div className="ws" aria-label="课件工作区">
       <div className="ws-head">
         <div className="ws-title">
-          方案工作区
+          课件工作区
           <span className={`tag ${tag.cls}`}>{tag.text}</span>
         </div>
         <div className="ctabs" role="tablist">
@@ -171,72 +166,12 @@ export function PlanWorkspace({
           )}
         </div>
 
-        <div className={`ctpane${tab === 'glossary' ? ' on' : ''}`}>
-          {plan ? (
-            <ToolCards
-              conceptMap={plan.conceptMap}
-              glossary={plan.glossary}
-              busy={busy}
-              onAddAlias={(conceptId, alias) => onTweak({ op: 'add_alias', conceptId, alias })}
-            />
-          ) : (
-            <p className="note">还没有方案。</p>
-          )}
-        </div>
-
-        <div className={`ctpane${tab === 'lessons' ? ' on' : ''}`}>
-          {plan ? (
-            <table className="mini-tbl">
-              <thead>
-                <tr>
-                  <th>课时</th>
-                  <th>挂靠章</th>
-                  <th>子节</th>
-                  <th>估时</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lessons.map((lesson) => (
-                  <tr key={lesson.id}>
-                    <td>{lesson.title}</td>
-                    <td>{lesson.sectionId ? (nodeTitleById.get(lesson.sectionId) ?? '—') : '—'}</td>
-                    <td>{lesson.subLessonCount}</td>
-                    <td>{lesson.estimatedMinutes} 分钟</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="note">还没有方案。</p>
-          )}
-          {plan?.coverage ? <CoverageNote coverage={plan.coverage} /> : null}        </div>
-
-        <div className={`ctpane${tab === 'trace' ? ' on' : ''}`}>
-          {events.length === 0 ? (
-            <p className="note">还没有事件。</p>
-          ) : (
-            events.map((event) =>
-              event.role === 'todo' ? (
-                <p key={event.id} className="note">{`TODO（${event.items.filter((i) => i.status === 'done').length}/${event.items.length}）：${event.items.map((i) => i.content).join('；')}`}</p>
-              ) : event.role === 'event' ? (
-                <div key={event.id} className={`ev ${event.level}`}>
-                  {event.detail ?? event.kind}
-                </div>
-              ) : null,
-            )
-          )}
-        </div>
+        {TABS.filter((item) => item.key !== 'outline').map((item) => (
+          <div className={`ctpane${tab === item.key ? ' on' : ''}`} key={item.key}>
+            <p className="note">{PENDING_TEXT[item.key]}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
-
-function CoverageNote({ coverage }: { coverage: PlanCoverageView }) {
-  return (
-    <p className="note" style={{ marginTop: 8 }}>
-      素材覆盖率：{coverage.coveredPoints}/{coverage.totalPoints} 条教学要点（
-      {Math.round(coverage.ratio * 100)}%）。
-    </p>
-  )
-}
-

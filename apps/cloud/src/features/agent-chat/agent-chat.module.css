@@ -1,6 +1,23 @@
 /* 对话流新样式（arch/08 §6）：只消费 --p-* token（P6 双主题经 data-wb-theme
    覆写同名变量整域换肤），不再写死 hex。 */
 
+/* ---------------------------------------------------------------- 展开更早 */
+.moreHistory {
+  align-self: center;
+  font: inherit;
+  font-size: 12px;
+  color: var(--p-mut);
+  background: var(--p-soft);
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.moreHistory:hover {
+  color: var(--p-pri);
+  border-color: var(--p-pri);
+}
+
 /* ---------------------------------------------------------------- 状态徽章 */
 .badge {
   display: inline-flex;
