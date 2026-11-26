@@ -188,7 +188,7 @@ function RenameDialog({
         <DialogHeader>
           <DialogTitle>课程改名</DialogTitle>
         </DialogHeader>
-        <div className="px-4 pb-1">
+        <div className="px-4 pt-3 pb-1">
           <div className="mb-3.5 grid gap-1.5">
             <Label htmlFor="rename-title">课程名称</Label>
             <Input
@@ -255,7 +255,7 @@ function DeleteDialog({
         <DialogHeader>
           <DialogTitle>删除课程</DialogTitle>
         </DialogHeader>
-        <div className="px-4 pb-1">
+        <div className="px-4 pt-3 pb-1">
           <p className="text-[13.5px] leading-[1.8]">
             将删除课程<b>{course ? `「${course.title}」` : ''}</b>
             ，连同它的全部素材、方案、生产产物与 Agent 对话记录，<b>不可恢复</b>。

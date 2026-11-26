@@ -134,7 +134,7 @@ export function NewCourseDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-4 pb-1">
+        <div className="px-4 pt-3 pb-1">
           {error ? (
             <Alert variant="destructive" className="mb-3.5">
               <AlertDescription>{error}</AlertDescription>

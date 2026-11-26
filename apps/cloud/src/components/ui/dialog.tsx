@@ -62,7 +62,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           /* 观感锚定现值：rounded-xl=--r-panel(14px)、现阴影、宽 440px */
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-line bg-bg p-0 shadow-[0_24px_64px_rgba(16,24,40,0.28)] duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-[440px]",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-0 rounded-xl border border-line bg-bg p-0 shadow-[0_24px_64px_rgba(16,24,40,0.28)] duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-[440px]",
           className
         )}
         {...props}
@@ -86,7 +86,12 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn(
+        /* 锚定旧 .dialog-head：14px 16px 内边距 + 底部分隔线（Content 是 p-0，
+           内边距由各段自控） */
+        "flex flex-col gap-2 border-b border-line px-4 py-3.5 text-center sm:text-left",
+        className
+      )}
       {...props}
     />
   )

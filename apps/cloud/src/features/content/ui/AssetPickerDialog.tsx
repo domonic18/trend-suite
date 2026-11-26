@@ -215,7 +215,7 @@ export function AssetPickerDialog({
           <DialogTitle>选择素材，开始制作</DialogTitle>
           <DialogDescription className="sr-only">从素材库勾选用于本课制作的视频</DialogDescription>
         </DialogHeader>
-        <div className="px-4 pb-1">
+        <div className="px-4 pt-3 pb-1">
         {error ? (
           <Alert variant="destructive" className="mb-3.5">
             <AlertDescription>{error}</AlertDescription>
