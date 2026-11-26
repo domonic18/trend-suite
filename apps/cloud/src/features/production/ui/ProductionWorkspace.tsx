@@ -1,5 +1,9 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type {
@@ -177,29 +181,31 @@ export function ProductionWorkspace({
   }
 
   return (
-    <div className="ws" aria-label="制作工作区">
+    <Tabs
+      value={tab}
+      onValueChange={(value) => selectTab(value as TabKey)}
+      className="ws"
+      aria-label="制作工作区"
+    >
       <div className="ws-head">
         <div className="ws-title">
           制作工作区
-          <span className={`tag ${boardReady ? tag.cls : emptyTag.cls}`}>
+          <Badge className={`tag ${boardReady ? tag.cls : emptyTag.cls}`}>
             {boardReady ? tag.text : emptyTag.text}
-          </span>
+          </Badge>
         </div>
-        <div className="ctabs" role="tablist">
+        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
           {TABS.map((item) => (
-            <button
+            <TabsTrigger
               key={item.key}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.key}
-              className={tab === item.key ? 'on' : ''}
-              onClick={() => selectTab(item.key)}
+              value={item.key}
+              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
             >
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
+        </TabsList>
       </div>
 
       <div className="ws-body">
@@ -211,12 +217,10 @@ export function ProductionWorkspace({
         ) : (
           <>
             {boardReady ? (
-              <div className="prog ws-prog" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="课件制作完成进度">
-                <i style={{ width: `${progressPct}%` }} />
-              </div>
+              <Progress className="ws-prog" value={progressPct} aria-label="课件制作完成进度" />
             ) : null}
 
-            <div className={`ctpane${tab === 'artifact' ? ' on' : ''}`}>
+            <TabsContent value="artifact" className="mt-0">
               {current ? (
                 <>
                   <div className="dh">
@@ -263,9 +267,9 @@ export function ProductionWorkspace({
               ) : (
                 <p className="note">还没有节。</p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'figures' ? ' on' : ''}`}>
+            <TabsContent value="figures" className="mt-0">
               {content && content.figures.length > 0 ? (
                 FIGURE_KINDS.map(({ kind, label }) => {
                   const list = content.figures.filter((figure) => figure.kind === kind)
@@ -285,9 +289,9 @@ export function ProductionWorkspace({
               ) : (
                 <p className="note">{current ? '本节还没有配图。' : '还没有选中节。'}</p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'video' ? ' on' : ''}`}>
+            <TabsContent value="video" className="mt-0">
               {current ? (
                 unitsByAsset.length > 0 ? (
                   unitsByAsset.map(([assetId, units]) => (
@@ -315,9 +319,9 @@ export function ProductionWorkspace({
               ) : (
                 <p className="note">还没有选中节。</p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'kline' ? ' on' : ''}`}>
+            <TabsContent value="kline" className="mt-0">
               {current ? (
                 <>
                   <div className="th">
@@ -363,9 +367,9 @@ export function ProductionWorkspace({
               ) : (
                 <p className="note">还没有选中节。</p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'quiz' ? ' on' : ''}`}>
+            <TabsContent value="quiz" className="mt-0">
               {content && quizWidgets.length > 0 ? (
                 quizWidgets.map((widget) => (
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
@@ -373,9 +377,9 @@ export function ProductionWorkspace({
               ) : (
                 <p className="note">{current ? '本节还没有练习题。' : '还没有选中节。'}</p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'interactive' ? ' on' : ''}`}>
+            <TabsContent value="interactive" className="mt-0">
               {content && interactiveWidgets.length > 0 ? (
                 interactiveWidgets.map((widget) => (
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
@@ -385,9 +389,9 @@ export function ProductionWorkspace({
                   {current ? '本节还没有其他互动课件。' : '还没有选中节。'}
                 </p>
               )}
-            </div>
+            </TabsContent>
 
-            <div className={`ctpane${tab === 'outline' ? ' on' : ''}`}>
+            <TabsContent value="outline" className="mt-0">
               <div className="th">
                 大纲 <span className="grow" />
                 <span className="tag gray">
@@ -432,10 +436,10 @@ export function ProductionWorkspace({
                   </div>
                 )
               })}
-            </div>
+            </TabsContent>
           </>
         )}
       </div>
-    </div>
+    </Tabs>
   )
 }

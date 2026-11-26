@@ -4,6 +4,8 @@ import { useState } from 'react'
 import type { PlanJobView, PlanReviewView, PlanView, TweakPlanRequest } from '@trend-suite/contracts'
 import { classifyDraftFailure } from './draftFailure'
 import { OutlineTree } from './OutlineTree'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
  * 方案页右栏课件工作区（arch/08 §6）：页签统一为**课件元素类别**（大纲 /
@@ -77,31 +79,33 @@ export function PlanWorkspace({
   }
 
   return (
-    <div className="ws" aria-label="课件工作区">
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value as TabKey)}
+      className="ws"
+      aria-label="课件工作区"
+    >
       <div className="ws-head">
         <div className="ws-title">
           课件工作区
-          <span className={`tag ${tag.cls}`}>{tag.text}</span>
+          <Badge className={`tag ${tag.cls}`}>{tag.text}</Badge>
         </div>
-        <div className="ctabs" role="tablist">
+        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
           {TABS.map((item) => (
-            <button
+            <TabsTrigger
               key={item.key}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.key}
-              className={tab === item.key ? 'on' : ''}
-              onClick={() => setTab(item.key)}
+              value={item.key}
+              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
             >
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
+        </TabsList>
       </div>
 
       <div className="ws-body">
-        <div className={`ctpane${tab === 'outline' ? ' on' : ''}`}>
+        <TabsContent value="outline" className="mt-0">
           {error ? <div className="notice err">{error}</div> : null}
           {notice ? <div className="notice warn">{notice}</div> : null}
 
@@ -164,14 +168,14 @@ export function PlanWorkspace({
           ) : (
             <p className="note">还没有方案。</p>
           )}
-        </div>
+        </TabsContent>
 
         {TABS.filter((item) => item.key !== 'outline').map((item) => (
-          <div className={`ctpane${tab === item.key ? ' on' : ''}`} key={item.key}>
+          <TabsContent value={item.key} key={item.key} className="mt-0">
             <p className="note">{PENDING_TEXT[item.key]}</p>
-          </div>
+          </TabsContent>
         ))}
       </div>
-    </div>
+    </Tabs>
   )
 }

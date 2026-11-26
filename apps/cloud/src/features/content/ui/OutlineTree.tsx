@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import type { PlanLessonView, PlanSectionNodeView } from '@trend-suite/contracts'
 import { countOutlineLevels } from '@trend-suite/contracts'
-import { IconCheck, IconClose } from '@/features/lib/icons'
+import { Check, X } from 'lucide-react'
 import { buildOutlineTree, descendantLessonCounts, siblingInfoOf } from './outlineGroup'
 import { evidenceDetailLinesOf, formatClock } from './planAudit'
 
@@ -106,7 +106,7 @@ export function OutlineTree({
                   setRenaming(null)
                 }}
               >
-                <IconCheck />
+                <Check className="size-3.5" />
               </button>
               <button
                 type="button"
@@ -115,7 +115,7 @@ export function OutlineTree({
                 aria-label="取消"
                 onClick={() => setRenaming(null)}
               >
-                <IconClose />
+                <X className="size-3.5" />
               </button>
             </span>
           ) : (
@@ -266,7 +266,7 @@ export function OutlineTree({
                 setAddTitle('')
               }}
             >
-              <IconCheck />
+              <Check className="size-3.5" />
             </button>
             <button
               type="button"
@@ -275,7 +275,7 @@ export function OutlineTree({
               aria-label="取消"
               onClick={() => setAdding(null)}
             >
-              <IconClose />
+              <X className="size-3.5" />
             </button>
           </span>
         ) : null}
