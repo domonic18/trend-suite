@@ -1,10 +1,13 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useParams } from 'next/navigation'
-import { SectionPreview } from '@/features/content/ui/SectionPreview'
-
-/** 分节正文预览（生产阶段下钻）。 */
-export default function SectionPreviewPage() {
-  const params = useParams<{ courseId: string; sectionId: string }>()
-  return <SectionPreview courseId={params.courseId} sectionId={params.sectionId} />
+/** 存量兼容：分节预览迁至课程下的 sections/[sectionId]/preview。 */
+export default function PreviewRedirect({
+  params,
+}: {
+  params: Promise<{ courseId: string; sectionId: string }>
+}) {
+  return (async () => {
+    const { courseId, sectionId } = await params
+    redirect(`/workbench/courses/${courseId}/sections/${sectionId}/preview`)
+  })()
 }

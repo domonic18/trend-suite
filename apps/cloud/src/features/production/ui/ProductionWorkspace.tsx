@@ -239,7 +239,7 @@ export function ProductionWorkspace({
                     </Badge>
                     <span className="right">
                       <Button variant="link" size="sm" asChild>
-                        <Link href={`/workbench/courses/${courseId}/production/sections/${current.sectionId}/preview`}>
+                        <Link href={`/workbench/courses/${courseId}/sections/${current.sectionId}/preview`}>
                         本节预览
                       </Link>
                       </Button>
