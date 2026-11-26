@@ -10,7 +10,7 @@ import { ApiError } from '@/features/lib/http'
 import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
-import { usePanelWidth } from '@/features/shell/PanelDivider'
+import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
 import { getProductionBoard, getSectionContent, getSectionQuotes, resyncSectionQuotes, retryProductionSection } from '../api'
 import { ProductionWorkspace } from './ProductionWorkspace'
 
@@ -42,7 +42,6 @@ export function ProductionStudio({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stream = useAgentStream(courseId, 'production')
-  const ws = usePanelWidth('wb.ws.w.production')
 
   const refreshBoard = useCallback(async () => {
     try {
@@ -173,18 +172,20 @@ export function ProductionStudio({
   const boardReady = board != null && sections.length > 0
 
   return (
-    <div className="plan-split" aria-label="课件制作台" style={ws.style}>
-      <AgentChat
+    <WorkbenchSplit
+      storageKey="wb.ws.w.production"
+      main={
+        <AgentChat
         stream={stream}
         crumb={`${courseTitle ?? '课程'} / 制作台`}
         subtitle="制作阶段 · 九步生产 / 停止继续"
         userName={userName}
         draftingLabel={inFlight ? `正在逐节制作（已完成 ${doneSteps}/${totalSteps} 步）…` : null}
         emptyHint="还没有对话——九步生产的每一步事实会自动留在这里；也可以直接吩咐 Agent 停止、继续或重试。"
-        quickChips={boardReady ? ['看看现在做到哪了', '停止制作', '继续制作', '重试挂起的节'] : []}
-      />
-      <div className="wb-col" ref={ws.railRef}>
-        <div {...ws.handleProps} />
+          quickChips={boardReady ? ['看看现在做到哪了', '停止制作', '继续制作', '重试挂起的节'] : []}
+        />
+      }
+      rail={
         <ProductionWorkspace
           board={board}
           courseId={courseId}
@@ -200,7 +201,7 @@ export function ProductionStudio({
           onRetry={(sectionId) => void retry(sectionId)}
           onSyncQuotes={() => void syncQuotes()}
         />
-      </div>
-    </div>
+      }
+    />
   )
 }

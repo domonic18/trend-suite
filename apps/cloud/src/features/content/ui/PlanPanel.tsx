@@ -6,7 +6,7 @@ import { ApiError } from '@/features/lib/http'
 import { getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
-import { usePanelWidth } from '@/features/shell/PanelDivider'
+import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
 import { takeDraftNotice } from './draftNotice'
 import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
@@ -40,7 +40,6 @@ export function PlanPanel({
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const ws = usePanelWidth('wb.ws.w.plan')
   const stream = useAgentStream(courseId, 'plan')
 
   // 建课后触发起草失败的原因：课程已建好，提示带到这一页，别让教师再建一门课。
@@ -120,43 +119,47 @@ export function PlanPanel({
       : ['开始起草方案']
 
   return (
-    <div className="plan-split" style={ws.style}>
-      <AgentChat
-        id="agent-chat"
-        stream={stream}
-        crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
-        subtitle="方案阶段 · 起草 / 打磨 / 批准"
-        userName={userName}
-        draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
-        emptyHint="还没有对话——把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它会用确认卡和你对齐规划方式后开始起草。"
-        emptyAction={
-          fresh
-            ? {
-                label: '选择素材，开始制作',
-                description: '从素材库勾选课程视频（可跨课、可多选），确认后自动起草方案',
-                onClick: () => setPickerOpen(true),
-              }
-            : null
-        }
-        quickChips={chips}
-      />
+    <>
       <AssetPickerDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onConfirm={confirmAssets}
       />
-      <div className="wb-col" ref={ws.railRef}>
-        <div {...ws.handleProps} />
-        <PlanWorkspace
-          plan={plan}
-          job={job}
-          review={data?.review ?? null}
-          busy={busy}
-          error={error}
-          notice={notice}
-          onTweak={tweak}
-        />
-      </div>
-    </div>
+      <WorkbenchSplit
+        storageKey="wb.ws.w.plan"
+        main={
+          <AgentChat
+            id="agent-chat"
+            stream={stream}
+            crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
+            subtitle="方案阶段 · 起草 / 打磨 / 批准"
+            userName={userName}
+            draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
+            emptyHint="还没有对话——把课程目标发给 Agent（目录可一并粘贴，或让 Agent 代拟），它会用确认卡和你对齐规划方式后开始起草。"
+            emptyAction={
+              fresh
+                ? {
+                    label: '选择素材，开始制作',
+                    description: '从素材库勾选课程视频（可跨课、可多选），确认后自动起草方案',
+                    onClick: () => setPickerOpen(true),
+                  }
+                : null
+            }
+            quickChips={chips}
+          />
+        }
+        rail={
+          <PlanWorkspace
+            plan={plan}
+            job={job}
+            review={data?.review ?? null}
+            busy={busy}
+            error={error}
+            notice={notice}
+            onTweak={tweak}
+          />
+        }
+      />
+    </>
   )
 }
