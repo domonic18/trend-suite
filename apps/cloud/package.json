@@ -41,10 +41,9 @@
     "radix-ui": "^1.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-markdown": "^10",
     "react-resizable-panels": "^4",
-    "remark-gfm": "^4",
     "server-only": "^0.0.1",
+    "streamdown": "^2.8.1",
     "tailwind-merge": "^3.7.1",
     "tsx": "^4.0.0",
     "zod": "^3.23.0"
