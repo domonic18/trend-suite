@@ -1,0 +1,57 @@
+/* ============================================================
+   基础层：设计 token 与全局 reset
+   —— token 定义是全部样式的单一来源（深色族见 console-tokens.css，
+   由 globals.css 统一导入，本文件不再重复 import）。
+   ============================================================ */
+
+:root {
+  --p-bg: #ffffff;
+  --p-soft: #f6f8fc;
+  --p-line: #e4e9f2;
+  --p-ink: #16203a;
+  --p-mut: #5a6785;
+  --p-faint: #8b94a9;
+  --p-pri: #2563eb;
+  --p-pri-deep: #1e4fd8;
+  --p-pri-soft: #eaf1ff;
+  --p-acc: #0f9d76;
+  --p-acc-soft: #e7f7f1;
+  --p-warn: #c47a12;
+  --p-warn-soft: #fdf3e0;
+  --p-err: #d9483f;
+  --p-err-soft: #fdecea;
+  --r-panel: 14px;
+  --r-ctrl: 10px;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --p-sh-sm: 0 1px 2px rgba(22, 32, 58, 0.06);
+  /* K 线画布取色（chartDraw palette 经 getComputedStyle 读，arch/08 §6）：
+     涨跌固定红涨绿跌，网格与轴标签随主题。 */
+  --k-up: #d9483f;
+  --k-down: #0f9d76;
+  --k-grid: rgba(22, 32, 58, 0.14);
+  --k-label: #8b94a9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--p-ink);
+  background: var(--p-soft);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--p-pri);
+  text-decoration: none;
+}
