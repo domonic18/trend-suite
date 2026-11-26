@@ -118,7 +118,7 @@ agentStreamResponse   = { messages, cursor, agentBusy, pendingQuestionId }   // 
 - **长线程**：对话流默认只渲染最近 120 条，更早的按「展开更早的 N 条」逐段放开（`agent_messages` 单次拉取上限 500 条，见 §2）——避免长线程整屏重渲染。
 - 右栏：**页签统一为课件元素类别**（大纲 / 课件 / 配图 / 视频 / K线图 / 练习题 / 互动，方案页与制作台同构）——教师从方案阶段起就按最终课件的元素维度看工作区；方案阶段只有大纲（骨架树 + 拒绝记录 + 自检卡），其余元素为待生成空态。`PanelDivider` 替代旧拖拽 hook（键盘 16px/48px、双击复位、宽度与页签 localStorage 持久化）；**联动**：对话最新消息 seq 变化驱动右栏重取（refreshKey），既有 board 轮询降为兜底；对话↔右栏定位走组件引用，不走 DOM 全局查找。右栏组件：方案页 `PlanWorkspace`、制作台 `ProductionWorkspace`（制作台组件只做取数与对话流，右栏呈现独立成组件）。
 - 布局：`chat-center` 由 WorkbenchShell 的 bleed 变体承载（组件树内表达，不用 CSS `:has()` 穿透）。
-- 主题：工作台双主题——`console-tokens.css` 定义工作台深色 token 族，`<html data-wb-theme>`（`dark` 默认 / `light`）下覆写同名 `--p-*` 变量实现整域换肤（挂 html 而非子树，body 根作用域 var() 与继承色才按主题解析）；主题与用户控件在 header 右侧（内流布局，不悬浮压工作区）；localStorage 持久化；canvas 图表（K 线）经 `getComputedStyle` 取 token 色并随主题重绘。门户与运营台不受影响。
+- 主题：工作台双主题——`console-tokens.css` 定义工作台深色 token 族，`<html data-wb-theme>`（`dark` 默认 / `light`）下覆写同名 `--p-*` 变量实现整域换肤（挂 html 而非子树，body 根作用域 var() 与继承色才按主题解析）；主题与用户控件在 header 右侧（内流布局，不悬浮压工作区）；localStorage 持久化；canvas 图表（K 线）经 `getComputedStyle` 取 token 色并随主题重绘。组件底座为 shadcn/ui + Tailwind v4：`@theme inline` 把语义槽指向 `--p-*`（utility 跟随主题覆写），对话流视觉在 `agent-chat.module.css`（B 类域，markdown 动态 HTML 必须 scoped CSS）。门户与运营台不受影响。
 
 ## 7. 清理清单
 

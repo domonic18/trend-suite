@@ -6,7 +6,7 @@
 
 monorepo（pnpm workspaces + Turborepo）：**一个云端服务 + 一个学员端插件 + 跨端契约包**。
 
-- **云端**（`apps/cloud`）：**Next.js（App Router，React 19）** + PostgreSQL + pgvector——门户（SSG/ISR）、管理台、教师生产工作台、全部 `/v1/*` API（Route Handlers）、生产 Agent（deepagents TS 进程内）、媒体管线、额度计费。
+- **云端**（`apps/cloud`）：**Next.js（App Router，React 19）+ shadcn/ui + Tailwind CSS v4** + PostgreSQL + pgvector——门户（SSG/ISR）、管理台、教师生产工作台、全部 `/v1/*` API（Route Handlers）、生产 Agent（deepagents TS 进程内）、媒体管线、额度计费。
 - **学员端**（`apps/coach`）：DSH（DeepSeek Harness）框架上的 trend-coach 插件；推理上云，插件零密钥。
 - **教师端无独立应用**：浏览器工作台由云端提供（生产端服务端化）。
 
@@ -21,7 +21,7 @@ trend-suite/
 │   ├── flow/                # 端到端流程图（archify 交互 HTML）
 │   └── standard/             # 团队规范
 ├── apps/
-│   ├── cloud/               # 云端：src/{app,server,features,components} + skills/ + db/ + deploy/ + cicd/ + compose×3
+│   ├── cloud/               # 云端：src/{app,server,features,components,lib} + skills/ + db/ + deploy/ + cicd/ + compose×3（src/components/ui = shadcn vendored 组件）
 │   │   └── skills/          #   （随实现落位）deepagents 工艺包 SKILL.md，服务端版本化
 │   └── coach/               # 学员端插件（src/ host/client/shared 三分，见 docs/arch/04）
 ├── packages/
