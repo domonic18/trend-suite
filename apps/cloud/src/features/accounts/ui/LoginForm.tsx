@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { ApiError } from '@/features/lib/http'
 import { isOpsRole } from '@/features/shell/ops-role'
 import { login } from '../api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function LoginForm() {
   const router = useRouter()
@@ -28,17 +32,20 @@ export function LoginForm() {
   }
 
   return (
-    <form className="login-card" onSubmit={onSubmit}>
-      <h1>登录生产工作台</h1>
-      <p className="sub">浏览器会话 · sessionStorage，不落 Cookie</p>
+    <form className="max-w-[400px]" onSubmit={onSubmit}>
+      <h1 className="mb-1 text-[21px] font-[650]">登录生产工作台</h1>
+      <p className="mb-6 text-[13.5px] text-mut">浏览器会话 · sessionStorage，不落 Cookie</p>
 
-      {error ? <div className="notice err">{error}</div> : null}
+      {error ? (
+        <Alert variant="destructive" className="mb-3.5">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <div className="field">
-        <label htmlFor="username">用户名</label>
-        <input
+      <div className="mb-3.5 grid gap-1.5">
+        <Label htmlFor="username">用户名</Label>
+        <Input
           id="username"
-          className="input"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
@@ -47,11 +54,10 @@ export function LoginForm() {
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="password">密码</label>
-        <input
+      <div className="mb-3.5 grid gap-1.5">
+        <Label htmlFor="password">密码</Label>
+        <Input
           id="password"
-          className="input"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -60,11 +66,11 @@ export function LoginForm() {
         />
       </div>
 
-      <button className="btn primary" type="submit" disabled={busy} style={{ width: '100%' }}>
+      <Button type="submit" className="w-full" disabled={busy}>
         {busy ? '登录中…' : '登录'}
-      </button>
+      </Button>
 
-      <p className="login-foot">
+      <p className="mt-[18px] text-[12.5px] leading-[1.9] text-faint">
         首次使用请联系运营创建 producer 账号；忘记密码由管理员重置。
         <br />
         学员入口在官网门户，学员账号看不到本工作台。

@@ -7,7 +7,6 @@
      tw-animate-css        动画 utility（shadcn 组件用）
      console-tokens.css    工作台深色 token 族（data-wb-theme 作用域）
      styles/base.css       设计 token + 全局 reset
-     styles/login.css      登录页
      styles/shell.css      工作台外壳、通用控件、素材上传、对话框、加工面板、运营台
      styles/plan.css       方案与生产（大纲树、九步看板、K 线）
      styles/chat.css       Agent 对话工作台（chat-center 三栏、右栏页签）
@@ -22,7 +21,6 @@
 @import 'tw-animate-css';
 @import './console-tokens.css';
 @import './styles/base.css';
-@import './styles/login.css';
 @import './styles/shell.css';
 @import './styles/plan.css';
 @import './styles/chat.css';
