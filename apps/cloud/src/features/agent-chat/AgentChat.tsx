@@ -68,6 +68,12 @@ export function AgentChat({
   )
   const hiddenCount = messages.length - visibleMessages.length
   const items = useMemo(() => foldChatItems(visibleMessages), [visibleMessages])
+  // 线程里有没有「对话」（user/assistant/question）——自动触发的生产只写
+  // 系统事件，此时仍显示引导语，告诉教师可以吩咐 Agent（停止/继续/重试）。
+  const hasNoDialogue = useMemo(
+    () => !messages.some((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'question'),
+    [messages],
+  )
   const todo = useMemo(() => latestTodo(messages), [messages])
 
   const { contentRef, showToBottom, scrollToBottom } = useChatScroll({
@@ -165,7 +171,7 @@ export function AgentChat({
               </AlertDescription>
             </Alert>
           ) : null}
-          {messages.length === 0 && !busy ? (
+          {hasNoDialogue && !busy ? (
             <div className="agent-empty">
               {emptyAction ? (
                 <button type="button" className="agent-empty-card" onClick={emptyAction.onClick}>
@@ -333,8 +339,11 @@ function EventGroup({
       </div>
     )
   }
+  // 大组（重试循环可产生几十条）即使含失败也默认折叠——摘要行已标红，
+  // 展开是用户的选择；小组含失败仍默认展开（失败不静默）。
+  const openByDefault = hasErr && events.length <= 6
   return (
-    <details className={`${styles.evGroup} ${hasErr ? styles.evGroupOpen : ''}`} open={hasErr}>
+    <details className={`${styles.evGroup} ${hasErr ? styles.evGroupOpen : ''}`} open={openByDefault}>
       <summary className={styles.evSummary}>
         <span className={styles.evCount}>{events.length} 条系统事件</span>
         {hasErr ? <span className={styles.evErrTag}>含失败</span> : null}
