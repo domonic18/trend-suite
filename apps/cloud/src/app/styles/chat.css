@@ -106,7 +106,7 @@
 }
 
 .ws-title .ws-meta {
-  font: 500 10.5px var(--font-mono);
+  font: 500 10.5px var(--p-font-mono);
   color: var(--p-faint);
   font-weight: 500;
 }
@@ -300,7 +300,7 @@
 
 .agent-tabs .n {
   margin-left: 5px;
-  font: 600 10px var(--font-mono);
+  font: 600 10px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -612,7 +612,7 @@
 }
 
 .atodo-n {
-  font: 600 10.5px var(--font-mono);
+  font: 600 10.5px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -739,7 +739,7 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 5px;
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -779,7 +779,7 @@
 .tool-group .tg-h {
   font-size: 10.5px;
   color: var(--p-faint);
-  font-family: var(--font-mono);
+  font-family: var(--p-font-mono);
   margin: 0 0 4px 2px;
 }
 
@@ -816,12 +816,12 @@
 }
 
 .tool .tn {
-  font: 600 10.5px var(--font-mono);
+  font: 600 10.5px var(--p-font-mono);
   color: var(--p-pri);
 }
 
 .tool .ta {
-  font: 10.5px var(--font-mono);
+  font: 10.5px var(--p-font-mono);
   color: var(--p-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -831,7 +831,7 @@
 .tool .ts {
   margin-left: auto;
   flex: none;
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -839,7 +839,7 @@
   border-top: 1px dashed var(--p-line);
   background: var(--p-soft);
   padding: 7px 9px;
-  font: 10.5px/1.65 var(--font-mono);
+  font: 10.5px/1.65 var(--p-font-mono);
   color: var(--p-mut);
   white-space: pre-wrap;
   word-break: break-all;
@@ -866,7 +866,7 @@
 
 .filetree .fh .n {
   margin-left: auto;
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -889,7 +889,7 @@
 }
 
 .file .fn {
-  font: 500 11px var(--font-mono);
+  font: 500 11px var(--p-font-mono);
   color: var(--p-ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -899,7 +899,7 @@
 .file .fs {
   margin-left: auto;
   flex: none;
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -909,7 +909,7 @@
   border-radius: 9px;
   background: var(--p-soft);
   padding: 9px 10px;
-  font: 10.5px/1.7 var(--font-mono);
+  font: 10.5px/1.7 var(--p-font-mono);
   color: var(--p-mut);
   white-space: pre-wrap;
 }
@@ -969,7 +969,7 @@
   resize: none;
   background: transparent;
   color: var(--p-ink);
-  font: 13px/1.6 var(--font-sans);
+  font: 13px/1.6 var(--p-font-sans);
 }
 
 .composer textarea::placeholder {
@@ -1034,7 +1034,7 @@
   margin: 0 0 12px;
   font-size: 11px;
   color: var(--p-faint);
-  font-family: var(--font-mono);
+  font-family: var(--p-font-mono);
 }
 
 .ev::before {
@@ -1082,7 +1082,7 @@
 }
 
 .ctabs .n {
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: var(--p-faint);
   margin-left: 4px;
 }
@@ -1122,7 +1122,7 @@
 }
 
 .kbd {
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   border: 1px solid var(--p-line);
   border-bottom-width: 2px;
   border-radius: 4px;

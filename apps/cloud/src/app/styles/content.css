@@ -386,7 +386,7 @@
 
 .doc-cards b {
   display: block;
-  font: 600 10px var(--font-mono);
+  font: 600 10px var(--p-font-mono);
   color: var(--p-pri);
   margin-bottom: 3px;
 }
@@ -413,7 +413,7 @@
 
 .doc-bignum b {
   display: block;
-  font: 650 20px/1.2 var(--font-mono);
+  font: 650 20px/1.2 var(--p-font-mono);
   color: var(--p-pri);
 }
 
@@ -448,6 +448,7 @@
 .doc-cmp ul {
   margin: 0;
   padding-left: 15px;
+  list-style: disc; /* preflight 清 UA 圆点，显式声明 */
   font-size: 11.5px;
   color: var(--p-mut);
   line-height: 1.8;
@@ -486,7 +487,7 @@
 }
 
 .doc-timeline .mono {
-  font: 500 10px var(--font-mono);
+  font: 500 10px var(--p-font-mono);
   color: #9aa3b8;
 }
 

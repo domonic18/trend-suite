@@ -3,16 +3,23 @@
    globals.css 的源码顺序**，级联行为与拆分前完全一致。
 
    文件地图：
-     console-tokens.css  工作台深色 token 族（data-wb-theme 作用域）
-     styles/base.css      设计 token + 全局 reset
-     styles/login.css     登录页
-     styles/shell.css     工作台外壳、通用控件、素材上传、对话框、加工面板、运营台
-     styles/plan.css      方案与生产（大纲树、九步看板、K 线）
-     styles/chat.css      Agent 对话工作台（chat-center 三栏、右栏页签）
-     styles/content.css   课件内容（正文预览、出处锚、交互课件、标注卡）
-     styles/workspace.css 课程切换器、骨架、状态标、素材卡、制作台右栏
+     tailwindcss           Tailwind v4 基座（preflight + utilities）
+     tw-animate-css        动画 utility（shadcn 组件用）
+     console-tokens.css    工作台深色 token 族（data-wb-theme 作用域）
+     styles/base.css       设计 token + 全局 reset
+     styles/login.css      登录页
+     styles/shell.css      工作台外壳、通用控件、素材上传、对话框、加工面板、运营台
+     styles/plan.css       方案与生产（大纲树、九步看板、K 线）
+     styles/chat.css       Agent 对话工作台（chat-center 三栏、右栏页签）
+     styles/content.css    课件内容（正文预览、出处锚、交互课件、标注卡）
+     styles/workspace.css  课程切换器、骨架、状态标、素材卡、制作台右栏
+
+   尾部（本文件）：@custom-variant dark、@theme inline token 桥、
+   @layer base 元素级规则——见文件尾注释。
    ============================================================ */
 
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @import './console-tokens.css';
 @import './styles/base.css';
 @import './styles/login.css';
@@ -21,3 +28,106 @@
 @import './styles/chat.css';
 @import './styles/content.css';
 @import './styles/workspace.css';
+
+/* ------------------------------------------------------------
+   主题变体：shadcn 组件内的 dark: utility 对齐现有属性选择器——
+   <html data-wb-theme='dark'> 由 themeBootstrap 首帧设置、
+   WorkbenchShell 切换管理（门户/登录不挂属性恒浅色）。
+   ------------------------------------------------------------ */
+@custom-variant dark (&:where([data-wb-theme='dark'], [data-wb-theme='dark'] *));
+
+/* ------------------------------------------------------------
+   token 桥（@theme inline）：把 shadcn 语义槽位与域扩展色指向
+   现有 --p-* 运行时变量——inline 使 utility 直接编译为 var(--p-*)，
+   html[data-wb-theme='dark'] 覆写到哪 utility 跟到哪（双主题零额外
+   代码）。圆角族对齐 --r-ctrl(10px)/--r-panel(14px)。
+   纪律：全程禁用 hex 色 utility，一律走语义槽。
+   ------------------------------------------------------------ */
+@theme inline {
+  --color-background: var(--p-soft);
+  --color-foreground: var(--p-ink);
+  --color-card: var(--p-bg);
+  --color-card-foreground: var(--p-ink);
+  --color-popover: var(--p-bg);
+  --color-popover-foreground: var(--p-ink);
+  --color-primary: var(--p-pri);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--p-soft);
+  --color-secondary-foreground: var(--p-ink);
+  --color-muted: var(--p-soft);
+  --color-muted-foreground: var(--p-mut);
+  --color-accent: var(--p-pri-soft);
+  --color-accent-foreground: var(--p-ink);
+  --color-destructive: var(--p-err);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--p-line);
+  --color-input: var(--p-line);
+  --color-ring: var(--p-pri);
+
+  /* 域扩展：迁移期 utility 直达现有语义色 */
+  --color-pri-deep: var(--p-pri-deep);
+  --color-pri-soft: var(--p-pri-soft);
+  --color-success: var(--p-acc);
+  --color-success-soft: var(--p-acc-soft);
+  --color-warn: var(--p-warn);
+  --color-warn-soft: var(--p-warn-soft);
+  --color-danger-soft: var(--p-err-soft);
+  --color-faint: var(--p-faint);
+  --color-bg: var(--p-bg);
+  --color-soft: var(--p-soft);
+  --color-line: var(--p-line);
+  --color-ink: var(--p-ink);
+  --color-mut: var(--p-mut);
+
+  /* K 线语义色（canvas 仍经 getComputedStyle 直读 --k-*；此槽供未来 SVG 图表） */
+  --color-chart-1: var(--k-up);
+  --color-chart-2: var(--k-down);
+  --color-chart-3: var(--p-pri);
+  --color-chart-4: var(--p-warn);
+  --color-chart-5: var(--p-mut);
+
+  --radius-sm: calc(var(--r-ctrl) - 4px);
+  --radius-md: var(--r-ctrl);
+  --radius-lg: calc(var(--r-ctrl) + 2px);
+  --radius-xl: var(--r-panel);
+
+  --font-sans: var(--p-font-sans);
+  --font-mono: var(--p-font-mono);
+
+  --shadow-sm: var(--p-sh-sm);
+}
+
+/* ------------------------------------------------------------
+   元素级全局规则（自 base.css 移入）：进 @layer base 是层叠纪律——
+   未分层规则会压过 utility，shadcn 组件的 utility 才能覆盖它们。
+   ------------------------------------------------------------ */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: var(--p-font-sans);
+    color: var(--p-ink);
+    background: var(--p-soft);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--p-pri);
+    text-decoration: none;
+  }
+
+  /* preflight 把标题字重设为 inherit（正文 400），原观感靠 UA 默认
+     bold=700——此条恢复逐像素一致。 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+  }
+}

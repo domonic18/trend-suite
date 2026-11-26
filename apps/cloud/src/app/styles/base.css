@@ -2,6 +2,10 @@
    基础层：设计 token 与全局 reset
    —— token 定义是全部样式的单一来源（深色族见 console-tokens.css，
    由 globals.css 统一导入，本文件不再重复 import）。
+   字体变量带 --p- 前缀：Tailwind v4 的 @theme 槽位名就是
+   --font-sans/--font-mono，同名会造成 @theme inline 自引用。
+   body/a 等元素级规则在 globals.css 的 @layer base（层叠纪律：
+   未分层规则会压过 utility）。
    ============================================================ */
 
 :root {
@@ -22,9 +26,9 @@
   --p-err-soft: #fdecea;
   --r-panel: 14px;
   --r-ctrl: 10px;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+  --p-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
     "Noto Sans SC", "Microsoft YaHei", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --p-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --p-sh-sm: 0 1px 2px rgba(22, 32, 58, 0.06);
   /* K 线画布取色（chartDraw palette 经 getComputedStyle 读，arch/08 §6）：
      涨跌固定红涨绿跌，网格与轴标签随主题。 */
@@ -36,22 +40,4 @@
 
 * {
   box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: var(--font-sans);
-  color: var(--p-ink);
-  background: var(--p-soft);
-  -webkit-font-smoothing: antialiased;
-}
-
-a {
-  color: var(--p-pri);
-  text-decoration: none;
 }

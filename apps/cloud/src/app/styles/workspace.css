@@ -275,7 +275,7 @@
 }
 
 .matcard-h .mh-id {
-  font: 500 11px var(--font-mono);
+  font: 500 11px var(--p-font-mono);
   color: var(--p-faint);
 }
 
@@ -410,7 +410,7 @@
 }
 
 .uitem .ts {
-  font: 500 11px var(--font-mono);
+  font: 500 11px var(--p-font-mono);
   color: var(--p-faint);
   flex: none;
   padding-top: 2px;
