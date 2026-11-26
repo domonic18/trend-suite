@@ -7,6 +7,15 @@ import { ApiError } from '@/features/lib/http'
 import { getFrames, listAssets } from '@/features/pipeline/api'
 import { getHlsPlayback } from '@/features/production/api'
 import { planningReadyOf, understandingCountOf } from '@/features/pipeline/ui/processing'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 /**
  * 选素材弹窗（方案页对话区空态入口，教师端需求 T7）：首次打开课程、
@@ -139,19 +148,11 @@ export function AssetPickerDialog({
   /** 确认制作：带回全部勾选的素材（已过可规划门控）。 */
   onConfirm: (assets: MediaAssetView[]) => void
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const [assets, setAssets] = useState<MediaAssetView[]>([])
   const [posters, setPosters] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [picked, setPicked] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (open && !el.open) el.showModal()
-    if (!open && el.open) el.close()
-  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -207,14 +208,13 @@ export function AssetPickerDialog({
   }
 
   return (
-    <dialog ref={dialogRef} onClose={onClose}>
-      <div className="dialog-head">
-        <b>选择素材，开始制作</b>
-        <button type="button" className="x" aria-label="关闭" onClick={onClose}>
-          ×
-        </button>
-      </div>
-      <div className="dialog-body">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>选择素材，开始制作</DialogTitle>
+          <DialogDescription className="sr-only">从素材库勾选用于本课制作的视频</DialogDescription>
+        </DialogHeader>
+        <div className="px-4 pb-1">
         {error ? <div className="notice err">{error}</div> : null}
         {loading ? (
           <div className="empty">素材加载中…</div>
@@ -233,21 +233,20 @@ export function AssetPickerDialog({
             ))}
           </div>
         )}
-      </div>
-      <div className="dialog-foot">
-        <button type="button" className="btn" onClick={onClose}>
-          取消
-        </button>
-        <button
-          type="button"
-          className="btn primary"
-          disabled={!canConfirm}
-          title={pickedAssets.length === 0 ? '先勾选素材' : undefined}
-          onClick={confirm}
-        >
-          确认制作（已选 {pickedAssets.length} 份）
-        </button>
-      </div>
-    </dialog>
+        </div>
+        <DialogFooter className="gap-2 border-t border-line px-4 py-3 sm:justify-end">
+          <Button variant="outline" onClick={onClose}>
+            取消
+          </Button>
+          <Button
+            disabled={!canConfirm}
+            title={pickedAssets.length === 0 ? '先勾选素材' : undefined}
+            onClick={confirm}
+          >
+            确认制作（已选 {pickedAssets.length} 份）
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

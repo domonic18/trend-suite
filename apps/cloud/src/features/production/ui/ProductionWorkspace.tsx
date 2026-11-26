@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -329,9 +331,9 @@ export function ProductionWorkspace({
                     {syncing ? (
                       <span className="tag run">同步中…</span>
                     ) : (
-                      <button type="button" className="btn link" onClick={onSyncQuotes}>
+                      <Button variant="link" size="sm" onClick={onSyncQuotes}>
                         同步行情
-                      </button>
+                      </Button>
                     )}
                   </div>
                   {quotes && quotes.stocks.length > 0 ? (
@@ -423,14 +425,13 @@ export function ProductionWorkspace({
                     </button>
                     {suspended ? (
                       <div className="tnode-acts">
-                        <button
-                          type="button"
-                          className="btn link"
+                        <Button
+                          variant="link" size="sm"
                           disabled={busy}
                           onClick={() => onRetry(section.sectionId)}
                         >
                           重试该节
-                        </button>
+                        </Button>
                       </div>
                     ) : null}
                   </div>

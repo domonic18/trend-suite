@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useMemo, useState } from 'react'
 import type { WidgetView } from '@trend-suite/contracts'
 import { MiniChart } from '../MiniChart'
@@ -66,12 +68,11 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
         }))}
       />
       <div className="widget-actions">
-        <button type="button" className="btn" onClick={revealMore} disabled={Boolean(pending) || finished}>
+        <Button variant="outline" size="sm" onClick={revealMore} disabled={Boolean(pending) || finished}>
           揭示下一根
-        </button>
-        <button
-          type="button"
-          className="btn link"
+        </Button>
+        <Button
+          variant="link" size="sm"
           onClick={() => {
             setRevealed(0)
             setAnswered(0)
@@ -80,7 +81,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
           }}
         >
           重来
-        </button>
+        </Button>
         <span className="grow" />
         <span className="meta">
           已答 {records.length} / {plan.points.length} 处 · 对 {correctCount} 处
@@ -106,16 +107,15 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
           </div>
           {selected === null ? (
             <div className="widget-actions">
-              <button type="button" className="btn" disabled>
+              <Button variant="outline" size="sm" disabled>
                 提交作答
-              </button>
+              </Button>
               <span className="meta">先选一个选项再提交——提交后不可回改。</span>
             </div>
           ) : (
             <div className="widget-actions">
-              <button
-                type="button"
-                className="btn"
+              <Button
+                variant="outline" size="sm"
                 onClick={() => {
                   const verdict = replayVerdict(pending.decision, selected)
                   setRecords((current) => [
@@ -132,7 +132,7 @@ export function BarReplayWidget({ widget }: { widget: WidgetView }) {
                 }}
               >
                 提交作答
-              </button>
+              </Button>
               <span className="meta">提交后不可回改。</span>
             </div>
           )}

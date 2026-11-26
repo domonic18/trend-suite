@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DSL_VERSION, type SectionContentView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
@@ -73,9 +75,9 @@ export function SectionPreview({ courseId, sectionId }: { courseId: string; sect
         <span className="grow" />
         {content.bodyStatus === 'draft' ? <span className="tag ready">正文已产出</span> : null}
         {content.bodyStatus === 'rejected' ? <span className="tag draft">正文曾被复检拒绝</span> : null}
-        <button type="button" className="btn" onClick={() => void load()}>
+        <Button variant="outline" size="sm" onClick={() => void load()}>
           刷新
-        </button>
+        </Button>
       </div>
       <DslRenderer content={content} />
       {listedWidgets.length > 0 ? (

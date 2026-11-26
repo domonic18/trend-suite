@@ -524,9 +524,6 @@ a.btn.link {
   transition: width 0.2s ease;
 }
 
-.err-text {
-  color: var(--p-err);
-}
 /* ---------------- 对话框 ---------------- */
 dialog {
   border: none;

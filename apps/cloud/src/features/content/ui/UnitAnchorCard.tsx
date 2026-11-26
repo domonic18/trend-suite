@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+
 import Link from 'next/link'
 import type { SourceUnitView } from '@trend-suite/contracts'
 
@@ -30,12 +32,12 @@ export function UnitAnchorCard({
         <span className="tag gray">原片 {msToClock(unit.startMs)} ~ {msToClock(unit.endMs)}</span>
         {unit.playable ? <span className="tag ready">可回放</span> : <span className="tag gray">HLS 未产出</span>}
         <span className="grow" />
-        <Link className="btn link" href={`/workbench/courses/${courseId}`}>
-          打开素材页
-        </Link>
-        <button type="button" className="btn link" onClick={onClose}>
+        <Button variant="link" size="sm" asChild>
+          <Link href={`/workbench/courses/${courseId}`}>打开素材页</Link>
+        </Button>
+        <Button variant="link" size="sm" onClick={onClose}>
           收起
-        </button>
+        </Button>
       </div>
       <blockquote className="unit-card-quote">{unit.text}</blockquote>
       {unit.visualDesc ? (
