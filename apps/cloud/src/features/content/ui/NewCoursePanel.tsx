@@ -111,18 +111,18 @@ export function NewCoursePanel({
               maxLength={2000}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder={'这门课讲什么、想让学员学会什么？\n如：用趋势线判断买卖点——从画法到实盘决策'}
+              placeholder="如：用趋势线判断买卖点——从画法到实盘决策"
               autoFocus
             />
           </div>
 
           <div className="mb-3.5 grid gap-1.5">
-            <Label>选择素材（可跨课选用）</Label>
+            <Label>选择素材</Label>
             {loadingAssets ? (
               <div className="empty">素材加载中…</div>
             ) : assets.length === 0 ? (
               <p className="text-[12.5px] leading-[1.7] text-mut">
-                素材库还没有视频——先到「素材库」上传，之后建课就能在这里勾选。
+                素材库还没有视频，先到「素材库」上传。
               </p>
             ) : (
               <div className="mat-picker">
@@ -133,7 +133,7 @@ export function NewCoursePanel({
                     <label
                       className={`mat-pick${ready ? '' : ' off'}`}
                       key={asset.id}
-                      title={ready ? '' : '还没跑完理解——先到素材库重跑理解'}
+                      title={ready ? '' : '还没跑完理解'}
                     >
                       <Checkbox
                         checked={picked.includes(asset.id)}
@@ -153,8 +153,7 @@ export function NewCoursePanel({
             {notReadyPicked.length > 0 ? (
               <Alert className="border-transparent bg-warn-soft text-warn">
                 <AlertDescription>
-                  {notReadyPicked.length} 份素材还没跑完理解，不能参与起草——先到素材库点
-                  <b className="font-medium">「重新生成 · 视频理解」</b>。
+                  {notReadyPicked.length} 份素材还没跑完理解，不能参与起草。
                 </AlertDescription>
               </Alert>
             ) : null}
