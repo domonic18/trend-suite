@@ -19,6 +19,7 @@ ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/cloud/package.json apps/cloud/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/dsl/package.json packages/dsl/package.json
 # ... 选云端应用及其工作区依赖（契约包）
 RUN pnpm install --frozen-lockfile --filter @trend-suite/cloud...
 COPY apps/cloud apps/cloud
@@ -49,6 +50,7 @@ ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/cloud/package.json apps/cloud/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/dsl/package.json packages/dsl/package.json
 RUN pnpm install --frozen-lockfile --prod --filter @trend-suite/cloud...
 
 FROM node:22-alpine AS runtime
@@ -82,10 +84,15 @@ WORKDIR /app
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=prod-deps /app/apps/cloud/node_modules /app/apps/cloud/node_modules
 COPY --from=prod-deps /app/packages/contracts/node_modules /app/packages/contracts/node_modules
+COPY --from=prod-deps /app/packages/dsl/node_modules /app/packages/dsl/node_modules
 # 工作区包在运行期被云端按包名 import（契约是 zod schema 的单一真相），
 # 契约包 main 指 src/index.ts（TS 直出，经 tsx 加载），整包带上
 COPY --from=build /app/packages/contracts/package.json /app/packages/contracts/package.json
 COPY --from=build /app/packages/contracts/src /app/packages/contracts/src
+# 教材 DSL 解析器同为运行期 import 的 workspace 包（TS 直出）；
+# ⚠ 新增 workspace 包时必须同步本文件全部四处清单（install×2 + runtime×2）
+COPY --from=build /app/packages/dsl/package.json /app/packages/dsl/package.json
+COPY --from=build /app/packages/dsl/src /app/packages/dsl/src
 COPY --from=build /app/apps/cloud/package.json /app/apps/cloud/package.json
 # Next.js 产物：.next 是运行期所需的全部编译输出；
 # 运行期是全量生产依赖镜像（非 standalone），migrate 契约与 cloud 应用共用一个镜像
