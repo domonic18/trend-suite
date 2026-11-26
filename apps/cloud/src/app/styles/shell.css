@@ -762,6 +762,10 @@ dialog::backdrop {
 .chat-center .ops-main {
   max-width: none;
   padding: 0;
+  /* react-resizable-panels 的 Group 带 inline height:100%（压过一切 CSS 类），
+     父级必须有确定高度，100% 才能解析——否则回退 auto，面板塌成内容高，
+     对话区下方大片空白（这就是空白的根因）。 */
+  height: calc(100vh - var(--shell-header-h));
 }
 
 .chat-center .ops-main .build-info {

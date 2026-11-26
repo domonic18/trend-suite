@@ -1,13 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { usePolling } from '@/features/lib/usePolling'
 import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
+import { CourseWorkspaceSkeleton } from './OutlineSkeleton'
+import { useCourses } from './CoursesProvider'
 import { takeDraftNotice } from './draftNotice'
 import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
@@ -44,20 +46,21 @@ export function PlanPanel({
   const [approving, setApproving] = useState(false)
   const [approveError, setApproveError] = useState<string | null>(null)
   const stream = useAgentStream(courseId, 'plan')
-  const router = useRouter()
+  const { refresh: refreshCourses } = useCourses()
 
-  /** 确认大纲：批准（确定性端点）→ 直接进制作台（生产由服务端自动排队开跑）。 */
+  /** 确认大纲：批准（确定性端点）→ 原地切换制作形态（课程工作台按
+   * planStatus 重渲；生产由服务端自动排队开跑，不换页不二次加载）。 */
   const confirmAndProduce = useCallback(async () => {
     setApproving(true)
     setApproveError(null)
     try {
       await approvePlan(courseId)
-      router.push(`/workbench/courses/${courseId}/production`)
+      await refreshCourses()
     } catch (err) {
       setApproveError(err instanceof ApiError ? err.message : '批准失败，请稍后再试')
       setApproving(false)
     }
-  }, [courseId, router])
+  }, [courseId, refreshCourses])
 
   // 建课后触发起草失败的原因：课程已建好，提示带到这一页，别让教师再建一门课。
   useEffect(() => {
@@ -81,11 +84,7 @@ export function PlanPanel({
 
   const job = data?.job ?? null
   const running = job?.status === 'queued' || job?.status === 'running'
-  useEffect(() => {
-    if (!running) return
-    const timer = setInterval(() => void refresh(), 3_000)
-    return () => clearInterval(timer)
-  }, [running, refresh])
+  usePolling(refresh, running ? 3_000 : 60_000) // 起草中 3s；空闲降到 60s 兜底
 
   // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：起草完成等事实落流即刷新。
   const lastSeq = stream.lastSeq
@@ -125,7 +124,7 @@ export function PlanPanel({
   }
 
   if (loading) {
-    return <div className="empty">方案加载中…</div>
+    return <CourseWorkspaceSkeleton />
   }
 
   // 快捷指令一点即发（主流 AskQuestion 口径）：未起草课一键进入起草对话。
@@ -146,7 +145,6 @@ export function PlanPanel({
         storageKey="wb.ws.w.plan"
         main={
           <AgentChat
-            id="agent-chat"
             stream={stream}
             crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
             userName={userName}

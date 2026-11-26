@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { dispose, init, type Chart, type KLineData, type Nullable } from 'klinecharts'
 import type { StockQuotesView } from '@trend-suite/contracts'
+import { klineTokenStyles, readKlineToken } from '@/features/lib/klineTheme'
 
 /**
  * 教学 K 线（教师预览版）：klinecharts 引擎——蜡烛 + 成交量 + MA5/10/60 +
@@ -10,52 +11,6 @@ import type { StockQuotesView } from '@trend-suite/contracts'
  * 数值。悬停读数走引擎内置 crosshair tooltip（OHLCV + MA 值），「数值可核」。
  * 网格与轴标签色从 CSS token 取（--k-grid/--k-label），切主题时 setStyles 重设。
  */
-
-function readToken(name: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
-}
-
-function tokenStyles(): Record<string, unknown> {
-  const read = readToken
-  const up = read('--k-up', '#d9483f')
-  const down = read('--k-down', '#0f9d76')
-  const grid = read('--k-grid', 'rgba(22, 32, 58, 0.14)')
-  const label = read('--k-label', '#8b94a9')
-  return {
-    candle: {
-      bar: {
-        upColor: up,
-        downColor: down,
-        noChangeColor: label,
-        upBorderColor: up,
-        downBorderColor: down,
-        upWickColor: up,
-        downWickColor: down,
-      },
-      priceMark: { show: false },
-      tooltip: { showRule: 'follow_cross', rect: { padding: 4, margin: 6, borderRadius: 6 } },
-    },
-    indicator: { tooltip: { showRule: 'follow_cross' } },
-    grid: {
-      horizontal: { show: true, color: grid, size: 1 },
-      vertical: { show: false },
-    },
-    xAxis: { axisLine: { show: false }, tickLine: { show: false }, tickText: { color: label } },
-    yAxis: {
-      position: 'right',
-      axisLine: { show: false },
-      tickLine: { show: false },
-      tickText: { color: label },
-    },
-    separator: { size: 1, color: grid, activeBackgroundColor: 'transparent' },
-    crosshair: {
-      show: true,
-      horizontal: { line: { show: true, color: label } },
-      vertical: { line: { show: true, color: label } },
-    },
-  }
-}
 
 export function KlineChart({ stock }: { stock: StockQuotesView }) {
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -80,7 +35,7 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
 
     const chart = init(el, {
       locale: 'zh-CN',
-      styles: tokenStyles() as never,
+      styles: klineTokenStyles() as never,
     })
     if (!chart) return
     chart.setSymbol({ ticker: stock.code, pricePrecision: 2, volumePrecision: 0 })
@@ -111,14 +66,14 @@ export function KlineChart({ stock }: { stock: StockQuotesView }) {
         points: [{ dataIndex: idx }],
         extendData: anchor.label,
         styles: {
-          verticalStraightLine: { line: { show: true, color: readToken('--k-label', '#8b94a9'), style: 'dashed', size: 1 }, text: { show: true, style: 'fill', color: '#fff', backgroundColor: readToken('--k-label', '#8b94a9') } },
+          verticalStraightLine: { line: { show: true, color: readKlineToken('--k-label', '#8b94a9'), style: 'dashed', size: 1 }, text: { show: true, style: 'fill', color: '#fff', backgroundColor: readKlineToken('--k-label', '#8b94a9') } },
         },
       })
     }
 
     // 工作台切换主题（data-wb-theme 变化）时按新 token 重设样式
     const themed = el.closest('[data-wb-theme]')
-    const themeObserver = new MutationObserver(() => chart.setStyles(tokenStyles() as never))
+    const themeObserver = new MutationObserver(() => chart.setStyles(klineTokenStyles() as never))
     if (themed) themeObserver.observe(themed, { attributes: true, attributeFilter: ['data-wb-theme'] })
 
     return () => {

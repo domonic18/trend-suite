@@ -22,7 +22,6 @@ import type { AgentStream } from './useAgentStream'
  * 数据层由调用方持有（useAgentStream）——右栏以 lastSeq 联动重取。
  */
 export function AgentChat({
-  id,
   stream,
   crumb,
   userName,
@@ -144,7 +143,7 @@ export function AgentChat({
   const stopMode = busy && !text.trim()
 
   return (
-    <aside className="agent-rail" id={id} aria-label="制作 Agent 对话">
+    <aside className="agent-rail" aria-label="制作 Agent 对话">
       <div className="agent-crumb">{crumb}</div>
       <div className="agent-head">
         <span className="agent-ava">制</span>

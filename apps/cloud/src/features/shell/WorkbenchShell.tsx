@@ -43,12 +43,14 @@ export function WorkbenchShell(props: { children: ReactNode }) {
   const courseId = courseIdOfPath(pathname)
   const onLibrary = pathname.startsWith('/workbench/library')
   const current = courses.find((c) => c.id === courseId) ?? null
-  const phase = courseId ? phaseOfPath(pathname) : null
+  const phase = courseId
+    ? (phaseOfPath(pathname) ?? (current ? (current.planStatus === 'approved' ? 'production' : 'plan') : null))
+    : null
   const user = session.user
   const name = user?.displayName ?? user?.username ?? ''
   // chat-center 语义进组件树（arch/08 §6）：方案页与制作台对话流是页面主轴，
   // 外壳收起顶栏与主区内边距——不再用 CSS :has() 从内容反穿外壳。
-  const chatCenter = /^\/workbench\/courses\/[^/]+\/(plan|production)(\/|$)/.test(pathname)
+  const chatCenter = /^\/workbench\/courses\/[^/]+$/.test(pathname)
 
   return (
     <div className={chatCenter ? 'ops-app chat-center' : 'ops-app'}>

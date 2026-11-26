@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MediaAssetView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
+import { usePolling } from '@/features/lib/usePolling'
 import { listAssets } from '../api'
 import { MaterialCard } from './MaterialCard'
 import { MaterialUploader } from './MaterialUploader'
@@ -44,11 +45,7 @@ export function MaterialLibrary() {
     return readiness === 'running' || readiness === 'queued'
   })
 
-  useEffect(() => {
-    if (!busy) return
-    const timer = setInterval(() => void refresh(), 3_000)
-    return () => clearInterval(timer)
-  }, [busy, refresh])
+  usePolling(refresh, busy ? 3_000 : 60_000) // 加工中 3s；空闲降到 60s 兜底
 
   const onChanged = useCallback((next: MediaAssetView) => {
     setAssets((prev) => prev.map((asset) => (asset.id === next.id ? next : asset)))

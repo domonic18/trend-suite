@@ -54,10 +54,10 @@ export function WorkbenchSkeleton({ rows = 3 }: { rows?: number }) {
           </div>
         </header>
         <main className="ops-main" aria-busy="true" aria-live="polite">
-          <div className="skeleton-page">
+          <div className="skeleton-page" style={{ minHeight: 'calc(100vh - 200px)' }}>
             <Skeleton className="h-[22px] w-[32%]" />
             <Skeleton className="h-[14px] w-[56%]" />
-            {Array.from({ length: rows }, (_, index) => (
+            {Array.from({ length: Math.max(rows, 4) }, (_, index) => (
               <Skeleton className="h-[78px]" key={index} />
             ))}
           </div>

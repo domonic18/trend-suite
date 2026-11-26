@@ -26,6 +26,10 @@
   --p-err-soft: #fdecea;
   --r-panel: 14px;
   --r-ctrl: 10px;
+  /* 外壳度量单一真相：顶栏 52px + 1px 边线。chat-center 全高布局的
+     calc(100vh - var(--shell-header-h)) 全部引用此值——改一处全局生效，
+     不要再写裸 53px（评审教训：magic number 分散 = 漏改 = 布局断裂）。 */
+  --shell-header-h: 53px;
   --p-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
     "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --p-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;

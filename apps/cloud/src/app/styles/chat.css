@@ -12,6 +12,11 @@
   gap: 22px;
 }
 
+.plan-split--narrow .agent-rail {
+  height: auto;
+  min-height: calc(100vh - 160px);
+}
+
 .plan-split > .wb-col {
   position: relative;
   min-width: 0;
@@ -25,18 +30,19 @@
    Codex / WorkBuddy 式通栏面板——贴住 header 下沿到视口底部、无圆角无外圈
    留白，相互之间只有 ResizableHandle 的一根 hairline；
    高度 = 视口 − header（52px + 1px 边线），面板内部滚动。 */
-.chat-center .ops-main .plan-split {
-  height: calc(100vh - 53px);
-}
-
 .chat-center .ops-main .plan-split > .wb-col {
   padding: 0;
   overflow: hidden;
+  /* panel 变 flex 列容器：rail 用 flex 拉伸撑满，不依赖 height:100%
+     对父级显式高度的依赖（更稳的撑满路径） */
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-center .ops-main .agent-rail {
   position: static;
-  height: 100%;
+  flex: 1;
+  height: auto;
   min-height: 0;
   border: none;
   border-radius: 0;
@@ -44,7 +50,8 @@
 
 .chat-center .ops-main .ws {
   position: static;
-  height: 100%;
+  flex: 1;
+  height: auto;
   max-height: none;
   border: none;
   border-radius: 0;
@@ -278,10 +285,13 @@
   min-height: 0;
   overflow-y: auto;
   padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 空态（对话区还没有消息时）：图式化主行动入口（虚线卡 + 影片图标 + 主行动） */
 .agent-empty {
+  margin: auto; /* 空态时垂直居中于对话区 */
   display: flex;
   flex-direction: column;
   align-items: center;
