@@ -161,8 +161,9 @@ export function NewCourseDialog({
               onChange={(e) => setGoal(e.target.value)}
               placeholder="这门课要让学员学会什么？"
             />
-            <p className="form-note">
-              目标会交给 Agent——它据此梳理素材、规划章节。填了目标才能「创建并生成大纲」。
+            <p className="text-[12.5px] leading-[1.7] text-mut">
+              目标会交给 Agent——它据此梳理素材、规划章节。填了目标才能
+              <b className="font-medium text-ink">「创建并生成大纲」</b>。
             </p>
           </div>
 
@@ -171,8 +172,8 @@ export function NewCourseDialog({
             {loadingAssets ? (
               <div className="empty">素材加载中…</div>
             ) : assets.length === 0 ? (
-              <p className="form-note">
-                素材库里还没有视频。先到「素材库」上传——上传时选好归属课程，之后建课就能在这里勾选。
+              <p className="text-[12.5px] leading-[1.7] text-mut">
+                素材库里还没有视频。先到<b className="font-medium text-ink">「素材库」</b>上传——上传时选好归属课程，之后建课就能在这里勾选。
               </p>
             ) : (
               <div className="mat-picker">
@@ -201,14 +202,18 @@ export function NewCourseDialog({
                 })}
               </div>
             )}
-            <p className="form-note">
+            <p className="text-[12.5px] leading-[1.7] text-mut">
               勾选的素材参与本次大纲生成；素材归属哪门课不变，一份素材可以被多门课选用。
-              已选 {picked.length} 份，其中 {readyCount} 份可直接规划。
+              已选 <b className="font-medium text-ink">{picked.length}</b> 份，其中
+              <b className="font-medium text-ink"> {readyCount} </b>份可直接规划。
             </p>
             {notReadyPicked.length > 0 ? (
-              <Alert className="mb-3.5 border-transparent bg-warn-soft text-warn">
-      <AlertDescription>{notReadyPicked.length} 份素材还没跑完理解，不能参与起草——先到素材库点「重新生成 · 视频理解」。</AlertDescription>
-    </Alert>
+              <Alert className="border-transparent bg-warn-soft text-warn">
+                <AlertDescription>
+                  {notReadyPicked.length} 份素材还没跑完理解，不能参与起草——先到素材库点
+                  <b className="font-medium">「重新生成 · 视频理解」</b>。
+                </AlertDescription>
+              </Alert>
             ) : null}
           </div>
 
@@ -226,19 +231,21 @@ export function NewCourseDialog({
               onChange={(e) => setOutlineText(e.target.value)}
             />
             {issues.length > 0 ? (
-              <Alert variant="destructive" className="mb-3.5">
-      <AlertDescription>有 {issues.length} 行认不出层级，改格式后再生成大纲：
-                <ul className="outline-issues">
-                  {issues.slice(0, 4).map((issue) => (
-                    <li key={issue.line}>
-                      第 {issue.line} 行：{issue.text.slice(0, 30)}
-                    </li>
-                  ))}
-                </ul></AlertDescription>
-    </Alert>
+              <Alert variant="destructive">
+                <AlertDescription>
+                  有 {issues.length} 行认不出层级，改格式后再生成大纲：
+                  <ul className="mt-1 list-disc pl-4 text-[12px] leading-[1.7]">
+                    {issues.slice(0, 4).map((issue) => (
+                      <li key={issue.line}>
+                        第 {issue.line} 行：{issue.text.slice(0, 30)}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
             ) : null}
-            <p className="form-note">
-              有现成的三级目录就粘进来——目录是你说了算，Agent 只在它上面挂出处。留空则由 Agent 代拟。
+            <p className="text-[12.5px] leading-[1.7] text-mut">
+              有现成的三级目录就粘进来——<b className="font-medium text-ink">目录是你说了算</b>，Agent 只在它上面挂出处。留空则由 Agent 代拟。
             </p>
           </details>
         </div>
