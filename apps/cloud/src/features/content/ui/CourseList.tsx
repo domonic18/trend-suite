@@ -4,17 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import type { CourseSummaryView } from '@trend-suite/contracts'
-import { Pencil, X } from 'lucide-react'
+import { BookOpen, Pencil, X } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import { deleteCourse, renameCourse } from '../api'
 import { useCourses } from './CoursesProvider'
 import { NewCoursePanel } from './NewCoursePanel'
-import {
-  courseScaleOf,
-  courseStatusTagOf,
-  nextActionOf,
-  progressOf,
-} from './coursePhase'
+import { courseScaleOf, courseStatusTagOf, progressOf } from './coursePhase'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   AlertDialog,
@@ -41,10 +36,8 @@ import { Progress } from '@/components/ui/progress'
 
 function formatTime(iso: string): string {
   const date = new Date(iso)
-  const sameYear = date.getFullYear() === new Date().getFullYear()
   const md = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  return sameYear ? `${md} ${hm}` : `${date.getFullYear()}-${md} ${hm}`
+  return date.getFullYear() === new Date().getFullYear() ? md : `${date.getFullYear()}-${md}`
 }
 
 /** 封面色相（借鉴 SasanImmersive 课程卡）：课程 id 哈希出稳定 hue，无封面图也有视觉锚点。 */
@@ -93,12 +86,18 @@ export function CourseList() {
       {loading ? (
         <div className="empty">课程加载中…</div>
       ) : courses.length === 0 ? (
-        <div className="empty">还没有课程。</div>
+        <a
+          href="#create"
+          className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-12 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
+        >
+          <BookOpen className="size-7" strokeWidth={1.4} aria-hidden="true" />
+          <span className="text-[13px]">还没有课程</span>
+          <span className="text-[12px]">新建课程 →</span>
+        </a>
       ) : (
         <div className="cards">
           {courses.map((course) => {
             const tag = courseStatusTagOf(course)
-            const next = nextActionOf(course)
             const progress = Math.round(progressOf(course) * 100)
             return (
               <article
@@ -115,13 +114,12 @@ export function CourseList() {
                     <b>{course.title}</b>
                     <Badge className={`tag ${tag.tone}`}>{tag.text}</Badge>
                   </div>
-                  <div className="meta">{courseScaleOf(course)}</div>
-                  <Progress value={progress} aria-label="制作进度" />
-                  <div className="meta card-hint" title={next.hint}>{next.hint}</div>
-                  <div className="foot">
-                    <span>创建于 {formatTime(course.createdAt)}</span>
-                    <span className="text-[13.5px] text-primary">进入课程 →</span>
+                  <div className="meta">
+                    {courseScaleOf(course)} · {formatTime(course.createdAt)}
                   </div>
+                  {course.sectionCount > 0 ? (
+                    <Progress value={progress} aria-label="制作进度" />
+                  ) : null}
                 </div>
                 <span className="card-acts">
                   <Button

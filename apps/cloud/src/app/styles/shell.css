@@ -109,24 +109,8 @@
 }
 
 /* 阶段提示句单行省略（悬停看全文），不占多行 */
-.card .card-hint {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.card .foot {
-  margin-top: auto;
-  font-size: 11.5px;
-  color: var(--p-faint);
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
 
-.card .foot > span {
-  white-space: nowrap;
-}
 
 .card.add {
   align-items: center;
