@@ -974,10 +974,6 @@ dialog::backdrop {
   border-color: var(--p-pri);
 }
 
-.ops-usermenu {
-  position: relative;
-}
-
 .ops-ava {
   width: 30px;
   height: 30px;
@@ -1000,9 +996,6 @@ dialog::backdrop {
 }
 
 .ops-usermenu-pop {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
   min-width: 190px;
   padding: 6px;
   background: var(--p-bg);

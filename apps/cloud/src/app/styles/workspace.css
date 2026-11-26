@@ -79,20 +79,10 @@
   transform: rotate(180deg);
 }
 
+/* sbc-pop 现为 Radix DropdownMenuContent 的附加类：定位/浮层/阴影由组件
+   自带（content 默认样式），此处只保留窄间距底座，条目样式见 .sbc-i。 */
 .sbc-pop {
-  position: fixed;
-  z-index: 60;
-  display: none;
-  width: 252px;
   padding: 6px;
-  background: var(--p-bg);
-  border: 1px solid var(--p-line);
-  border-radius: 11px;
-  box-shadow: 0 16px 40px rgba(22, 32, 58, 0.16), 0 2px 6px rgba(22, 32, 58, 0.06);
-}
-
-.sbc-pop.open {
-  display: block;
 }
 
 .sbc-h {
@@ -146,25 +136,18 @@
   border-top: 1px solid var(--p-line);
   margin-top: 5px;
   padding-top: 5px;
-}
-
-.sbc-f button {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
-  padding: 7px 8px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  font: inherit;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-bottom: 7px;
   font-size: 12.5px;
   color: var(--p-mut);
   cursor: pointer;
-  text-align: left;
 }
 
-.sbc-f button:hover {
+.sbc-f:hover {
   background: var(--p-soft);
   color: var(--p-ink);
 }
@@ -178,41 +161,11 @@
   animation: none;
 }
 
-/* 载入骨架 */
+/* 载入骨架容器（条目已换 shadcn Skeleton） */
 .skeleton-page {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.sk {
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--p-soft) 25%, color-mix(in srgb, var(--p-soft) 55%, var(--p-bg)) 37%, var(--p-soft) 63%);
-  background-size: 400% 100%;
-  animation: sk-shine 1.4s ease infinite;
-}
-
-.sk-title {
-  height: 22px;
-  width: 32%;
-}
-
-.sk-sub {
-  height: 14px;
-  width: 56%;
-}
-
-.sk-card {
-  height: 78px;
-}
-
-@keyframes sk-shine {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
 }
 
 /* 课程卡状态标 */

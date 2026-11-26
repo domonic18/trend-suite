@@ -1,5 +1,7 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+
 /**
  * 载入骨架：会话校验期间占位。
  *
@@ -26,10 +28,10 @@ export function WorkbenchSkeleton({ rows = 3 }: { rows?: number }) {
         </header>
         <main className="ops-main" aria-busy="true" aria-live="polite">
           <div className="skeleton-page">
-            <div className="sk sk-title" />
-            <div className="sk sk-sub" />
+            <Skeleton className="h-[22px] w-[32%]" />
+            <Skeleton className="h-[14px] w-[56%]" />
             {Array.from({ length: rows }, (_, index) => (
-              <div className="sk sk-card" key={index} />
+              <Skeleton className="h-[78px]" key={index} />
             ))}
           </div>
         </main>
@@ -57,9 +59,9 @@ export function OpsSkeleton() {
         </header>
         <main className="ops-main" aria-busy="true">
           <div className="skeleton-page">
-            <div className="sk sk-title" />
+            <Skeleton className="h-[22px] w-[32%]" />
             {Array.from({ length: 3 }, (_, index) => (
-              <div className="sk sk-card" key={index} />
+              <Skeleton className="h-[78px]" key={index} />
             ))}
           </div>
         </main>
