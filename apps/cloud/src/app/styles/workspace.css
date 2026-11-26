@@ -168,6 +168,62 @@
   gap: 10px;
 }
 
+/* 骨架的同构占位（WorkbenchSkeleton）：侧栏导航条 / 课程切换器 /
+   顶栏面包屑 / 右上控件——形状与真实壳一致，刷新时不跳版。 */
+.ops-i .oi-ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 4px;
+  background: var(--p-line);
+  animation: skeleton-pulse 1.6s ease infinite;
+}
+.ops-i .oi-t {
+  height: 12px;
+  width: 56px;
+  border-radius: 4px;
+  background: var(--p-line);
+  animation: skeleton-pulse 1.6s ease infinite;
+}
+.crumb-sk {
+  display: inline-block;
+  width: 64px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--p-line);
+  animation: skeleton-pulse 1.6s ease infinite;
+}
+.corner-dot,
+.corner-ava {
+  border-radius: 50%;
+  background: var(--p-line);
+  animation: skeleton-pulse 1.6s ease infinite;
+}
+.corner-dot {
+  width: 26px;
+  height: 26px;
+}
+.corner-ava {
+  width: 30px;
+  height: 30px;
+}
+.sbc-t b.w-\[60\%\] {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--p-line);
+  animation: skeleton-pulse 1.6s ease infinite;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
 /* 课程卡状态标 */
 .tag.run {
   color: var(--p-pri-deep);
