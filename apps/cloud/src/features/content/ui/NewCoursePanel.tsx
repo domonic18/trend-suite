@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { MediaAssetView } from '@trend-suite/contracts'
+import { Video } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import { listAssets } from '@/features/pipeline/api'
 import { planningReadyOf, understandingCountOf } from '@/features/pipeline/ui/processing'
@@ -121,9 +123,14 @@ export function NewCoursePanel({
             {loadingAssets ? (
               <div className="empty">素材加载中…</div>
             ) : assets.length === 0 ? (
-              <p className="text-[12.5px] leading-[1.7] text-mut">
-                素材库还没有视频，先到「素材库」上传。
-              </p>
+              <Link
+                href="/workbench/library"
+                className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
+              >
+                <Video className="size-7" strokeWidth={1.4} aria-hidden="true" />
+                <span className="text-[13px]">素材库还没有视频</span>
+                <span className="text-[12px]">去素材库上传 →</span>
+              </Link>
             ) : (
               <div className="mat-picker">
                 {assets.map((asset) => {
