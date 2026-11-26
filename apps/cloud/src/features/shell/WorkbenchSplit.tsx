@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -9,12 +9,9 @@ import {
 
 /**
  * 工作台双栏分隔（arch/08 §6）：中栏对话 + 右栏产物工作区。
- * shadcn Resizable（react-resizable-panels v4）承载拖拽与键盘（方向键微调、
- * Home/End 首尾、双击复位）；v4 无 autoSaveId，布局数组经 onLayoutChange
- * 持久化（沿用 wb.ws.w.* 键域，存百分比数组）。窄屏（<1280px）回退单栏堆叠。
- *
- * 右栏限幅 340–680px：面板按百分比布局，像素限幅由 Panel 内层 min/max-width
- * 约束（拖到边界时内容不再收窄）。
+ * shadcn Resizable（react-resizable-panels v2）承载拖拽与键盘（方向键微调、
+ * Home/End 首尾、双击复位）；autoSaveId 内置布局持久化（沿用 wb.ws.w.* 键域）。
+ * 窄屏（<1280px）回退单栏堆叠。右栏限幅 340–680px 的百分比近似：rail 28–55%。
  */
 function useNarrowViewport(): boolean {
   const [narrow, setNarrow] = useState(false)
@@ -28,14 +25,12 @@ function useNarrowViewport(): boolean {
   return narrow
 }
 
-const DEFAULT_LAYOUT: Record<string, number> = { main: 58, rail: 42 }
-
 export function WorkbenchSplit({
   storageKey,
   main,
   rail,
 }: {
-  /** 布局持久化键（wb.ws.w.* 命名域，存 { main, rail } 百分比 JSON）。 */
+  /** autoSaveId：布局持久化键（沿用 wb.ws.w.* 命名域）。 */
   storageKey: string
   /** 中栏（Agent 对话流）。 */
   main: ReactNode
@@ -43,34 +38,6 @@ export function WorkbenchSplit({
   rail: ReactNode
 }) {
   const narrow = useNarrowViewport()
-  const [layout, setLayout] = useState<Record<string, number>>(DEFAULT_LAYOUT)
-
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? 'null')
-      if (
-        saved &&
-        typeof saved.main === 'number' &&
-        typeof saved.rail === 'number'
-      ) {
-        setLayout(saved)
-      }
-    } catch {
-      // 忽略损坏的持久化值，用默认布局
-    }
-  }, [storageKey])
-
-  const onLayoutChange = useCallback(
-    (next: Record<string, number>) => {
-      setLayout(next)
-      try {
-        window.localStorage.setItem(storageKey, JSON.stringify(next))
-      } catch {
-        // 隐私模式等场景写不进就算了
-      }
-    },
-    [storageKey],
-  )
 
   if (narrow) {
     return (
@@ -82,17 +49,12 @@ export function WorkbenchSplit({
   }
 
   return (
-    <ResizablePanelGroup
-      orientation="horizontal"
-      className="plan-split"
-      defaultLayout={layout}
-      onLayoutChange={onLayoutChange}
-    >
-      <ResizablePanel id="main" className="wb-col" minSize={45}>
+    <ResizablePanelGroup direction="horizontal" autoSaveId={storageKey} className="plan-split">
+      <ResizablePanel defaultSize={58} minSize={45} className="wb-col">
         {main}
       </ResizablePanel>
       <ResizableHandle className="ws-resizer" />
-      <ResizablePanel id="rail" className="wb-col wb-col--rail" minSize={28} maxSize={55}>
+      <ResizablePanel defaultSize={42} minSize={28} maxSize={55} className="wb-col wb-col--rail">
         {rail}
       </ResizablePanel>
     </ResizablePanelGroup>

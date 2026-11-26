@@ -84,14 +84,14 @@ importers:
         specifier: ^19.2.0
         version: 19.3.1(react@19.3.1)
       react-resizable-panels:
-        specifier: ^4
-        version: 4.24.3(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^2.1.9
+        version: 2.1.9(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
       streamdown:
-        specifier: ^2.8.1
-        version: 2.8.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^2.7.1
+        version: 2.7.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
         specifier: ^3.7.1
         version: 3.7.1
@@ -2532,15 +2532,11 @@ packages:
       '@types/react':
         optional: true
 
-  react-resizable-panels@4.24.3:
-    resolution: {integrity: sha512-KagdTE+EJh/BmYqYDgnWGmYP4c9FEo4QKROxaAvI0QiwW3lUClyDvI8saYZLOZl71I0VP8J0e+teRWNUlYRJnA==}
+  react-resizable-panels@2.1.9:
+    resolution: {integrity: sha512-z77+X08YDIrgAes4jl8xhnUu1LNIRp4+E7cv4xHmLOxxUPO/ML7PSrE813b90vj7xvQ1lcf7g2uA9GeMZonjhQ==}
     peerDependencies:
-      '@types/react': ^18.2.6 || ^19.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
+      react: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+      react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
 
   react-style-singleton@2.2.3:
     resolution: {integrity: sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ==}
@@ -2577,8 +2573,8 @@ packages:
   remark-stringify@11.0.0:
     resolution: {integrity: sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw==}
 
-  remend@1.5.1:
-    resolution: {integrity: sha512-Mvum2BFoAlLukpqIb5bCzzvjdNQk4w9OasdKEUuVkXTEPlWpiN3pRCbbSgOXWZIxbQFB16YL/s4D7PMnQ3oU5Q==}
+  remend@1.4.0:
+    resolution: {integrity: sha512-mHiYhhwphs1IgIZmkToKLwJn0U99IjPXuutkA2acrNcG0vlEq2G4TGnd2eT0saIHwh2KjaCpvleHcsd5SAz96A==}
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -2630,8 +2626,8 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
-  streamdown@2.8.1:
-    resolution: {integrity: sha512-upkaPZx6gZpQcZWKQdDU/AJxqlMNWykDCwZqr0H8iGk2u/qGgwZoZxAIrSKz/E2wYW2+6XxiTkv+kRPDn7AoHw==}
+  streamdown@2.7.1:
+    resolution: {integrity: sha512-pIz4XOB+e7iyqSJABXC9PoyHifBZVQx/7U0Qo/vdOIERqGXfgEhJxkXENsuWMO8TGXkaQ5ewV9jnliK7q47T8w==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -5357,12 +5353,10 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
 
-  react-resizable-panels@4.24.3(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  react-resizable-panels@2.1.9(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
-    optionalDependencies:
-      '@types/react': 19.3.0
 
   react-style-singleton@2.2.3(@types/react@19.3.0)(react@19.3.1):
     dependencies:
@@ -5423,7 +5417,7 @@ snapshots:
       mdast-util-to-markdown: 2.2.4
       unified: 11.0.5
 
-  remend@1.5.1: {}
+  remend@1.4.0: {}
 
   resolve-from@4.0.0: {}
 
@@ -5485,10 +5479,9 @@ snapshots:
 
   split2@4.2.0: {}
 
-  streamdown@2.8.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  streamdown@2.7.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       clsx: 2.1.1
-      decode-named-character-reference: 1.3.0
       hast-util-to-jsx-runtime: 2.3.7
       html-url-attributes: 3.0.1
       marked: 18.3.0
@@ -5500,7 +5493,7 @@ snapshots:
       remark-gfm: 4.0.1
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
-      remend: 1.5.1
+      remend: 1.4.0
       tailwind-merge: 3.7.1
       unified: 11.0.5
       unist-util-visit: 5.2.0
