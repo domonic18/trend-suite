@@ -44,10 +44,15 @@ export const PHASE_LABELS: Record<CoursePhaseKey, string> = {
 }
 
 /** 从路由反推当前阶段（深链保持可用；课程根路径会立即重定向，不标阶段）。 */
+/**
+ * 路由 → 阶段的粗分（面包屑高亮用；课程工作台的阶段真相是 planStatus，
+ * pathname 只辅助判断非课程页）：
+ * - 课程根（工作台）：null（由 WorkbenchShell 按 planStatus 兜底）
+ * - 课程子路径（分节预览等）：null（不参与阶段导航）
+ * - 素材库与工作台首页之外的页：material
+ */
 export function phaseOfPath(pathname: string): CoursePhaseKey | null {
-  if (pathname.endsWith('/plan')) return 'plan'
-  if (/\/production(\/|$)/.test(pathname)) return 'production'
-  if (/\/courses\/[^/]+$/.test(pathname)) return null
+  if (/\/courses\//.test(pathname)) return null
   return 'material'
 }
 

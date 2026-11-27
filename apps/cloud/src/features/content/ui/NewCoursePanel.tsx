@@ -84,7 +84,7 @@ export function NewCoursePanel({
         setDraftNotice(err instanceof ApiError ? err.message : '起草未启动，请到方案页重提')
       }
       onCreated(course.id)
-      router.push(`/workbench/courses/${course.id}/plan`)
+      router.push(`/workbench/courses/${course.id}`)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '创建课程失败')
       setBusy(false)

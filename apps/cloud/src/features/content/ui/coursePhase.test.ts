@@ -105,9 +105,6 @@ test('全部完成：下一步交给运营', () => {
 
 test('深链反推阶段：课程根路径不标阶段（立即重定向），其余落对应阶段', () => {
   assert.equal(phaseOfPath('/workbench/courses/crs_1'), null)
-  assert.equal(phaseOfPath('/workbench/courses/crs_1/plan'), 'plan')
-  assert.equal(phaseOfPath('/workbench/courses/crs_1/production'), 'production')
-  assert.equal(phaseOfPath('/workbench/courses/crs_1/production/sections/s1/preview'), 'production')
 })
 
 test('进度：三段各占三分之一', () => {

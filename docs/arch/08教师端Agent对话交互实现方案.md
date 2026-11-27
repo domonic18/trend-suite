@@ -1,6 +1,6 @@
 # 08 教师端 Agent 对话交互实现方案
 
-> 适用范围：课程工作台（`/workbench/courses/[id]`，方案期与制作期同一页面按阶段渲染；`/plan` `/production` 为存量兼容 redirect）。
+> 适用范围：课程工作台（`/workbench/courses/[id]`，方案期与制作期同一页面按阶段渲染；无兼容路由——旧 `/plan` `/production` 已删除，系统未投产不留过渡层）。
 > 前置文档：arch/02（领域模块与队列）、arch/03（存储模型）、arch/05（九步生产链路）、arch/07（模型与计费）。
 > 原型：`prototype/teacher-plan.html`、`prototype/teacher-studio.html`（`chat-center` 中置对话布局）。
 
