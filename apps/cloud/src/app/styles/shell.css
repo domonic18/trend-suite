@@ -972,3 +972,14 @@ dialog::backdrop {
   font-size: 14px;
   color: var(--p-mut);
 }
+
+/* 设置分区（GitHub/Vercel settings sections 形态）：纵向分区，
+   每区 settings-heading 标题 + 内容；区与区之间分隔留白。 */
+.settings-section {
+  padding-bottom: 10px;
+}
+.settings-section + .settings-section {
+  margin-top: 26px;
+  border-top: 1px solid var(--p-line);
+  padding-top: 22px;
+}

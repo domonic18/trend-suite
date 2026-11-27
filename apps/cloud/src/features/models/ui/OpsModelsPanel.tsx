@@ -54,15 +54,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-type Tab = 'entries' | 'bindings' | 'asr'
 
-const TAB_LABELS: Record<Tab, string> = {
-  entries: '模型条目',
-  bindings: '任务模型',
-  asr: 'ASR 渠道',
-}
 
 export const PURPOSE_LABELS: Record<ModelPurpose, string> = {
   llm: '内容生成',
@@ -134,7 +127,6 @@ const EMPTY_FORM: EntryForm = {
 }
 
 export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
-  const [tab, setTab] = useState<Tab>('entries')
   const [models, setModels] = useState<ModelEntryView[]>([])
   const [bindings, setBindings] = useState<TaskBindingView[]>([])
   const [channel, setChannel] = useState<AsrChannelView | null>(null)
@@ -266,24 +258,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
 
   return (
     <section>
-      <Tabs
-        value={tab}
-        onValueChange={(value) => {
-          setTab(value as Tab)
-          // 横幅是上一个 tab 的操作反馈，切走即清（避免挂在下一个 tab 顶部撑动布局）
-          setError(null)
-          setNotice(null)
-        }}
-      >
-        <TabsList>
-          {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
-            <TabsTrigger key={key} value={key}>
-              {TAB_LABELS[key]}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value="entries">
+      <section className="settings-section">
           <div className="settings-heading">
             <h3>模型条目</h3>
             {canWrite ? (
@@ -356,9 +331,9 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
               </div>
             ))
           )}
-        </TabsContent>
+        </section>
 
-        <TabsContent value="bindings">
+        <section className="settings-section">
           <div className="card">
             <div className="mt-3.5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
               {bindings.map((binding) => (
@@ -374,9 +349,9 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
               ))}
             </div>
           </div>
-        </TabsContent>
+        </section>
 
-        <TabsContent value="asr">
+        <section className="settings-section">
           <div className="settings-heading">
             <h3>ASR 渠道</h3>
             {canWrite ? (
@@ -431,8 +406,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
           ) : (
             <div className="empty">ASR 渠道加载中…</div>
           )}
-        </TabsContent>
-      </Tabs>
+        </section>
 
       {error ? (
         <Alert variant="destructive" className="mb-3.5">
