@@ -9,6 +9,9 @@ import type {
   TaskBindingView,
 } from '@trend-suite/contracts'
 import { Plus, Trash2 } from 'lucide-react'
+import { ModelEntryForm } from './ModelEntryForm'
+import { ModelBindingCard } from './ModelBindingCard'
+import { ModelTestBadge } from './ModelTestBadge'
 import { ApiError } from '@/features/lib/http'
 import {
   MODEL_PROVIDERS,
@@ -62,7 +65,7 @@ const TAB_LABELS: Record<Tab, string> = {
   asr: 'ASR 渠道',
 }
 
-const PURPOSE_LABELS: Record<ModelPurpose, string> = {
+export const PURPOSE_LABELS: Record<ModelPurpose, string> = {
   llm: '内容生成',
   vlm: '视觉理解',
   asr: '语音转写',
@@ -70,7 +73,7 @@ const PURPOSE_LABELS: Record<ModelPurpose, string> = {
   image: '图像生成',
 }
 
-const PROTOCOL_LABELS: Record<ModelProtocol, string> = {
+export const PROTOCOL_LABELS: Record<ModelProtocol, string> = {
   openai: 'OpenAI 兼容',
   anthropic: 'Anthropic',
   minimax: 'MiniMax 专有',
@@ -86,7 +89,7 @@ const PROTOCOLS_BY_PURPOSE: Record<ModelPurpose, ModelProtocol[]> = {
 }
 
 /** 多用途条目的协议交集：用途全允许才可选。 */
-function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
+export function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
   const sets = purposes.map((p) => PROTOCOLS_BY_PURPOSE[p])
   return (Object.keys(PROTOCOL_LABELS) as ModelProtocol[]).filter((protocol) =>
     sets.every((list) => list.includes(protocol)),
@@ -94,7 +97,7 @@ function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
 }
 
 /** 可选协议 = 用途允许集 ∩ 厂商支持集；选了预置厂商后不再列出该厂商没有的协议。 */
-function availableProtocols(
+export function availableProtocols(
   purposes: ModelPurpose[],
   preset: ReturnType<typeof findProviderPreset>,
 ): ModelProtocol[] {
@@ -104,7 +107,7 @@ function availableProtocols(
   return allowed.filter((protocol) => supported.includes(protocol))
 }
 
-type EntryForm = {
+export type EntryForm = {
   id: string | null
   name: string
   purposes: ModelPurpose[]
@@ -292,7 +295,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
             )}
 
             {form ? (
-              <EntryFormCard
+              <ModelEntryForm
                 form={form}
                 busy={busy}
                 setForm={setForm}
@@ -327,7 +330,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                     <TableCell>{entry.apiKeyMasked ?? '未配置'}</TableCell>
                     <TableCell>{entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}</TableCell>
                     <TableCell>
-                      <TestBadge
+                      <ModelTestBadge
                         testing={testingIds.has(entry.id)}
                         result={entry.lastTestResult}
                         latencyMs={entry.lastTestLatencyMs}
@@ -373,7 +376,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
           <div className="card">
             <div className="mt-3.5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
               {bindings.map((binding) => (
-                <BindingCard
+                <ModelBindingCard
                   key={binding.task}
                   binding={binding}
                   models={models}
@@ -390,7 +393,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
         <TabsContent value="asr">
           <div className="card">
               {form && form.purposes.includes('asr') ? (
-              <EntryFormCard
+              <ModelEntryForm
                 form={form}
                 busy={busy}
                 setForm={setForm}
@@ -430,7 +433,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                   <TableRow>
                     <TableHead>最后测试</TableHead>
                     <TableCell colSpan={3}>
-                      <TestBadge
+                      <ModelTestBadge
                         testing={channel.modelId !== null && testingIds.has(channel.modelId)}
                         result={channel.lastTestResult}
                         latencyMs={channel.lastTestLatencyMs}
@@ -497,389 +500,3 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
   )
 }
 
-function EntryFormCard(props: {
-  form: EntryForm
-  busy: boolean
-  setForm: (next: EntryForm) => void
-  onSubmit: (event: React.FormEvent) => void
-  onCancel: () => void
-}) {
-  const { form } = props
-  const preset = findProviderPreset(form.provider)
-
-  /** 协议变了，地址跟着换成该厂商该协议的端点；手填地址不动。 */
-  function syncProtocol(next: EntryForm, protocol: ModelProtocol): EntryForm {
-    const picked = findProviderPreset(next.provider)
-    const endpoint = picked ? providerBaseUrl(picked, protocol) : null
-    const baseUrlUsable = next.baseUrl === '' || isPresetBaseUrl(next.baseUrl)
-    return {
-      ...next,
-      protocol,
-      baseUrl: baseUrlUsable && endpoint ? endpoint : next.baseUrl,
-    }
-  }
-
-  /** 用途 toggle：至少一项；协议随所选用途交集收缩（当前协议不在交集内则重置为交集第一个）。 */
-  function togglePurpose(purpose: ModelPurpose) {
-    const next = form.purposes.includes(purpose)
-      ? form.purposes.filter((p) => p !== purpose)
-      : [...form.purposes, purpose]
-    if (next.length === 0) return
-    const allowed = allowedProtocols(next)
-    const protocol = allowed.includes(form.protocol) ? form.protocol : (allowed[0] ?? 'openai')
-    props.setForm(syncProtocol({ ...form, purposes: next }, protocol))
-  }
-
-  /** 选厂商：填协议（厂商支持 ∩ 用途允许）与该协议对应的端点地址。 */
-  function pickProvider(provider: string) {
-    if (provider === '') {
-      props.setForm({ ...form, provider: '', custom: false })
-      return
-    }
-    if (provider === OTHER_PROVIDER) {
-      // 自定义供应商：清空预置，名称由用户在「供应商名称」里手填
-      props.setForm({ ...form, provider: '', custom: true })
-      return
-    }
-    const picked = findProviderPreset(provider)
-    if (!picked) {
-      props.setForm({ ...form, provider, custom: false })
-      return
-    }
-    const usable = availableProtocols(form.purposes, picked)
-    const protocol = usable.includes(picked.protocol) ? picked.protocol : (usable[0] ?? form.protocol)
-    const endpoint = providerBaseUrl(picked, protocol)
-    const baseUrlUsable = form.baseUrl === '' || isPresetBaseUrl(form.baseUrl)
-    props.setForm({
-      ...form,
-      provider: picked.label,
-      custom: false,
-      protocol,
-      baseUrl: baseUrlUsable && endpoint ? endpoint : form.baseUrl,
-    })
-  }
-
-  /** 切协议：地址跟着换成该厂商该协议的端点（手填地址不动）。 */
-  function pickProtocol(protocol: ModelProtocol) {
-    props.setForm(syncProtocol(form, protocol))
-  }
-
-  return (
-    <form
-      className="mb-3.5 rounded-xl border border-line bg-soft px-4 py-3.5"
-      onSubmit={props.onSubmit}
-    >
-      <h4 className="mb-3 text-[14.5px] font-bold">{form.id ? '编辑模型条目' : '新增模型条目'}</h4>
-      <div className="grid gap-x-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>名称</Label>
-          <Input
-            value={form.name}
-            onChange={(e) => props.setForm({ ...form, name: e.target.value })}
-            required
-          />
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>用途（可多选）</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {(Object.keys(PURPOSE_LABELS) as ModelPurpose[]).map((purpose) => (
-              <button
-                key={purpose}
-                type="button"
-                aria-pressed={form.purposes.includes(purpose)}
-                className={
-                  form.purposes.includes(purpose)
-                    ? 'cursor-pointer rounded-[6px] border border-primary bg-pri-soft px-3 py-[5px] text-[12.5px] font-semibold text-primary'
-                    : 'cursor-pointer rounded-[6px] border border-line bg-none px-3 py-[5px] text-[12.5px] text-mut hover:text-ink'
-                }
-                onClick={() => togglePurpose(purpose)}
-              >
-                {PURPOSE_LABELS[purpose]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>供应商</Label>
-          <Select
-            value={form.custom ? OTHER_PROVIDER : preset ? preset.value : ''}
-            onValueChange={pickProvider}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MODEL_PROVIDERS.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
-                </SelectItem>
-              ))}
-              <SelectItem value={OTHER_PROVIDER}>其他（手动填写）</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {form.custom ? (
-          <div className="mb-3.5 grid gap-1.5">
-            <Label>供应商名称</Label>
-            <Input
-              value={form.provider}
-              onChange={(e) => props.setForm({ ...form, provider: e.target.value })}
-              required
-            />
-          </div>
-        ) : null}
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>调用协议</Label>
-          <Select value={form.protocol} onValueChange={(v) => pickProtocol(v as ModelProtocol)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableProtocols(form.purposes, preset).map((protocol) => (
-                <SelectItem key={protocol} value={protocol}>
-                  {PROTOCOL_LABELS[protocol]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>模型名</Label>
-          <Input
-            value={form.model}
-            list="provider-model-examples"
-            onChange={(e) => props.setForm({ ...form, model: e.target.value })}
-            required
-          />
-          <datalist id="provider-model-examples">
-            {(findProviderPreset(form.provider)?.modelExamples ?? []).map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>Base URL</Label>
-          <Input
-            value={form.baseUrl}
-            placeholder="https://api.example.com"
-            onChange={(e) => props.setForm({ ...form, baseUrl: e.target.value })}
-          />
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>密钥</Label>
-          <Input
-            type="password"
-            value={form.apiKey}
-            placeholder={form.id ? '留空即保留原密钥' : ''}
-            onChange={(e) => props.setForm({ ...form, apiKey: e.target.value })}
-          />
-        </div>
-        <div className="mb-3.5 grid gap-1.5">
-          <Label>默认条目</Label>
-          <Checkbox
-            checked={form.isDefault}
-            onCheckedChange={(v) => props.setForm({ ...form, isDefault: v === true })}
-          />
-        </div>
-      </div>
-      <div className="mfoot">
-        <Button type="submit" disabled={props.busy}>
-          保存
-        </Button>
-        <Button type="button" variant="outline" onClick={props.onCancel}>
-          取消
-        </Button>
-      </div>
-    </form>
-  )
-}
-
-/**
- * 连通性测试三态徽章（对齐家族 aitech-hub TestStatusBadge 形态）：
- * 测试中 → 「测试中…」；ok → 绿 ✓ + 延迟毫秒；failed → 红 ✗ 失败 + 截断原因
- * （≤48 字，全文悬浮）；未测过 → —。
- */
-function TestBadge(props: {
-  testing: boolean
-  result: string | null
-  latencyMs: number | null
-  error: string | null
-  testedAt: string | null
-}) {
-  const time = props.testedAt ? (
-    <span className="text-xs text-mut"> {props.testedAt.slice(0, 16).replace('T', ' ')}</span>
-  ) : null
-  if (props.testing) return <span className="text-xs text-mut">测试中…</span>
-  if (props.result === 'ok') {
-    return (
-      <>
-        <span
-          className="text-success"
-          title={props.latencyMs != null ? `${props.latencyMs}ms` : undefined}
-        >
-          ✓ {props.latencyMs ?? '?'}ms
-        </span>
-        {time}
-      </>
-    )
-  }
-  if (props.result === 'failed') {
-    const reason = (props.error ?? '').replace(/\s+/g, ' ').trim()
-    return (
-      <>
-        <span className="text-destructive" title={reason || undefined}>
-          ✗ 失败
-        </span>
-        {reason ? (
-          <span className="text-xs text-mut" title={reason}>
-            {' '}
-            {reason.length > 48 ? `${reason.slice(0, 48)}…` : reason}
-          </span>
-        ) : null}
-        {time}
-      </>
-    )
-  }
-  return <>—</>
-}
-
-/**
- * 任务槽位绑定卡（对齐家族 aitech-hub BindingCards/RoleCard 形态）：
- * 一槽一卡，主备下拉纵向对齐；「测试主模型」复用条目测试通道，
- * 结果随条目落库并在卡内徽章内联展示；保存/测试反馈在卡内，不动页面级横幅。
- */
-function BindingCard(props: {
-  binding: TaskBindingView
-  models: ModelEntryView[]
-  canWrite: boolean
-  testingIds: ReadonlySet<string>
-  onTest: (modelId: string) => Promise<void>
-  onChanged: () => Promise<void>
-}) {
-  const usable = props.models.filter(
-    (m) => m.purposes.includes(props.binding.purpose) && m.status === 'active',
-  )
-  const [primary, setPrimary] = useState(props.binding.primaryModelId ?? '')
-  const [backup, setBackup] = useState(props.binding.backupModelId ?? '')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    setPrimary(props.binding.primaryModelId ?? '')
-    setBackup(props.binding.backupModelId ?? '')
-  }, [props.binding.primaryModelId, props.binding.backupModelId])
-
-  async function save() {
-    if (!primary) return
-    setBusy(true)
-    setError(null)
-    setSaved(false)
-    try {
-      await saveBinding({
-        task: props.binding.task,
-        primaryModelId: primary,
-        backupModelId: backup || null,
-      })
-      setSaved(true)
-      await props.onChanged()
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '绑定保存失败')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const primaryEntry = props.models.find((m) => m.id === primary) ?? null
-  const testing = primaryEntry !== null && props.testingIds.has(primaryEntry.id)
-
-  return (
-    <div
-      className="rounded-xl border border-line bg-bg px-4 py-3.5"
-      role="group"
-      aria-label={`${props.binding.taskLabel}绑定`}
-    >
-      <div className="flex items-center gap-2 text-sm">
-        <b>{props.binding.taskLabel}</b>
-        <Badge>{PURPOSE_LABELS[props.binding.purpose]}</Badge>
-      </div>
-      <div className="mt-1 mb-3 text-xs text-mut">{props.binding.task}</div>
-      <div className="mb-2.5 grid gap-1.5">
-        <Label className="text-[12.5px] text-mut">主模型</Label>
-        <Select
-          value={primary}
-          disabled={!props.canWrite}
-          onValueChange={(v) => {
-            setPrimary(v)
-            setSaved(false)
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="请选择" />
-          </SelectTrigger>
-          <SelectContent>
-            {usable.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.name}（{m.model}）
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="mb-2.5 grid gap-1.5">
-        <Label className="text-[12.5px] text-mut">备用模型</Label>
-        <Select
-          value={backup}
-          disabled={!props.canWrite}
-          onValueChange={(v) => {
-            setBackup(v)
-            setSaved(false)
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="无备用" />
-          </SelectTrigger>
-          <SelectContent>
-            {usable
-              .filter((m) => m.id !== primary)
-              .map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.name}（{m.model}）
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-wrap items-baseline gap-1.5 text-[12.5px] text-mut">
-        <span>主模型连通</span>
-        {primaryEntry ? (
-          <TestBadge
-            testing={testing}
-            result={primaryEntry.lastTestResult}
-            latencyMs={primaryEntry.lastTestLatencyMs}
-            error={primaryEntry.lastTestError}
-            testedAt={primaryEntry.lastTestedAt}
-          />
-        ) : (
-          <span>未选择主模型</span>
-        )}
-      </div>
-      {error ? <p className="mt-1.5 text-[12.5px] text-destructive">{error}</p> : null}
-      {saved && !error ? <p className="mt-1.5 text-[12.5px] text-mut">已保存，下一次任务即生效</p> : null}
-      {props.canWrite ? (
-        <div className="mt-3 flex justify-end gap-2">
-          <Button
-            variant="outline"
-            disabled={!primary || testing}
-            onClick={() => void props.onTest(primary)}
-          >
-            {testing ? '测试中…' : '测试主模型'}
-          </Button>
-          <Button disabled={busy || !primary} onClick={() => void save()}>
-            {busy ? '保存中…' : '保存'}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  )
-}

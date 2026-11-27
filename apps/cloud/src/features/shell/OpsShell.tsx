@@ -8,8 +8,7 @@ import { useWorkbenchTheme } from './ThemeToggle'
 import { BuildInfo } from './BuildInfo'
 
 const MENU: { label: string; href: string | null }[] = [
-  { label: '模型配置', href: '/ops/models' },
-  { label: '行情源', href: '/ops/market' },
+  { label: '运营配置', href: '/ops' },
   { label: '账号管理', href: null },
 ]
 
