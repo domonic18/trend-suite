@@ -56,9 +56,8 @@ export function OpsShell(props: {
         </nav>
         <div className="ops-user">
           <span className="ava">{initial.slice(0, 1)}</span>
-          <span>
+          <span className="ops-user-id">
             <span className="un">{initial}</span>
-            <br />
             <span className="ur">{props.user.role}</span>
           </span>
           <a className="bk" href="/workbench">

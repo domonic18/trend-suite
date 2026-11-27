@@ -823,3 +823,18 @@ dialog::backdrop {
 .ops-user .bk:hover {
   color: var(--p-pri);
 }
+
+.ops-user-id {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.ops-user-id .un {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-user .bk {
+  flex: none;
+}
