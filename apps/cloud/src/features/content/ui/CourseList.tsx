@@ -77,6 +77,15 @@ export function CourseList() {
 
   return (
     <section>
+      <div className="page-head" style={{ marginTop: 26 }}>
+        <h1>我的课程</h1>
+        <div className="actions">
+          <Button asChild>
+            <a href="#create">新建课程</a>
+          </Button>
+        </div>
+      </div>
+
       {error ? (
         <Alert variant="destructive" className="mb-3.5">
           <AlertDescription>{error}</AlertDescription>
@@ -86,14 +95,11 @@ export function CourseList() {
       {loading ? (
         <div className="empty">课程加载中…</div>
       ) : courses.length === 0 ? (
-        <a
-          href="#create"
-          className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-12 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
-        >
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-12 text-mut">
           <BookOpen className="size-7" strokeWidth={1.4} aria-hidden="true" />
           <span className="text-[13px]">还没有课程</span>
-          <span className="text-[12px]">新建课程 →</span>
-        </a>
+          <span className="text-[12px]">点右上角「新建课程」创建第一门课</span>
+        </div>
       ) : (
         <div className="cards">
           {courses.map((course) => {
@@ -147,12 +153,6 @@ export function CourseList() {
           })}
         </div>
       )}
-
-      <div className="cards mt-3.5">
-        <a className="card add" href="#create">
-          ＋ 新建课程
-        </a>
-      </div>
 
       <RenameDialog course={renaming} onClose={() => setRenaming(null)} onDone={() => void refresh()} />
       <DeleteDialog course={deleting} onClose={() => setDeleting(null)} onDone={() => void refresh()} />

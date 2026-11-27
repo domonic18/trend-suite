@@ -112,20 +112,9 @@
 
 
 
-.card.add {
-  align-items: center;
-  justify-content: center;
-  border-style: dashed;
-  background: var(--p-soft);
-  color: var(--p-mut);
-  font-size: 13px;
-  cursor: pointer;
-}
 
-.card.add:hover {
-  color: var(--p-pri);
-  border-color: var(--p-pri);
-}
+
+
 
 /* 课程卡整卡可点：Link 铺满卡片当热区，右上操作钮抬高一层不被吞掉。 */
 .card.clickable {
