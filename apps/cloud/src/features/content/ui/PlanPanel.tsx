@@ -10,8 +10,8 @@ import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
 import { CourseWorkspaceSkeleton } from './OutlineSkeleton'
 import { useCourses } from './CoursesProvider'
+import dynamic from 'next/dynamic'
 import { takeDraftNotice } from './draftNotice'
-import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
 
 export type MaterialsReady = { ready: number; total: number }
@@ -26,6 +26,12 @@ export type MaterialsReady = { ready: number; total: number }
  * 就绪时发确认卡，教师点选后确定性执行；右栏宽度可拖拽/键盘调整并持久化，
  * 对话事件驱动右栏重取（refreshKey），轮询仅作兜底。
  */
+/** 素材选择弹窗懒加载：hls.js 预览只在首次打开弹窗时下载。 */
+const AssetPickerDialog = dynamic(
+  () => import('./AssetPickerDialog').then((m) => m.AssetPickerDialog),
+  { ssr: false },
+)
+
 export function PlanPanel({
   courseId,
   materials = null,

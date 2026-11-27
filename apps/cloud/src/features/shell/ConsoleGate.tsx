@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import type { SessionUser } from '@trend-suite/contracts'
 import { useSession } from '@/features/accounts/SessionProvider'
+import { getToken } from '@/features/accounts/session'
 import { accessFor, canEnterArea } from './access'
 import { OpsSkeleton, WorkbenchSkeleton } from './ConsoleSkeleton'
 
@@ -53,6 +54,14 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
   }, [anonymous, router])
 
   if (area === 'public') return <>{children}</>
+
+  // 乐观会话（行业惯例：token 在手即先画壳，me 校验并行不阻塞渲染）：
+  // workbench 区在 loading 且有 token 时直接放行——壳（WorkbenchShell 的
+  // user 用法空安全）与课程列表 fetch（Provider 挂载即发）与 /auth/me
+  // 三方并行，省掉「骨架等 me → 再等列表」的串行 RTT；me 判失败时
+  // status 转 anonymous，下面的跳转逻辑兜底回登录页。
+  const optimistic = area === 'workbench' && session.status === 'loading' && typeof window !== 'undefined' && !!getToken()
+  if (optimistic) return <>{children}</>
 
   if (session.status === 'loading') {
     return area === 'ops' ? <OpsSkeleton /> : <WorkbenchSkeleton />

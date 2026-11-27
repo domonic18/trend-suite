@@ -2,8 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { AgentQuestionOption } from '@trend-suite/contracts'
-import { ChatMarkdown } from './ChatMarkdown'
 import styles from './agent-chat.module.css'
+
+import dynamic from 'next/dynamic'
+
+/** 对话 markdown 懒加载：streamdown + shiki 语法高亮是 bundle 大头，首屏不打包。 */
+const ChatMarkdown = dynamic(() => import('./ChatMarkdown').then((m) => m.ChatMarkdown), { ssr: false })
 
 /**
  * AskQuestion 确认卡（arch/08 §6，对齐 SasanImmersive ApprovalCard 的内嵌形态）：

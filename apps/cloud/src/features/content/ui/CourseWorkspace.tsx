@@ -3,10 +3,17 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCourses } from '@/features/content/ui/CoursesProvider'
+import dynamic from 'next/dynamic'
 import { CourseWorkspaceSkeleton } from '@/features/content/ui/OutlineSkeleton'
 import { PlanPanel } from '@/features/content/ui/PlanPanel'
-import { ProductionStudio } from '@/features/production/ui/ProductionStudio'
 import { useSession } from '@/features/accounts/SessionProvider'
+
+/** 制作态按需加载：klinecharts 与九步产物等重依赖只进制作态 chunk——
+ * 方案期进课不下载（课程页 First Load 426kB 的主因）。 */
+const ProductionStudio = dynamic(
+  () => import('@/features/production/ui/ProductionStudio').then((m) => m.ProductionStudio),
+  { loading: () => <CourseWorkspaceSkeleton /> },
+)
 
 /**
  * 课程工作台（Sasan 式合一，arch/08 §1）：课程只有一个 URL——进入即工作台，
