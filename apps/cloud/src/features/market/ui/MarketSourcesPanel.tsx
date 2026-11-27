@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { MarketQuoteSourceView } from '@trend-suite/contracts'
-import { Trash2 } from 'lucide-react'
+import { Plus, Trash2, TrendingUp } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import { createMarketSource, deleteMarketSource, listMarketSources, testMarketSource, updateMarketSource } from '../api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type SourceForm = {
   id: string | null
@@ -227,91 +226,63 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
           </form>
         ) : null}
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>名称</TableHead>
-              <TableHead>Base URL</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead>上次测试</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sources.map((source) => (
-              <TableRow key={source.id}>
-                <TableCell>
-                  <b>{source.name}</b>
-                  {source.isDefault ? <Badge className="ml-1.5">默认</Badge> : null}
-                  {source.note ? <span className="text-xs text-mut"> {source.note}</span> : null}
-                </TableCell>
-                <TableCell>{source.baseUrl}</TableCell>
-                <TableCell>{source.enabled ? '启用' : '停用'}</TableCell>
-                <TableCell>
-                  {testingIds.has(source.id) ? (
-                    <span className="text-xs text-mut">测试中…</span>
-                  ) : source.lastTestResult === 'ok' ? (
-                    <>
-                      <span
-                        className="text-success"
-                        title={source.lastTestLatencyMs != null ? `${source.lastTestLatencyMs}ms` : undefined}
-                      >
-                        ✓ {source.lastTestLatencyMs ?? '?'}ms
-                      </span>
-                      {source.lastTestedAt ? (
-                        <span className="text-xs text-mut"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
-                      ) : null}
-                    </>
-                  ) : source.lastTestResult === 'failed' ? (
-                    <>
-                      <span className="text-destructive" title={source.lastTestError ?? undefined}>✗ 失败</span>
-                      {source.lastTestError ? (
-                        <span className="text-xs text-mut" title={source.lastTestError}>
-                          {' '}
-                          {source.lastTestError.length > 48
-                            ? `${source.lastTestError.slice(0, 48)}…`
-                            : source.lastTestError}
-                        </span>
-                      ) : null}
-                      {source.lastTestedAt ? (
-                        <span className="text-xs text-mut"> {source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
-                      ) : null}
-                    </>
-                  ) : (
-                    '未测试'
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  {canWrite ? (
-                    <>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        disabled={testingIds.has(source.id)}
-                        onClick={() => void runTest(source.id)}
-                      >
-                        {testingIds.has(source.id) ? '测试中…' : '测试连接'}
-                      </Button>
-                      <Button variant="link" size="sm" onClick={() => edit(source)}>
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label="删除条目"
-                        onClick={() => setPendingDelete(source)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {sources.length === 0 ? (
+          <div className="settings-empty">
+            <TrendingUp className="size-8 text-pri" strokeWidth={1.3} aria-hidden="true" />
+            <h4>还没有行情源</h4>
+          </div>
+        ) : (
+          sources.map((source) => (
+            <div className="settings-row" key={source.id}>
+              <div className="row-info">
+                <div className="row-name">
+                  <h4>{source.name}</h4>
+                  {source.isDefault ? (
+                    <Badge className="rounded-full bg-pri-soft px-2 py-0.5 text-[11px] font-medium text-primary">默认</Badge>
+                  ) : null}
+                </div>
+                <div className="row-meta">
+                  <code>{source.baseUrl}</code>
+                  {source.note ? <span>{source.note}</span> : null}
+                  <span>{source.enabled ? '启用' : '停用'}</span>
+                </div>
+              </div>
+              <div className="row-controls">
+                <span className={source.lastTestResult === 'ok' ? 'text-success text-[13px]' : source.lastTestResult === 'failed' ? 'text-destructive text-[13px]' : 'text-xs text-mut'}>
+                  {testingIds.has(source.id)
+                    ? '测试中…'
+                    : source.lastTestResult === 'ok'
+                      ? `✓ ${source.lastTestLatencyMs ?? '?'}ms`
+                      : source.lastTestResult === 'failed'
+                        ? '✗ 失败'
+                        : '未测试'}
+                </span>
+                {source.lastTestedAt ? (
+                  <span className="text-xs text-mut">{source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
+                ) : null}
+                {canWrite ? (
+                  <>
+                    <Button variant="outline" size="sm" disabled={testingIds.has(source.id)} onClick={() => void runTest(source.id)}>
+                      {testingIds.has(source.id) ? '测试中…' : '测试连接'}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => edit(source)}>
+                      编辑
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive hover:text-destructive"
+                      aria-label="删除条目"
+                      onClick={() => setPendingDelete(source)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>

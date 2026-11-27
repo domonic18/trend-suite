@@ -3,6 +3,7 @@
 import { useSession } from '@/features/accounts/SessionProvider'
 import { OpsModelsPanel } from '@/features/models/ui/OpsModelsPanel'
 import { MarketSourcesPanel } from '@/features/market/ui/MarketSourcesPanel'
+import { Cpu, TrendingUp } from 'lucide-react'
 import { OpsShell } from '@/features/shell/OpsShell'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -25,16 +26,18 @@ export default function OpsPage() {
         void session.logout()
       }}
     >
-      <Tabs defaultValue="models">
-        <div className="page-head" style={{ marginTop: 26 }}>
-          <h2>运营配置</h2>
-          <div className="actions">
-            <TabsList>
-              <TabsTrigger value="models">模型配置</TabsTrigger>
-              <TabsTrigger value="market">行情源</TabsTrigger>
-            </TabsList>
-          </div>
-        </div>
+      <Tabs defaultValue="models" className="ops-settings">
+        <header className="settings-head">
+          <h1>运营配置</h1>
+        </header>
+        <TabsList className="settings-tabs">
+          <TabsTrigger value="models">
+            <Cpu className="size-[17px]" aria-hidden="true" />模型配置
+          </TabsTrigger>
+          <TabsTrigger value="market">
+            <TrendingUp className="size-[17px]" aria-hidden="true" />行情源
+          </TabsTrigger>
+        </TabsList>
         <TabsContent value="models" className="mt-0">
           <OpsModelsPanel canWrite={user.role === 'admin'} />
         </TabsContent>

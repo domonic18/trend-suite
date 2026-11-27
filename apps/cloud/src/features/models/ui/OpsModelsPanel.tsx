@@ -8,7 +8,7 @@ import type {
   ModelProtocol,
   TaskBindingView,
 } from '@trend-suite/contracts'
-import { Plus, Trash2 } from 'lucide-react'
+import { Cpu, Plus, Trash2 } from 'lucide-react'
 import { ModelEntryForm } from './ModelEntryForm'
 import { ModelBindingCard } from './ModelBindingCard'
 import { ModelTestBadge } from './ModelTestBadge'
@@ -54,7 +54,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 type Tab = 'entries' | 'bindings' | 'asr'
@@ -285,91 +284,78 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
         </TabsList>
 
         <TabsContent value="entries">
-          <div className="card">
+          <div className="settings-heading">
+            <h3>模型条目</h3>
             {canWrite ? (
-              <div className="mfoot mt-0 mb-2.5">
-                <Button onClick={() => setForm({ ...EMPTY_FORM })}>新增模型</Button>
-              </div>
-            ) : (
-              <p className="meta">当前角色只读：只有管理员可以维护模型配置。</p>
-            )}
-
-            {form ? (
-              <ModelEntryForm
-                form={form}
-                busy={busy}
-                setForm={setForm}
-                onSubmit={submit}
-                onCancel={() => setForm(null)}
-              />
+              <Button size="sm" onClick={() => setForm({ ...EMPTY_FORM })}>
+                <Plus className="size-4" /> 新增
+              </Button>
             ) : null}
+          </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名称</TableHead>
-                  <TableHead>用途</TableHead>
-                  <TableHead>协议</TableHead>
-                  <TableHead>模型</TableHead>
-                  <TableHead>密钥</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>上次测试</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {models.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      <b>{entry.name}</b>
-                      {entry.isDefault ? <Badge className="ml-1.5">默认</Badge> : null}
-                    </TableCell>
-                    <TableCell>{entry.purposes.map((p) => PURPOSE_LABELS[p]).join(' + ')}</TableCell>
-                    <TableCell>{PROTOCOL_LABELS[entry.protocol]}</TableCell>
-                    <TableCell>{entry.model}</TableCell>
-                    <TableCell>{entry.apiKeyMasked ?? '未配置'}</TableCell>
-                    <TableCell>{entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}</TableCell>
-                    <TableCell>
-                      <ModelTestBadge
-                        testing={testingIds.has(entry.id)}
-                        result={entry.lastTestResult}
-                        latencyMs={entry.lastTestLatencyMs}
-                        error={entry.lastTestError}
-                        testedAt={entry.lastTestedAt}
-                      />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-right">
-                      {canWrite ? (
-                        <>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            disabled={testingIds.has(entry.id)}
-                            onClick={() => void runTest(entry.id)}
-                          >
-                            {testingIds.has(entry.id) ? '测试中…' : '测试'}
-                          </Button>
-                          <Button variant="link" size="sm" onClick={() => edit(entry)}>
-                            编辑
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label="删除条目"
-                            onClick={() => setPendingDelete(entry)}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          {models.length === 0 ? (
+            <div className="settings-empty">
+              <Cpu className="size-8 text-pri" strokeWidth={1.3} aria-hidden="true" />
+              <h4>还没有模型条目</h4>
             </div>
+          ) : (
+            models.map((entry) => (
+              <div className="settings-row" key={entry.id}>
+                <div className="row-info">
+                  <div className="row-name">
+                    <h4>{entry.name}</h4>
+                    {entry.isDefault ? (
+                      <Badge className="rounded-full bg-pri-soft px-2 py-0.5 text-[11px] font-medium text-primary">
+                        默认
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="row-meta">
+                    <code>{entry.model}</code>
+                    <span>{entry.purposes.map((p) => PURPOSE_LABELS[p]).join(' + ')}</span>
+                    <span>{PROTOCOL_LABELS[entry.protocol]}</span>
+                    <span>
+                      {entry.apiKeyMasked ? '已配密钥' : '未配密钥'} ·{' '}
+                      {entry.status === 'active' ? '启用' : entry.status === 'cooling' ? '冷却' : '禁用'}
+                    </span>
+                  </div>
+                </div>
+                <div className="row-controls">
+                  <ModelTestBadge
+                    testing={testingIds.has(entry.id)}
+                    result={entry.lastTestResult}
+                    latencyMs={entry.lastTestLatencyMs}
+                    error={entry.lastTestError}
+                    testedAt={entry.lastTestedAt}
+                  />
+                  {canWrite ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={testingIds.has(entry.id)}
+                        onClick={() => void runTest(entry.id)}
+                      >
+                        {testingIds.has(entry.id) ? '测试中…' : '测试连接'}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => edit(entry)}>
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-destructive hover:text-destructive"
+                        aria-label="删除条目"
+                        onClick={() => setPendingDelete(entry)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="bindings">
@@ -391,76 +377,60 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
         </TabsContent>
 
         <TabsContent value="asr">
-          <div className="card">
-              {form && form.purposes.includes('asr') ? (
-              <ModelEntryForm
-                form={form}
-                busy={busy}
-                setForm={setForm}
-                onSubmit={submit}
-                onCancel={() => setForm(null)}
-              />
-            ) : null}
-            {channel ? (
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableHead>供应商</TableHead>
-                    <TableCell>{channel.provider || '未配置'}</TableCell>
-                    <TableHead>调用协议</TableHead>
-                    <TableCell>{PROTOCOL_LABELS[channel.protocol]}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableHead>模型</TableHead>
-                    <TableCell>{channel.model || '未配置'}</TableCell>
-                    <TableHead>Base URL</TableHead>
-                    <TableCell>{channel.baseUrl || '未配置'}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableHead>API Key</TableHead>
-                    <TableCell>{channel.apiKeyMasked ?? '未配置'}</TableCell>
-                    <TableHead>状态</TableHead>
-                    <TableCell>{channel.status === 'active' ? '启用' : channel.status === 'cooling' ? '冷却' : '禁用'}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableHead>单条音频时长上限</TableHead>
-                    <TableCell>{channel.maxAudioSeconds} 秒</TableCell>
-                    <TableHead>热词</TableHead>
-                    <TableCell>
-                      {channel.hotwordSupported ? `${channel.hotwordCount} 个` : '该协议不支持热词注入'}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableHead>最后测试</TableHead>
-                    <TableCell colSpan={3}>
-                      <ModelTestBadge
-                        testing={channel.modelId !== null && testingIds.has(channel.modelId)}
-                        result={channel.lastTestResult}
-                        latencyMs={channel.lastTestLatencyMs}
-                        error={channel.lastTestError}
-                        testedAt={channel.lastTestedAt}
-                      />
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="empty">ASR 渠道加载中…</div>
-            )}
+          <div className="settings-heading">
+            <h3>ASR 渠道</h3>
             {canWrite ? (
-              <div className="mfoot">
-                <Button
-                  onClick={() => {
-                    const asr = findAsrEntry()
-                    if (asr) edit(asr)
-                    else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
-                  }}
-                >
-                  编辑配置
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  const asr = findAsrEntry()
+                  if (asr) edit(asr)
+                  else setForm({ ...EMPTY_FORM, purposes: ['asr'], protocol: 'minimax' })
+                }}
+              >
+                <Plus className="size-4" /> 编辑配置
+              </Button>
             ) : null}
           </div>
+
+          {form && form.purposes.includes('asr') ? (
+            <ModelEntryForm
+              form={form}
+              busy={busy}
+              setForm={setForm}
+              onSubmit={submit}
+              onCancel={() => setForm(null)}
+            />
+          ) : null}
+
+          {channel ? (
+            <div className="settings-row">
+              <div className="row-info">
+                <div className="row-name">
+                  <h4>{channel.provider || '未配置'}</h4>
+                </div>
+                <div className="row-meta">
+                  {channel.model ? <code>{channel.model}</code> : null}
+                  <span>{PROTOCOL_LABELS[channel.protocol]}</span>
+                  {channel.baseUrl ? <span>{channel.baseUrl}</span> : null}
+                  <span>{channel.apiKeyMasked ? '已配密钥' : '未配密钥'} · {channel.status === 'active' ? '启用' : channel.status === 'cooling' ? '冷却' : '禁用'}</span>
+                  <span>单条音频 ≤ {channel.maxAudioSeconds}s</span>
+                  {channel.hotwordSupported ? <span>热词 {channel.hotwordCount} 个</span> : null}
+                </div>
+              </div>
+              <div className="row-controls">
+                <ModelTestBadge
+                  testing={channel.modelId !== null && testingIds.has(channel.modelId)}
+                  result={channel.lastTestResult}
+                  latencyMs={channel.lastTestLatencyMs}
+                  error={channel.lastTestError}
+                  testedAt={channel.lastTestedAt}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="empty">ASR 渠道加载中…</div>
+          )}
         </TabsContent>
       </Tabs>
 
