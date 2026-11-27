@@ -31,7 +31,7 @@ export function LoginForm() {
     try {
       const user = await login(name, pass)
       // setToken 已发布会话变更：Provider 重新校验后放行，SPA 直达。
-      router.replace(isOpsRole(user) ? '/ops/models' : '/workbench')
+      router.replace(isOpsRole(user) ? '/ops' : '/workbench')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '登录失败，请稍后重试')
       setBusy(false)
