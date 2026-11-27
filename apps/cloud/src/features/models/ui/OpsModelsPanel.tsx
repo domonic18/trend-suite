@@ -366,15 +366,11 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                 ))}
               </TableBody>
             </Table>
-            <p className="meta">连通性测试会真实调用一次（需计费）。密钥加密存储，列表只回掩码。</p>
-          </div>
+            </div>
         </TabsContent>
 
         <TabsContent value="bindings">
           <div className="card">
-            <p className="meta">
-              每槽位绑定主模型（必填）与可选备用；备用不可与主模型相同。下拉只列出与槽位用途匹配且启用的条目；「测试主模型」对当前选中的主模型发起连通性测试（真实调用一次，需计费）。
-            </p>
             <div className="mt-3.5 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
               {bindings.map((binding) => (
                 <BindingCard
@@ -393,8 +389,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
 
         <TabsContent value="asr">
           <div className="card">
-            <p className="meta">素材入库即转写：partial 段落实时可读。保存即刻生效。</p>
-            {form && form.purposes.includes('asr') ? (
+              {form && form.purposes.includes('asr') ? (
               <EntryFormCard
                 form={form}
                 busy={busy}
@@ -605,7 +600,7 @@ function EntryFormCard(props: {
           </div>
         </div>
         <div className="mb-3.5 grid gap-1.5">
-          <Label>供应商（选预置自动填端点）</Label>
+          <Label>供应商</Label>
           <Select
             value={form.custom ? OTHER_PROVIDER : preset ? preset.value : ''}
             onValueChange={pickProvider}
@@ -663,7 +658,7 @@ function EntryFormCard(props: {
           </datalist>
         </div>
         <div className="mb-3.5 grid gap-1.5">
-          <Label>Base URL（可修改）</Label>
+          <Label>Base URL</Label>
           <Input
             value={form.baseUrl}
             placeholder="https://api.example.com"
@@ -671,7 +666,7 @@ function EntryFormCard(props: {
           />
         </div>
         <div className="mb-3.5 grid gap-1.5">
-          <Label>{form.id ? '密钥（留空保留原密钥）' : '密钥'}</Label>
+          <Label>密钥</Label>
           <Input
             type="password"
             value={form.apiKey}
@@ -810,7 +805,7 @@ function BindingCard(props: {
       </div>
       <div className="mt-1 mb-3 text-xs text-mut">{props.binding.task}</div>
       <div className="mb-2.5 grid gap-1.5">
-        <Label className="text-[12.5px] text-mut">主模型（必填）</Label>
+        <Label className="text-[12.5px] text-mut">主模型</Label>
         <Select
           value={primary}
           disabled={!props.canWrite}
@@ -832,7 +827,7 @@ function BindingCard(props: {
         </Select>
       </div>
       <div className="mb-2.5 grid gap-1.5">
-        <Label className="text-[12.5px] text-mut">备用模型（可选）</Label>
+        <Label className="text-[12.5px] text-mut">备用模型</Label>
         <Select
           value={backup}
           disabled={!props.canWrite}

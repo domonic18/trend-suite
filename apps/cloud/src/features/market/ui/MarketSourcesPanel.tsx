@@ -149,7 +149,7 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
             <Button onClick={() => setForm({ ...EMPTY_FORM })}>新增行情源</Button>
           </div>
         ) : (
-          <p className="meta">当前角色只读：只有管理员可以维护行情源配置。</p>
+          <p className="sub" style={{ margin: 0 }}>只读模式</p>
         )}
 
         {error ? (
@@ -312,9 +312,6 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
             ))}
           </TableBody>
         </Table>
-        <p className="meta">
-          运行时取默认启用源（缓存 ≤60 秒）；显式设置环境变量 MARKET_QUOTES_BASE_URL 时该变量优先（本地开发口径）。测试连接会真实拉一次样本 K 线。
-        </p>
       </div>
 
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
