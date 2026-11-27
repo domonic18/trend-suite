@@ -186,6 +186,18 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
 
   return (
     <section>
+      {/* 新增/编辑表单：单一挂载点（此前只在 ASR 区按用途条件渲染，普通条目
+          点编辑/新增时 state 变了但无处渲染——「点击没反应」的根因） */}
+      {form ? (
+        <ModelEntryForm
+          form={form}
+          busy={busy}
+          setForm={setForm}
+          onSubmit={submit}
+          onCancel={() => setForm(null)}
+        />
+      ) : null}
+
       <section className="settings-section">
           <div className="settings-heading">
             <h3>模型条目</h3>
@@ -295,16 +307,6 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
               </Button>
             ) : null}
           </div>
-
-          {form && form.purposes.includes('asr') ? (
-            <ModelEntryForm
-              form={form}
-              busy={busy}
-              setForm={setForm}
-              onSubmit={submit}
-              onCancel={() => setForm(null)}
-            />
-          ) : null}
 
           {channel ? (
             <div className="settings-row">
