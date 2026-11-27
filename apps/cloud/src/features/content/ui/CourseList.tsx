@@ -259,7 +259,11 @@ function DeleteDialog({
       onClose()
       onDone()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '删除失败，请稍后再试')
+      // 非 ApiError（fetch 网络层异常：超时 / 连接重置）时透出原始信息，
+      // 便于区分「接口报错」与「网络没到服务端」。
+      setError(
+        err instanceof ApiError ? err.message : `删除失败：${String(err instanceof Error ? err.message : err)}`,
+      )
       setBusy(false)
     }
   }
