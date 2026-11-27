@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { userRole } from './enums.js'
-import { idShape } from './ids.js'
+import { userRole } from './enums'
+import { idShape } from './ids'
 
 /** 用户名：登录与建号共用一套形状，避免两端口径漂移。 */
 export const username = z

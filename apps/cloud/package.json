@@ -7,12 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev --port 3940 --hostname 127.0.0.1",
+    "dev": "next dev --turbopack --port 3940 --hostname 127.0.0.1",
     "dev:all": "node --run dev & APP_ROLE=worker node --run worker & wait",
     "worker": "node --env-file-if-exists=.env --conditions=react-server --import tsx src/worker.ts",
     "check": "tsc --noEmit",
     "build": "next build",
     "start": "next start",
+    "start:all": "PORT=3940 node --run start & APP_ROLE=worker node --run worker & wait",
     "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\" \"src/**/*.test.ts\"",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",

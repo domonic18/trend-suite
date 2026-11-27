@@ -7,7 +7,7 @@ import {
   parseOutlineText,
   renderOutlineText,
   stripOutlineNumbering,
-} from '../src/index.js'
+} from '../src/index'
 
 /** 目录先验格式规则：前后端共用（教师端本地提示与一键规整、服务端把关同源）。 */
 

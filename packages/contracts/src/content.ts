@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
-import { caseStockView } from './market.js'
-import { figureView } from './figures.js'
-import { widgetView } from './widgets.js'
+import { idShape } from './ids'
+import { caseStockView } from './market'
+import { figureView } from './figures'
+import { widgetView } from './widgets'
 
 /**
  * 节教材内容视图（迭代 6）：正文 DSL 原文 + 三路图示 + 被引用的 source units

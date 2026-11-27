@@ -4,7 +4,7 @@ import {
   chipHorizontalParams,
   statInlineParams,
   timelineParams,
-} from './figure-params.js'
+} from './figure-params'
 
 /**
  * 图示**草稿**契约（arch/05 §8，zod/v4 子路径）：生产 agent 交给 write_step_output 的形状。

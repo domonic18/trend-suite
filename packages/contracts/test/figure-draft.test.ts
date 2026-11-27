@@ -4,7 +4,7 @@ import {
   DIAGRAM_TEMPLATE_NAMES,
   diagramParamsByTemplate,
   figureDraftProduct,
-} from '../src/index.js'
+} from '../src/index'
 
 /**
  * 图示草稿与模板参数形状（arch/05 §8）：

@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { courseStatus } from './enums.js'
-import { idShape } from './ids.js'
+import { courseStatus } from './enums'
+import { idShape } from './ids'
 
 export const createCourseRequest = z.object({
   title: z.string().min(1, '课程名称必填').max(120, '课程名称最长 120 个字符'),

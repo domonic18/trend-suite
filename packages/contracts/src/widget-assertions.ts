@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
-import { GENERATORS } from './widget-data.js'
-import { type WidgetType } from './widget-types.js'
+import { GENERATORS } from './widget-data'
+import { type WidgetType } from './widget-types'
 
 /**
  * 断言词表与参数形状（arch/06 §8）：**唯一真相源**。

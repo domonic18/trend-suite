@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
-import { DIAGRAM_TEMPLATE_NAMES } from './figure-params.js'
+import { idShape } from './ids'
+import { DIAGRAM_TEMPLATE_NAMES } from './figure-params'
 
 /**
  * 图示三路（arch/05 §8 / arch/06 §3）：keyframe 讲师原始画面（按 source unit

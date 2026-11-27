@@ -5,9 +5,9 @@ import {
   GENERATOR_BARS_MAX,
   GENERATOR_BARS_MIN,
   GENERATOR_SEED_MAX,
-} from './widget-data.js'
-import { assertionsForType } from './widget-assertions.js'
-import type { WidgetType } from './widget-types.js'
+} from './widget-data'
+import { assertionsForType } from './widget-assertions'
+import type { WidgetType } from './widget-types'
 
 /**
  * 课件**草稿**契约（arch/06 §9，zod/v4 子路径）：生产 agent 交给 write_step_output 的形状。

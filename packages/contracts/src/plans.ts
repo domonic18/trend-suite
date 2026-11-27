@@ -4,8 +4,8 @@ import {
   planOrigin,
   planStatus,
   sectionMatchStatus,
-} from './enums.js'
-import { idShape } from './ids.js'
+} from './enums'
+import { idShape } from './ids'
 
 /**
  * 课程方案与方案门禁（arch/05 §5 阶段三，教师端需求 T6–T8）：

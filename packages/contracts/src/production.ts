@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
-import { productionSectionStatus, productionTaskStatus } from './enums.js'
-import { sectionContentBodyStatus } from './content.js'
+import { idShape } from './ids'
+import { productionSectionStatus, productionTaskStatus } from './enums'
+import { sectionContentBodyStatus } from './content'
 
 /**
  * 逐节九步生产引擎（arch/05 §6，教师端需求 T10）：

@@ -10,7 +10,7 @@ import {
   classifyShape,
   generateBars,
   mulberry32,
-} from '../src/index.js'
+} from '../src/index'
 
 /**
  * 课件生成器与计算公式（arch/06 §9）：
