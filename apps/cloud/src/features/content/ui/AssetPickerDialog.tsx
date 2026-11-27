@@ -8,6 +8,8 @@ import { getFrames, listAssets } from '@/features/pipeline/api'
 import { getHlsPlayback } from '@/features/production/api'
 import { planningReadyOf, understandingCountOf } from '@/features/pipeline/ui/processing'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { Video } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
@@ -224,7 +226,15 @@ export function AssetPickerDialog({
         {loading ? (
           <div className="empty">素材加载中…</div>
         ) : assets.length === 0 ? (
-          <p className="form-note">素材库里还没有可用的视频。</p>
+          <Link
+            href="/workbench/library"
+            onClick={() => onClose()}
+            className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-10 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
+          >
+            <Video className="size-7" strokeWidth={1.4} aria-hidden="true" />
+            <span className="text-[13px]">素材库还没有视频</span>
+            <span className="text-[12px]">去素材库上传 →</span>
+          </Link>
         ) : (
           <div className="asset-grid">
             {assets.map((asset) => (
