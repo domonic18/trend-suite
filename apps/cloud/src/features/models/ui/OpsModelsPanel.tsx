@@ -8,7 +8,7 @@ import type {
   ModelProtocol,
   TaskBindingView,
 } from '@trend-suite/contracts'
-import { Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
 import {
   MODEL_PROVIDERS,
@@ -273,13 +273,9 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
           setNotice(null)
         }}
       >
-        <TabsList className="mb-[18px] h-auto w-full justify-start gap-1 rounded-none border-b border-line bg-transparent p-0">
+        <TabsList>
           {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
-            <TabsTrigger
-              key={key}
-              value={key}
-              className="rounded-none border-b-2 border-transparent px-[18px] py-2.5 text-sm text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
-            >
+            <TabsTrigger key={key} value={key}>
               {TAB_LABELS[key]}
             </TabsTrigger>
           ))}

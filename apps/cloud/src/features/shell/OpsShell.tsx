@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import type { SessionUser } from '@trend-suite/contracts'
 import { Button } from '@/components/ui/button'
+import { useWorkbenchTheme } from './ThemeToggle'
 import { BuildInfo } from './BuildInfo'
 
 const MENU: { label: string; href: string | null }[] = [
@@ -20,6 +21,7 @@ export function OpsShell(props: {
   children: ReactNode
 }) {
   const initial = props.user.displayName ?? props.user.username
+  useWorkbenchTheme()
   return (
     <div className="ops-app">
       <aside className="ops-sb">
