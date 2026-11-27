@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 /** 任务槽位绑定：运营只读，管理员可写（arch/07 §9）。 */
 export async function GET(req: Request) {
   try {
-    await requireUser(req, ['operator', 'admin'])
+    await requireUser(req, ['producer', 'operator', 'admin'])
     const items = await listTaskBindings()
     return json(taskBindingListResponse.parse({ items }))
   } catch (err) {
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
     assertCanWriteModels(actor.role)
     const raw = await req.json().catch(() => null)
     const parsed = updateTaskBindingRequest.safeParse(raw)

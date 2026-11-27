@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    await requireUser(req, ['operator', 'admin'])
+    await requireUser(req, ['producer', 'operator', 'admin'])
     const { id } = await ctx.params
     const item = (await listModelEntries()).find((entry) => entry.id === id)
     if (!item) throw notFound('模型条目不存在')
@@ -25,7 +25,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
     assertCanWriteModels(actor.role)
     const { id } = await ctx.params
     const raw = await req.json().catch(() => null)
@@ -40,7 +40,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
     assertCanWriteModels(actor.role)
     const { id } = await ctx.params
     await deleteModelEntry(id)

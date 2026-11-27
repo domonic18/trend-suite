@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
     assertCanWriteMarketSources(actor.role)
     const { id } = await ctx.params
     const raw = await req.json().catch(() => null)
@@ -27,7 +27,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
     assertCanWriteMarketSources(actor.role)
     const { id } = await ctx.params
     await deleteMarketSource(id)

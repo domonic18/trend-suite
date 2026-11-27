@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 /** ASR 渠道：素材入库即转写用的那一条配置（密钥只回掩码）。 */
 export async function GET(req: Request) {
   try {
-    await requireUser(req, ['operator', 'admin'])
+    await requireUser(req, ['producer', 'operator', 'admin'])
     const channel = await getAsrChannel()
     return json(asrChannelResponse.parse({ channel }))
   } catch (err) {
