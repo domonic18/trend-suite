@@ -27,7 +27,7 @@ trend-suite/
 ├── packages/
 │   ├── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
 │   └── dsl/                 # @trend-suite/dsl：教材 DSL 解析器（纯函数，云端服务端与浏览器渲染同源复用）
-└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 同时发 staging（自动）与 production（人工审批后），镜像 tag 统一 main-<sha>）
+└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 只发 production（人工审批后），无测试环境（无 develop / staging），镜像 tag 统一 main-<sha>）
 ├── eslint.config.mjs       # 仓级 eslint 扁平配置（typescript-eslint recommended，pnpm lint 从根跑）
 ```
 
