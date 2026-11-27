@@ -1118,3 +1118,25 @@
 .wb-collapse:focus-visible {
   color: var(--p-mut);
 }
+
+/* 工作台侧栏底部的运营台入口（Sasan「工作室设置」同款位置）：版本行
+   之上，仅 operator/admin 可见。 */
+.ops-settings-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--p-mut);
+}
+.ops-settings-entry svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.ops-settings-entry:hover {
+  background: var(--p-soft);
+  color: var(--p-ink);
+}
