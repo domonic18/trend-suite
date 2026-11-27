@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import type { AsrChannelView, ModelEntryView, ModelPurpose, TaskBindingView } from '@trend-suite/contracts'
+import type { AsrChannelView, ModelEntryView, TaskBindingView } from '@trend-suite/contracts'
 import { Cpu, Plus, Trash2 } from 'lucide-react'
 import { ModelEntryForm } from './ModelEntryForm'
 import { ModelBindingCard } from './ModelBindingCard'
@@ -13,19 +13,10 @@ import {
   getAsrChannel,
   listBindings,
   listModels,
-  saveBinding,
   testModel,
   updateModel,
 } from '../api'
-import {
-  allowedProtocols,
-  availableProtocols,
-  findProviderPreset,
-  providerProtocols,
-  PURPOSE_LABELS,
-  PROTOCOL_LABELS,
-  type EntryForm,
-} from '../providers'
+import { findProviderPreset, PURPOSE_LABELS, PROTOCOL_LABELS, type EntryForm } from '../providers'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   AlertDialog,

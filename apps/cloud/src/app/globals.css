@@ -64,6 +64,7 @@
   --color-ring: var(--p-pri);
 
   /* 域扩展：迁移期 utility 直达现有语义色 */
+  --color-pri: var(--p-pri);
   --color-pri-deep: var(--p-pri-deep);
   --color-pri-soft: var(--p-pri-soft);
   --color-success: var(--p-acc);

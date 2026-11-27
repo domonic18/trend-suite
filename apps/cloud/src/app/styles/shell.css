@@ -110,12 +110,6 @@
 
 /* 阶段提示句单行省略（悬停看全文），不占多行 */
 
-
-
-
-
-
-
 /* 课程卡整卡可点：Link 铺满卡片当热区，右上操作钮抬高一层不被吞掉。 */
 .card.clickable {
   position: relative;
@@ -278,10 +272,6 @@ dialog {
 
 dialog::backdrop {
   background: rgba(16, 24, 40, 0.42);
-}
-
-.dialog-body {
-  padding: 16px;
 }
 
 /* ---------------- 加工面板（步进条 / 逐字稿 / 关键帧） ---------------- */
@@ -736,7 +726,6 @@ dialog::backdrop {
   color: var(--p-faint);
 }
 
-
 .ops-main {
   padding: 20px 24px 40px;
   max-width: 1200px;
@@ -775,15 +764,10 @@ dialog::backdrop {
   max-width: 72ch;
 }
 
-
-
-
-
 /* 侧栏底部附加导航（运营台入口）：mt-auto 贴到版本行之上。 */
 .ops-menu--bottom {
   margin-top: auto;
 }
-
 
 /* 列表页页头贴顶间距（课程列表 / 素材库同值，替代内联 style）。 */
 .page-head--top {

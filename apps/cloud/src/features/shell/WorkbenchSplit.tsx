@@ -75,7 +75,7 @@ export function WorkbenchSplit({
       <ResizablePanel defaultSize={58} minSize={45} className="wb-col">
         {main}
       </ResizablePanel>
-      <ResizableHandle className="ws-resizer">
+      <ResizableHandle>
         <button
           type="button"
           className={styles.collapse}
@@ -86,7 +86,7 @@ export function WorkbenchSplit({
           <PanelRightClose className="size-3.5" />
         </button>
       </ResizableHandle>
-      <ResizablePanel defaultSize={42} minSize={28} maxSize={55} className="wb-col wb-col--rail">
+      <ResizablePanel defaultSize={42} minSize={28} maxSize={55} className="wb-col">
         {rail}
       </ResizablePanel>
     </ResizablePanelGroup>

@@ -116,18 +116,6 @@ export function ProductionWorkspace({
   ).length
   const allComplete = sections.length > 0 && sections.every((section) => section.status === 'complete')
 
-  const tag = allComplete
-    ? { cls: 'ok', text: '已完成' }
-    : board?.job?.status === 'queued' || board?.job?.status === 'running'
-      ? { cls: 'run', text: '制作中' }
-      : board?.stop != null
-        ? { cls: 'warn', text: '已停止' }
-        : board?.job?.status === 'failed'
-          ? { cls: 'err', text: '失败' }
-          : suspendedCount > 0
-            ? { cls: 'warn', text: '待人工' }
-            : { cls: 'mut', text: '空闲' }
-  const emptyTag = board ? { cls: 'mut', text: '空闲' } : { cls: 'mut', text: '加载中' }
 
   /** 视频/出处页签：本节引用的素材按份分组，段内时间范围可回溯原视频并可回放。 */
   const unitsByAsset = useMemo(() => {
@@ -281,7 +269,7 @@ export function ProductionWorkspace({
                   )
                 })
               ) : (
-                <p className="note">{current ? '本节还没有配图。' : '还没有选中节。'}</p>
+                current ? <EmptyPanel tabKey="figures" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 
@@ -308,7 +296,7 @@ export function ProductionWorkspace({
                     </div>
                   ))
                 ) : (
-                  <p className="note">本节还没有引用素材片段。</p>
+                  <EmptyPanel tabKey="video" />
                 )
               ) : (
                 <p className="note">还没有选中节。</p>
@@ -369,7 +357,7 @@ export function ProductionWorkspace({
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
                 ))
               ) : (
-                <p className="note">{current ? '本节还没有练习题。' : '还没有选中节。'}</p>
+                current ? <EmptyPanel tabKey="quiz" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 
@@ -379,9 +367,7 @@ export function ProductionWorkspace({
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
                 ))
               ) : (
-                <p className="note">
-                  {current ? '本节还没有其他互动课件。' : '还没有选中节。'}
-                </p>
+                current ? <EmptyPanel tabKey="interactive" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 

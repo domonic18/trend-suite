@@ -21,7 +21,7 @@ export default function OpsPage() {
 
   return (
     <OpsShell>
-      <Tabs defaultValue="models" className="ops-settings">
+      <Tabs defaultValue="models">
         <header className="settings-head">
           <h1>运营配置</h1>
         </header>
