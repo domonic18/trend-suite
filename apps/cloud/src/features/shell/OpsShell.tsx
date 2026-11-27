@@ -52,7 +52,6 @@ export function OpsShell(props: {
             发布交接
           </span>
         </nav>
-        <BuildInfo />
         <div className="ops-user">
           <span className="ava">{initial.slice(0, 1)}</span>
           <span>
@@ -67,6 +66,7 @@ export function OpsShell(props: {
             退出
           </Button>
         </div>
+        <BuildInfo />
       </aside>
       <div>
         <header className="ops-top">
