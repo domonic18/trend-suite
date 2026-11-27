@@ -152,7 +152,6 @@ export function PlanPanel({
         main={
           <AgentChat
             stream={stream}
-            crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
             userName={userName}
             draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
             emptyHint="还没有对话——把课程主题发给 Agent，它会起草大纲并和你对齐。"

@@ -23,7 +23,6 @@ import type { AgentStream } from './useAgentStream'
  */
 export function AgentChat({
   stream,
-  crumb,
   userName,
   draftingLabel = null,
   emptyHint,
@@ -32,7 +31,6 @@ export function AgentChat({
 }: {
   id?: string
   stream: AgentStream
-  crumb: string
   userName: string
   /** 课程级队列任务在途时的文案（如「正在起草方案…」）；null = 无。 */
   draftingLabel?: string | null
@@ -144,7 +142,6 @@ export function AgentChat({
 
   return (
     <aside className="agent-rail" aria-label="制作 Agent 对话">
-      <div className="agent-crumb">{crumb}</div>
       <div className="agent-head">
         <span className="agent-ava">制</span>
         <div className="agent-id">

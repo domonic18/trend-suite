@@ -125,17 +125,6 @@
 }
 
 /* 工作区宽度可拖拽调整（把手贴住右栏左缘） */
-/* 面包屑：对话流上方第一行（课程 / 阶段 / 版本） */
-.agent-crumb {
-  flex: none;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--p-line);
-  background: var(--p-soft);
-  font-size: 11.5px;
-  color: var(--p-mut);
-  line-height: 1.5;
-  word-break: break-all;
-}
 
 .agent-rail {
   position: sticky;
