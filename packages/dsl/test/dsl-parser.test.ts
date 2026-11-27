@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DSL_VERSION } from '@trend-suite/contracts'
-import { collectStockRefs, collectUnitRefs, DslSyntaxError, parseDsl } from '../src/dsl-parser.js'
+import { collectStockRefs, collectUnitRefs, DslSyntaxError, parseDsl } from '../src/dsl-parser'
 
 /**
  * 教材 DSL 解析器（arch/06 §2 语法层）：块/属性/锚/散文合并/语法错——

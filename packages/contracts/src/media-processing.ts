@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
+import { idShape } from './ids'
 
 /**
  * 素材加工（arch/05 §3.4–§3.7）：抽音频 → ASR 转写 → 关键帧 → 索引。

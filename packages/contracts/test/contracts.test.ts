@@ -10,7 +10,7 @@ import {
   submitPlanInputRequest,
   processingStep,
   processingSteps,
-} from '../src/index.js'
+} from '../src/index'
 
 test('healthResponse 契约', () => {
   assert.equal(healthResponse.parse({ ok: true }).ok, true)

@@ -5,7 +5,7 @@ import {
   applicableAssertions,
   assertionsForType,
   widgetDraft,
-} from '../src/index.js'
+} from '../src/index'
 
 /**
  * 断言参数形状（arch/06 §8）：

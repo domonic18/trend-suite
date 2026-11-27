@@ -33,7 +33,7 @@ trend-suite/
 
 ## 3. 硬约束
 
-1. **依赖纪律**：`apps/*` 之间禁止互相 import；`packages/*` 禁止依赖 `apps/*`；跨端共享的契约一律落 `packages/contracts`，跨端共享的纯算法（如教材 DSL 解析）落 `packages/dsl`。**`src/features` 不得 import `src/server`**（浏览器切片与服务端真相的边界；共享纯逻辑下沉到 `packages/`）。
+1. **依赖纪律**：`apps/*` 之间禁止互相 import；`packages/*` 禁止依赖 `apps/*`；跨端共享的契约一律落 `packages/contracts`，跨端共享的纯算法（如教材 DSL 解析）落 `packages/dsl`。`packages/*` 内部相对导入**省略扩展名**（`moduleResolution: Bundler`，被 tsx / Next 消费）——不要写 NodeNext 的 `./x.js`，Turbopack 解析不了。**`src/features` 不得 import `src/server`**（浏览器切片与服务端真相的边界；共享纯逻辑下沉到 `packages/`）。
 2. **契约先行**：接口字段/错误码变更先改 docs/requirement/ 需求与 contracts，再改实现与测试。
 3. **每个应用一个 `src/` 根**：cloud 采用 Next.js `src/app` 约定——`src/app` 薄路由层、`src/server/<域>` 服务端真相、`src/features/<域>` 浏览器切片（**同名成对**，目录名与 arch/02 §2 模块表一致，详见 arch/02 §2.1）；`public/` 固定在应用根；浏览器-only 切片 `features/shell`（壳）与 `features/courseware`（课件只读渲染）无 server 对应，`content`/`production` 单向依赖 `courseware`、彼此不互引；页面路径一律经 `src/lib/routes.ts`（`routes.test.ts` 守卫每条路径有对应 page），角色组一律引 contracts 的 `*Roles` 常量。
 4. **持久化数据**：运行期数据一律落各应用 `workspace/`（gitignore），不写其他路径、不提交入库；密钥只走 `.env` 注入（云端模型密钥走 `ai_models` 加密列，见 docs/arch/07）。
@@ -47,7 +47,8 @@ trend-suite/
 
 ```bash
 pnpm install && pnpm check && pnpm build && pnpm test
-pnpm dev:cloud            # 127.0.0.1:3940
+pnpm dev:cloud            # 127.0.0.1:3940（Turbopack dev：路由按需编译，首次进页有编译延迟——判断性能请用 preview）
+pnpm preview:cloud        # 127.0.0.1:3940（生产构建 + next start + worker）：本地按线上性能走查
 ```
 
 ## 5. 改动规则

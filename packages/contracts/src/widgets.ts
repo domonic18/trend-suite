@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
-import { klineBar } from './market.js'
-import { CALC_FORMULAS, GENERATORS, GENERATOR_BARS_MAX, GENERATOR_BARS_MIN, GENERATOR_SEED_MAX } from './widget-data.js'
-import { REQUIRED_ASSERTIONS } from './widget-assertions.js'
-import { WIDGET_TYPES, type WidgetType } from './widget-types.js'
+import { idShape } from './ids'
+import { klineBar } from './market'
+import { CALC_FORMULAS, GENERATORS, GENERATOR_BARS_MAX, GENERATOR_BARS_MIN, GENERATOR_SEED_MAX } from './widget-data'
+import { REQUIRED_ASSERTIONS } from './widget-assertions'
+import { WIDGET_TYPES, type WidgetType } from './widget-types'
 
 /**
  * 交互课件契约（arch/06 §7–§9）：11 类组件白名单 + 25 条断言词表 +

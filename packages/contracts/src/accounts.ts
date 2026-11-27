@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { accountPassword, username } from './auth.js'
-import { userRole, userStatus } from './enums.js'
-import { idShape } from './ids.js'
+import { accountPassword, username } from './auth'
+import { userRole, userStatus } from './enums'
+import { idShape } from './ids'
 
 export const createAccountRequest = z.object({
   username,

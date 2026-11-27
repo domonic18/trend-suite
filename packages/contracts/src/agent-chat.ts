@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
+import { idShape } from './ids'
 
 /**
  * Agent 对话式交互（arch/08，教师端需求 T7/T8/T11/T21）：

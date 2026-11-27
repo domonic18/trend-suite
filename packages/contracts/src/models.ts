@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
+import { idShape } from './ids'
 
 /**
  * 模型配置（arch/07 §9）：条目统一维护，密钥 AES-GCM 加密存储，

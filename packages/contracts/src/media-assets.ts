@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { mediaAssetStatus } from './enums.js'
-import { idShape } from './ids.js'
-import { jobStatus, processingStep } from './media-processing.js'
+import { mediaAssetStatus } from './enums'
+import { idShape } from './ids'
+import { jobStatus, processingStep } from './media-processing'
 
 /** 单文件上限 2GiB（教师端需求 T4 / arch/05 §3.1）。 */
 export const MAX_MEDIA_BYTES = 2 * 1024 * 1024 * 1024

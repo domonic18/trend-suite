@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
+import { idShape } from './ids'
 
 /**
  * 行情源配置（arch/06 §5）：K 线数据来源由运营台维护，不再代码 hardcode。

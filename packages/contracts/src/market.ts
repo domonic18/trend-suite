@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idShape } from './ids.js'
+import { idShape } from './ids'
 
 /**
  * 案例股与行情（arch/06 §5 口径）：腾讯前复权（qfq）、日线/周线原生周期
