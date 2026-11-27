@@ -656,10 +656,12 @@ dialog::backdrop {
 }
 
 .build-info {
-  margin-top: 28px;
+  margin-top: auto; /* 侧栏 flex 列的底部（版本行常驻侧栏底，不随内容流浮动） */
+  padding: 14px 16px 12px;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--p-faint);
+  border-top: 1px solid var(--p-line);
 }
 
 .ops-top {
@@ -755,10 +757,6 @@ dialog::backdrop {
      父级必须有确定高度，100% 才能解析——否则回退 auto，面板塌成内容高，
      对话区下方大片空白（这就是空白的根因）。 */
   height: calc(100vh - var(--shell-header-h));
-}
-
-.chat-center .ops-main .build-info {
-  display: none;
 }
 
 .ops-ph {

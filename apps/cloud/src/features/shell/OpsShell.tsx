@@ -52,6 +52,7 @@ export function OpsShell(props: {
             发布交接
           </span>
         </nav>
+        <BuildInfo />
         <div className="ops-user">
           <span className="ava">{initial.slice(0, 1)}</span>
           <span>
@@ -76,7 +77,7 @@ export function OpsShell(props: {
             <span>密钥 AES-GCM 加密 · 明文不回显</span>
           </span>
         </header>
-        <main className="ops-main">{props.children}<BuildInfo /></main>
+        <main className="ops-main">{props.children}</main>
       </div>
     </div>
   )

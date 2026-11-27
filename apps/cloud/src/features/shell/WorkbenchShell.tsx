@@ -82,6 +82,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
             </>
           ) : null}
         </nav>
+        <BuildInfo />
       </aside>
 
       <div className="wb-col">
@@ -130,10 +131,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
             />
           </div>
         </header>
-        <main className="ops-main">
-          {props.children}
-          <BuildInfo />
-        </main>
+        <main className="ops-main">{props.children}</main>
       </div>
     </div>
   )
