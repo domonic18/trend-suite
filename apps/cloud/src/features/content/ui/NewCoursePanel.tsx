@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -84,7 +85,7 @@ export function NewCoursePanel({
         setDraftNotice(err instanceof ApiError ? err.message : '起草未启动，请到方案页重提')
       }
       onCreated(course.id)
-      router.push(`/workbench/courses/${course.id}/plan`)
+      router.push(routes.workbench.course(course.id))
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '创建课程失败')
       setBusy(false)
@@ -124,7 +125,7 @@ export function NewCoursePanel({
               <div className="empty">素材加载中…</div>
             ) : assets.length === 0 ? (
               <Link
-                href="/workbench/library"
+                href={routes.workbench.library}
                 className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
               >
                 <Video className="size-7" strokeWidth={1.4} aria-hidden="true" />

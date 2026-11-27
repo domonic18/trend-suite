@@ -8,11 +8,13 @@ import type {
 } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { usePolling } from '@/features/lib/usePolling'
+import { POLL_MS } from '@/lib/polling'
 import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
-import { getProductionBoard, getSectionContent, getSectionQuotes, resyncSectionQuotes, retryProductionSection } from '../api'
+import { getProductionBoard, resyncSectionQuotes, retryProductionSection } from '../api'
+import { getSectionContent, getSectionQuotes } from '@/features/courseware/api'
 import { ProductionWorkspace } from './ProductionWorkspace'
 
 /**
@@ -27,11 +29,9 @@ import { ProductionWorkspace } from './ProductionWorkspace'
 
 export function ProductionStudio({
   courseId,
-  courseTitle = null,
   userName = '教师',
 }: {
   courseId: string
-  courseTitle?: string | null
   userName?: string
 }) {
   const [board, setBoard] = useState<ProductionBoardView | null>(null)
@@ -73,7 +73,7 @@ export function ProductionStudio({
   const stopped = board?.stop != null
   const inFlight = running && !stopped
 
-  usePolling(refreshBoard, 3_000)
+  usePolling(refreshBoard, POLL_MS.active)
 
   /** 当前展示的节：默认跟随正在跑的那节，教师点选后钉住。 */
   const currentId = useMemo(() => {
@@ -175,7 +175,6 @@ export function ProductionStudio({
       main={
         <AgentChat
         stream={stream}
-        crumb={`${courseTitle ?? '课程'} / 制作台`}
         userName={userName}
         draftingLabel={inFlight ? `正在逐节制作（已完成 ${doneSteps}/${totalSteps} 步）…` : null}
         emptyHint="还没有对话——九步生产的每一步事实会自动留在这里；也可以直接吩咐 Agent 停止、继续或重试。"

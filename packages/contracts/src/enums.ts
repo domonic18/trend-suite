@@ -51,6 +51,18 @@ export function isWorkbenchRole(role: (typeof userRoles)[number]): boolean {
   return (workbenchRoles as readonly string[]).includes(role)
 }
 
+/** 运营台只读准入（arch/07 §9 演进）：producer 可看模型配置/行情源，admin 可写。
+ *  route 层只引用这组常量，不得再手写角色数组——同一策略多处手写 = 改一处漏一处。 */
+export const opsReadRoles = ['producer', 'operator', 'admin'] as const
+/** 运营台写权限：模型条目 / 行情源 / 槽位绑定的新增修改删除。 */
+export const opsWriteRoles = ['admin'] as const
+/** 账号管理准入（不随运营台只读放开）：operator / admin。 */
+export const accountAdminRoles = ['operator', 'admin'] as const
+
+export function canWriteOps(role: (typeof userRoles)[number]): boolean {
+  return (opsWriteRoles as readonly string[]).includes(role)
+}
+
 export type UserRole = z.infer<typeof userRole>
 export type UserStatus = z.infer<typeof userStatus>
 export type CourseStatus = z.infer<typeof courseStatus>

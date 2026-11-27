@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useState } from 'react'
 import type { PlanJobView, PlanReviewView, PlanView, TweakPlanRequest } from '@trend-suite/contracts'
 import { classifyDraftFailure } from './draftFailure'
+import { WORKSPACE_TABS, EmptyPanel, type WorkspaceTabKey } from '@/features/courseware/ui/workspaceTabs'
 import { OutlineSkeleton } from './OutlineSkeleton'
 import { OutlineTree } from './OutlineTree'
 import { Badge } from '@/components/ui/badge'
@@ -18,27 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
  * 批准制作后逐节生成。微调即时生效、不进对话；不放横幅与动作按钮。
  */
 
-const TABS = [
-  { key: 'outline', label: '大纲' },
-  { key: 'artifact', label: '课件' },
-  { key: 'figures', label: '配图' },
-  { key: 'video', label: '视频' },
-  { key: 'kline', label: 'K线图' },
-  { key: 'quiz', label: '练习题' },
-  { key: 'interactive', label: '互动' },
-] as const
 
-type TabKey = (typeof TABS)[number]['key']
 
 /** 课件元素在方案阶段的空态（最小状态句，无教学标注）。 */
-const PENDING_TEXT: Record<Exclude<TabKey, 'outline'>, string> = {
-  artifact: '还没有课件。',
-  figures: '还没有配图。',
-  video: '还没有视频。',
-  kline: '还没有 K 线图。',
-  quiz: '还没有练习题。',
-  interactive: '还没有互动课件。',
-}
 
 export function PlanWorkspace({
   plan,
@@ -64,22 +47,14 @@ export function PlanWorkspace({
   approving?: boolean
   approveError?: string | null
 }) {
-  const [tab, setTab] = useState<TabKey>('outline')
+  const [tab, setTab] = useState<WorkspaceTabKey>('outline')
 
   const running = job?.status === 'queued' || job?.status === 'running'
   const approved = plan?.status === 'approved'
   const jobFailed = !plan && job?.status === 'failed'
   const failure = jobFailed ? classifyDraftFailure(job) : null
 
-  const tag = approved
-    ? { cls: 'ok', text: '已锁定' }
-    : running
-      ? { cls: 'run', text: '起草中' }
-      : plan
-        ? { cls: 'warn', text: '待批准' }
-        : { cls: 'mut', text: '未起草' }
-
-  const counts: Record<TabKey, string | null> = {
+  const counts: Record<WorkspaceTabKey, string | null> = {
     outline: plan ? String(plan.skeleton.nodes.length) : null,
     artifact: null,
     figures: null,
@@ -92,14 +67,13 @@ export function PlanWorkspace({
   return (
     <Tabs
       value={tab}
-      onValueChange={(value) => setTab(value as TabKey)}
+      onValueChange={(value) => setTab(value as WorkspaceTabKey)}
       className="ws"
       aria-label="课件工作区"
     >
       <div className="ws-head">
         <div className="ws-title">
           课件工作区
-          <Badge className={`tag ${tag.cls}`}>{tag.text}</Badge>
           {plan && !approved && onApprove ? (
             <Button
               size="sm"
@@ -116,13 +90,10 @@ export function PlanWorkspace({
             <AlertDescription>{approveError}</AlertDescription>
           </Alert>
         ) : null}
-        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
-          {TABS.map((item) => (
-            <TabsTrigger
-              key={item.key}
-              value={item.key}
-              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
-            >
+        <TabsList className="overflow-x-auto">
+          {WORKSPACE_TABS.map((item) => (
+            <TabsTrigger key={item.key} value={item.key}>
+              <item.icon className="size-3.5" aria-hidden="true" />
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}
             </TabsTrigger>
@@ -202,9 +173,9 @@ export function PlanWorkspace({
           )}
         </TabsContent>
 
-        {TABS.filter((item) => item.key !== 'outline').map((item) => (
+        {WORKSPACE_TABS.filter((item) => item.key !== 'outline').map((item) => (
           <TabsContent value={item.key} key={item.key} className="mt-0">
-            <p className="note">{PENDING_TEXT[item.key]}</p>
+            <EmptyPanel tabKey={item.key} />
           </TabsContent>
         ))}
       </div>

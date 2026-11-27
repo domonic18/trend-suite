@@ -1,4 +1,4 @@
-import { marketSourceTestResultView } from '@trend-suite/contracts'
+import { marketSourceTestResultView, opsReadRoles } from '@trend-suite/contracts'
 import { assertCanWriteMarketSources, testMarketSource } from '@/server/content/quotes/sources/service'
 import { requireUser } from '@/server/lib/auth'
 import { errorResponse, json } from '@/server/lib/http'
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, opsReadRoles)
     assertCanWriteMarketSources(actor.role)
     const { id } = await ctx.params
     const result = await testMarketSource(id)

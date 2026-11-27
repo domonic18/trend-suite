@@ -1,8 +1,12 @@
 'use client'
 
+import { storageKeys } from '@/lib/storageKeys'
+
+import { routes } from '@/lib/routes'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
+import { WORKSPACE_TABS, EmptyPanel, type WorkspaceTabKey } from '@/features/courseware/ui/workspaceTabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -16,12 +20,12 @@ import type {
   SectionQuotesView,
   SourceUnitView,
 } from '@trend-suite/contracts'
-import { ClipCard } from '@/features/content/ui/ClipCard'
-import { DslRenderer } from '@/features/content/ui/DslRenderer'
-import { FigureCard } from '@/features/content/ui/FigureCard'
-import { WidgetHost } from '@/features/content/ui/widgets/WidgetHost'
+import { ClipCard } from '@/features/courseware/ui/ClipCard'
+import { DslRenderer } from '@/features/courseware/ui/DslRenderer'
+import { FigureCard } from '@/features/courseware/ui/FigureCard'
+import { WidgetHost } from '@/features/courseware/ui/widgets/WidgetHost'
 import type { FigureView } from '@trend-suite/contracts'
-import { KlineChart } from './KlineChart'
+import { KlineChart } from '@/features/courseware/ui/KlineChart'
 
 /**
  * 制作台右栏工作区（arch/08 §6）：页签 = 课件元素类别（大纲 / 课件 / 配图 /
@@ -29,17 +33,7 @@ import { KlineChart } from './KlineChart'
  * 持久化。只呈现产物与微调入口——工作交互都在左栏对话流。
  */
 
-const TABS = [
-  { key: 'outline', label: '大纲' },
-  { key: 'artifact', label: '课件' },
-  { key: 'figures', label: '配图' },
-  { key: 'video', label: '视频' },
-  { key: 'kline', label: 'K线图' },
-  { key: 'quiz', label: '练习题' },
-  { key: 'interactive', label: '互动' },
-] as const
 
-type TabKey = (typeof TABS)[number]['key']
 
 /** K 线类课件：K 线标注练习 + 逐根回放决策。 */
 const KLINE_TYPES = new Set<string>(['kline-annotator', 'bar-replay-decision'])
@@ -98,16 +92,16 @@ export function ProductionWorkspace({
   onRetry: (sectionId: string) => void
   onSyncQuotes: () => void
 }) {
-  const [tab, setTab] = useState<TabKey>('artifact')
+  const [tab, setTab] = useState<WorkspaceTabKey>('artifact')
 
   // 页签与宽度一样持久化：刷新后还在教师上次看的位置。
   useEffect(() => {
-    const saved = window.localStorage.getItem('wb.ws.tab.production')
-    if (saved && TABS.some((item) => item.key === saved)) setTab(saved as TabKey)
+    const saved = window.localStorage.getItem(storageKeys.workspaceTab('production'))
+    if (saved && WORKSPACE_TABS.some((item) => item.key === saved)) setTab(saved as WorkspaceTabKey)
   }, [])
-  const selectTab = (next: TabKey) => {
+  const selectTab = (next: WorkspaceTabKey) => {
     setTab(next)
-    window.localStorage.setItem('wb.ws.tab.production', next)
+    window.localStorage.setItem(storageKeys.workspaceTab('production'), next)
   }
 
   const sections = board?.sections ?? []
@@ -122,18 +116,6 @@ export function ProductionWorkspace({
   ).length
   const allComplete = sections.length > 0 && sections.every((section) => section.status === 'complete')
 
-  const tag = allComplete
-    ? { cls: 'ok', text: '已完成' }
-    : board?.job?.status === 'queued' || board?.job?.status === 'running'
-      ? { cls: 'run', text: '制作中' }
-      : board?.stop != null
-        ? { cls: 'warn', text: '已停止' }
-        : board?.job?.status === 'failed'
-          ? { cls: 'err', text: '失败' }
-          : suspendedCount > 0
-            ? { cls: 'warn', text: '待人工' }
-            : { cls: 'mut', text: '空闲' }
-  const emptyTag = board ? { cls: 'mut', text: '空闲' } : { cls: 'mut', text: '加载中' }
 
   /** 视频/出处页签：本节引用的素材按份分组，段内时间范围可回溯原视频并可回放。 */
   const unitsByAsset = useMemo(() => {
@@ -167,7 +149,7 @@ export function ProductionWorkspace({
     [content],
   )
 
-  const counts: Record<TabKey, string | null> = {
+  const counts: Record<WorkspaceTabKey, string | null> = {
     outline: sections.length > 0 ? String(sections.length) : null,
     artifact: current ? `${current.products}/9` : null,
     figures:
@@ -186,24 +168,18 @@ export function ProductionWorkspace({
   return (
     <Tabs
       value={tab}
-      onValueChange={(value) => selectTab(value as TabKey)}
+      onValueChange={(value) => selectTab(value as WorkspaceTabKey)}
       className="ws"
       aria-label="制作工作区"
     >
       <div className="ws-head">
         <div className="ws-title">
           制作工作区
-          <Badge className={`tag ${boardReady ? tag.cls : emptyTag.cls}`}>
-            {boardReady ? tag.text : emptyTag.text}
-          </Badge>
         </div>
-        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
-          {TABS.map((item) => (
-            <TabsTrigger
-              key={item.key}
-              value={item.key}
-              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
-            >
+        <TabsList className="overflow-x-auto">
+          {WORKSPACE_TABS.map((item) => (
+            <TabsTrigger key={item.key} value={item.key}>
+              <item.icon className="size-3.5" aria-hidden="true" />
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}
             </TabsTrigger>
@@ -239,7 +215,7 @@ export function ProductionWorkspace({
                     </Badge>
                     <span className="right">
                       <Button variant="link" size="sm" asChild>
-                        <Link href={`/workbench/courses/${courseId}/sections/${current.sectionId}/preview`}>
+                        <Link href={routes.workbench.preview(courseId, current.sectionId)}>
                         本节预览
                       </Link>
                       </Button>
@@ -293,7 +269,7 @@ export function ProductionWorkspace({
                   )
                 })
               ) : (
-                <p className="note">{current ? '本节还没有配图。' : '还没有选中节。'}</p>
+                current ? <EmptyPanel tabKey="figures" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 
@@ -320,7 +296,7 @@ export function ProductionWorkspace({
                     </div>
                   ))
                 ) : (
-                  <p className="note">本节还没有引用素材片段。</p>
+                  <EmptyPanel tabKey="video" />
                 )
               ) : (
                 <p className="note">还没有选中节。</p>
@@ -381,7 +357,7 @@ export function ProductionWorkspace({
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
                 ))
               ) : (
-                <p className="note">{current ? '本节还没有练习题。' : '还没有选中节。'}</p>
+                current ? <EmptyPanel tabKey="quiz" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 
@@ -391,9 +367,7 @@ export function ProductionWorkspace({
                   <WidgetHost key={widget.id} widget={widget} figures={figureMap} />
                 ))
               ) : (
-                <p className="note">
-                  {current ? '本节还没有其他互动课件。' : '还没有选中节。'}
-                </p>
+                current ? <EmptyPanel tabKey="interactive" /> : <p className="note">还没有选中节。</p>
               )}
             </TabsContent>
 

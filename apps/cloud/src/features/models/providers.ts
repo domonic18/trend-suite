@@ -1,4 +1,4 @@
-import type { ModelProtocol } from '@trend-suite/contracts'
+import type { ModelProtocol, ModelPurpose } from '@trend-suite/contracts'
 
 /**
  * 厂商预置（arch/07 §9）：只收录国内常用厂商的**中国大陆**公开文档端点。
@@ -100,4 +100,61 @@ export function isPresetBaseUrl(url: string): boolean {
 
 export function findProviderPreset(provider: string): ProviderPreset | undefined {
   return MODEL_PROVIDERS.find((p) => p.value === provider || p.label === provider)
+}
+
+/* ---------- 用途 / 协议字典与可选协议推导（此前放在面板组件里，子组件反向依赖父文件）---------- */
+export const PURPOSE_LABELS: Record<ModelPurpose, string> = {
+  llm: '内容生成',
+  vlm: '视觉理解',
+  asr: '语音转写',
+  embedding: '向量嵌入',
+  image: '图像生成',
+}
+
+export const PROTOCOL_LABELS: Record<ModelProtocol, string> = {
+  openai: 'OpenAI 兼容',
+  anthropic: 'Anthropic',
+  minimax: 'MiniMax 专有',
+}
+
+/** 用途允许的协议（与服务端一致，服务端还会再挡一次）。 */
+const PROTOCOLS_BY_PURPOSE: Record<ModelPurpose, ModelProtocol[]> = {
+  llm: ['openai', 'anthropic'],
+  vlm: ['openai', 'anthropic'],
+  asr: ['minimax', 'openai'],
+  embedding: ['openai'],
+  image: ['openai'],
+}
+
+/** 多用途条目的协议交集：用途全允许才可选。 */
+export function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
+  const sets = purposes.map((p) => PROTOCOLS_BY_PURPOSE[p])
+  return (Object.keys(PROTOCOL_LABELS) as ModelProtocol[]).filter((protocol) =>
+    sets.every((list) => list.includes(protocol)),
+  )
+}
+
+/** 可选协议 = 用途允许集 ∩ 厂商支持集；选了预置厂商后不再列出该厂商没有的协议。 */
+export function availableProtocols(
+  purposes: ModelPurpose[],
+  preset: ReturnType<typeof findProviderPreset>,
+): ModelProtocol[] {
+  const allowed = allowedProtocols(purposes)
+  if (!preset) return allowed
+  const supported = providerProtocols(preset)
+  return allowed.filter((protocol) => supported.includes(protocol))
+}
+
+export type EntryForm = {
+  id: string | null
+  name: string
+  purposes: ModelPurpose[]
+  provider: string
+  /** 自定义供应商（「其他」手填名称）：provider 存用户输入，select 停在「其他」。 */
+  custom: boolean
+  protocol: ModelProtocol
+  model: string
+  baseUrl: string
+  apiKey: string
+  isDefault: boolean
 }

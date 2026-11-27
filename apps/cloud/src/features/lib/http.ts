@@ -39,5 +39,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
       body?.error?.code,
     )
   }
-  return (await res.json()) as T
+  // 成功响应的 body 可能为空（204 No Content——删除等操作）：无 body 时返回
+  // undefined 而不是无脑 res.json()（空 body 解析会抛 SyntaxError，
+  // 把删除成功当失败——「删除失败：Unexpected end of JSON input」的根因）。
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }

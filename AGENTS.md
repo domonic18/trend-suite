@@ -27,7 +27,7 @@ trend-suite/
 ├── packages/
 │   ├── contracts/           # @trend-suite/contracts：跨端契约单一真相源（zod）
 │   └── dsl/                 # @trend-suite/dsl：教材 DSL 解析器（纯函数，云端服务端与浏览器渲染同源复用）
-└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 同时发 staging（自动）与 production（人工审批后），镜像 tag 统一 main-<sha>）
+└── .github/workflows/       # CI/CD（dockerfile-lint / lint / check / test / 双迁移守卫 → build → deploy：单主干——push main 只发 production（人工审批后），无测试环境（无 develop / staging），镜像 tag 统一 main-<sha>）
 ├── eslint.config.mjs       # 仓级 eslint 扁平配置（typescript-eslint recommended，pnpm lint 从根跑）
 ```
 
@@ -35,7 +35,7 @@ trend-suite/
 
 1. **依赖纪律**：`apps/*` 之间禁止互相 import；`packages/*` 禁止依赖 `apps/*`；跨端共享的契约一律落 `packages/contracts`，跨端共享的纯算法（如教材 DSL 解析）落 `packages/dsl`。**`src/features` 不得 import `src/server`**（浏览器切片与服务端真相的边界；共享纯逻辑下沉到 `packages/`）。
 2. **契约先行**：接口字段/错误码变更先改 docs/requirement/ 需求与 contracts，再改实现与测试。
-3. **每个应用一个 `src/` 根**：cloud 采用 Next.js `src/app` 约定——`src/app` 薄路由层、`src/server/<域>` 服务端真相、`src/features/<域>` 浏览器切片（**同名成对**，目录名与 arch/02 §2 模块表一致，详见 arch/02 §2.1）；`public/` 固定在应用根。
+3. **每个应用一个 `src/` 根**：cloud 采用 Next.js `src/app` 约定——`src/app` 薄路由层、`src/server/<域>` 服务端真相、`src/features/<域>` 浏览器切片（**同名成对**，目录名与 arch/02 §2 模块表一致，详见 arch/02 §2.1）；`public/` 固定在应用根；浏览器-only 切片 `features/shell`（壳）与 `features/courseware`（课件只读渲染）无 server 对应，`content`/`production` 单向依赖 `courseware`、彼此不互引；页面路径一律经 `src/lib/routes.ts`（`routes.test.ts` 守卫每条路径有对应 page），角色组一律引 contracts 的 `*Roles` 常量。
 4. **持久化数据**：运行期数据一律落各应用 `workspace/`（gitignore），不写其他路径、不提交入库；密钥只走 `.env` 注入（云端模型密钥走 `ai_models` 加密列，见 docs/arch/07）。
 5. **文档随仓库走**：apps/* 只放代码与运行资产，项目文档一律在根 `docs/`，并在 docs/README.md 登记。**临时性 / 过渡性文档不进仓库**——评审清单、还债路线、阶段小结、过程稿等过程产物不进 `docs/`，需要留档就放应用 `workspace/`（gitignore）或留在会话里；进仓的文档必须是长期有效的需求 / 架构 / 规范正文。
 6. **提交**：Conventional Commits；未经用户批准不提交 git。

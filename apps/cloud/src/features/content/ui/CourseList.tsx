@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
@@ -11,16 +12,6 @@ import { useCourses } from './CoursesProvider'
 import { NewCoursePanel } from './NewCoursePanel'
 import { courseScaleOf, courseStatusTagOf, progressOf } from './coursePhase'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,7 +45,7 @@ export function CourseList() {
   // 新建课程是页面内嵌面板（Sasan 式）：#create 锚点驱动，无弹窗无路由跳转。
   const [creating, setCreating] = useState(false)
   useEffect(() => {
-    const sync = () => setCreating(window.location.hash === '#create')
+    const sync = () => setCreating(window.location.hash === `#${routes.workbench.create.split('#')[1]}`)
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
@@ -77,6 +68,15 @@ export function CourseList() {
 
   return (
     <section>
+      <div className="page-head page-head--top">
+        <h1>我的课程</h1>
+        <div className="actions">
+          <Button asChild>
+            <a href={routes.workbench.create}>新建课程</a>
+          </Button>
+        </div>
+      </div>
+
       {error ? (
         <Alert variant="destructive" className="mb-3.5">
           <AlertDescription>{error}</AlertDescription>
@@ -86,14 +86,11 @@ export function CourseList() {
       {loading ? (
         <div className="empty">课程加载中…</div>
       ) : courses.length === 0 ? (
-        <a
-          href="#create"
-          className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-12 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
-        >
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-12 text-mut">
           <BookOpen className="size-7" strokeWidth={1.4} aria-hidden="true" />
           <span className="text-[13px]">还没有课程</span>
-          <span className="text-[12px]">新建课程 →</span>
-        </a>
+          <span className="text-[12px]">点右上角「新建课程」创建第一门课</span>
+        </div>
       ) : (
         <div className="cards">
           {courses.map((course) => {
@@ -105,7 +102,7 @@ export function CourseList() {
                 key={course.id}
                 style={{ '--cover-hue': coverHueOf(course.id) } as CSSProperties}
               >
-                <Link className="card-go" href={`/workbench/courses/${course.id}`} aria-label={`进入课程 ${course.title}`} />
+                <Link className="card-go" href={routes.workbench.course(course.id)} aria-label={`进入课程 ${course.title}`} />
                 <div className="card-cover" aria-hidden="true">
                   <span className="card-mono">{Array.from(course.title)[0] ?? '课'}</span>
                 </div>
@@ -147,12 +144,6 @@ export function CourseList() {
           })}
         </div>
       )}
-
-      <div className="cards mt-3.5">
-        <a className="card add" href="#create">
-          ＋ 新建课程
-        </a>
-      </div>
 
       <RenameDialog course={renaming} onClose={() => setRenaming(null)} onDone={() => void refresh()} />
       <DeleteDialog course={deleting} onClose={() => setDeleting(null)} onDone={() => void refresh()} />
@@ -259,7 +250,11 @@ function DeleteDialog({
       onClose()
       onDone()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '删除失败，请稍后再试')
+      // 非 ApiError（fetch 网络层异常：超时 / 连接重置）时透出原始信息，
+      // 便于区分「接口报错」与「网络没到服务端」。
+      setError(
+        err instanceof ApiError ? err.message : `删除失败：${String(err instanceof Error ? err.message : err)}`,
+      )
       setBusy(false)
     }
   }

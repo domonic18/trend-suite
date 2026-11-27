@@ -1,4 +1,4 @@
-import { modelTestResultView } from '@trend-suite/contracts'
+import { modelTestResultView, opsReadRoles } from '@trend-suite/contracts'
 import { assertCanWriteModels, testModelEntry } from '@/server/models/service'
 import { requireUser } from '@/server/lib/auth'
 import { errorResponse, json } from '@/server/lib/http'
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, opsReadRoles)
     assertCanWriteModels(actor.role)
     const { id } = await ctx.params
     const result = await testModelEntry(id)

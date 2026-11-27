@@ -2,6 +2,7 @@ import {
   createModelEntryRequest,
   modelEntryListResponse,
   modelEntryView,
+  opsReadRoles,
 } from '@trend-suite/contracts'
 import { assertCanWriteModels, createModelEntry, listModelEntries } from '@/server/models/service'
 import { requireUser } from '@/server/lib/auth'
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 /** 模型条目列表：运营只读，管理员可写（arch/07 §9）。 */
 export async function GET(req: Request) {
   try {
-    await requireUser(req, ['operator', 'admin'])
+    await requireUser(req, opsReadRoles)
     const items = await listModelEntries()
     return json(modelEntryListResponse.parse({ items }))
   } catch (err) {
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, opsReadRoles)
     assertCanWriteModels(actor.role)
     const raw = await req.json().catch(() => null)
     const parsed = createModelEntryRequest.safeParse(raw)

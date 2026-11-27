@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { storageKeys } from '@/lib/storageKeys'
 import { LogOut, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +23,7 @@ export function useWorkbenchTheme(): { theme: 'dark' | 'light'; toggle: () => vo
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('wb.theme')
+    const saved = window.localStorage.getItem(storageKeys.theme)
     const next = saved === 'light' || saved === 'dark' ? saved : 'dark'
     setTheme(next)
     document.documentElement.setAttribute('data-wb-theme', next)
@@ -34,7 +35,7 @@ export function useWorkbenchTheme(): { theme: 'dark' | 'light'; toggle: () => vo
   const toggle = useCallback(() => {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark'
-      window.localStorage.setItem('wb.theme', next)
+      window.localStorage.setItem(storageKeys.theme, next)
       document.documentElement.setAttribute('data-wb-theme', next)
       return next
     })

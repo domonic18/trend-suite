@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CaseStockView, SectionQuotesView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { getSectionQuotes } from '@/features/production/api'
-import { KlineChart } from '@/features/production/ui/KlineChart'
+import { getSectionQuotes } from '../api'
+import { KlineChart } from './KlineChart'
 
 /**
  * 个股锚 [[stock:code|名称]]：正文内联芯片，点开懒加载节行情并

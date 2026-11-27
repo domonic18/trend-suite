@@ -110,23 +110,6 @@
 
 /* 阶段提示句单行省略（悬停看全文），不占多行 */
 
-
-
-.card.add {
-  align-items: center;
-  justify-content: center;
-  border-style: dashed;
-  background: var(--p-soft);
-  color: var(--p-mut);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.card.add:hover {
-  color: var(--p-pri);
-  border-color: var(--p-pri);
-}
-
 /* 课程卡整卡可点：Link 铺满卡片当热区，右上操作钮抬高一层不被吞掉。 */
 .card.clickable {
   position: relative;
@@ -289,10 +272,6 @@ dialog {
 
 dialog::backdrop {
   background: rgba(16, 24, 40, 0.42);
-}
-
-.dialog-body {
-  padding: 16px;
 }
 
 /* ---------------- 加工面板（步进条 / 逐字稿 / 关键帧） ---------------- */
@@ -667,10 +646,12 @@ dialog::backdrop {
 }
 
 .build-info {
-  margin-top: 28px;
+  margin-top: auto; /* 侧栏 flex 列的底部（版本行常驻侧栏底，不随内容流浮动） */
+  padding: 14px 16px 12px;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--p-faint);
+  border-top: 1px solid var(--p-line);
 }
 
 .ops-top {
@@ -745,11 +726,6 @@ dialog::backdrop {
   color: var(--p-faint);
 }
 
-.ops-top .right {
-  margin-left: auto;
-  font-size: 12.5px;
-}
-
 .ops-main {
   padding: 20px 24px 40px;
   max-width: 1200px;
@@ -766,10 +742,6 @@ dialog::backdrop {
      父级必须有确定高度，100% 才能解析——否则回退 auto，面板塌成内容高，
      对话区下方大片空白（这就是空白的根因）。 */
   height: calc(100vh - var(--shell-header-h));
-}
-
-.chat-center .ops-main .build-info {
-  display: none;
 }
 
 .ops-ph {
@@ -790,4 +762,14 @@ dialog::backdrop {
   color: var(--p-mut);
   margin-top: 4px;
   max-width: 72ch;
+}
+
+/* 侧栏底部附加导航（运营台入口）：mt-auto 贴到版本行之上。 */
+.ops-menu--bottom {
+  margin-top: auto;
+}
+
+/* 列表页页头贴顶间距（课程列表 / 素材库同值，替代内联 style）。 */
+.page-head--top {
+  margin-top: 26px;
 }

@@ -26,6 +26,7 @@
 @import './styles/chat.css';
 @import './styles/content.css';
 @import './styles/workspace.css';
+@import './styles/settings.css';
 
 /* ------------------------------------------------------------
    主题变体：shadcn 组件内的 dark: utility 对齐现有属性选择器——
@@ -63,6 +64,7 @@
   --color-ring: var(--p-pri);
 
   /* 域扩展：迁移期 utility 直达现有语义色 */
+  --color-pri: var(--p-pri);
   --color-pri-deep: var(--p-pri-deep);
   --color-pri-soft: var(--p-pri-soft);
   --color-success: var(--p-acc);

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type Hls from 'hls.js'
 import type { SourceUnitView } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
-import { getHlsPlayback } from '@/features/production/api'
+import { getHlsPlayback } from '../api'
 
 /**
  * 片段卡 :::clip（验收②的播放形态）：素材已产出 HLS 才可播；

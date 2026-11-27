@@ -5,6 +5,7 @@ import {
   type UserRole,
 } from '@trend-suite/contracts'
 import { createAccount, listAccounts } from '@/server/accounts/service'
+import { accountAdminRoles } from '@trend-suite/contracts'
 import { requireUser } from '@/server/lib/auth'
 import { badRequest, errorResponse, firstIssueOf, forbidden, json } from '@/server/lib/http'
 
@@ -16,7 +17,7 @@ const OPERATOR_CREATABLE: readonly UserRole[] = ['producer', 'student']
 
 export async function GET(req: Request) {
   try {
-    await requireUser(req, ['operator', 'admin'])
+    await requireUser(req, accountAdminRoles)
     const items = await listAccounts()
     return json(accountListResponse.parse({ items }))
   } catch (err) {
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const actor = await requireUser(req, ['operator', 'admin'])
+    const actor = await requireUser(req, accountAdminRoles)
     const raw = await req.json().catch(() => null)
     const parsed = createAccountRequest.safeParse(raw)
     if (!parsed.success) {

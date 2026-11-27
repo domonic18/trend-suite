@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { validateDsl } from './validator'
 import { parseDsl } from '@trend-suite/dsl'
-import { bignumView, cardsView, cmpView, timelineView } from '@/features/content/ui/blockView'
+import { bignumView, cardsView, cmpView, timelineView } from '@/features/courseware/ui/blockView'
 
 /**
  * JSON 容器块的 body 形状在服务端复检与客户端渲染之间必须同源

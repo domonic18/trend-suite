@@ -4,17 +4,16 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { usePolling } from '@/features/lib/usePolling'
+import { POLL_MS } from '@/lib/polling'
 import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
 import { CourseWorkspaceSkeleton } from './OutlineSkeleton'
 import { useCourses } from './CoursesProvider'
+import dynamic from 'next/dynamic'
 import { takeDraftNotice } from './draftNotice'
-import { AssetPickerDialog } from './AssetPickerDialog'
 import { PlanWorkspace } from './PlanWorkspace'
-
-export type MaterialsReady = { ready: number; total: number }
 
 /**
  * 方案页（迭代 11，arch/08 chat-center）：中栏 = 与 Agent 的真多轮对话，
@@ -26,16 +25,18 @@ export type MaterialsReady = { ready: number; total: number }
  * 就绪时发确认卡，教师点选后确定性执行；右栏宽度可拖拽/键盘调整并持久化，
  * 对话事件驱动右栏重取（refreshKey），轮询仅作兜底。
  */
+/** 素材选择弹窗懒加载：hls.js 预览只在首次打开弹窗时下载。 */
+const AssetPickerDialog = dynamic(
+  () => import('./AssetPickerDialog').then((m) => m.AssetPickerDialog),
+  { ssr: false },
+)
+
 export function PlanPanel({
   courseId,
-  materials = null,
   userName = '教师',
-  courseTitle,
 }: {
   courseId: string
-  materials?: MaterialsReady | null
   userName?: string
-  courseTitle?: string | null
 }) {
   const [data, setData] = useState<PlanResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -84,7 +85,7 @@ export function PlanPanel({
 
   const job = data?.job ?? null
   const running = job?.status === 'queued' || job?.status === 'running'
-  usePolling(refresh, running ? 3_000 : 60_000) // 起草中 3s；空闲降到 60s 兜底
+  usePolling(refresh, running ? POLL_MS.active : POLL_MS.idle)
 
   // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：起草完成等事实落流即刷新。
   const lastSeq = stream.lastSeq
@@ -146,7 +147,6 @@ export function PlanPanel({
         main={
           <AgentChat
             stream={stream}
-            crumb={`${courseTitle ?? '课程'} / 制作方案${plan ? ` v${plan.version}` : ''}`}
             userName={userName}
             draftingLabel={running ? `正在起草方案（第 ${job?.attempts ?? 1} 次尝试）…` : null}
             emptyHint="还没有对话——把课程主题发给 Agent，它会起草大纲并和你对齐。"
