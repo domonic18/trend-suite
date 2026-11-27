@@ -14,8 +14,6 @@ import dynamic from 'next/dynamic'
 import { takeDraftNotice } from './draftNotice'
 import { PlanWorkspace } from './PlanWorkspace'
 
-export type MaterialsReady = { ready: number; total: number }
-
 /**
  * 方案页（迭代 11，arch/08 chat-center）：中栏 = 与 Agent 的真多轮对话，
  * 交互只有三种——自由文本（composer，目标与目录在这里给）、AskQuestion
@@ -34,14 +32,10 @@ const AssetPickerDialog = dynamic(
 
 export function PlanPanel({
   courseId,
-  materials = null,
   userName = '教师',
-  courseTitle,
 }: {
   courseId: string
-  materials?: MaterialsReady | null
   userName?: string
-  courseTitle?: string | null
 }) {
   const [data, setData] = useState<PlanResponse | null>(null)
   const [loading, setLoading] = useState(true)

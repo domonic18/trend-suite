@@ -1,3 +1,4 @@
+import { routes } from '@/lib/routes'
 import { isWorkbenchRole, type SessionUser } from '@trend-suite/contracts'
 import { isOpsRole } from './ops-role'
 
@@ -9,8 +10,8 @@ import { isOpsRole } from './ops-role'
 export type ConsoleArea = 'public' | 'ops' | 'workbench'
 
 export function accessFor(pathname: string): ConsoleArea {
-  if (pathname === '/login' || pathname.startsWith('/login/')) return 'public'
-  if (pathname === '/ops' || pathname.startsWith('/ops/')) return 'ops'
+  if (pathname === routes.login || pathname.startsWith(`${routes.login}/`)) return 'public'
+  if (pathname === routes.ops || pathname.startsWith(`${routes.ops}/`)) return 'ops'
   return 'workbench'
 }
 

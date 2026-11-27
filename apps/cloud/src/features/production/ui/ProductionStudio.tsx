@@ -27,11 +27,9 @@ import { ProductionWorkspace } from './ProductionWorkspace'
 
 export function ProductionStudio({
   courseId,
-  courseTitle = null,
   userName = '教师',
 }: {
   courseId: string
-  courseTitle?: string | null
   userName?: string
 }) {
   const [board, setBoard] = useState<ProductionBoardView | null>(null)

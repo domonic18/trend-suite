@@ -54,14 +54,6 @@ export function PlanWorkspace({
   const jobFailed = !plan && job?.status === 'failed'
   const failure = jobFailed ? classifyDraftFailure(job) : null
 
-  const tag = approved
-    ? { cls: 'ok', text: '已锁定' }
-    : running
-      ? { cls: 'run', text: '起草中' }
-      : plan
-        ? { cls: 'warn', text: '待批准' }
-        : { cls: 'mut', text: '未起草' }
-
   const counts: Record<WorkspaceTabKey, string | null> = {
     outline: plan ? String(plan.skeleton.nodes.length) : null,
     artifact: null,

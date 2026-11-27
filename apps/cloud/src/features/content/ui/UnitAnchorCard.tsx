@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { Badge } from '@/components/ui/badge'
 
 import { Button } from '@/components/ui/button'
@@ -35,7 +36,7 @@ export function UnitAnchorCard({
         {unit.playable ? <Badge className="tag ready">可回放</Badge> : <Badge className="tag gray">HLS 未产出</Badge>}
         <span className="grow" />
         <Button variant="link" size="sm" asChild>
-          <Link href={`/workbench/courses/${courseId}`}>打开素材页</Link>
+          <Link href={routes.workbench.course(courseId)}>打开素材页</Link>
         </Button>
         <Button variant="link" size="sm" onClick={onClose}>
           收起

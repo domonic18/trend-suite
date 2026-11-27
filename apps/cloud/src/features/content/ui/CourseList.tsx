@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
@@ -11,16 +12,6 @@ import { useCourses } from './CoursesProvider'
 import { NewCoursePanel } from './NewCoursePanel'
 import { courseScaleOf, courseStatusTagOf, progressOf } from './coursePhase'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,7 +45,7 @@ export function CourseList() {
   // 新建课程是页面内嵌面板（Sasan 式）：#create 锚点驱动，无弹窗无路由跳转。
   const [creating, setCreating] = useState(false)
   useEffect(() => {
-    const sync = () => setCreating(window.location.hash === '#create')
+    const sync = () => setCreating(window.location.hash === `#${routes.workbench.create.split('#')[1]}`)
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
@@ -81,7 +72,7 @@ export function CourseList() {
         <h1>我的课程</h1>
         <div className="actions">
           <Button asChild>
-            <a href="#create">新建课程</a>
+            <a href={routes.workbench.create}>新建课程</a>
           </Button>
         </div>
       </div>
@@ -111,7 +102,7 @@ export function CourseList() {
                 key={course.id}
                 style={{ '--cover-hue': coverHueOf(course.id) } as CSSProperties}
               >
-                <Link className="card-go" href={`/workbench/courses/${course.id}`} aria-label={`进入课程 ${course.title}`} />
+                <Link className="card-go" href={routes.workbench.course(course.id)} aria-label={`进入课程 ${course.title}`} />
                 <div className="card-cover" aria-hidden="true">
                   <span className="card-mono">{Array.from(course.title)[0] ?? '课'}</span>
                 </div>

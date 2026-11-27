@@ -142,14 +142,14 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
 
   return (
     <section>
-      <div className="card">
+      <div className="settings-heading">
+        <h3>行情源</h3>
         {canWrite ? (
-          <div className="mfoot mt-0 mb-2.5">
-            <Button onClick={() => setForm({ ...EMPTY_FORM })}>新增行情源</Button>
-          </div>
-        ) : (
-          <p className="sub" style={{ margin: 0 }}>只读模式</p>
-        )}
+          <Button size="sm" onClick={() => setForm({ ...EMPTY_FORM })}>
+            <Plus className="size-4" /> 新增
+          </Button>
+        ) : null}
+      </div>
 
         {error ? (
           <Alert variant="destructive" className="mb-3.5">
@@ -283,7 +283,6 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
             </div>
           ))
         )}
-      </div>
 
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>

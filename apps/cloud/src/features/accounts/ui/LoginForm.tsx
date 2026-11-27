@@ -1,9 +1,9 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { ApiError } from '@/features/lib/http'
-import { isOpsRole } from '@/features/shell/ops-role'
 import { login } from '../api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -29,9 +29,9 @@ export function LoginForm() {
     const name = String(data.get('username') ?? username).trim()
     const pass = String(data.get('password') ?? password)
     try {
-      const user = await login(name, pass)
+      await login(name, pass)
       // setToken 已发布会话变更：Provider 重新校验后放行，SPA 直达。
-      router.replace(isOpsRole(user) ? '/ops' : '/workbench')
+      router.replace(routes.workbench.index)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '登录失败，请稍后重试')
       setBusy(false)

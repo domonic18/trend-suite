@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -42,7 +43,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
   const { theme, toggle } = useWorkbenchTheme()
 
   const courseId = courseIdOfPath(pathname)
-  const onLibrary = pathname.startsWith('/workbench/library')
+  const onLibrary = pathname.startsWith(routes.workbench.library)
   const current = courses.find((c) => c.id === courseId) ?? null
   const phase = courseId
     ? (phaseOfPath(pathname) ?? (current ? (current.planStatus === 'approved' ? 'production' : 'plan') : null))
@@ -65,11 +66,11 @@ export function WorkbenchShell(props: { children: ReactNode }) {
         </div>
         <nav className="ops-menu">
           <div className="ops-g">工作台</div>
-          <Link className={`ops-i ${courseId || onLibrary ? '' : 'on'}`} href="/workbench">
+          <Link className={`ops-i ${courseId || onLibrary ? '' : 'on'}`} href={routes.workbench.index}>
             <NavIcon d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5zM20 17H6.5A2.5 2.5 0 0 0 4 19.5" />
             我的课程
           </Link>
-          <Link className={`ops-i ${onLibrary ? 'on' : ''}`} href="/workbench/library">
+          <Link className={`ops-i ${onLibrary ? 'on' : ''}`} href={routes.workbench.library}>
             <NavIcon>
               <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
               <path d="M3 9h18M3 15h18M8 4v16M16 4v16" stroke="currentColor" strokeWidth="1.2" />
@@ -84,7 +85,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
           ) : null}
         </nav>
         {isOpsRole(user ?? { role: 'producer' }) ? (
-          <Link className="ops-settings-entry" href="/ops">
+          <Link className="ops-settings-entry" href={routes.ops}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.08a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.08a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.86z"
@@ -103,14 +104,14 @@ export function WorkbenchShell(props: { children: ReactNode }) {
         <header className="ops-top">
           {/* 面包屑（对齐 Sasan：可点击链接 + skew 分隔线 + 当前页 aria-current） */}
           <nav className="ops-crumb" aria-label="面包屑">
-            <Link href="/workbench">生产工作台</Link>
+            <Link href={routes.workbench.index}>生产工作台</Link>
             {current ? (
               <>
                 <i className="sep" aria-hidden="true" />
                 <Link
                   className="course-crumb"
                   title={current.title}
-                  href={`/workbench/courses/${current.id}`}
+                  href={routes.workbench.course(current.id)}
                 >
                   {current.title}
                 </Link>
@@ -140,7 +141,7 @@ export function WorkbenchShell(props: { children: ReactNode }) {
               name={name}
               role={user?.role ?? ''}
               onLogout={() => {
-                void session.logout().then(() => router.replace('/login'))
+                void session.logout().then(() => router.replace(routes.login))
               }}
             />
           </div>

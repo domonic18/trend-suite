@@ -2,6 +2,7 @@ import {
   createMarketSourceRequest,
   marketQuoteSourceListResponse,
   marketQuoteSourceView,
+  opsReadRoles,
 } from '@trend-suite/contracts'
 import {
   assertCanWriteMarketSources,
@@ -17,7 +18,7 @@ export const dynamic = 'force-dynamic'
 /** 行情源条目列表：运营只读，管理员可写（与模型配置同一权限口径）。 */
 export async function GET(req: Request) {
   try {
-    await requireUser(req, ['producer', 'operator', 'admin'])
+    await requireUser(req, opsReadRoles)
     const items = await listMarketSources()
     return json(marketQuoteSourceListResponse.parse({ items }))
   } catch (err) {
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const actor = await requireUser(req, ['producer', 'operator', 'admin'])
+    const actor = await requireUser(req, opsReadRoles)
     assertCanWriteMarketSources(actor.role)
     const raw = await req.json().catch(() => null)
     const parsed = createMarketSourceRequest.safeParse(raw)

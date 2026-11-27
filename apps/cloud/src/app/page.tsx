@@ -1,3 +1,4 @@
+import { routes } from '@/lib/routes'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -25,7 +26,7 @@ export default function Home() {
           Agent 从原始数据生成教材——大纲、课件、K 线与练习题。
         </p>
         <Button asChild className="mt-8 w-full py-3 text-[14.5px]">
-          <Link href="/login">登录生产工作台</Link>
+          <Link href={routes.login}>登录生产工作台</Link>
         </Button>
         <p className="mt-5 text-[12.5px] text-[#6f7f9e]">
           模型云端预置 · 零安装零密钥 · 学员入口在官网门户

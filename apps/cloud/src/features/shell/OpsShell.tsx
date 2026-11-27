@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import type { SessionUser } from '@trend-suite/contracts'
@@ -8,7 +9,7 @@ import { useWorkbenchTheme } from './ThemeToggle'
 import { BuildInfo } from './BuildInfo'
 
 const MENU: { label: string; href: string | null }[] = [
-  { label: '运营配置', href: '/ops' },
+  { label: '运营配置', href: routes.ops },
   { label: '账号管理', href: null },
 ]
 
@@ -59,7 +60,7 @@ export function OpsShell(props: {
             <span className="un">{initial}</span>
             <span className="ur">{props.user.role}</span>
           </span>
-          <a className="bk" href="/workbench">
+          <a className="bk" href={routes.workbench.index}>
             返回工作台
           </a>
           <Button variant="ghost" size="sm" onClick={props.onLogout}>

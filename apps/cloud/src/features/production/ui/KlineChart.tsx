@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef } from 'react'
-import { dispose, init, type Chart, type KLineData, type Nullable } from 'klinecharts'
+import { dispose, init, type KLineData } from 'klinecharts'
 import type { StockQuotesView } from '@trend-suite/contracts'
 import { klineTokenStyles, readKlineToken } from '@/features/lib/klineTheme'
 

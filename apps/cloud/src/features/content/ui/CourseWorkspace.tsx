@@ -1,12 +1,12 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCourses } from '@/features/content/ui/CoursesProvider'
 import dynamic from 'next/dynamic'
 import { CourseWorkspaceSkeleton } from '@/features/content/ui/OutlineSkeleton'
 import { PlanPanel } from '@/features/content/ui/PlanPanel'
-import { useSession } from '@/features/accounts/SessionProvider'
 
 /** 制作态按需加载：klinecharts 与九步产物等重依赖只进制作态 chunk——
  * 方案期进课不下载（课程页 First Load 426kB 的主因）。 */
@@ -35,32 +35,28 @@ export function CourseWorkspace({
 }) {
   const router = useRouter()
   const { courses, loading } = useCourses()
-  const session = useSession()
   const course = courses.find((item) => item.id === courseId)
 
   useEffect(() => {
-    if (!loading && !course) router.replace('/workbench')
+    if (!loading && !course) router.replace(routes.workbench.index)
   }, [loading, course, router])
 
   // 课程未就绪（列表加载中 / 不存在待跳转）统一骨架——跳转由 effect 兜底
   if (!course) return <CourseWorkspaceSkeleton />
 
-  const title = course.title
   const approved = course.planStatus === 'approved'
 
   return approved ? (
     <ProductionStudio
       key="production"
       courseId={courseId}
-      courseTitle={title}
-      userName={userName ?? session.user?.displayName ?? '教师'}
+      userName={userName}
     />
   ) : (
     <PlanPanel
       key="plan"
       courseId={courseId}
-      courseTitle={title}
-      userName={userName ?? session.user?.displayName ?? '教师'}
+      userName={userName}
     />
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useEffect, useRef, useState } from 'react'
 import type Hls from 'hls.js'
 import type { MediaAssetView, MediaFrameView } from '@trend-suite/contracts'
@@ -227,7 +228,7 @@ export function AssetPickerDialog({
           <div className="empty">素材加载中…</div>
         ) : assets.length === 0 ? (
           <Link
-            href="/workbench/library"
+            href={routes.workbench.library}
             onClick={() => onClose()}
             className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-10 text-mut no-underline transition-colors hover:border-primary hover:text-primary"
           >

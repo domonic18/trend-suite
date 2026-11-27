@@ -5,6 +5,7 @@ import { OpsModelsPanel } from '@/features/models/ui/OpsModelsPanel'
 import { MarketSourcesPanel } from '@/features/market/ui/MarketSourcesPanel'
 import { Cpu, TrendingUp } from 'lucide-react'
 import { OpsShell } from '@/features/shell/OpsShell'
+import { canWriteOpsConfig } from '@/features/shell/ops-role'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
@@ -39,10 +40,10 @@ export default function OpsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="models" className="mt-0">
-          <OpsModelsPanel canWrite={user.role === 'admin'} />
+          <OpsModelsPanel canWrite={canWriteOpsConfig(user.role)} />
         </TabsContent>
         <TabsContent value="market" className="mt-0">
-          <MarketSourcesPanel canWrite={user.role === 'admin'} />
+          <MarketSourcesPanel canWrite={canWriteOpsConfig(user.role)} />
         </TabsContent>
       </Tabs>
     </OpsShell>

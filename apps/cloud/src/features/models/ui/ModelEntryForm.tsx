@@ -7,11 +7,15 @@ import {
   findProviderPreset,
   isPresetBaseUrl,
   providerBaseUrl,
-  providerProtocols,
+  allowedProtocols,
+  availableProtocols,
+  PURPOSE_LABELS,
+  PROTOCOL_LABELS,
+  type EntryForm,
 } from '../providers'
 import type { ModelProtocol, ModelPurpose } from '@trend-suite/contracts'
-import { allowedProtocols, availableProtocols, PURPOSE_LABELS, PROTOCOL_LABELS } from './OpsModelsPanel'
-import type { EntryForm } from './OpsModelsPanel'
+
+
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'

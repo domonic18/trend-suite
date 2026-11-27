@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -228,7 +229,7 @@ export function ProductionWorkspace({
                     </Badge>
                     <span className="right">
                       <Button variant="link" size="sm" asChild>
-                        <Link href={`/workbench/courses/${courseId}/sections/${current.sectionId}/preview`}>
+                        <Link href={routes.workbench.preview(courseId, current.sectionId)}>
                         本节预览
                       </Link>
                       </Button>

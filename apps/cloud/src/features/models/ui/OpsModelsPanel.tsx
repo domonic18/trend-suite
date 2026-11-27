@@ -1,26 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import type {
-  AsrChannelView,
-  ModelEntryView,
-  ModelPurpose,
-  ModelProtocol,
-  TaskBindingView,
-} from '@trend-suite/contracts'
+import type { AsrChannelView, ModelEntryView, ModelPurpose, TaskBindingView } from '@trend-suite/contracts'
 import { Cpu, Plus, Trash2 } from 'lucide-react'
 import { ModelEntryForm } from './ModelEntryForm'
 import { ModelBindingCard } from './ModelBindingCard'
 import { ModelTestBadge } from './ModelTestBadge'
 import { ApiError } from '@/features/lib/http'
-import {
-  MODEL_PROVIDERS,
-  OTHER_PROVIDER,
-  findProviderPreset,
-  isPresetBaseUrl,
-  providerBaseUrl,
-  providerProtocols,
-} from '../providers'
 import {
   createModel,
   deleteModel,
@@ -31,6 +17,15 @@ import {
   testModel,
   updateModel,
 } from '../api'
+import {
+  allowedProtocols,
+  availableProtocols,
+  findProviderPreset,
+  providerProtocols,
+  PURPOSE_LABELS,
+  PROTOCOL_LABELS,
+  type EntryForm,
+} from '../providers'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   AlertDialog,
@@ -44,74 +39,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
-
-
-export const PURPOSE_LABELS: Record<ModelPurpose, string> = {
-  llm: '内容生成',
-  vlm: '视觉理解',
-  asr: '语音转写',
-  embedding: '向量嵌入',
-  image: '图像生成',
-}
-
-export const PROTOCOL_LABELS: Record<ModelProtocol, string> = {
-  openai: 'OpenAI 兼容',
-  anthropic: 'Anthropic',
-  minimax: 'MiniMax 专有',
-}
-
-/** 用途允许的协议（与服务端一致，服务端还会再挡一次）。 */
-const PROTOCOLS_BY_PURPOSE: Record<ModelPurpose, ModelProtocol[]> = {
-  llm: ['openai', 'anthropic'],
-  vlm: ['openai', 'anthropic'],
-  asr: ['minimax', 'openai'],
-  embedding: ['openai'],
-  image: ['openai'],
-}
-
-/** 多用途条目的协议交集：用途全允许才可选。 */
-export function allowedProtocols(purposes: ModelPurpose[]): ModelProtocol[] {
-  const sets = purposes.map((p) => PROTOCOLS_BY_PURPOSE[p])
-  return (Object.keys(PROTOCOL_LABELS) as ModelProtocol[]).filter((protocol) =>
-    sets.every((list) => list.includes(protocol)),
-  )
-}
-
-/** 可选协议 = 用途允许集 ∩ 厂商支持集；选了预置厂商后不再列出该厂商没有的协议。 */
-export function availableProtocols(
-  purposes: ModelPurpose[],
-  preset: ReturnType<typeof findProviderPreset>,
-): ModelProtocol[] {
-  const allowed = allowedProtocols(purposes)
-  if (!preset) return allowed
-  const supported = providerProtocols(preset)
-  return allowed.filter((protocol) => supported.includes(protocol))
-}
-
-export type EntryForm = {
-  id: string | null
-  name: string
-  purposes: ModelPurpose[]
-  provider: string
-  /** 自定义供应商（「其他」手填名称）：provider 存用户输入，select 停在「其他」。 */
-  custom: boolean
-  protocol: ModelProtocol
-  model: string
-  baseUrl: string
-  apiKey: string
-  isDefault: boolean
-}
 
 const EMPTY_FORM: EntryForm = {
   id: null,

@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { useRouter } from 'next/navigation'
 import type { CourseSummaryView } from '@trend-suite/contracts'
 import { Check, Plus } from 'lucide-react'
@@ -66,7 +67,7 @@ export function CourseSwitcher({ current }: { current: CourseSummaryView }) {
             <DropdownMenuItem
               key={course.id}
               aria-checked={course.id === current.id}
-              onSelect={() => router.push(`/workbench/courses/${course.id}`)}
+              onSelect={() => router.push(routes.workbench.course(course.id))}
               className={`sbc-i${course.id === current.id ? ' on' : ''}`}
             >
               <span className={`sb-dot ${dotClassOf(course)}`} />
@@ -81,7 +82,7 @@ export function CourseSwitcher({ current }: { current: CourseSummaryView }) {
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={() => router.push('/workbench#create')}
+            onSelect={() => router.push(routes.workbench.create)}
             className="sbc-f"
           >
             <Plus className="size-3.5" aria-hidden="true" /> 新建课程

@@ -1,5 +1,6 @@
 'use client'
 
+import { routes } from '@/lib/routes'
 import { Button } from '@/components/ui/button'
 
 import { useEffect, type ReactNode } from 'react'
@@ -50,7 +51,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
 
   const anonymous = area !== 'public' && session.status === 'anonymous'
   useEffect(() => {
-    if (anonymous) router.replace('/login')
+    if (anonymous) router.replace(routes.login)
   }, [anonymous, router])
 
   if (area === 'public') return <>{children}</>
@@ -80,7 +81,7 @@ export function ConsoleGate({ children }: { children: ReactNode }) {
         user={user}
         area={area}
         onLogout={() => {
-          void session.logout().then(() => router.replace('/login'))
+          void session.logout().then(() => router.replace(routes.login))
         }}
       />
     )
