@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
+import { WORKSPACE_TABS, EmptyPanel, type WorkspaceTabKey } from '@/features/content/ui/workspaceTabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -29,17 +30,7 @@ import { KlineChart } from './KlineChart'
  * 持久化。只呈现产物与微调入口——工作交互都在左栏对话流。
  */
 
-const TABS = [
-  { key: 'outline', label: '大纲' },
-  { key: 'artifact', label: '课件' },
-  { key: 'figures', label: '配图' },
-  { key: 'video', label: '视频' },
-  { key: 'kline', label: 'K线图' },
-  { key: 'quiz', label: '练习题' },
-  { key: 'interactive', label: '互动' },
-] as const
 
-type TabKey = (typeof TABS)[number]['key']
 
 /** K 线类课件：K 线标注练习 + 逐根回放决策。 */
 const KLINE_TYPES = new Set<string>(['kline-annotator', 'bar-replay-decision'])
@@ -98,14 +89,14 @@ export function ProductionWorkspace({
   onRetry: (sectionId: string) => void
   onSyncQuotes: () => void
 }) {
-  const [tab, setTab] = useState<TabKey>('artifact')
+  const [tab, setTab] = useState<WorkspaceTabKey>('artifact')
 
   // 页签与宽度一样持久化：刷新后还在教师上次看的位置。
   useEffect(() => {
     const saved = window.localStorage.getItem('wb.ws.tab.production')
-    if (saved && TABS.some((item) => item.key === saved)) setTab(saved as TabKey)
+    if (saved && WORKSPACE_TABS.some((item) => item.key === saved)) setTab(saved as WorkspaceTabKey)
   }, [])
-  const selectTab = (next: TabKey) => {
+  const selectTab = (next: WorkspaceTabKey) => {
     setTab(next)
     window.localStorage.setItem('wb.ws.tab.production', next)
   }
@@ -167,7 +158,7 @@ export function ProductionWorkspace({
     [content],
   )
 
-  const counts: Record<TabKey, string | null> = {
+  const counts: Record<WorkspaceTabKey, string | null> = {
     outline: sections.length > 0 ? String(sections.length) : null,
     artifact: current ? `${current.products}/9` : null,
     figures:
@@ -186,24 +177,22 @@ export function ProductionWorkspace({
   return (
     <Tabs
       value={tab}
-      onValueChange={(value) => selectTab(value as TabKey)}
+      onValueChange={(value) => selectTab(value as WorkspaceTabKey)}
       className="ws"
       aria-label="制作工作区"
     >
       <div className="ws-head">
         <div className="ws-title">
           制作工作区
-          <Badge className={`tag ${boardReady ? tag.cls : emptyTag.cls}`}>
-            {boardReady ? tag.text : emptyTag.text}
-          </Badge>
         </div>
         <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
-          {TABS.map((item) => (
+          {WORKSPACE_TABS.map((item) => (
             <TabsTrigger
               key={item.key}
               value={item.key}
               className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
             >
+              <item.icon className="size-3.5" aria-hidden="true" />
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}
             </TabsTrigger>

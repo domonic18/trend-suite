@@ -1065,3 +1065,56 @@
   color: var(--p-faint);
   line-height: 1.7;
 }
+
+/* chat-center 融合面板：两栏头部不带横线（Sasan 形态——面板间只有
+   ResizableHandle 一根 hairline，栏内不再有多余分隔线），并统一头部
+   高度让两侧视觉对齐。 */
+.chat-center .ops-main .agent-head,
+.chat-center .ops-main .ws-head {
+  border-bottom: none;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+/* 右栏收起/展开（Sasan「收起课程资源」同款）：收起后中栏占满，右缘一个
+   常驻小钮展开；未收起时收起钮挂在分隔条上。 */
+.wb-collapsed {
+  display: flex;
+  position: relative;
+}
+.wb-expand {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--p-line);
+  background: var(--p-bg);
+  color: var(--p-mut);
+  cursor: pointer;
+}
+.wb-expand:hover {
+  color: var(--p-pri);
+  border-color: var(--p-pri);
+}
+.wb-collapse {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: none;
+  color: transparent;
+  cursor: pointer;
+}
+.wb-collapse:hover,
+.wb-collapse:focus-visible {
+  color: var(--p-mut);
+}
