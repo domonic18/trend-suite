@@ -4,7 +4,7 @@ import { routes } from '@/lib/routes'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-import { WORKSPACE_TABS, EmptyPanel, type WorkspaceTabKey } from '@/features/content/ui/workspaceTabs'
+import { WORKSPACE_TABS, EmptyPanel, type WorkspaceTabKey } from '@/features/courseware/ui/workspaceTabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,12 +18,12 @@ import type {
   SectionQuotesView,
   SourceUnitView,
 } from '@trend-suite/contracts'
-import { ClipCard } from '@/features/content/ui/ClipCard'
-import { DslRenderer } from '@/features/content/ui/DslRenderer'
-import { FigureCard } from '@/features/content/ui/FigureCard'
-import { WidgetHost } from '@/features/content/ui/widgets/WidgetHost'
+import { ClipCard } from '@/features/courseware/ui/ClipCard'
+import { DslRenderer } from '@/features/courseware/ui/DslRenderer'
+import { FigureCard } from '@/features/courseware/ui/FigureCard'
+import { WidgetHost } from '@/features/courseware/ui/widgets/WidgetHost'
 import type { FigureView } from '@trend-suite/contracts'
-import { KlineChart } from './KlineChart'
+import { KlineChart } from '@/features/courseware/ui/KlineChart'
 
 /**
  * 制作台右栏工作区（arch/08 §6）：页签 = 课件元素类别（大纲 / 课件 / 配图 /

@@ -12,7 +12,8 @@ import { listAssets } from '@/features/pipeline/api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
 import { WorkbenchSplit } from '@/features/shell/WorkbenchSplit'
-import { getProductionBoard, getSectionContent, getSectionQuotes, resyncSectionQuotes, retryProductionSection } from '../api'
+import { getProductionBoard, resyncSectionQuotes, retryProductionSection } from '../api'
+import { getSectionContent, getSectionQuotes } from '@/features/courseware/api'
 import { ProductionWorkspace } from './ProductionWorkspace'
 
 /**

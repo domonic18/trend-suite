@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { SectionPreview } from '@/features/content/ui/SectionPreview'
+import { SectionPreview } from '@/features/courseware/ui/SectionPreview'
 
 /** 分节正文预览（生产阶段下钻）。 */
 export default function SectionPreviewPage() {
