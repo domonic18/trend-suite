@@ -26,6 +26,7 @@
 @import './styles/chat.css';
 @import './styles/content.css';
 @import './styles/workspace.css';
+@import './styles/settings.css';
 
 /* ------------------------------------------------------------
    主题变体：shadcn 组件内的 dark: utility 对齐现有属性选择器——

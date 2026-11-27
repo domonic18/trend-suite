@@ -736,10 +736,6 @@ dialog::backdrop {
   color: var(--p-faint);
 }
 
-.ops-top .right {
-  margin-left: auto;
-  font-size: 12.5px;
-}
 
 .ops-main {
   padding: 20px 24px 40px;
@@ -779,207 +775,17 @@ dialog::backdrop {
   max-width: 72ch;
 }
 
-/* 运营台侧栏底部用户区（对齐工作台形态）：头像 + 名字/角色 + 动作钮。
-   此前 .ops-user/.ava/.un/.ur/.bk 从未定义——裸样式堆积的历史遗留。 */
-.ops-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-}
-.ops-user .ava {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--p-pri-soft);
-  color: var(--p-pri);
-  font-weight: 600;
-  font-size: 13px;
-}
-.ops-user .un {
-  display: block;
-  font-weight: 600;
-  font-size: 12.5px;
-  color: var(--p-ink);
-  line-height: 1.4;
-}
-.ops-user .ur {
-  display: block;
-  font-size: 11px;
-  color: var(--p-faint);
-  line-height: 1.4;
-}
-.ops-user .bk {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--p-mut);
-  text-decoration: none;
-}
-.ops-user .bk:hover {
-  color: var(--p-pri);
+
+
+
+
+/* 侧栏底部附加导航（运营台入口）：mt-auto 贴到版本行之上。 */
+.ops-menu--bottom {
+  margin-top: auto;
 }
 
-.ops-user-id {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-}
-.ops-user-id .un {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ops-user .bk {
-  flex: none;
-}
 
-/* ---------------- 设置页（/ops，Sasan settings 同款形态） ---------------- */
-.settings-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 26px 0 20px;
-}
-.settings-head h1 {
-  font-size: 22px;
-  font-weight: 650;
-  margin: 0;
-}
-.settings-tabs {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-start;
-  width: 100%;
-  height: auto;
-  border-bottom: 1px solid var(--p-line);
-  border-radius: 0;
-  padding: 0;
-  background: none;
-  margin-bottom: 22px;
-}
-.settings-tabs [data-slot='tabs-trigger'] {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: auto;
-  padding: 9px 12px;
-  font-size: 14px;
-  font-weight: 400;
-  white-space: nowrap;
-  border-radius: 0;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--p-mut);
-  box-shadow: none;
-}
-.settings-tabs [data-slot='tabs-trigger']:hover {
-  color: var(--p-ink);
-}
-.settings-tabs [data-slot='tabs-trigger'][data-state='active'] {
-  color: var(--p-pri);
-  border-bottom-color: var(--p-pri);
-  font-weight: 600;
-  background: none;
-}
-/* 分组标题行（Sasan .heading）：h3 + 右侧新增按钮 */
-.settings-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.settings-heading h3 {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0;
-}
-/* 单行卡片（Sasan .row）：左信息 + 右操作 */
-.settings-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 15px 18px;
-  margin: 10px 0;
-  background: var(--p-bg);
-  border: 1px solid var(--p-line);
-  border-radius: 10px;
-}
-.settings-row .row-info {
-  min-width: 0;
-  flex: 1 1 320px;
-  overflow-wrap: anywhere;
-}
-.settings-row .row-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.settings-row .row-name h4 {
-  font-size: 14.5px;
-  font-weight: 600;
-  margin: 0;
-}
-.settings-row .row-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px 12px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--p-mut);
-}
-.settings-row .row-meta code {
-  font-family: var(--p-font-mono);
-  font-size: 11.5px;
-  background: var(--p-soft);
-  border: 1px solid var(--p-line);
-  border-radius: 5px;
-  padding: 1px 6px;
-}
-.settings-row .row-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.settings-row > p.row-status {
-  flex-basis: 100%;
-  font-size: 13px;
-  margin: 0;
-}
-.settings-empty {
-  text-align: center;
-  padding: 38px 16px;
-  border: 1px dashed var(--p-line);
-  border-radius: 10px;
-  color: var(--p-mut);
-}
-.settings-empty h4 {
-  margin: 8px 0 0;
-  font-size: 14px;
-  color: var(--p-mut);
-}
-
-/* 设置分区（GitHub/Vercel settings sections 形态）：纵向分区，
-   每区 settings-heading 标题 + 内容；区与区之间分隔留白。 */
-.settings-section {
-  padding-bottom: 10px;
-}
-.settings-section + .settings-section {
+/* 列表页页头贴顶间距（课程列表 / 素材库同值，替代内联 style）。 */
+.page-head--top {
   margin-top: 26px;
-  border-top: 1px solid var(--p-line);
-  padding-top: 22px;
 }

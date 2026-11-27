@@ -7,7 +7,7 @@ import type { ModelEntryView, TaskBindingView } from '@trend-suite/contracts'
 import { saveBinding } from '../api'
 import { PURPOSE_LABELS } from '../providers'
 
-import { ModelTestBadge } from './ModelTestBadge'
+import { TestStatusBadge } from '@/features/lib/TestStatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -129,7 +129,7 @@ export const ModelBindingCard = memo(function ModelBindingCard(props: {
       <div className="flex flex-wrap items-baseline gap-1.5 text-[12.5px] text-mut">
         <span>主模型连通</span>
         {primaryEntry ? (
-          <ModelTestBadge
+          <TestStatusBadge
             testing={testing}
             result={primaryEntry.lastTestResult}
             latencyMs={primaryEntry.lastTestLatencyMs}

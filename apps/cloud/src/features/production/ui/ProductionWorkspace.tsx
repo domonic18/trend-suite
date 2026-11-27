@@ -1,5 +1,7 @@
 'use client'
 
+import { storageKeys } from '@/lib/storageKeys'
+
 import { routes } from '@/lib/routes'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -94,12 +96,12 @@ export function ProductionWorkspace({
 
   // 页签与宽度一样持久化：刷新后还在教师上次看的位置。
   useEffect(() => {
-    const saved = window.localStorage.getItem('wb.ws.tab.production')
+    const saved = window.localStorage.getItem(storageKeys.workspaceTab('production'))
     if (saved && WORKSPACE_TABS.some((item) => item.key === saved)) setTab(saved as WorkspaceTabKey)
   }, [])
   const selectTab = (next: WorkspaceTabKey) => {
     setTab(next)
-    window.localStorage.setItem('wb.ws.tab.production', next)
+    window.localStorage.setItem(storageKeys.workspaceTab('production'), next)
   }
 
   const sections = board?.sections ?? []
@@ -186,13 +188,9 @@ export function ProductionWorkspace({
         <div className="ws-title">
           制作工作区
         </div>
-        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
+        <TabsList className="overflow-x-auto">
           {WORKSPACE_TABS.map((item) => (
-            <TabsTrigger
-              key={item.key}
-              value={item.key}
-              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
-            >
+            <TabsTrigger key={item.key} value={item.key}>
               <item.icon className="size-3.5" aria-hidden="true" />
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}

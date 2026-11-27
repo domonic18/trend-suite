@@ -8,6 +8,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import styles from './WorkbenchSplit.module.css'
 
 /**
  * 工作台双栏分隔（arch/08 §6）：中栏对话 + 右栏产物工作区。
@@ -54,11 +55,11 @@ export function WorkbenchSplit({
 
   if (collapsed) {
     return (
-      <div className="plan-split wb-collapsed">
+      <div className={`plan-split ${styles.collapsed}`}>
         <div className="wb-col">{main}</div>
         <button
           type="button"
-          className="wb-expand"
+          className={styles.expand}
           onClick={() => setCollapsed(false)}
           aria-label="展开工作区"
           title="展开工作区"
@@ -77,7 +78,7 @@ export function WorkbenchSplit({
       <ResizableHandle className="ws-resizer">
         <button
           type="button"
-          className="wb-collapse"
+          className={styles.collapse}
           onClick={() => setCollapsed(true)}
           aria-label="收起工作区"
           title="收起工作区"

@@ -5,7 +5,7 @@ import type { AsrChannelView, ModelEntryView, ModelPurpose, TaskBindingView } fr
 import { Cpu, Plus, Trash2 } from 'lucide-react'
 import { ModelEntryForm } from './ModelEntryForm'
 import { ModelBindingCard } from './ModelBindingCard'
-import { ModelTestBadge } from './ModelTestBadge'
+import { TestStatusBadge } from '@/features/lib/TestStatusBadge'
 import { ApiError } from '@/features/lib/http'
 import {
   createModel,
@@ -224,7 +224,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                   </div>
                 </div>
                 <div className="row-controls">
-                  <ModelTestBadge
+                  <TestStatusBadge
                     testing={testingIds.has(entry.id)}
                     result={entry.lastTestResult}
                     latencyMs={entry.lastTestLatencyMs}
@@ -322,7 +322,7 @@ export function OpsModelsPanel({ canWrite }: { canWrite: boolean }) {
                 </div>
               </div>
               <div className="row-controls">
-                <ModelTestBadge
+                <TestStatusBadge
                   testing={channel.modelId !== null && testingIds.has(channel.modelId)}
                   result={channel.lastTestResult}
                   latencyMs={channel.lastTestLatencyMs}

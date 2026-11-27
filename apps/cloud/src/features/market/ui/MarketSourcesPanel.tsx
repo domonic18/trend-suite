@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MarketQuoteSourceView } from '@trend-suite/contracts'
 import { Plus, Trash2, TrendingUp } from 'lucide-react'
 import { ApiError } from '@/features/lib/http'
+import { TestStatusBadge } from '@/features/lib/TestStatusBadge'
 import { createMarketSource, deleteMarketSource, listMarketSources, testMarketSource, updateMarketSource } from '../api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -248,18 +249,13 @@ export function MarketSourcesPanel({ canWrite }: { canWrite: boolean }) {
                 </div>
               </div>
               <div className="row-controls">
-                <span className={source.lastTestResult === 'ok' ? 'text-success text-[13px]' : source.lastTestResult === 'failed' ? 'text-destructive text-[13px]' : 'text-xs text-mut'}>
-                  {testingIds.has(source.id)
-                    ? '测试中…'
-                    : source.lastTestResult === 'ok'
-                      ? `✓ ${source.lastTestLatencyMs ?? '?'}ms`
-                      : source.lastTestResult === 'failed'
-                        ? '✗ 失败'
-                        : '未测试'}
-                </span>
-                {source.lastTestedAt ? (
-                  <span className="text-xs text-mut">{source.lastTestedAt.slice(0, 16).replace('T', ' ')}</span>
-                ) : null}
+                <TestStatusBadge
+                  testing={testingIds.has(source.id)}
+                  result={source.lastTestResult}
+                  latencyMs={source.lastTestLatencyMs}
+                  error={source.lastTestError}
+                  testedAt={source.lastTestedAt}
+                />
                 {canWrite ? (
                   <>
                     <Button variant="outline" size="sm" disabled={testingIds.has(source.id)} onClick={() => void runTest(source.id)}>

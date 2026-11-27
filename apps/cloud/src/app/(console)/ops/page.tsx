@@ -20,18 +20,12 @@ export default function OpsPage() {
   if (!user) return null
 
   return (
-    <OpsShell
-      user={user}
-      active="运营配置"
-      onLogout={() => {
-        void session.logout()
-      }}
-    >
+    <OpsShell>
       <Tabs defaultValue="models" className="ops-settings">
         <header className="settings-head">
           <h1>运营配置</h1>
         </header>
-        <TabsList className="settings-tabs">
+        <TabsList className="mb-[22px]">
           <TabsTrigger value="models">
             <Cpu className="size-[17px]" aria-hidden="true" />模型配置
           </TabsTrigger>

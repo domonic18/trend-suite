@@ -1,0 +1,112 @@
+/* ============================================================
+   设置页（/ops）领域样式：下划线页签之外的分区布局——页头、分组标题行、
+   单行卡片列表、空态（Sasan settings 同款形态，配色走 --p-* token）。
+   包在 @layer components：utility 可覆盖；新增设置页布局类只放这里。
+   ============================================================ */
+
+@layer components {
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 20px;
+}
+.settings-head h1 {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0;
+}
+/* 分组标题行（Sasan .heading）：h3 + 右侧新增按钮 */
+.settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.settings-heading h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+/* 单行卡片（Sasan .row）：左信息 + 右操作 */
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 18px;
+  margin: 10px 0;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  border-radius: 10px;
+}
+.settings-row .row-info {
+  min-width: 0;
+  flex: 1 1 320px;
+  overflow-wrap: anywhere;
+}
+.settings-row .row-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.settings-row .row-name h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0;
+}
+.settings-row .row-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--p-mut);
+}
+.settings-row .row-meta code {
+  font-family: var(--p-font-mono);
+  font-size: 11.5px;
+  background: var(--p-soft);
+  border: 1px solid var(--p-line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+.settings-row .row-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.settings-row > p.row-status {
+  flex-basis: 100%;
+  font-size: 13px;
+  margin: 0;
+}
+.settings-empty {
+  text-align: center;
+  padding: 38px 16px;
+  border: 1px dashed var(--p-line);
+  border-radius: 10px;
+  color: var(--p-mut);
+}
+.settings-empty h4 {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--p-mut);
+}
+
+.settings-section {
+  padding-bottom: 10px;
+}
+.settings-section + .settings-section {
+  margin-top: 26px;
+  border-top: 1px solid var(--p-line);
+  padding-top: 22px;
+}
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MediaAssetView, PlanResponse, TweakPlanRequest } from '@trend-suite/contracts'
 import { ApiError } from '@/features/lib/http'
 import { usePolling } from '@/features/lib/usePolling'
+import { POLL_MS } from '@/lib/polling'
 import { approvePlan, getPlan, tweakPlan } from '../api'
 import { AgentChat } from '@/features/agent-chat/AgentChat'
 import { useAgentStream } from '@/features/agent-chat/useAgentStream'
@@ -84,7 +85,7 @@ export function PlanPanel({
 
   const job = data?.job ?? null
   const running = job?.status === 'queued' || job?.status === 'running'
-  usePolling(refresh, running ? 3_000 : 60_000) // 起草中 3s；空闲降到 60s 兜底
+  usePolling(refresh, running ? POLL_MS.active : POLL_MS.idle)
 
   // 对话事件驱动右栏重取（refreshKey = 最新消息 seq）：起草完成等事实落流即刷新。
   const lastSeq = stream.lastSeq

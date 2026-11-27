@@ -90,13 +90,9 @@ export function PlanWorkspace({
             <AlertDescription>{approveError}</AlertDescription>
           </Alert>
         ) : null}
-        <TabsList className="h-auto justify-start gap-0.5 overflow-x-auto rounded-none border-b border-line bg-transparent p-0.5">
+        <TabsList className="overflow-x-auto">
           {WORKSPACE_TABS.map((item) => (
-            <TabsTrigger
-              key={item.key}
-              value={item.key}
-              className="rounded-none border-b-2 border-transparent px-3 py-2 text-[12.5px] text-mut data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
-            >
+            <TabsTrigger key={item.key} value={item.key}>
               <item.icon className="size-3.5" aria-hidden="true" />
               {item.label}
               {counts[item.key] ? <span className="n">{counts[item.key]}</span> : null}

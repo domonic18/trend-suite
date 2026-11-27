@@ -68,7 +68,7 @@ export function CourseList() {
 
   return (
     <section>
-      <div className="page-head" style={{ marginTop: 26 }}>
+      <div className="page-head page-head--top">
         <h1>我的课程</h1>
         <div className="actions">
           <Button asChild>

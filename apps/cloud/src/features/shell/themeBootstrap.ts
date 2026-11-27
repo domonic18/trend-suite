@@ -6,7 +6,7 @@
  */
 export const THEME_BOOTSTRAP = `(() => {
   try {
-    var saved = localStorage.getItem('wb.theme');
+    var saved = localStorage.getItem('wb.theme') /* = storageKeys.theme（脚本是字符串，无法 import；改名须同步） */;
     document.documentElement.setAttribute('data-wb-theme', saved === 'light' ? 'light' : 'dark');
   } catch (e) {
     document.documentElement.setAttribute('data-wb-theme', 'dark');
